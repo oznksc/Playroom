@@ -226,6 +226,54 @@ export function getGameKitRoot(root: string): string {
   return join(root, "gamekit");
 }
 
+export async function exportProject(root: string, outputDir: string): Promise<string> {
+  const { project, scenes, assets } = await getProjectSnapshot(root);
+  const gamekitRoot = getGameKitRoot(root);
+  const outputGamekit = join(outputDir, "gamekit");
+  const pkgJson = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as Record<string, unknown>;
+
+  await mkdir(outputDir, { recursive: true });
+  await mkdir(join(outputGamekit, "scenes"), { recursive: true });
+  await mkdir(join(outputGamekit, "assets"), { recursive: true });
+  await mkdir(join(outputGamekit, "generated"), { recursive: true });
+
+  const templateDir = join(root, "templates", "expo-game");
+  const filesToCopy = [
+    { src: join(templateDir, "App.tsx"), dest: join(outputDir, "App.tsx") },
+    { src: join(templateDir, "app.json"), dest: join(outputDir, "app.json") },
+    { src: join(templateDir, "babel.config.js"), dest: join(outputDir, "babel.config.js") },
+    { src: join(templateDir, "tsconfig.json"), dest: join(outputDir, "tsconfig.json") },
+  ];
+
+  for (const { src, dest } of filesToCopy) {
+    if (await exists(src)) {
+      await writeFile(dest, await readFile(src, "utf8"));
+    }
+  }
+
+  const templatePkg = { ...JSON.parse(await readFile(join(templateDir, "package.json"), "utf8")) as Record<string, unknown> };
+  templatePkg.name = project.name.toLowerCase().replace(/\s+/g, "-");
+  (templatePkg.dependencies as Record<string, string>)["@gamekit/runtime"] = pkgJson.version as string ?? "0.1.0";
+  await writeFile(join(outputDir, "package.json"), JSON.stringify(templatePkg, null, 2) + "\n");
+
+  for (const sceneFile of scenes) {
+    const scenePath = join(gamekitRoot, "scenes", sceneFile);
+    await writeFile(join(outputGamekit, "scenes", sceneFile), await readFile(scenePath, "utf8"));
+  }
+
+  for (const asset of assets) {
+    const assetSrc = join(gamekitRoot, "assets", asset.file);
+    if (await exists(assetSrc)) {
+      await writeFile(join(outputGamekit, "assets", asset.file), await readFile(assetSrc));
+    }
+  }
+
+  await writeProject(outputDir, project);
+  await generateAssetRegistry(outputDir);
+
+  return outputDir;
+}
+
 function createStarterScene(): GameKitScene {
   const scene = createEmptyScene("Main Scene");
   scene.entities = [

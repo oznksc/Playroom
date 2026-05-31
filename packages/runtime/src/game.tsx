@@ -7,6 +7,8 @@ import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
 import { applyAabbCollisions, getEntityAabb, type CollisionSolid } from "./collision.js";
+import { updateAnimation } from "./animate.js";
+import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
 
 export type GameKitGameProps = {
@@ -20,6 +22,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
   const cameraStateRef = useRef<CameraState>({ position: { x: 0, y: 0 }, zoom: 1 });
+  const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -115,6 +118,17 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
         cameraStateRef.current = { ...cameraFollowRef.current.state };
         break;
       }
+    }
+
+    for (const entity of entities) {
+      const anim = entity.components.find((c): c is AnimationComponent => c.type === "Animation");
+      if (!anim) continue;
+      let state = animationStatesRef.current.get(entity.id);
+      if (!state) {
+        state = { currentFrame: anim.currentFrame ?? 0, elapsed: 0 };
+        animationStatesRef.current.set(entity.id, state);
+      }
+      anim.currentFrame = updateAnimation(anim, state, dt);
     }
 
     setTick((t) => t + 1);

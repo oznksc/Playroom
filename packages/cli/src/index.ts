@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { basename, resolve } from "node:path";
-import { initProject, importAsset, removeAsset, generateAssetRegistry } from "./project.js";
+import { basename, join, resolve } from "node:path";
+import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
 import { startEditorServer } from "./server.js";
 
-export { initProject, importAsset, removeAsset, generateAssetRegistry } from "./project.js";
+export { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
 export { startEditorServer } from "./server.js";
 
 async function main(argv: string[]): Promise<void> {
@@ -44,6 +44,13 @@ async function main(argv: string[]): Promise<void> {
       await startEditorServer({ root: cwd, port });
       return;
     }
+    case "export": {
+      const path = args.find((arg) => !arg.startsWith("--")) ?? join(cwd, "build");
+      await initProject(cwd);
+      const output = await exportProject(cwd, resolve(cwd, path));
+      console.log(`Exported runnable Expo app: ${output}`);
+      return;
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -67,6 +74,7 @@ Usage:
   gamekit editor [--port 4177]
   gamekit import <file>
   gamekit remove <asset-id>
+  gamekit export [path]
   gamekit generate
 `);
 }

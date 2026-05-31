@@ -1,4 +1,4 @@
-import type { GameKitScene, ResponsiveConfig, SafeAreaConfig, SpriteComponent, TransformComponent } from "@gamekit/schema";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TransformComponent } from "@gamekit/schema";
 import { Canvas, Group, Rect, Skia, Image as SkiaImage, useImage } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
@@ -122,11 +122,22 @@ export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1
           />
           {scene.entities.map((entity) => {
             const transform = entity.components.find((component): component is TransformComponent => component.type === "Transform");
-            const sprite = entity.components.find((component): component is SpriteComponent => component.type === "Sprite");
+            if (!transform) return null;
 
-            if (!transform || !sprite) {
-              return null;
+            const anim = entity.components.find((component): component is AnimationComponent => component.type === "Animation");
+            if (anim) {
+              return (
+                <AnimatedSpriteNode
+                  key={entity.id}
+                  anim={anim}
+                  transform={transform}
+                  source={assets[anim.assetId]}
+                />
+              );
             }
+
+            const sprite = entity.components.find((component): component is SpriteComponent => component.type === "Sprite");
+            if (!sprite) return null;
 
             return (
               <SpriteNode
@@ -176,6 +187,48 @@ function SpriteNode({
       width={sprite.width}
       height={sprite.height}
     />
+  );
+}
+
+function AnimatedSpriteNode({
+  anim,
+  transform,
+  source
+}: {
+  anim: AnimationComponent;
+  transform: TransformComponent;
+  source: unknown;
+}): ReactElement {
+  const image = useImage(source as Parameters<typeof useImage>[0]);
+  const x = transform.position.x;
+  const y = transform.position.y;
+  const frame = anim.currentFrame ?? 0;
+  const srcX = frame * anim.frameWidth;
+
+  if (!image) {
+    return (
+      <Rect
+        x={x}
+        y={y}
+        width={anim.frameWidth}
+        height={anim.frameHeight}
+        color={Skia.Color("#fbbf24")}
+      />
+    );
+  }
+
+  return (
+    <Group
+      clip={Skia.RRectXY(Skia.XYWHRect(x, y, anim.frameWidth, anim.frameHeight), 0, 0)}
+    >
+      <SkiaImage
+        image={image}
+        x={x - srcX}
+        y={y}
+        width={anim.frameWidth * (anim.totalFrames || 1)}
+        height={anim.frameHeight}
+      />
+    </Group>
   );
 }
 

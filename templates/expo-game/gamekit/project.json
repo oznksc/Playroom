@@ -7,6 +7,11 @@
   "levels": [],
   "assets": [
     {
+      "id": "block-yellow-alt",
+      "file": "block-yellow-alt.png",
+      "kind": "image"
+    },
+    {
       "id": "player",
       "file": "player.svg",
       "kind": "image"

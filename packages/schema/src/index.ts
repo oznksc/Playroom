@@ -70,17 +70,66 @@ export type CameraFollowComponent = {
   smoothing: number;
 };
 
+export type AnimationComponent = {
+  type: "Animation";
+  assetId: string;
+  frameWidth: number;
+  frameHeight: number;
+  totalFrames: number;
+  framesPerSecond: number;
+  loop: boolean;
+  currentFrame?: number;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
   | AabbColliderComponent
   | PlayerControllerComponent
-  | CameraFollowComponent;
+  | CameraFollowComponent
+  | AnimationComponent;
 
 export type GameKitEntity = {
   id: string;
   name: string;
   components: GameKitComponent[];
+};
+
+export type GuiNode = GuiText | GuiButton | GuiImage;
+
+export type GuiBase = {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  anchorX?: number;
+  anchorY?: number;
+  visible?: boolean;
+  interactive?: boolean;
+};
+
+export type GuiText = GuiBase & {
+  type: "Text";
+  text: string;
+  fontSize?: number;
+  color?: string;
+  align?: "left" | "center" | "right";
+};
+
+export type GuiButton = GuiBase & {
+  type: "Button";
+  text: string;
+  action?: string;
+  fontSize?: number;
+  color?: string;
+  backgroundColor?: string;
+};
+
+export type GuiImage = GuiBase & {
+  type: "Image";
+  assetId: string;
 };
 
 export type GameKitScene = {
@@ -100,7 +149,7 @@ export type GameKitScene = {
     tracks: unknown[];
   };
   gui: {
-    nodes: unknown[];
+    nodes: GuiNode[];
   };
 };
 
@@ -357,8 +406,20 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           smoothing: expectNumber(component.smoothing, `${path}.smoothing`, errors)
         });
         return;
+      case "Animation":
+        components.push({
+          type: "Animation",
+          assetId: expectString(component.assetId, `${path}.assetId`, errors),
+          frameWidth: expectNumber(component.frameWidth, `${path}.frameWidth`, errors),
+          frameHeight: expectNumber(component.frameHeight, `${path}.frameHeight`, errors),
+          totalFrames: expectNumber(component.totalFrames, `${path}.totalFrames`, errors),
+          framesPerSecond: expectNumber(component.framesPerSecond, `${path}.framesPerSecond`, errors),
+          loop: expectBoolean(component.loop, `${path}.loop`, errors),
+          ...(component.currentFrame !== undefined ? { currentFrame: expectNumber(component.currentFrame, `${path}.currentFrame`, errors) } : {}),
+        });
+        return;
       default:
-        errors.push(`${path}.type has unsupported component type`);
+        errors.push(`${path}.type has unsupported component type: ${String((component as Record<string, unknown>).type ?? "unknown")}`);
     }
   });
 
@@ -397,7 +458,72 @@ function validateTimeline(input: unknown, errors: string[]): GameKitScene["timel
 }
 
 function validateGui(input: unknown, errors: string[]): GameKitScene["gui"] {
-  return { nodes: validateReservedArray(input, "gui", "nodes", errors) };
+  if (input === undefined) return { nodes: [] };
+  if (!isRecord(input)) {
+    errors.push("gui must be an object");
+    return { nodes: [] };
+  }
+
+  const rawNodes = input.nodes;
+  if (!Array.isArray(rawNodes)) {
+    errors.push("gui.nodes must be an array");
+    return { nodes: [] };
+  }
+
+  const nodes: GuiNode[] = [];
+  for (let i = 0; i < rawNodes.length; i++) {
+    const node = rawNodes[i];
+    if (!isRecord(node) || typeof node.type !== "string") {
+      errors.push(`gui.nodes[${i}].type is required`);
+      continue;
+    }
+    const common = {
+      id: expectString(node.id, `gui.nodes[${i}].id`, errors),
+      x: expectNumber(node.x, `gui.nodes[${i}].x`, errors),
+      y: expectNumber(node.y, `gui.nodes[${i}].y`, errors),
+      width: expectNumber(node.width, `gui.nodes[${i}].width`, errors),
+      height: expectNumber(node.height, `gui.nodes[${i}].height`, errors),
+      visible: node.visible !== undefined ? expectBoolean(node.visible, `gui.nodes[${i}].visible`, errors) : undefined,
+      interactive: node.interactive !== undefined ? expectBoolean(node.interactive, `gui.nodes[${i}].interactive`, errors) : undefined,
+      anchorX: node.anchorX !== undefined ? expectNumber(node.anchorX, `gui.nodes[${i}].anchorX`, errors) : undefined,
+      anchorY: node.anchorY !== undefined ? expectNumber(node.anchorY, `gui.nodes[${i}].anchorY`, errors) : undefined,
+    };
+
+    switch (node.type) {
+      case "Text":
+        nodes.push({
+          ...common,
+          type: "Text",
+          text: expectString(node.text, `gui.nodes[${i}].text`, errors),
+          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `gui.nodes[${i}].fontSize`, errors) : undefined,
+          color: node.color !== undefined ? expectString(node.color, `gui.nodes[${i}].color`, errors) : undefined,
+          align: node.align !== undefined ? expectString(node.align, `gui.nodes[${i}].align`, errors) as "left" | "center" | "right" : undefined,
+        });
+        break;
+      case "Button":
+        nodes.push({
+          ...common,
+          type: "Button",
+          text: expectString(node.text, `gui.nodes[${i}].text`, errors),
+          action: node.action !== undefined ? expectString(node.action, `gui.nodes[${i}].action`, errors) : undefined,
+          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `gui.nodes[${i}].fontSize`, errors) : undefined,
+          color: node.color !== undefined ? expectString(node.color, `gui.nodes[${i}].color`, errors) : undefined,
+          backgroundColor: node.backgroundColor !== undefined ? expectString(node.backgroundColor, `gui.nodes[${i}].backgroundColor`, errors) : undefined,
+        });
+        break;
+      case "Image":
+        nodes.push({
+          ...common,
+          type: "Image",
+          assetId: expectString(node.assetId, `gui.nodes[${i}].assetId`, errors),
+        });
+        break;
+      default:
+        errors.push(`gui.nodes[${i}].type "${node.type}" is not a supported GUI node type`);
+    }
+  }
+
+  return { nodes };
 }
 
 function validateReservedArray(input: unknown, path: string, key: string, errors: string[]): unknown[] {
