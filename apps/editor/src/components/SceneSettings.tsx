@@ -208,7 +208,22 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                       <select
                         value={responsive.orientation}
                         onChange={(event) => onChange((draft) => {
-                          draft.responsive.orientation = event.target.value as Orientation;
+                          const nextOrientation = event.target.value as Orientation;
+                          draft.responsive.orientation = nextOrientation;
+                          
+                          // Auto synchronize viewport width/height dimensions
+                          const w = draft.responsive.referenceWidth;
+                          const h = draft.responsive.referenceHeight;
+                          if (nextOrientation === "portrait") {
+                            draft.viewport.width = Math.min(w, h);
+                            draft.viewport.height = Math.max(w, h);
+                          } else if (nextOrientation === "landscape") {
+                            draft.viewport.width = Math.max(w, h);
+                            draft.viewport.height = Math.min(w, h);
+                          } else {
+                            draft.viewport.width = w;
+                            draft.viewport.height = h;
+                          }
                         })}
                       >
                         <option value="portrait">Portrait</option>
@@ -237,6 +252,21 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                       value={responsive.referenceWidth}
                       onChange={(value) => onChange((draft) => {
                         draft.responsive.referenceWidth = value;
+                        
+                        // Auto synchronize viewport width/height dimensions
+                        const orientation = draft.responsive.orientation;
+                        const w = value;
+                        const h = draft.responsive.referenceHeight;
+                        if (orientation === "portrait") {
+                          draft.viewport.width = Math.min(w, h);
+                          draft.viewport.height = Math.max(w, h);
+                        } else if (orientation === "landscape") {
+                          draft.viewport.width = Math.max(w, h);
+                          draft.viewport.height = Math.min(w, h);
+                        } else {
+                          draft.viewport.width = w;
+                          draft.viewport.height = h;
+                        }
                       })}
                     />
                     <NumberField
@@ -244,6 +274,21 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                       value={responsive.referenceHeight}
                       onChange={(value) => onChange((draft) => {
                         draft.responsive.referenceHeight = value;
+                        
+                        // Auto synchronize viewport width/height dimensions
+                        const orientation = draft.responsive.orientation;
+                        const w = draft.responsive.referenceWidth;
+                        const h = value;
+                        if (orientation === "portrait") {
+                          draft.viewport.width = Math.min(w, h);
+                          draft.viewport.height = Math.max(w, h);
+                        } else if (orientation === "landscape") {
+                          draft.viewport.width = Math.max(w, h);
+                          draft.viewport.height = Math.min(w, h);
+                        } else {
+                          draft.viewport.width = w;
+                          draft.viewport.height = h;
+                        }
                       })}
                     />
                   </div>
