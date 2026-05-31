@@ -62,12 +62,21 @@
   }
 }
 
-canvas {
-  width: min(100%, 520px);
+.canvas-viewport {
+  overflow: auto;
+  max-width: 100%;
   max-height: calc(100vh - 140px);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  image-rendering: pixelated;
   box-shadow: var(--shadow-lg);
+}
+
+.canvas-reset-button {
+  font-size: 10px !important;
+}
+
+canvas {
+  display: block;
+  background: var(--bg-surface);
+  image-rendering: auto;
 }

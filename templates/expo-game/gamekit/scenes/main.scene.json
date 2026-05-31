@@ -22,8 +22,8 @@
         {
           "type": "Transform",
           "position": {
-            "x": 41,
-            "y": 237
+            "x": 123,
+            "y": 263
           },
           "rotation": 0,
           "scale": {
@@ -58,6 +58,11 @@
           "speed": 240,
           "jumpVelocity": 620,
           "gravity": 1800
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player",
+          "smoothing": 0.18
         }
       ]
     },
@@ -68,8 +73,8 @@
         {
           "type": "Transform",
           "position": {
-            "x": 0,
-            "y": 520
+            "x": 76,
+            "y": 483
           },
           "rotation": 0,
           "scale": {
@@ -98,19 +103,19 @@
         {
           "type": "Transform",
           "position": {
-            "x": 0,
-            "y": 0
+            "x": 200,
+            "y": 200
           },
-          "rotation": 0,
+          "rotation": 20,
           "scale": {
-            "x": 1,
-            "y": 1
+            "x": 2,
+            "y": 2
           }
         },
         {
           "type": "CameraFollow",
           "targetId": "player",
-          "smoothing": 0.18
+          "smoothing": 40.18
         }
       ]
     }
@@ -119,7 +124,7 @@
     "mode": "fixed",
     "referenceWidth": 400,
     "referenceHeight": 844,
-    "orientation": "auto",
+    "orientation": "landscape",
     "safeArea": {
       "enabled": false,
       "padding": {

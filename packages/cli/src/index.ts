@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { basename, resolve } from "node:path";
-import { initProject, importAsset, generateAssetRegistry } from "./project.js";
+import { initProject, importAsset, removeAsset, generateAssetRegistry } from "./project.js";
 import { startEditorServer } from "./server.js";
 
-export { initProject, importAsset, generateAssetRegistry } from "./project.js";
+export { initProject, importAsset, removeAsset, generateAssetRegistry } from "./project.js";
 export { startEditorServer } from "./server.js";
 
 async function main(argv: string[]): Promise<void> {
@@ -23,6 +23,15 @@ async function main(argv: string[]): Promise<void> {
       }
       const asset = await importAsset(cwd, resolve(cwd, file));
       console.log(`Imported asset: ${asset.id}`);
+      return;
+    }
+    case "remove": {
+      const assetId = args.find((arg) => !arg.startsWith("--"));
+      if (!assetId) {
+        throw new Error("Usage: gamekit remove <asset-id>");
+      }
+      await removeAsset(cwd, assetId);
+      console.log(`Removed asset: ${assetId}`);
       return;
     }
     case "generate": {
@@ -57,6 +66,7 @@ Usage:
   gamekit init [--name MyGame]
   gamekit editor [--port 4177]
   gamekit import <file>
+  gamekit remove <asset-id>
   gamekit generate
 `);
 }

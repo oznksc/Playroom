@@ -8,6 +8,7 @@ import {
   importAssetBuffer,
   initProject,
   readScene,
+  removeAsset,
   writeScene,
   writeProject,
   readProject
@@ -92,6 +93,21 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       sendJson(response, 200, { deleted: file });
     } catch {
       sendJson(response, 404, { error: `Scene file not found: ${file}` });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/assets" && request.method === "DELETE") {
+    const assetId = url.searchParams.get("id");
+    if (!assetId) {
+      sendJson(response, 400, { error: "Missing id query parameter." });
+      return;
+    }
+    try {
+      await removeAsset(options.root, assetId);
+      sendJson(response, 200, { deleted: assetId });
+    } catch (error) {
+      sendJson(response, 404, { error: error instanceof Error ? error.message : "Asset not found" });
     }
     return;
   }

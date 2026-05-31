@@ -1,5 +1,5 @@
 import type { GameKitAsset, GameKitEntity } from "@gamekit/schema";
-import { Box, ImagePlus, Layers } from "lucide-react";
+import { Box, ImagePlus, Layers, Trash2 } from "lucide-react";
 
 function PanelTitle({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
@@ -17,6 +17,7 @@ type SidebarProps = {
   selectedEntityId?: string;
   onSelectAsset: (id: string) => void;
   onSelectEntity: (id: string) => void;
+  onDeleteAsset?: (id: string) => void;
 };
 
 export function Sidebar({
@@ -25,7 +26,8 @@ export function Sidebar({
   selectedAssetId,
   selectedEntityId,
   onSelectAsset,
-  onSelectEntity
+  onSelectEntity,
+  onDeleteAsset
 }: SidebarProps) {
   return (
     <aside className="panel">
@@ -38,16 +40,34 @@ export function Sidebar({
           </div>
         )}
         {assets.map((asset) => (
-          <button
-            key={asset.id}
-            type="button"
-            className={asset.id === selectedAssetId ? "asset selected" : "asset"}
-            onClick={() => onSelectAsset(asset.id)}
-            title={asset.id}
-          >
-            <img src={`/gamekit/assets/${asset.file}`} alt="" />
-            <span>{asset.id}</span>
-          </button>
+          <div key={asset.id} className={asset.id === selectedAssetId ? "asset selected" : "asset"}>
+            <button
+              type="button"
+              className="asset-thumb"
+              onClick={() => onSelectAsset(asset.id)}
+              title={asset.id}
+            >
+              <img src={`/gamekit/assets/${asset.file}`} alt="" />
+            </button>
+            <span className="asset-label">
+              <span className="asset-name">{asset.id}</span>
+              {onDeleteAsset && (
+                <button
+                  type="button"
+                  className="icon-button danger asset-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete asset "${asset.id}"?`)) {
+                      onDeleteAsset(asset.id);
+                    }
+                  }}
+                  title="Delete asset"
+                >
+                  <Trash2 size={10} />
+                </button>
+              )}
+            </span>
+          </div>
         ))}
       </div>
 

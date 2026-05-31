@@ -1,5 +1,5 @@
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, extname, join, relative } from "node:path";
 import { pipeline } from "node:stream/promises";
 import {
@@ -153,6 +153,26 @@ export async function importAssetBuffer(root: string, fileName: string, data: Bu
   await writeProject(root, project);
   await generateAssetRegistry(root);
   return asset;
+}
+
+export async function removeAsset(root: string, assetId: string): Promise<void> {
+  const project = await readProject(root);
+  const asset = project.assets.find((a) => a.id === assetId);
+  if (!asset) {
+    throw new Error(`Asset "${assetId}" not found in project`);
+  }
+
+  const assetsRoot = join(getGameKitRoot(root), "assets");
+  const filePath = join(assetsRoot, asset.file);
+  try {
+    await unlink(filePath);
+  } catch {
+    // File may already be missing — that's fine
+  }
+
+  project.assets = project.assets.filter((a) => a.id !== assetId);
+  await writeProject(root, project);
+  await generateAssetRegistry(root);
 }
 
 export async function generateAssetRegistry(root: string): Promise<string> {
