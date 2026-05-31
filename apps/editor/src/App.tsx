@@ -1,34 +1,16 @@
-import type {
-  AabbColliderComponent,
-  GameKitAsset,
-  GameKitEntity,
-  GameKitScene,
-  SpriteComponent,
-  TransformComponent
-} from "@gamekit/schema";
+import type { GameKitScene, TransformComponent } from "@gamekit/schema";
 import { createEntity } from "@gamekit/schema";
-import {
-  Box,
-  ChevronRight,
-  Circle,
-  ImagePlus,
-  Layers,
-  Minus,
-  Plus,
-  RefreshCw,
-  Save,
-  Upload,
-  ZoomIn,
-  ZoomOut
-} from "lucide-react";
-import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
-
-type ProjectSnapshot = {
-  scenes: string[];
-  assets: GameKitAsset[];
-};
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Topbar } from "./components/Topbar.js";
+import { Sidebar } from "./components/Sidebar.js";
+import { SceneCanvas } from "./components/SceneCanvas.js";
+import { Inspector } from "./components/Inspector.js";
+import { Footer } from "./components/Footer.js";
+import type { ProjectSnapshot, SaveState } from "./types.js";
+import { findComponent } from "./lib/components.js";
 
 const sceneFile = "main.scene.json";
+const AUTO_SAVE_DELAY_MS = 1500;
 
 export function App() {
   const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [] });
@@ -36,8 +18,30 @@ export function App() {
   const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
   const [status, setStatus] = useState("Loading");
-  const [zoom, setZoom] = useState(1);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [zoom] = useState(1);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveScene(sceneRef.current);
+    }, AUTO_SAVE_DELAY_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   async function refresh() {
     const [projectResponse, sceneResponse] = await Promise.all([
@@ -50,6 +54,8 @@ export function App() {
     setScene(nextScene);
     setSelectedEntityId((current) => current ?? nextScene.entities[0]?.id);
     setSelectedAssetId((current) => current ?? nextSnapshot.assets[0]?.id);
+    setIsDirty(false);
+    setLastSaved(new Date());
     setStatus("Ready");
   }
 
@@ -57,23 +63,45 @@ export function App() {
     refresh().catch((error: unknown) => setStatus(error instanceof Error ? error.message : "Load failed"));
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+        event.preventDefault();
+        saveScene(sceneRef.current);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   async function saveScene(nextScene = scene) {
     if (!nextScene) {
       return;
     }
 
-    const response = await fetch(`/api/scene?file=${sceneFile}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(nextScene)
-    });
+    setSaveState("saving");
+    try {
+      const response = await fetch(`/api/scene?file=${sceneFile}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(nextScene)
+      });
 
-    if (!response.ok) {
-      const body = await response.json() as { error?: string; errors?: string[] };
-      throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
+      if (!response.ok) {
+        const body = await response.json() as { error?: string; errors?: string[] };
+        throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
+      }
+
+      setSaveState("saved");
+      setIsDirty(false);
+      setLastSaved(new Date());
+      setStatus("Saved");
+      setTimeout(() => setSaveState("idle"), 2000);
+    } catch {
+      setSaveState("error");
+      setStatus("Save failed");
+      setTimeout(() => setSaveState("idle"), 3000);
     }
-
-    setStatus("Saved");
   }
 
   async function importAsset(file: File) {
@@ -100,6 +128,8 @@ export function App() {
       mutator(draft);
       return draft;
     });
+    setIsDirty(true);
+    triggerAutoSave();
   }
 
   function addEntity() {
@@ -128,94 +158,46 @@ export function App() {
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
 
-  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") ? "error" : "";
+  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
+
+  function formatLastSaved(): string {
+    if (!lastSaved) return "";
+    const now = new Date();
+    const diff = now.getTime() - lastSaved.getTime();
+    if (diff < 5000) return "just now";
+    if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    return lastSaved.toLocaleTimeString();
+  }
+
+  function setError(error: unknown) {
+    setStatus(error instanceof Error ? error.message : "Operation failed");
+  }
 
   return (
     <main className="shell">
-      <header className="topbar">
-        <div className="topbar-brand">
-          <div className="topbar-logo">G</div>
-          <h1>GameKit</h1>
-          <ChevronRight size={14} style={{ opacity: 0.3 }} />
-          <span>{scene?.name ?? "Scene"}</span>
-        </div>
-
-        <div className="toolbar">
-          <button type="button" title="Refresh" onClick={() => refresh().catch(setError)}>
-            <RefreshCw size={15} />
-          </button>
-          <div className="toolbar-divider" />
-          <button type="button" title="Import asset" onClick={() => fileInputRef.current?.click()}>
-            <Upload size={15} />
-          </button>
-          <button type="button" title="Add entity" onClick={addEntity}>
-            <Plus size={15} />
-          </button>
-          <div className="toolbar-divider" />
-          <button type="button" title="Save" onClick={() => saveScene().catch(setError)}>
-            <Save size={15} />
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              if (file) {
-                importAsset(file).catch(setError);
-              }
-              event.currentTarget.value = "";
-            }}
-          />
-        </div>
-
-        <div className="topbar-status">
-          <span className={`status-dot ${statusClass}`} />
-          {status}
-        </div>
-      </header>
+      <Topbar
+        sceneName={scene?.name ?? "Scene"}
+        isDirty={isDirty}
+        saveState={saveState}
+        status={status}
+        lastSaved={lastSaved}
+        onRefresh={() => refresh().catch(setError)}
+        onImport={(file) => importAsset(file).catch(setError)}
+        onSave={() => saveScene().catch(setError)}
+        onAddEntity={addEntity}
+        formatLastSaved={formatLastSaved}
+      />
 
       <section className="workspace">
-        <aside className="panel">
-          <PanelTitle icon={<ImagePlus size={14} />} label="Assets" />
-          <div className="assetGrid">
-            {snapshot.assets.length === 0 && (
-              <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
-                <ImagePlus size={24} />
-                <p>No assets yet</p>
-              </div>
-            )}
-            {snapshot.assets.map((asset) => (
-              <button
-                key={asset.id}
-                type="button"
-                className={asset.id === selectedAssetId ? "asset selected" : "asset"}
-                onClick={() => setSelectedAssetId(asset.id)}
-                title={asset.id}
-              >
-                <img src={`/gamekit/assets/${asset.file}`} alt="" />
-                <span>{asset.id}</span>
-              </button>
-            ))}
-          </div>
-
-          <PanelTitle icon={<Layers size={14} />} label="Entities" />
-          <div className="entityList">
-            {scene?.entities.map((entity) => (
-              <button
-                key={entity.id}
-                type="button"
-                className={entity.id === selectedEntityId ? "entity selected" : "entity"}
-                onClick={() => setSelectedEntityId(entity.id)}
-              >
-                <span className="entity-icon">
-                  <Box size={12} />
-                </span>
-                {entity.name}
-              </button>
-            ))}
-          </div>
-        </aside>
+        <Sidebar
+          assets={snapshot.assets}
+          entities={scene?.entities ?? []}
+          selectedAssetId={selectedAssetId}
+          selectedEntityId={selectedEntityId}
+          onSelectAsset={setSelectedAssetId}
+          onSelectEntity={setSelectedEntityId}
+        />
 
         <SceneCanvas
           scene={scene}
@@ -246,379 +228,14 @@ export function App() {
         />
       </section>
 
-      <footer>
-        <span className="status-indicator">
-          <span className={`status-dot ${statusClass}`} />
-          {status}
-        </span>
-        {scene && (
-          <>
-            <span style={{ color: "var(--border-default)" }}>|</span>
-            <span>{scene.entities.length} entities</span>
-            <span style={{ color: "var(--border-default)" }}>|</span>
-            <span>{snapshot.assets.length} assets</span>
-          </>
-        )}
-      </footer>
+      <Footer
+        scene={scene}
+        assetCount={snapshot.assets.length}
+        status={status}
+        saveState={saveState}
+        isDirty={isDirty}
+        statusClass={statusClass}
+      />
     </main>
   );
-
-  function setError(error: unknown) {
-    setStatus(error instanceof Error ? error.message : "Operation failed");
-  }
-}
-
-function SceneCanvas({
-  scene,
-  assets,
-  selectedEntityId,
-  zoom,
-  onSelect,
-  onMove
-}: {
-  scene?: GameKitScene;
-  assets: GameKitAsset[];
-  selectedEntityId?: string;
-  zoom: number;
-  onSelect: (id: string) => void;
-  onMove: (id: string, position: { x: number; y: number }) => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | undefined>();
-  const images = useImageCache(assets);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context || !scene) {
-      return;
-    }
-
-    const pixelRatio = window.devicePixelRatio || 1;
-    canvas.width = scene.viewport.width * pixelRatio;
-    canvas.height = scene.viewport.height * pixelRatio;
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    drawScene(context, scene, assets, images, selectedEntityId);
-  }, [scene, assets, images, selectedEntityId]);
-
-  function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    if (!scene) {
-      return { x: 0, y: 0 };
-    }
-    return {
-      x: (event.clientX - rect.left) * (scene.viewport.width / rect.width),
-      y: (event.clientY - rect.top) * (scene.viewport.height / rect.height)
-    };
-  }
-
-  return (
-    <section className="canvasPanel">
-      <canvas
-        ref={canvasRef}
-        style={{
-          aspectRatio: scene ? `${scene.viewport.width} / ${scene.viewport.height}` : "390 / 844"
-        }}
-        onPointerDown={(event) => {
-          if (!scene) {
-            return;
-          }
-          const point = pointerPosition(event);
-          const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
-          if (!hit) {
-            return;
-          }
-          const transform = findComponent<TransformComponent>(hit, "Transform");
-          if (!transform) {
-            return;
-          }
-          onSelect(hit.id);
-          setDrag({ id: hit.id, dx: point.x - transform.position.x, dy: point.y - transform.position.y });
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
-        onPointerMove={(event) => {
-          if (!drag) {
-            return;
-          }
-          const point = pointerPosition(event);
-          onMove(drag.id, { x: Math.round(point.x - drag.dx), y: Math.round(point.y - drag.dy) });
-        }}
-        onPointerUp={() => setDrag(undefined)}
-      />
-      <div className="canvas-controls">
-        <button type="button" title="Zoom out">
-          <ZoomOut size={14} />
-        </button>
-        <span>{Math.round(zoom * 100)}%</span>
-        <button type="button" title="Zoom in">
-          <ZoomIn size={14} />
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function Inspector({
-  entity,
-  assets,
-  onChange
-}: {
-  entity?: GameKitEntity;
-  assets: GameKitAsset[];
-  onChange: (mutator: (entity: GameKitEntity) => void) => void;
-}) {
-  const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
-  const sprite = entity ? findComponent<SpriteComponent>(entity, "Sprite") : undefined;
-  const collider = entity ? findComponent<AabbColliderComponent>(entity, "AabbCollider") : undefined;
-
-  return (
-    <aside className="panel inspector">
-      {entity && transform ? (
-        <>
-          <h2>{entity.name}</h2>
-
-          <div className="inspector-section">
-            <div className="inspector-section-title">
-              <Box size={12} />
-              General
-            </div>
-            <label>
-              Name
-              <input value={entity.name} onChange={(event) => onChange((draft) => { draft.name = event.target.value; })} />
-            </label>
-          </div>
-
-          <div className="inspector-section">
-            <div className="inspector-section-title">
-              <Circle size={12} />
-              Transform
-            </div>
-            <div className="fieldRow">
-              <NumberField label="X" value={transform.position.x} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
-              })} />
-              <NumberField label="Y" value={transform.position.y} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
-              })} />
-            </div>
-          </div>
-
-          {sprite ? (
-            <div className="inspector-section">
-              <div className="inspector-section-title">
-                <ImagePlus size={12} />
-                Sprite
-              </div>
-              <label>
-                Asset
-                <select value={sprite.assetId} onChange={(event) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
-                })}>
-                  {assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.id}</option>)}
-                </select>
-              </label>
-              <div className="fieldRow">
-                <NumberField label="W" value={sprite.width} onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
-                })} />
-                <NumberField label="H" value={sprite.height} onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
-                })} />
-              </div>
-            </div>
-          ) : null}
-
-          {collider ? (
-            <div className="inspector-section">
-              <div className="inspector-section-title">
-                <Box size={12} />
-                Collider
-              </div>
-              <div className="fieldRow">
-                <NumberField label="CW" value={collider.size.x} onChange={(value) => onChange((draft) => {
-                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
-                })} />
-                <NumberField label="CH" value={collider.size.y} onChange={(value) => onChange((draft) => {
-                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
-                })} />
-              </div>
-              <label className="check">
-                <input type="checkbox" checked={collider.isStatic} onChange={(event) => onChange((draft) => {
-                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
-                })} />
-                Static collider
-              </label>
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div className="empty-state">
-          <Box size={32} />
-          <p>No entity selected</p>
-        </div>
-      )}
-    </aside>
-  );
-}
-
-function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <label>
-      {label}
-      <input
-        type="number"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
-  );
-}
-
-function PanelTitle({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <h2 className="panelTitle">
-      {icon}
-      {label}
-    </h2>
-  );
-}
-
-function useImageCache(assets: GameKitAsset[]): Map<string, HTMLImageElement> {
-  const [version, setVersion] = useState(0);
-  const cache = useMemo(() => new Map<string, HTMLImageElement>(), [assets]);
-
-  useEffect(() => {
-    let cancelled = false;
-    for (const asset of assets) {
-      const image = new Image();
-      image.onload = () => {
-        if (!cancelled) {
-          cache.set(asset.id, image);
-          setVersion((current) => current + 1);
-        }
-      };
-      image.src = `/gamekit/assets/${asset.file}`;
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [assets, cache]);
-
-  void version;
-  return cache;
-}
-
-function drawScene(
-  context: CanvasRenderingContext2D,
-  scene: GameKitScene,
-  assets: GameKitAsset[],
-  images: Map<string, HTMLImageElement>,
-  selectedEntityId?: string
-) {
-  context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
-  context.fillStyle = scene.viewport.background;
-  context.fillRect(0, 0, scene.viewport.width, scene.viewport.height);
-  drawGrid(context, scene.viewport.width, scene.viewport.height);
-
-  for (const entity of scene.entities) {
-    const transform = findComponent<TransformComponent>(entity, "Transform");
-    const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-    const collider = findComponent<AabbColliderComponent>(entity, "AabbCollider");
-    if (!transform) {
-      continue;
-    }
-
-    if (sprite) {
-      const image = images.get(sprite.assetId);
-      const x = transform.position.x - sprite.width * sprite.anchor.x;
-      const y = transform.position.y - sprite.height * sprite.anchor.y;
-      if (image) {
-        context.drawImage(image, x, y, sprite.width, sprite.height);
-      } else {
-        context.fillStyle = colorForAsset(sprite.assetId, assets);
-        context.fillRect(x, y, sprite.width, sprite.height);
-      }
-    }
-
-    if (collider) {
-      const isSelected = entity.id === selectedEntityId;
-      context.strokeStyle = isSelected ? "#f0c846" : collider.isStatic ? "#34d399" : "#4f9cf7";
-      context.lineWidth = isSelected ? 2 : 1;
-      context.setLineDash(isSelected ? [] : [4, 4]);
-      context.strokeRect(
-        transform.position.x + collider.offset.x,
-        transform.position.y + collider.offset.y,
-        collider.size.x,
-        collider.size.y
-      );
-      context.setLineDash([]);
-    }
-  }
-
-  if (selectedEntityId) {
-    const entity = scene.entities.find((e) => e.id === selectedEntityId);
-    const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
-    if (transform) {
-      context.fillStyle = "#f0c846";
-      context.beginPath();
-      context.arc(transform.position.x, transform.position.y, 4, 0, Math.PI * 2);
-      context.fill();
-    }
-  }
-}
-
-function drawGrid(context: CanvasRenderingContext2D, width: number, height: number) {
-  context.strokeStyle = "rgba(255, 255, 255, 0.04)";
-  context.lineWidth = 1;
-  for (let x = 0; x <= width; x += 32) {
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, height);
-    context.stroke();
-  }
-  for (let y = 0; y <= height; y += 32) {
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y);
-    context.stroke();
-  }
-}
-
-function hitEntity(entity: GameKitEntity, point: { x: number; y: number }): boolean {
-  const transform = findComponent<TransformComponent>(entity, "Transform");
-  const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-  const collider = findComponent<AabbColliderComponent>(entity, "AabbCollider");
-  if (!transform) {
-    return false;
-  }
-  const box = collider
-    ? {
-        x: transform.position.x + collider.offset.x,
-        y: transform.position.y + collider.offset.y,
-        width: collider.size.x,
-        height: collider.size.y
-      }
-    : sprite
-      ? {
-          x: transform.position.x - sprite.width * sprite.anchor.x,
-          y: transform.position.y - sprite.height * sprite.anchor.y,
-          width: sprite.width,
-          height: sprite.height
-        }
-      : undefined;
-
-  return !!box &&
-    point.x >= box.x &&
-    point.x <= box.x + box.width &&
-    point.y >= box.y &&
-    point.y <= box.y + box.height;
-}
-
-function colorForAsset(assetId: string, assets: GameKitAsset[]): string {
-  const index = Math.max(0, assets.findIndex((asset) => asset.id === assetId));
-  return ["#4f9cf7", "#34d399", "#f0c846", "#f472b6", "#c084fc"][index % 5];
-}
-
-function findComponent<T extends { type: string }>(entity: GameKitEntity, type: T["type"]): T | undefined {
-  return entity.components.find((component) => component.type === type) as T | undefined;
 }
