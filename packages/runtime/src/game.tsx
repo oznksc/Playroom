@@ -6,7 +6,7 @@ import { useGameLoop } from "./loop.js";
 import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, getEntityAabb, type Aabb } from "./collision.js";
+import { applyAabbCollisions, getEntityAabb, type CollisionSolid } from "./collision.js";
 import type { AssetRegistry } from "./scene.js";
 
 export type GameKitGameProps = {
@@ -65,12 +65,12 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     const entities = entitiesRef.current;
     const input = inputRef.current;
 
-    const solids: Aabb[] = [];
+    const solids: CollisionSolid[] = [];
     for (const entity of entities) {
       const collider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
       if (collider && collider.isStatic) {
         const aabb = getEntityAabb(entity);
-        if (aabb) solids.push(aabb);
+        if (aabb) solids.push({ ...aabb, layer: collider.layer ?? 1 });
       }
     }
 
@@ -88,7 +88,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
       if (collider) {
         const movingAabb = getEntityAabb(entity);
         if (movingAabb) {
-          const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids);
+          const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids, collider.mask);
           transform.position.x = result.position.x - collider.offset.x;
           transform.position.y = result.position.y - collider.offset.y;
           controller.state.velocity = result.velocity;

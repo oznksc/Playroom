@@ -1,5 +1,5 @@
-import type { GameKitScene, Orientation, ResponsiveConfig, SafeAreaConfig } from "@gamekit/schema";
-import { Settings, Smartphone, Monitor, Shield } from "lucide-react";
+import type { GameKitScene, Orientation, ResponsiveConfig } from "@gamekit/schema";
+import { Settings, Smartphone, Monitor, Shield, Palette, Gauge } from "lucide-react";
 
 type SceneSettingsProps = {
   scene: GameKitScene;
@@ -24,6 +24,89 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
 
   return (
     <div className="scene-settings">
+
+      <div className="inspector-section">
+        <div className="inspector-section-title">
+          <Settings size={12} />
+          Scene
+        </div>
+        <label>
+          Name
+          <input
+            type="text"
+            value={scene.name}
+            onChange={(event) => onChange((draft) => {
+              draft.name = event.target.value;
+            })}
+          />
+        </label>
+        <div className="fieldRow">
+          <NumberField
+            label="Viewport W"
+            value={scene.viewport.width}
+            onChange={(value) => onChange((draft) => {
+              draft.viewport.width = value;
+            })}
+          />
+          <NumberField
+            label="Viewport H"
+            value={scene.viewport.height}
+            onChange={(value) => onChange((draft) => {
+              draft.viewport.height = value;
+            })}
+          />
+        </div>
+      </div>
+
+      <div className="inspector-section">
+        <div className="inspector-section-title">
+          <Palette size={12} />
+          Background
+        </div>
+        <label>
+          Color
+          <div className="color-row">
+            <input
+              type="color"
+              value={scene.viewport.background}
+              onChange={(event) => onChange((draft) => {
+                draft.viewport.background = event.target.value;
+              })}
+            />
+            <input
+              type="text"
+              value={scene.viewport.background}
+              onChange={(event) => onChange((draft) => {
+                draft.viewport.background = event.target.value;
+              })}
+            />
+          </div>
+        </label>
+      </div>
+
+      <div className="inspector-section">
+        <div className="inspector-section-title">
+          <Gauge size={12} />
+          Gravity
+        </div>
+        <div className="fieldRow">
+          <NumberField
+            label="X"
+            value={scene.gravity.x}
+            onChange={(value) => onChange((draft) => {
+              draft.gravity.x = value;
+            })}
+          />
+          <NumberField
+            label="Y"
+            value={scene.gravity.y}
+            onChange={(value) => onChange((draft) => {
+              draft.gravity.y = value;
+            })}
+          />
+        </div>
+      </div>
+
       <div className="inspector-section">
         <div className="inspector-section-title">
           <Smartphone size={12} />

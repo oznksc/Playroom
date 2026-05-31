@@ -53,6 +53,8 @@ export type AabbColliderComponent = {
   offset: Vector2;
   size: Vector2;
   isStatic: boolean;
+  layer?: number;
+  mask?: number;
 };
 
 export type PlayerControllerComponent = {
@@ -335,7 +337,9 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           type: "AabbCollider",
           offset: validateVector(component.offset, `${path}.offset`, errors),
           size: validateVector(component.size, `${path}.size`, errors),
-          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors)
+          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
+          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
+          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
         });
         return;
       case "PlayerController":

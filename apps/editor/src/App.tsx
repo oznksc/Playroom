@@ -1,4 +1,4 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, TransformComponent } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Topbar } from "./components/Topbar.js";
@@ -42,7 +42,8 @@ export function App() {
     canRedo,
     bypassRef: undoBypassRef,
   } = useUndo<GameKitScene | undefined>(undefined);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
+  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(new Set());
+  const selectedEntityId = [...selectedEntityIds][0]; // first selected for single-entity operations
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
   const [status, setStatus] = useState("Loading");
   const [zoom, setZoom] = useState(1);
@@ -50,11 +51,13 @@ export function App() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels">("entities");
+  const [snap, setSnap] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const clipboardRef = useRef<GameKitEntity | null>(null);
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
-  const selectedEntityIdRef = useRef(selectedEntityId);
-  selectedEntityIdRef.current = selectedEntityId;
+  const selectedEntityIdsRef = useRef(selectedEntityIds);
+  selectedEntityIdsRef.current = selectedEntityIds;
 
   const triggerAutoSave = useCallback(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -79,7 +82,7 @@ export function App() {
     const nextScene = await sceneResponse.json() as GameKitScene;
     setSnapshot(nextSnapshot);
     reset(nextScene);
-    setSelectedEntityId(nextScene.entities[0]?.id);
+    setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
     setSelectedAssetId(nextSnapshot.assets[0]?.id);
     setIsDirty(false);
     setLastSaved(new Date());
@@ -93,7 +96,7 @@ export function App() {
       .then((r) => r.json())
       .then((nextScene: GameKitScene) => {
         reset(nextScene);
-        setSelectedEntityId(nextScene.entities[0]?.id);
+        setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
         setIsDirty(false);
         setLastSaved(new Date());
         setStatus("Ready");
@@ -122,29 +125,49 @@ export function App() {
         return;
       }
       if (!isInput && (event.key === "Delete" || event.key === "Backspace")) {
-        if (selectedEntityIdRef.current) {
+        const ids = selectedEntityIdsRef.current;
+        if (ids.size > 0) {
           event.preventDefault();
-          deleteEntity(selectedEntityIdRef.current);
+          ids.forEach((id) => deleteEntity(id));
         }
         return;
       }
       if (ctrl && event.key === "d") {
-        if (selectedEntityIdRef.current) {
+        const ids = selectedEntityIdsRef.current;
+        if (ids.size > 0) {
           event.preventDefault();
-          duplicateEntity(selectedEntityIdRef.current);
+          ids.forEach((id) => duplicateEntity(id));
         }
         return;
       }
-      if (event.key === "Escape") {
-        if (selectedEntityIdRef.current) {
+      if (ctrl && event.key === "c") {
+        const ids = selectedEntityIdsRef.current;
+        if (ids.size > 0) {
           event.preventDefault();
-          setSelectedEntityId(undefined);
+          const s = sceneRef.current;
+          if (!s) return;
+          const entity = s.entities.find((e) => e.id === [...ids][0]);
+          if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
+        }
+        return;
+      }
+      if (ctrl && event.key === "v") {
+        const entity = clipboardRef.current;
+        if (!entity) return;
+        event.preventDefault();
+        pasteEntity(entity);
+        return;
+      }
+      if (event.key === "Escape") {
+        if (selectedEntityIdsRef.current.size > 0) {
+          event.preventDefault();
+          setSelectedEntityIds(new Set());
         }
         return;
       }
       if (!isInput && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        const eid = selectedEntityIdRef.current;
-        if (!eid) return;
+        const ids = [...selectedEntityIdsRef.current];
+        if (ids.length === 0) return;
         event.preventDefault();
         const moveMap: Record<string, { x: number; y: number }> = {
           ArrowUp: { x: 0, y: -1 },
@@ -155,26 +178,30 @@ export function App() {
         const delta = event.shiftKey ? 10 : 1;
         const move = moveMap[event.key];
         if (!move) return;
-        const s = sceneRef.current;
-        if (!s) return;
-        const entity = s.entities.find((e) => e.id === eid);
-        if (!entity) return;
-        const transform = findComponent<TransformComponent>(entity, "Transform");
-        if (!transform) return;
+        const shouldSnap = snap;
+        const GRID = 32;
         push((draft) => {
           if (!draft) return;
-          const ent = draft.entities.find((e) => e.id === eid);
-          if (!ent) return;
-          const t = findComponent<TransformComponent>(ent, "Transform");
-          if (!t) return;
-          t.position.x = Math.round((t.position.x + move.x * delta) * 10) / 10;
-          t.position.y = Math.round((t.position.y + move.y * delta) * 10) / 10;
+          for (const eid of ids) {
+            const ent = draft.entities.find((e) => e.id === eid);
+            if (!ent) continue;
+            const t = findComponent<TransformComponent>(ent, "Transform");
+            if (!t) continue;
+            if (shouldSnap) {
+              const rounded = { x: Math.round(t.position.x / GRID) * GRID, y: Math.round(t.position.y / GRID) * GRID };
+              t.position.x = rounded.x + move.x * GRID;
+              t.position.y = rounded.y + move.y * GRID;
+            } else {
+              t.position.x = Math.round((t.position.x + move.x * delta) * 10) / 10;
+              t.position.y = Math.round((t.position.y + move.y * delta) * 10) / 10;
+            }
+          }
         });
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, push]);
+  }, [undo, redo, push, snap]);
 
   async function saveScene(nextScene = scene) {
     if (!nextScene) return;
@@ -202,6 +229,12 @@ export function App() {
   }
 
   async function deleteAsset(assetId: string) {
+    const usingSprites = scene?.entities.filter((e) =>
+      e.components.some((c) => c.type === "Sprite" && c.assetId === assetId)
+    );
+    if (usingSprites && usingSprites.length > 0) {
+      if (!confirm(`Asset "${assetId}" is used by ${usingSprites.length} entity(s). Delete anyway?`)) return;
+    }
     setStatus("Deleting");
     const response = await fetch(`/api/assets?id=${encodeURIComponent(assetId)}`, { method: "DELETE" });
     if (!response.ok) {
@@ -235,7 +268,7 @@ export function App() {
       }
       entity.components.push({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: false });
       draft.entities.push(entity);
-      setSelectedEntityId(entity.id);
+      setSelectedEntityIds(new Set([entity.id]));
     });
   }
 
@@ -244,9 +277,15 @@ export function App() {
       const index = draft.entities.findIndex((e) => e.id === id);
       if (index === -1) return;
       draft.entities.splice(index, 1);
-      if (selectedEntityId === id) {
-        setSelectedEntityId(draft.entities[Math.min(index, draft.entities.length - 1)]?.id);
-      }
+      setSelectedEntityIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        if (next.size === 0) {
+          const fallback = draft.entities[Math.min(index, draft.entities.length - 1)]?.id;
+          if (fallback) next.add(fallback);
+        }
+        return next;
+      });
     });
   }
 
@@ -255,8 +294,12 @@ export function App() {
     if (!current) return;
     const source = current.entities.find((e) => e.id === id);
     if (!source) return;
+    pasteEntity(source);
+  }
+
+  function pasteEntity(source: GameKitEntity) {
     updateScene((draft) => {
-      const clone = structuredClone(source) as typeof source;
+      const clone = structuredClone(source) as GameKitEntity;
       clone.id = crypto.randomUUID();
       clone.name = `${source.name} (copy)`;
       const transform = findComponent<TransformComponent>(clone, "Transform");
@@ -264,9 +307,10 @@ export function App() {
         transform.position.x += 32;
         transform.position.y += 32;
       }
-      const sourceIndex = draft.entities.findIndex((e) => e.id === id);
+      const sourceIndex = draft.entities.findIndex((e) => e.id === source.id);
       draft.entities.splice(sourceIndex + 1, 0, clone);
-      setSelectedEntityId(clone.id);
+      clipboardRef.current = structuredClone(clone) as GameKitEntity;
+      setSelectedEntityIds(new Set([clone.id]));
     });
   }
 
@@ -390,9 +434,16 @@ export function App() {
               assets={snapshot.assets}
               entities={scene?.entities ?? []}
               selectedAssetId={selectedAssetId}
-              selectedEntityId={selectedEntityId}
+              selectedEntityIds={selectedEntityIds}
               onSelectAsset={setSelectedAssetId}
-              onSelectEntity={setSelectedEntityId}
+              onSelectEntity={(id, shift) => {
+                setSelectedEntityIds((prev) => {
+                  const next = new Set(shift ? prev : undefined);
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  return next;
+                });
+              }}
               onDeleteAsset={(id) => deleteAsset(id).catch(setError)}
             />
           )}
@@ -427,10 +478,19 @@ export function App() {
         <SceneCanvas
           scene={scene}
           assets={snapshot.assets}
-          selectedEntityId={selectedEntityId}
+          selectedEntityIds={selectedEntityIds}
           zoom={zoom}
+          snap={snap}
           onZoomChange={setZoom}
-          onSelect={setSelectedEntityId}
+          onSnapToggle={setSnap}
+          onSelect={(id, shift) => {
+            setSelectedEntityIds((prev) => {
+              const next = new Set(shift ? prev : undefined);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
           onMove={(id, position) => {
             push((draft) => {
               if (!draft) return;
@@ -448,11 +508,13 @@ export function App() {
           <Inspector
             entity={selectedEntity}
             assets={snapshot.assets}
+            entityIds={scene?.entities.map((e) => e.id) ?? []}
+            multiCount={selectedEntityIds.size}
             onChange={(mutator) => updateScene((draft) => {
               const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
               if (entity) mutator(entity);
             })}
-            onDelete={selectedEntityId ? () => deleteEntity(selectedEntityId) : undefined}
+            onDelete={selectedEntityIds.size > 0 ? () => selectedEntityIds.forEach((id) => deleteEntity(id)) : undefined}
           />
         </div>
       </section>

@@ -7,6 +7,10 @@ export type Aabb = {
   height: number;
 };
 
+export type CollisionSolid = Aabb & {
+  layer: number;
+};
+
 export function intersectsAabb(a: Aabb, b: Aabb): boolean {
   return a.x < b.x + b.width &&
     a.x + a.width > b.x &&
@@ -33,14 +37,19 @@ export function getEntityAabb(entity: GameKitEntity): Aabb | undefined {
 export function applyAabbCollisions(
   moving: Aabb,
   velocity: Vector2,
-  solids: Aabb[]
+  solids: CollisionSolid[],
+  mask?: number
 ): { position: Vector2; velocity: Vector2; grounded: boolean } {
   const next = { ...moving };
   const nextVelocity = { ...velocity };
   let grounded = false;
 
+  const effectiveSolids = mask !== undefined
+    ? solids.filter((s) => (mask & s.layer) !== 0)
+    : solids;
+
   next.x += velocity.x;
-  for (const solid of solids) {
+  for (const solid of effectiveSolids) {
     if (intersectsAabb(next, solid)) {
       if (velocity.x > 0) {
         next.x = solid.x - next.width;
@@ -52,7 +61,7 @@ export function applyAabbCollisions(
   }
 
   next.y += velocity.y;
-  for (const solid of solids) {
+  for (const solid of effectiveSolids) {
     if (intersectsAabb(next, solid)) {
       if (velocity.y > 0) {
         next.y = solid.y - next.height;

@@ -58,6 +58,8 @@ function SectionHeader({ icon, label, removable, onAdd, onRemove }: SectionHeade
 type InspectorProps = {
   entity?: GameKitEntity;
   assets: GameKitAsset[];
+  entityIds: string[];
+  multiCount: number;
   onChange: (mutator: (entity: GameKitEntity) => void) => void;
   onDelete?: () => void;
 };
@@ -69,6 +71,8 @@ function hasComponent(entity: GameKitEntity, type: GameKitComponent["type"]): bo
 export function Inspector({
   entity,
   assets,
+  entityIds,
+  multiCount,
   onChange,
   onDelete
 }: InspectorProps) {
@@ -188,6 +192,14 @@ export function Inspector({
                     findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
                   })} />
                 </div>
+                <div className="fieldRow">
+                  <NumberField label="Layer" value={collider.layer ?? 1} onChange={(value) => onChange((draft) => {
+                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
+                  })} />
+                  <NumberField label="Mask" value={collider.mask ?? 1} onChange={(value) => onChange((draft) => {
+                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
+                  })} />
+                </div>
                 <label className="check">
                   <input type="checkbox" checked={collider.isStatic} onChange={(event) => onChange((draft) => {
                     findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
@@ -253,10 +265,18 @@ export function Inspector({
             {camera ? (
               <>
                 <label>
-                  Target ID
-                  <input value={camera.targetId} onChange={(event) => onChange((draft) => {
-                    findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId = event.target.value;
-                  })} />
+                  Target
+                  <select
+                    value={camera.targetId}
+                    onChange={(event) => onChange((draft) => {
+                      findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId = event.target.value;
+                    })}
+                  >
+                    <option value="">— None —</option>
+                    {entityIds.filter((id) => id !== entity?.id).map((id) => (
+                      <option key={id} value={id}>{id}</option>
+                    ))}
+                  </select>
                 </label>
                 <NumberField label="Smoothing" value={camera.smoothing} onChange={(value) => onChange((draft) => {
                   findComponent<CameraFollowComponent>(draft, "CameraFollow")!.smoothing = value;
@@ -265,6 +285,14 @@ export function Inspector({
             ) : null}
           </div>
         </>
+      ) : multiCount > 1 ? (
+        <div className="multi-select-count">
+          <Box size={32} />
+          <p>{multiCount} entities selected</p>
+          {onDelete && (
+            <button className="button danger" onClick={onDelete}>Delete {multiCount} entities</button>
+          )}
+        </div>
       ) : (
         <div className="empty-state">
           <Box size={32} />

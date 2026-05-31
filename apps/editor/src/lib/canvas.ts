@@ -13,7 +13,7 @@ export function drawScene(
   scene: GameKitScene,
   assets: GameKitAsset[],
   images: Map<string, HTMLImageElement>,
-  selectedEntityId?: string
+  selectedEntityIds: Set<string>
 ) {
   context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
   context.fillStyle = scene.viewport.background;
@@ -41,7 +41,7 @@ export function drawScene(
     }
 
     if (collider) {
-      const isSelected = entity.id === selectedEntityId;
+      const isSelected = selectedEntityIds.has(entity.id);
       context.strokeStyle = isSelected ? "#f0c846" : collider.isStatic ? "#34d399" : "#4f9cf7";
       context.lineWidth = isSelected ? 2 : 1;
       context.setLineDash(isSelected ? [] : [4, 4]);
@@ -55,8 +55,8 @@ export function drawScene(
     }
   }
 
-  if (selectedEntityId) {
-    const entity = scene.entities.find((e) => e.id === selectedEntityId);
+  for (const id of selectedEntityIds) {
+    const entity = scene.entities.find((e) => e.id === id);
     const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
     if (transform) {
       context.fillStyle = "#f0c846";

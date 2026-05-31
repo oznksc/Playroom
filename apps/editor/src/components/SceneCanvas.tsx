@@ -1,5 +1,5 @@
 import type { GameKitAsset, GameKitScene, TransformComponent } from "@gamekit/schema";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, Magnet } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
 import { drawScene, hitEntity } from "../lib/canvas.js";
@@ -8,22 +8,27 @@ import { findComponent } from "../lib/components.js";
 type SceneCanvasProps = {
   scene?: GameKitScene;
   assets: GameKitAsset[];
-  selectedEntityId?: string;
+  selectedEntityIds: Set<string>;
   zoom: number;
+  snap: boolean;
   onZoomChange: (zoom: number) => void;
-  onSelect: (id: string) => void;
+  onSnapToggle: (snap: boolean) => void;
+  onSelect: (id: string, shift: boolean) => void;
   onMove: (id: string, position: { x: number; y: number }) => void;
 };
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
+const GRID_SIZE = 32;
 
 export function SceneCanvas({
   scene,
   assets,
-  selectedEntityId,
+  selectedEntityIds,
   zoom,
+  snap,
   onZoomChange,
+  onSnapToggle,
   onSelect,
   onMove
 }: SceneCanvasProps) {
@@ -46,8 +51,8 @@ export function SceneCanvas({
 
     context.resetTransform();
     context.scale(pixelRatio, pixelRatio);
-    drawScene(context, scene, assets, images, selectedEntityId);
-  }, [scene, assets, images, selectedEntityId]);
+    drawScene(context, scene, assets, images, selectedEntityIds);
+  }, [scene, assets, images, selectedEntityIds]);
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -88,7 +93,7 @@ export function SceneCanvas({
               if (!hit) return;
               const transform = findComponent<TransformComponent>(hit, "Transform");
               if (!transform) return;
-              onSelect(hit.id);
+              onSelect(hit.id, event.shiftKey);
               setDrag({ id: hit.id, dx: point.x - transform.position.x, dy: point.y - transform.position.y });
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
@@ -101,7 +106,13 @@ export function SceneCanvas({
               }
               if (!drag || !scene) return;
               const point = pointerPosition(event);
-              onMove(drag.id, { x: Math.round(point.x - drag.dx), y: Math.round(point.y - drag.dy) });
+              let x = point.x - drag.dx;
+              let y = point.y - drag.dy;
+              if (snap) {
+                x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+                y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+              }
+              onMove(drag.id, { x: Math.round(x), y: Math.round(y) });
             }}
             onPointerUp={() => { setDrag(undefined); setPanning(undefined); }}
             onWheel={(event) => {
@@ -122,6 +133,14 @@ export function SceneCanvas({
         </button>
         <button type="button" className="canvas-reset-button" onClick={() => { onZoomChange(1); setPan({ x: 0, y: 0 }); }} title="Reset view">
           Reset
+        </button>
+        <button
+          type="button"
+          className={snap ? "canvas-snap active" : "canvas-snap"}
+          onClick={() => onSnapToggle(!snap)}
+          title="Toggle grid snap"
+        >
+          <Magnet size={12} />
         </button>
       </div>
     </section>

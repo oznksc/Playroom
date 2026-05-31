@@ -51,7 +51,7 @@
             "x": 48,
             "y": 64
           },
-          "isStatic": false
+          "isStatic": true
         },
         {
           "type": "PlayerController",

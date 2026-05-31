@@ -14,9 +14,9 @@ type SidebarProps = {
   assets: GameKitAsset[];
   entities: GameKitEntity[];
   selectedAssetId?: string;
-  selectedEntityId?: string;
+  selectedEntityIds: Set<string>;
   onSelectAsset: (id: string) => void;
-  onSelectEntity: (id: string) => void;
+  onSelectEntity: (id: string, shift: boolean) => void;
   onDeleteAsset?: (id: string) => void;
 };
 
@@ -24,7 +24,7 @@ export function Sidebar({
   assets,
   entities,
   selectedAssetId,
-  selectedEntityId,
+  selectedEntityIds,
   onSelectAsset,
   onSelectEntity,
   onDeleteAsset
@@ -72,13 +72,18 @@ export function Sidebar({
       </div>
 
       <PanelTitle icon={<Layers size={14} />} label="Entities" />
+      {selectedEntityIds.size > 1 && (
+        <div className="multi-select-count">
+          {selectedEntityIds.size} entities selected
+        </div>
+      )}
       <div className="entityList">
         {entities.map((entity) => (
           <button
             key={entity.id}
             type="button"
-            className={entity.id === selectedEntityId ? "entity selected" : "entity"}
-            onClick={() => onSelectEntity(entity.id)}
+            className={selectedEntityIds.has(entity.id) ? "entity selected" : "entity"}
+            onClick={(e) => onSelectEntity(entity.id, e.shiftKey)}
           >
             <span className="entity-icon">
               <Box size={12} />

@@ -177,7 +177,13 @@ async function serveEditorAsset(options: EditorServerOptions, pathname: string, 
 
 async function readBody(request: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
+  let totalLength = 0;
+  const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10 MB
   for await (const chunk of request) {
+    totalLength += chunk.length;
+    if (totalLength > MAX_BODY_SIZE) {
+      throw new Error("Request body exceeds 10 MB limit");
+    }
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return Buffer.concat(chunks);

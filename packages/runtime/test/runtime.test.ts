@@ -25,7 +25,7 @@ describe("aabb collision", () => {
     const result = applyAabbCollisions(
       { x: 0, y: 0, width: 10, height: 10 },
       { x: 0, y: 10 },
-      [{ x: 0, y: 15, width: 100, height: 10 }]
+      [{ x: 0, y: 15, width: 100, height: 10, layer: 1 }]
     );
 
     expect(result.position.y).toBe(5);
