@@ -1,7 +1,6 @@
 .panel {
   min-width: 0;
   overflow: auto;
-  border-right: 1px solid var(--border-subtle);
   padding: 12px;
   background: var(--bg-surface);
   display: flex;
@@ -9,7 +8,7 @@
   gap: 4px;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-track {
@@ -30,16 +29,16 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 8px 0 6px;
+  margin: 12px 0 8px;
   padding: 0 4px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
   user-select: none;
 
   svg {
-    opacity: 0.6;
+    opacity: 0.5;
   }
 }

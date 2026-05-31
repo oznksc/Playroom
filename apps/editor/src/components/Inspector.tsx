@@ -8,46 +8,81 @@ import type {
   SpriteComponent,
   TransformComponent
 } from "@gamekit/schema";
-import { Box, Circle, ImagePlus, Trash2, Plus, Minus, Gamepad2, Video } from "lucide-react";
+import {
+  Box,
+  Circle,
+  ImagePlus,
+  Trash2,
+  Plus,
+  Minus,
+  Gamepad2,
+  Video,
+  ChevronDown,
+  ChevronRight,
+  RefreshCw,
+  FolderOpen,
+  Focus
+} from "lucide-react";
+import { useState } from "react";
 import { findComponent } from "../lib/components.js";
 
-function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+type NumberFieldProps = {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+};
+
+function NumberField({ label, value, onChange }: NumberFieldProps) {
   return (
-    <label>
-      {label}
+    <div className="inspector-num-field">
+      <span className="field-badge">{label}</span>
       <input
         type="number"
-        value={value}
+        value={Math.round(value * 100) / 100}
         onChange={(event) => onChange(Number(event.target.value))}
       />
-    </label>
+    </div>
   );
 }
 
 type SectionHeaderProps = {
   icon: React.ReactNode;
   label: string;
+  isOpen: boolean;
+  onToggle: () => void;
   removable?: boolean;
-  onAdd?: () => void;
   onRemove?: () => void;
+  accentClass: string;
 };
 
-function SectionHeader({ icon, label, removable, onAdd, onRemove }: SectionHeaderProps) {
+function SectionHeader({
+  icon,
+  label,
+  isOpen,
+  onToggle,
+  removable,
+  onRemove,
+  accentClass
+}: SectionHeaderProps) {
   return (
-    <div className="inspector-section-title-row">
-      <span className="inspector-section-title">
+    <div className={`inspector-section-title-row ${accentClass}`}>
+      <button type="button" className="accordion-toggle" onClick={onToggle}>
+        {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         {icon}
-        {label}
-      </span>
+        <span className="section-label-text">{label}</span>
+      </button>
       <span className="inspector-section-actions">
-        {onAdd && (
-          <button type="button" className="icon-button" onClick={onAdd} title={`Add ${label}`}>
-            <Plus size={12} />
-          </button>
-        )}
         {removable && onRemove && (
-          <button type="button" className="icon-button danger" onClick={onRemove} title={`Remove ${label}`}>
-            <Minus size={12} />
+          <button
+            type="button"
+            className="icon-button danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            title={`Remove ${label}`}
+          >
+            <Minus size={11} />
           </button>
         )}
       </span>
@@ -64,10 +99,6 @@ type InspectorProps = {
   onDelete?: () => void;
 };
 
-function hasComponent(entity: GameKitEntity, type: GameKitComponent["type"]): boolean {
-  return entity.components.some((c) => c.type === type);
-}
-
 export function Inspector({
   entity,
   assets,
@@ -76,227 +107,463 @@ export function Inspector({
   onChange,
   onDelete
 }: InspectorProps) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    Transform: false,
+    Sprite: false,
+    Collider: false,
+    Player: false,
+    Camera: false
+  });
+
+  const [selectedCompToAdd, setSelectedCompToAdd] = useState("");
+
   const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
   const sprite = entity ? findComponent<SpriteComponent>(entity, "Sprite") : undefined;
   const collider = entity ? findComponent<AabbColliderComponent>(entity, "AabbCollider") : undefined;
   const player = entity ? findComponent<PlayerControllerComponent>(entity, "PlayerController") : undefined;
   const camera = entity ? findComponent<CameraFollowComponent>(entity, "CameraFollow") : undefined;
 
+  function toggleCollapse(comp: string) {
+    setCollapsed((prev) => ({ ...prev, [comp]: !prev[comp] }));
+  }
+
+  function handleAddComponent(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value;
+    if (!val) return;
+
+    onChange((draft) => {
+      if (val === "Sprite") {
+        const assetId = assets[0]?.id ?? "";
+        draft.components.push({
+          type: "Sprite",
+          assetId,
+          width: 64,
+          height: 64,
+          anchor: { x: 0.5, y: 0.5 }
+        });
+      } else if (val === "AabbCollider") {
+        draft.components.push({
+          type: "AabbCollider",
+          offset: { x: -32, y: -32 },
+          size: { x: 64, y: 64 },
+          isStatic: false
+        });
+      } else if (val === "PlayerController") {
+        draft.components.push({
+          type: "PlayerController",
+          speed: 300,
+          jumpVelocity: 600,
+          gravity: 1800
+        });
+      } else if (val === "CameraFollow") {
+        draft.components.push({
+          type: "CameraFollow",
+          targetId: draft.id,
+          smoothing: 0.18
+        });
+      }
+    });
+
+    setSelectedCompToAdd("");
+    setCollapsed((prev) => ({ ...prev, [val === "AabbCollider" ? "Collider" : val === "PlayerController" ? "Player" : val]: false }));
+  }
+
+  // Determine what components can still be added
+  const missingComponents = [];
+  if (entity) {
+    if (!sprite) missingComponents.push({ val: "Sprite", label: "Sprite Renderer" });
+    if (!collider) missingComponents.push({ val: "AabbCollider", label: "Box Collider 2D" });
+    if (!player) missingComponents.push({ val: "PlayerController", label: "Player Controller" });
+    if (!camera) missingComponents.push({ val: "CameraFollow", label: "Camera Follow" });
+  }
+
   return (
     <aside className="panel inspector">
       {entity && transform ? (
         <>
+          {/* Inspector Header: Entity name & actions */}
           <div className="inspector-section-header">
-            <h2>{entity.name}</h2>
+            <div className="entity-main-details">
+              <input
+                type="text"
+                className="entity-rename-input"
+                value={entity.name}
+                onChange={(e) => onChange((draft) => {
+                  draft.name = e.target.value;
+                })}
+                placeholder="Entity Name"
+                title="Double click to rename entity"
+              />
+              <span className="entity-uuid-badge">{entity.id.slice(0, 8)}</span>
+            </div>
             {onDelete && (
-              <button type="button" className="icon-button danger" onClick={onDelete} title="Delete entity">
-                <Trash2 size={14} />
+              <button type="button" className="icon-button danger btn-delete-entity" onClick={onDelete} title="Delete entity">
+                <Trash2 size={13} />
               </button>
             )}
           </div>
 
-          {/* Transform — always present, not removable */}
-          <div className="inspector-section">
-            <SectionHeader icon={<Circle size={12} />} label="Transform" />
-            <div className="fieldRow">
-              <NumberField label="X" value={transform.position.x} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
-              })} />
-              <NumberField label="Y" value={transform.position.y} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
-              })} />
+          <div className="inspector-scroll-area">
+            {/* Transform — Always Present */}
+            <div className="inspector-section-card">
+              <SectionHeader
+                icon={<Circle size={12} />}
+                label="Transform"
+                isOpen={!collapsed.Transform}
+                onToggle={() => toggleCollapse("Transform")}
+                accentClass="accent-transform"
+              />
+              {!collapsed.Transform && (
+                <div className="inspector-card-body">
+                  <div className="inspector-field-grid">
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="X"
+                        value={transform.position.x}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Y"
+                        value={transform.position.y}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Scale X"
+                        value={transform.scale.x}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<TransformComponent>(draft, "Transform")!.scale.x = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Scale Y"
+                        value={transform.scale.y}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<TransformComponent>(draft, "Transform")!.scale.y = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row single-field">
+                      <NumberField
+                        label="Rotation"
+                        value={transform.rotation}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<TransformComponent>(draft, "Transform")!.rotation = value;
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="fieldRow">
-              <NumberField label="Rot" value={transform.rotation} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.rotation = value;
-              })} />
-              <label />
+
+            {/* Sprite Component */}
+            <div className="inspector-section-card">
+              <SectionHeader
+                icon={<ImagePlus size={12} />}
+                label="Sprite Renderer"
+                isOpen={!collapsed.Sprite}
+                onToggle={() => toggleCollapse("Sprite")}
+                removable={!!sprite}
+                onRemove={() => onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "Sprite");
+                })}
+                accentClass="accent-sprite"
+              />
+              {!collapsed.Sprite && sprite && (
+                <div className="inspector-card-body">
+                  {/* Dynamic Visual Preview! */}
+                  <div className="sprite-preview-inline">
+                    {assets.find(a => a.id === sprite.assetId) ? (
+                      <div className="sprite-preview-img-box">
+                        <img src={`/gamekit/assets/${assets.find(a => a.id === sprite.assetId)?.file}`} alt="" />
+                      </div>
+                    ) : (
+                      <div className="sprite-preview-img-box empty">
+                        <FolderOpen size={16} />
+                      </div>
+                    )}
+                    <div className="sprite-asset-select-area">
+                      <label className="inspector-select-label">Asset Ref</label>
+                      <select
+                        value={sprite.assetId}
+                        onChange={(event) => onChange((draft) => {
+                          findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
+                        })}
+                      >
+                        {assets.map((asset) => (
+                          <option key={asset.id} value={asset.id}>{asset.id}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="inspector-field-grid" style={{ marginTop: 10 }}>
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Width"
+                        value={sprite.width}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Height"
+                        value={sprite.height}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Anchor X"
+                        value={sprite.anchor.x}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<SpriteComponent>(draft, "Sprite")!.anchor.x = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Anchor Y"
+                        value={sprite.anchor.y}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<SpriteComponent>(draft, "Sprite")!.anchor.y = value;
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!sprite && !collapsed.Sprite && (
+                <div className="inspector-card-body-empty">
+                  <span>Sprite Renderer missing on this entity</span>
+                </div>
+              )}
             </div>
-            <div className="fieldRow">
-              <NumberField label="Scale X" value={transform.scale.x} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.scale.x = value;
-              })} />
-              <NumberField label="Scale Y" value={transform.scale.y} onChange={(value) => onChange((draft) => {
-                findComponent<TransformComponent>(draft, "Transform")!.scale.y = value;
-              })} />
+
+            {/* Collider Component */}
+            <div className="inspector-section-card">
+              <SectionHeader
+                icon={<Box size={12} />}
+                label="Box Collider 2D"
+                isOpen={!collapsed.Collider}
+                onToggle={() => toggleCollapse("Collider")}
+                removable={!!collider}
+                onRemove={() => onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "AabbCollider");
+                })}
+                accentClass="accent-collider"
+              />
+              {!collapsed.Collider && collider && (
+                <div className="inspector-card-body">
+                  <div className="inspector-field-grid">
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Width"
+                        value={collider.size.x}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Height"
+                        value={collider.size.y}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Offset X"
+                        value={collider.offset.x}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.x = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Offset Y"
+                        value={collider.offset.y}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.y = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Layer"
+                        value={collider.layer ?? 1}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Mask"
+                        value={collider.mask ?? 1}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-checkbox-row">
+                      <input
+                        id="collider-static-check"
+                        type="checkbox"
+                        checked={collider.isStatic}
+                        onChange={(event) => onChange((draft) => {
+                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
+                        })}
+                      />
+                      <label htmlFor="collider-static-check">Is Static (Rigid obstacle)</label>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!collider && !collapsed.Collider && (
+                <div className="inspector-card-body-empty">
+                  <span>No Box Collider attached</span>
+                </div>
+              )}
+            </div>
+
+            {/* Player Controller Component */}
+            <div className="inspector-section-card">
+              <SectionHeader
+                icon={<Gamepad2 size={12} />}
+                label="Player Controller"
+                isOpen={!collapsed.Player}
+                onToggle={() => toggleCollapse("Player")}
+                removable={!!player}
+                onRemove={() => onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "PlayerController");
+                })}
+                accentClass="accent-player"
+              />
+              {!collapsed.Player && player && (
+                <div className="inspector-card-body">
+                  <div className="inspector-field-grid">
+                    <div className="field-grid-row dual-fields">
+                      <NumberField
+                        label="Speed"
+                        value={player.speed}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<PlayerControllerComponent>(draft, "PlayerController")!.speed = value;
+                        })}
+                      />
+                      <NumberField
+                        label="Jump Vel"
+                        value={player.jumpVelocity}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<PlayerControllerComponent>(draft, "PlayerController")!.jumpVelocity = value;
+                        })}
+                      />
+                    </div>
+                    <div className="field-grid-row single-field">
+                      <NumberField
+                        label="Gravity"
+                        value={player.gravity}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<PlayerControllerComponent>(draft, "PlayerController")!.gravity = value;
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!player && !collapsed.Player && (
+                <div className="inspector-card-body-empty">
+                  <span>Standard physics controller unassigned</span>
+                </div>
+              )}
+            </div>
+
+            {/* Camera Follow Component */}
+            <div className="inspector-section-card">
+              <SectionHeader
+                icon={<Video size={12} />}
+                label="Camera Follow"
+                isOpen={!collapsed.Camera}
+                onToggle={() => toggleCollapse("Camera")}
+                removable={!!camera}
+                onRemove={() => onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "CameraFollow");
+                })}
+                accentClass="accent-camera"
+              />
+              {!collapsed.Camera && camera && (
+                <div className="inspector-card-body">
+                  <div className="inspector-field-grid">
+                    <div className="inspector-select-wrapper">
+                      <label className="inspector-select-label">Follow Focus Target</label>
+                      <select
+                        value={camera.targetId}
+                        onChange={(event) => onChange((draft) => {
+                          findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId = event.target.value;
+                        })}
+                      >
+                        <option value="">— Viewport Camera Centered —</option>
+                        {entityIds.filter((id) => id !== entity?.id).map((id) => (
+                          <option key={id} value={id}>{id}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field-grid-row single-field" style={{ marginTop: 10 }}>
+                      <NumberField
+                        label="Smoothing"
+                        value={camera.smoothing}
+                        onChange={(value) => onChange((draft) => {
+                          findComponent<CameraFollowComponent>(draft, "CameraFollow")!.smoothing = value;
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!camera && !collapsed.Camera && (
+                <div className="inspector-card-body-empty">
+                  <span>Camera targeting missing</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Sprite */}
-          <div className="inspector-section">
-            <SectionHeader
-              icon={<ImagePlus size={12} />}
-              label="Sprite"
-              removable={!!sprite}
-              onAdd={!sprite ? () => onChange((draft) => {
-                const assetId = assets[0]?.id ?? "";
-                draft.components.push({
-                  type: "Sprite",
-                  assetId,
-                  width: 64,
-                  height: 64,
-                  anchor: { x: 0.5, y: 0.5 }
-                });
-              }) : undefined}
-              onRemove={sprite ? () => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "Sprite");
-              }) : undefined}
-            />
-            {sprite ? (
-              <>
-                <label>
-                  Asset
-                  <select value={sprite.assetId} onChange={(event) => onChange((draft) => {
-                    findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
-                  })}>
-                    {assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.id}</option>)}
-                  </select>
-                </label>
-                <div className="fieldRow">
-                  <NumberField label="W" value={sprite.width} onChange={(value) => onChange((draft) => {
-                    findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
-                  })} />
-                  <NumberField label="H" value={sprite.height} onChange={(value) => onChange((draft) => {
-                    findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
-                  })} />
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          {/* Collider */}
-          <div className="inspector-section">
-            <SectionHeader
-              icon={<Box size={12} />}
-              label="Collider"
-              removable={!!collider}
-              onAdd={!collider ? () => onChange((draft) => {
-                draft.components.push({
-                  type: "AabbCollider",
-                  offset: { x: -32, y: -32 },
-                  size: { x: 64, y: 64 },
-                  isStatic: false
-                });
-              }) : undefined}
-              onRemove={collider ? () => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "AabbCollider");
-              }) : undefined}
-            />
-            {collider ? (
-              <>
-                <div className="fieldRow">
-                  <NumberField label="CW" value={collider.size.x} onChange={(value) => onChange((draft) => {
-                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
-                  })} />
-                  <NumberField label="CH" value={collider.size.y} onChange={(value) => onChange((draft) => {
-                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
-                  })} />
-                </div>
-                <div className="fieldRow">
-                  <NumberField label="Layer" value={collider.layer ?? 1} onChange={(value) => onChange((draft) => {
-                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
-                  })} />
-                  <NumberField label="Mask" value={collider.mask ?? 1} onChange={(value) => onChange((draft) => {
-                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
-                  })} />
-                </div>
-                <label className="check">
-                  <input type="checkbox" checked={collider.isStatic} onChange={(event) => onChange((draft) => {
-                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
-                  })} />
-                  Static collider
-                </label>
-              </>
-            ) : null}
-          </div>
-
-          {/* PlayerController */}
-          <div className="inspector-section">
-            <SectionHeader
-              icon={<Gamepad2 size={12} />}
-              label="Player"
-              removable={!!player}
-              onAdd={!player ? () => onChange((draft) => {
-                draft.components.push({
-                  type: "PlayerController",
-                  speed: 300,
-                  jumpVelocity: 600,
-                  gravity: 1800
-                });
-              }) : undefined}
-              onRemove={player ? () => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "PlayerController");
-              }) : undefined}
-            />
-            {player ? (
-              <>
-                <div className="fieldRow">
-                  <NumberField label="Speed" value={player.speed} onChange={(value) => onChange((draft) => {
-                    findComponent<PlayerControllerComponent>(draft, "PlayerController")!.speed = value;
-                  })} />
-                  <NumberField label="Jump" value={player.jumpVelocity} onChange={(value) => onChange((draft) => {
-                    findComponent<PlayerControllerComponent>(draft, "PlayerController")!.jumpVelocity = value;
-                  })} />
-                </div>
-                <NumberField label="Gravity" value={player.gravity} onChange={(value) => onChange((draft) => {
-                  findComponent<PlayerControllerComponent>(draft, "PlayerController")!.gravity = value;
-                })} />
-              </>
-            ) : null}
-          </div>
-
-          {/* CameraFollow */}
-          <div className="inspector-section">
-            <SectionHeader
-              icon={<Video size={12} />}
-              label="Camera"
-              removable={!!camera}
-              onAdd={!camera ? () => onChange((draft) => {
-                draft.components.push({
-                  type: "CameraFollow",
-                  targetId: entity.id,
-                  smoothing: 0.18
-                });
-              }) : undefined}
-              onRemove={camera ? () => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "CameraFollow");
-              }) : undefined}
-            />
-            {camera ? (
-              <>
-                <label>
-                  Target
-                  <select
-                    value={camera.targetId}
-                    onChange={(event) => onChange((draft) => {
-                      findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId = event.target.value;
-                    })}
-                  >
-                    <option value="">— None —</option>
-                    {entityIds.filter((id) => id !== entity?.id).map((id) => (
-                      <option key={id} value={id}>{id}</option>
-                    ))}
-                  </select>
-                </label>
-                <NumberField label="Smoothing" value={camera.smoothing} onChange={(value) => onChange((draft) => {
-                  findComponent<CameraFollowComponent>(draft, "CameraFollow")!.smoothing = value;
-                })} />
-              </>
-            ) : null}
-          </div>
+          {/* Component Adder Section */}
+          {missingComponents.length > 0 && (
+            <div className="inspector-add-component-wrapper">
+              <div className="add-component-bar">
+                <Plus size={13} className="add-icon" />
+                <select
+                  value={selectedCompToAdd}
+                  onChange={handleAddComponent}
+                  title="Add new script or body component to entity"
+                >
+                  <option value="">Add Component...</option>
+                  {missingComponents.map((comp) => (
+                    <option key={comp.val} value={comp.val}>{comp.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </>
       ) : multiCount > 1 ? (
         <div className="multi-select-count">
           <Box size={32} />
-          <p>{multiCount} entities selected</p>
+          <p>{multiCount} nodes selected</p>
           {onDelete && (
-            <button className="button danger" onClick={onDelete}>Delete {multiCount} entities</button>
+            <button type="button" className="button danger" onClick={onDelete}>Delete Selection</button>
           )}
         </div>
       ) : (
         <div className="empty-state">
-          <Box size={32} />
+          <Focus size={32} style={{ opacity: 0.1 }} />
           <p>No entity selected</p>
+          <span className="tip">Click on an entity in the Viewport or Hierarchy list to inspect properties.</span>
         </div>
       )}
     </aside>

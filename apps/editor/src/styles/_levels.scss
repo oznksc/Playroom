@@ -7,7 +7,7 @@
 .level-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .level-item {
@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px;
+  padding: 6px 8px;
 }
 
 .drag-handle {
@@ -38,7 +38,7 @@
 }
 
 .level-order {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   min-width: 16px;
@@ -46,7 +46,7 @@
 
 .level-name {
   flex: 1;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -59,11 +59,11 @@
   padding: 0 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .empty-scenes {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   font-style: italic;
 }
@@ -72,13 +72,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: var(--bg-elevated);
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .scene-assign-select {
-  font-size: 11px;
-  min-height: 28px;
+  font-size: 10px;
+  min-height: 24px;
 }

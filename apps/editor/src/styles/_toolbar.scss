@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: 4px;
   border-radius: var(--radius-md);
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
@@ -10,8 +10,8 @@
   button {
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 28px;
+    width: 30px;
+    height: 26px;
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -31,21 +31,21 @@
 
     &.save-success {
       color: var(--success);
-      background: rgba(52, 211, 153, 0.15);
+      background: rgba(16, 185, 129, 0.15);
     }
 
     &.save-error {
       color: var(--error);
-      background: rgba(248, 113, 113, 0.15);
+      background: rgba(239, 68, 68, 0.15);
     }
 
     &[title]::after {
       content: attr(title);
       position: absolute;
-      bottom: -30px;
+      bottom: -32px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 3px 8px;
+      padding: 4px 10px;
       border-radius: var(--radius-sm);
       background: var(--bg-overlay);
       border: 1px solid var(--border-default);

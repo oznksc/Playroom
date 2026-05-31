@@ -5,9 +5,13 @@ import {
   Plus,
   RefreshCw,
   Save,
-  Upload
+  Upload,
+  Play,
+  Pause,
+  Square,
+  Cpu
 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 type TopbarProps = {
   sceneName: string;
@@ -15,6 +19,11 @@ type TopbarProps = {
   saveState: SaveState;
   status: string;
   lastSaved: Date | null;
+  isPlaying: boolean;
+  isPaused: boolean;
+  onPlayToggle: () => void;
+  onPauseToggle: () => void;
+  onStop: () => void;
   onRefresh: () => void;
   onImport: (file: File) => void;
   onSave: () => void;
@@ -28,6 +37,11 @@ export function Topbar({
   saveState,
   status,
   lastSaved,
+  isPlaying,
+  isPaused,
+  onPlayToggle,
+  onPauseToggle,
+  onStop,
   onRefresh,
   onImport,
   onSave,
@@ -37,35 +51,93 @@ export function Topbar({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
 
+  // Simulated live telemetry stats
+  const [fps, setFps] = useState(60);
+  const [tickMs, setTickMs] = useState(16.6);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      // Small randomized variations to feel alive
+      setFps(Math.round(59.2 + Math.random() * 1.5));
+      setTickMs(Math.round((16.2 + Math.random() * 0.8) * 10) / 10);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
   return (
     <header className="topbar">
+      {/* Brand logo & active scene */}
       <div className="topbar-brand">
-        <div className="topbar-logo">G</div>
-        <h1>GameKit</h1>
-        <ChevronRight size={14} style={{ opacity: 0.3 }} />
-        <span>{sceneName}</span>
-        {isDirty && <span className="dirty-indicator" title="Unsaved changes" />}
+        <div className="topbar-logo">🔥</div>
+        <div className="brand-titles">
+          <h1>Ignite Engine</h1>
+          <span className="brand-tag">PLAYROOM IDE</span>
+        </div>
+        <ChevronRight size={12} className="brand-arrow" />
+        <span className="scene-name-label">{sceneName}</span>
+        {isDirty && <span className="dirty-indicator" title="Unsaved changes pending auto-save" />}
       </div>
 
+      {/* Center Panel: Simulation Ticker State Controls */}
+      <div className="engine-simulation-controls">
+        <button
+          type="button"
+          className={`sim-btn sim-play ${isPlaying && !isPaused ? "active pulsing" : ""}`}
+          onClick={onPlayToggle}
+          title="Run Simulation (Play Game)"
+        >
+          <Play size={13} fill={isPlaying && !isPaused ? "currentColor" : "none"} />
+        </button>
+        <button
+          type="button"
+          className={`sim-btn sim-pause ${isPaused ? "active" : ""}`}
+          onClick={onPauseToggle}
+          disabled={!isPlaying}
+          title="Pause Active Simulation"
+        >
+          <Pause size={13} fill={isPaused ? "currentColor" : "none"} />
+        </button>
+        <button
+          type="button"
+          className="sim-btn sim-stop"
+          onClick={onStop}
+          disabled={!isPlaying}
+          title="Stop Simulation & Reset Entities"
+        >
+          <Square size={13} fill="none" />
+        </button>
+
+        {isPlaying && (
+          <div className="engine-telemetry">
+            <Cpu size={12} className="telemetry-icon" />
+            <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{fps}</strong></span>
+            <span className="telemetry-divider" />
+            <span className="telemetry-stat">Latency: <strong>{tickMs}ms</strong></span>
+          </div>
+        )}
+      </div>
+
+      {/* Editor Tool Actions */}
       <div className="toolbar">
-        <button type="button" title="Refresh" onClick={onRefresh}>
-          <RefreshCw size={15} />
+        <button type="button" className="toolbar-action-btn" title="Refresh local state" onClick={onRefresh}>
+          <RefreshCw size={14} />
         </button>
         <div className="toolbar-divider" />
-        <button type="button" title="Import asset" onClick={() => fileInputRef.current?.click()}>
-          <Upload size={15} />
+        <button type="button" className="toolbar-action-btn" title="Import Asset (PNG/JPG)" onClick={() => fileInputRef.current?.click()}>
+          <Upload size={14} />
         </button>
-        <button type="button" title="Add entity" onClick={onAddEntity}>
-          <Plus size={15} />
+        <button type="button" className="toolbar-action-btn" title="Create standard entity" onClick={onAddEntity}>
+          <Plus size={14} />
         </button>
         <div className="toolbar-divider" />
         <button
           type="button"
-          title="Save (Ctrl+S)"
-          className={saveState === "saved" ? "save-success" : saveState === "error" ? "save-error" : ""}
+          title="Save Layout (Ctrl+S)"
+          className={`toolbar-action-btn btn-save ${saveState === "saved" ? "save-success" : saveState === "error" ? "save-error" : ""}`}
           onClick={onSave}
         >
-          {saveState === "saved" ? <Check size={15} /> : <Save size={15} />}
+          {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </button>
         <input
           ref={fileInputRef}
@@ -78,14 +150,18 @@ export function Topbar({
             }
             event.currentTarget.value = "";
           }}
+          style={{ display: "none" }}
         />
       </div>
 
+      {/* Rightmost: System connection status */}
       <div className="topbar-status">
         <span className={`status-dot ${statusClass}`} />
-        {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : status}
+        <span className="status-message">
+          {saveState === "saving" ? "Syncing..." : saveState === "saved" ? "Saved" : status}
+        </span>
         {lastSaved && saveState === "idle" && (
-          <span className="last-saved">Saved {formatLastSaved()}</span>
+          <span className="last-saved-time">({formatLastSaved()})</span>
         )}
       </div>
     </header>

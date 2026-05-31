@@ -4,8 +4,16 @@
 
 body {
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
   cursor: pointer;
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--accent-muted);
+  color: var(--accent-hover);
 }

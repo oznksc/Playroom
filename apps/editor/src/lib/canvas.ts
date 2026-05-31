@@ -13,12 +13,17 @@ export function drawScene(
   scene: GameKitScene,
   assets: GameKitAsset[],
   images: Map<string, HTMLImageElement>,
-  selectedEntityIds: Set<string>
+  selectedEntityIds: Set<string>,
+  showGrid = true,
+  showColliders = true
 ) {
   context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
   context.fillStyle = scene.viewport.background;
   context.fillRect(0, 0, scene.viewport.width, scene.viewport.height);
-  drawGrid(context, scene.viewport.width, scene.viewport.height);
+  
+  if (showGrid) {
+    drawGrid(context, scene.viewport.width, scene.viewport.height);
+  }
 
   for (const entity of scene.entities) {
     const transform = findComponent<TransformComponent>(entity, "Transform");
@@ -40,9 +45,9 @@ export function drawScene(
       }
     }
 
-    if (collider) {
+    if (collider && showColliders) {
       const isSelected = selectedEntityIds.has(entity.id);
-      context.strokeStyle = isSelected ? "#f0c846" : collider.isStatic ? "#34d399" : "#4f9cf7";
+      context.strokeStyle = isSelected ? "#ffb300" : collider.isStatic ? "#10b981" : "#00f0ff";
       context.lineWidth = isSelected ? 2 : 1;
       context.setLineDash(isSelected ? [] : [4, 4]);
       context.strokeRect(
@@ -59,7 +64,7 @@ export function drawScene(
     const entity = scene.entities.find((e) => e.id === id);
     const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
     if (transform) {
-      context.fillStyle = "#f0c846";
+      context.fillStyle = "#ffb300";
       context.beginPath();
       context.arc(transform.position.x, transform.position.y, 4, 0, Math.PI * 2);
       context.fill();
