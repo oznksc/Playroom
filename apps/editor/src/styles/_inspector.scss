@@ -71,7 +71,6 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  overflow: hidden;
   transition: border-color var(--transition-fast);
 
   &:hover {
@@ -82,6 +81,7 @@
     padding: 10px;
     border-top: 1px solid var(--border-default);
     background: rgba(11, 15, 23, 0.3);
+    overflow: visible;
   }
 
   .inspector-card-body-empty {
@@ -101,7 +101,8 @@
   padding: 8px 10px;
   background: rgba(255, 255, 255, 0.01);
   border-left: 3px solid var(--text-muted);
-  height: 32px;
+  height: 38px;
+  min-width: 0;
 
   &.accent-transform { border-left-color: var(--accent-purple); }
   &.accent-sprite { border-left-color: var(--accent); }
@@ -121,15 +122,26 @@
     padding: 0;
     flex: 1;
     text-align: left;
+    min-width: 0;
 
     svg {
       color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .section-label-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
     }
   }
 
   .inspector-section-actions {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 }
 

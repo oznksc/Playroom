@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "axsxa",
+  "name": "axsxa",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#101820"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 1800
+  },
+  "assets": [],
+  "entities": [],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": []
+  },
+  "gui": {
+    "nodes": []
+  }
+}

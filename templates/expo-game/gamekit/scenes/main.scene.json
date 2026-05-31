@@ -11,9 +11,7 @@
     "x": 0,
     "y": 1800
   },
-  "assets": [
-    "player"
-  ],
+  "assets": [],
   "entities": [
     {
       "id": "player",
@@ -22,22 +20,12 @@
         {
           "type": "Transform",
           "position": {
-            "x": 148,
-            "y": 246
+            "x": 120,
+            "y": 360
           },
           "rotation": 0,
           "scale": {
             "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "player",
-          "width": 48,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
             "y": 1
           }
         },
@@ -51,18 +39,13 @@
             "x": 48,
             "y": 64
           },
-          "isStatic": true
+          "isStatic": false
         },
         {
           "type": "PlayerController",
           "speed": 240,
           "jumpVelocity": 620,
           "gravity": 1800
-        },
-        {
-          "type": "CameraFollow",
-          "targetId": "player",
-          "smoothing": 0.18
         }
       ]
     },
@@ -73,8 +56,8 @@
         {
           "type": "Transform",
           "position": {
-            "x": 76,
-            "y": 483
+            "x": 0,
+            "y": 520
           },
           "rotation": 0,
           "scale": {
@@ -103,190 +86,30 @@
         {
           "type": "Transform",
           "position": {
-            "x": 200,
-            "y": 200
+            "x": 0,
+            "y": 0
           },
-          "rotation": 20,
+          "rotation": 0,
           "scale": {
-            "x": 2,
-            "y": 2
+            "x": 1,
+            "y": 1
           }
         },
         {
           "type": "CameraFollow",
           "targetId": "player",
-          "smoothing": 40.18
-        }
-      ]
-    },
-    {
-      "id": "entity-aknsss",
-      "name": "Entity",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 36,
-            "y": 578
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "block-yellow-alt",
-          "width": 64,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -32,
-            "y": -32
-          },
-          "size": {
-            "x": 64,
-            "y": 64
-          },
-          "isStatic": false
-        }
-      ]
-    },
-    {
-      "id": "sprite-o5dw0j",
-      "name": "Sprite",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 180,
-            "y": 240
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "block-yellow-alt",
-          "width": 64,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        }
-      ]
-    },
-    {
-      "id": "sprite-acezox",
-      "name": "Sprite",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 180,
-            "y": 240
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "block-yellow-alt",
-          "width": 64,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        }
-      ]
-    },
-    {
-      "id": "player-7all1h",
-      "name": "Player",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 180,
-            "y": 240
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "block-yellow-alt",
-          "width": 64,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -32,
-            "y": -32
-          },
-          "size": {
-            "x": 64,
-            "y": 64
-          },
-          "isStatic": false
-        },
-        {
-          "type": "PlayerController",
-          "speed": 320,
-          "jumpVelocity": 600,
-          "gravity": 1800
-        }
-      ]
-    },
-    {
-      "id": "empty-mcyf7u",
-      "name": "Empty",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 180,
-            "y": 240
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
+          "smoothing": 0.18
         }
       ]
     }
   ],
   "responsive": {
-    "mode": "fixed",
-    "referenceWidth": 400,
+    "mode": "scale",
+    "referenceWidth": 390,
     "referenceHeight": 844,
-    "orientation": "landscape",
+    "orientation": "portrait",
     "safeArea": {
-      "enabled": false,
+      "enabled": true,
       "padding": {
         "top": 0,
         "bottom": 0,
@@ -296,19 +119,7 @@
     }
   },
   "timeline": {
-    "tracks": [
-      {
-        "entityId": "ground",
-        "property": "position.x",
-        "keyframes": [
-          {
-            "time": 0,
-            "value": 0,
-            "easing": "easeOut"
-          }
-        ]
-      }
-    ]
+    "tracks": []
   },
   "gui": {
     "nodes": []
