@@ -5,7 +5,7 @@ import type {
   SpriteComponent,
   TransformComponent
 } from "@gamekit/schema";
-import { Box, Circle, ImagePlus } from "lucide-react";
+import { Box, Circle, ImagePlus, Trash2 } from "lucide-react";
 import { findComponent } from "../lib/components.js";
 
 function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
@@ -25,12 +25,14 @@ type InspectorProps = {
   entity?: GameKitEntity;
   assets: GameKitAsset[];
   onChange: (mutator: (entity: GameKitEntity) => void) => void;
+  onDelete?: () => void;
 };
 
 export function Inspector({
   entity,
   assets,
-  onChange
+  onChange,
+  onDelete
 }: InspectorProps) {
   const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
   const sprite = entity ? findComponent<SpriteComponent>(entity, "Sprite") : undefined;
@@ -40,7 +42,14 @@ export function Inspector({
     <aside className="panel inspector">
       {entity && transform ? (
         <>
-          <h2>{entity.name}</h2>
+          <div className="inspector-section-header">
+            <h2>{entity.name}</h2>
+            {onDelete && (
+              <button type="button" className="icon-button danger" onClick={onDelete} title="Delete entity">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
 
           <div className="inspector-section">
             <div className="inspector-section-title">

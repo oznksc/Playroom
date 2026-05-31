@@ -82,6 +82,12 @@ export function App() {
         event.preventDefault();
         saveScene(sceneRef.current);
       }
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (selectedEntityId && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement) && !(event.target instanceof HTMLSelectElement)) {
+          event.preventDefault();
+          deleteEntity(selectedEntityId);
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -173,6 +179,17 @@ export function App() {
       });
       draft.entities.push(entity);
       setSelectedEntityId(entity.id);
+    });
+  }
+
+  function deleteEntity(id: string) {
+    updateScene((draft) => {
+      const index = draft.entities.findIndex((e) => e.id === id);
+      if (index === -1) return;
+      draft.entities.splice(index, 1);
+      if (selectedEntityId === id) {
+        setSelectedEntityId(draft.entities[Math.min(index, draft.entities.length - 1)]?.id);
+      }
     });
   }
 
@@ -415,6 +432,7 @@ export function App() {
                 mutator(entity);
               }
             })}
+            onDelete={selectedEntityId ? () => deleteEntity(selectedEntityId) : undefined}
           />
         </div>
       </section>

@@ -18,6 +18,8 @@ export type {
 
 export { createLevel } from "@gamekit/schema";
 export { GameKitView } from "./view.js";
+export { GameKitGame } from "./game.js";
+export type { GameKitGameProps } from "./game.js";
 export { SceneManager } from "./manager.js";
 export { loadScene } from "./scene.js";
 export {
@@ -35,3 +37,6 @@ export {
   type PlayerControllerState,
   createPlayerController
 } from "./player.js";
+export { useGameLoop } from "./loop.js";
+export type { GameLoopCallback } from "./loop.js";
+export { usePlayerInput } from "./input.js";

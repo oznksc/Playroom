@@ -119,7 +119,7 @@
     "mode": "fixed",
     "referenceWidth": 400,
     "referenceHeight": 844,
-    "orientation": "portrait",
+    "orientation": "auto",
     "safeArea": {
       "enabled": false,
       "padding": {
