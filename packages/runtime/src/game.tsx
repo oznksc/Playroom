@@ -8,6 +8,7 @@ import { createPlayerController } from "./player.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
 import { applyAabbCollisions, getEntityAabb, type CollisionSolid } from "./collision.js";
 import { updateAnimation } from "./animate.js";
+import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
 
@@ -23,6 +24,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
   const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
   const cameraStateRef = useRef<CameraState>({ position: { x: 0, y: 0 }, zoom: 1 });
   const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
+  const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: scene.timeline.playing });
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -30,6 +32,8 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     entitiesRef.current = structuredClone(scene.entities);
     controllersRef.current.clear();
     cameraFollowRef.current = null;
+    animationStatesRef.current.clear();
+    timelineRef.current = { elapsed: 0, playing: scene.timeline.playing };
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
@@ -130,6 +134,11 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
       }
       anim.currentFrame = updateAnimation(anim, state, dt);
     }
+
+    // Apply current scene (with updated entities) to timeline
+    const currentEntities = entitiesRef.current;
+    const workingScene = { ...scene, entities: currentEntities };
+    playTimeline(workingScene, timelineRef.current, dt);
 
     setTick((t) => t + 1);
   });

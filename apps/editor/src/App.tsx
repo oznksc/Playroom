@@ -9,6 +9,7 @@ import { Footer } from "./components/Footer.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { LevelPanel } from "./components/LevelPanel.js";
 import { SceneSettings } from "./components/SceneSettings.js";
+import { TimelinePanel } from "./components/TimelinePanel.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
@@ -24,7 +25,7 @@ const DEFAULT_SCENE: GameKitScene = {
   assets: [],
   entities: [],
   responsive: { mode: "scale", referenceWidth: 390, referenceHeight: 844, orientation: "portrait", safeArea: { enabled: true, padding: { top: 0, bottom: 0, left: 0, right: 0 } } },
-  timeline: { tracks: [] },
+  timeline: { tracks: [], duration: 0, loop: false, playing: false },
   gui: { nodes: [] },
 };
 
@@ -518,6 +519,13 @@ export function App() {
           />
         </div>
       </section>
+
+      {scene && (
+        <TimelinePanel
+          scene={scene}
+          onChange={updateScene}
+        />
+      )}
 
       <Footer
         scene={scene}

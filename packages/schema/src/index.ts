@@ -132,6 +132,25 @@ export type GuiImage = GuiBase & {
   assetId: string;
 };
 
+export type Keyframe = {
+  time: number;
+  value: number | number[];
+  easing?: "linear" | "easeIn" | "easeOut" | "easeInOut";
+};
+
+export type TimelineTrack = {
+  entityId: string;
+  property: "position.x" | "position.y" | "rotation" | "scale.x" | "scale.y" | "alpha";
+  keyframes: Keyframe[];
+};
+
+export type TimelineData = {
+  tracks: TimelineTrack[];
+  duration: number;
+  loop: boolean;
+  playing: boolean;
+};
+
 export type GameKitScene = {
   schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
   id: string;
@@ -145,9 +164,7 @@ export type GameKitScene = {
   assets: string[];
   entities: GameKitEntity[];
   responsive: ResponsiveConfig;
-  timeline: {
-    tracks: unknown[];
-  };
+  timeline: TimelineData;
   gui: {
     nodes: GuiNode[];
   };
@@ -196,7 +213,7 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
         padding: { top: 0, bottom: 0, left: 0, right: 0 }
       }
     },
-    timeline: { tracks: [] },
+    timeline: { tracks: [], duration: 0, loop: false, playing: false },
     gui: { nodes: [] }
   };
 }
@@ -454,7 +471,59 @@ function validateAssets(input: unknown, errors: string[]): GameKitAsset[] {
 }
 
 function validateTimeline(input: unknown, errors: string[]): GameKitScene["timeline"] {
-  return { tracks: validateReservedArray(input, "timeline", "tracks", errors) };
+  const defaults: GameKitScene["timeline"] = { tracks: [], duration: 0, loop: false, playing: false };
+  if (input === undefined) return defaults;
+  if (!isRecord(input)) {
+    errors.push("timeline must be an object");
+    return defaults;
+  }
+
+  const duration = input.duration !== undefined ? expectNumber(input.duration, "timeline.duration", errors) : 0;
+  const loop = input.loop !== undefined ? expectBoolean(input.loop, "timeline.loop", errors) : false;
+  const playing = input.playing !== undefined ? expectBoolean(input.playing, "timeline.playing", errors) : false;
+  const tracks: TimelineTrack[] = [];
+
+  const rawTracks = input.tracks;
+  if (!Array.isArray(rawTracks)) {
+    errors.push("timeline.tracks must be an array");
+    return { ...defaults, duration, loop, playing, tracks };
+  }
+
+  for (let i = 0; i < rawTracks.length; i++) {
+    const track = rawTracks[i];
+    if (!isRecord(track)) {
+      errors.push(`timeline.tracks[${i}] must be an object`);
+      continue;
+    }
+    const keyframes: Keyframe[] = [];
+    const rawKfs = track.keyframes;
+    if (Array.isArray(rawKfs)) {
+      for (let j = 0; j < rawKfs.length; j++) {
+        const kf = rawKfs[j];
+        if (!isRecord(kf)) {
+          errors.push(`timeline.tracks[${i}].keyframes[${j}] must be an object`);
+          continue;
+        }
+        keyframes.push({
+          time: expectNumber(kf.time, `timeline.tracks[${i}].keyframes[${j}].time`, errors),
+          value: expectNumberOrArray(kf.value, `timeline.tracks[${i}].keyframes[${j}].value`, errors),
+          easing: kf.easing !== undefined ? expectEasing(kf.easing, `timeline.tracks[${i}].keyframes[${j}].easing`, errors) : undefined,
+        });
+      }
+    }
+    const validProperties = ["position.x", "position.y", "rotation", "scale.x", "scale.y", "alpha"];
+    const prop = track.property;
+    if (typeof prop !== "string" || !validProperties.includes(prop)) {
+      errors.push(`timeline.tracks[${i}].property must be one of: ${validProperties.join(", ")}`);
+    }
+    tracks.push({
+      entityId: expectString(track.entityId, `timeline.tracks[${i}].entityId`, errors),
+      property: (typeof prop === "string" && validProperties.includes(prop) ? prop : "position.x") as TimelineTrack["property"],
+      keyframes: keyframes.sort((a, b) => a.time - b.time),
+    });
+  }
+
+  return { tracks, duration, loop, playing };
 }
 
 function validateGui(input: unknown, errors: string[]): GameKitScene["gui"] {
@@ -601,6 +670,21 @@ function expectBoolean(input: unknown, path: string, errors: string[]): boolean 
     return false;
   }
   return input;
+}
+
+function expectNumberOrArray(input: unknown, path: string, errors: string[]): number | number[] {
+  if (typeof input === "number") return input;
+  if (Array.isArray(input)) {
+    return input.map((v, idx) => expectNumber(v, `${path}[${idx}]`, errors));
+  }
+  errors.push(`${path} must be a number or array of numbers`);
+  return 0;
+}
+
+function expectEasing(input: unknown, path: string, errors: string[]): "linear" | "easeIn" | "easeOut" | "easeInOut" {
+  if (input === "linear" || input === "easeIn" || input === "easeOut" || input === "easeInOut") return input;
+  errors.push(`${path} must be linear, easeIn, easeOut, or easeInOut`);
+  return "linear";
 }
 
 function isRecord(input: unknown): input is Record<string, unknown> {
