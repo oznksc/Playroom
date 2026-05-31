@@ -1,19 +1,22 @@
-import type { GameKitScene, TransformComponent } from "@gamekit/schema";
-import { createEntity } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, TransformComponent } from "@gamekit/schema";
+import { createEntity, createEmptyScene } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { Inspector } from "./components/Inspector.js";
 import { Footer } from "./components/Footer.js";
+import { ScenePanel } from "./components/ScenePanel.js";
+import { LevelPanel } from "./components/LevelPanel.js";
+import { SceneSettings } from "./components/SceneSettings.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 
-const sceneFile = "main.scene.json";
 const AUTO_SAVE_DELAY_MS = 1500;
 
 export function App() {
-  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [] });
+  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [] });
+  const [currentSceneFile, setCurrentSceneFile] = useState<string>("main.scene.json");
   const [scene, setScene] = useState<GameKitScene | undefined>();
   const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
@@ -22,6 +25,7 @@ export function App() {
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels">("entities");
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -46,9 +50,14 @@ export function App() {
   async function refresh() {
     const [projectResponse, sceneResponse] = await Promise.all([
       fetch("/api/project"),
-      fetch(`/api/scene?file=${sceneFile}`)
+      fetch(`/api/scene?file=${currentSceneFile}`)
     ]);
-    const nextSnapshot = await projectResponse.json() as ProjectSnapshot;
+    const rawSnapshot = await projectResponse.json() as { project?: unknown; scenes: string[]; assets: GameKitAsset[]; levels?: GameKitLevel[] };
+    const nextSnapshot: ProjectSnapshot = {
+      scenes: rawSnapshot.scenes ?? [],
+      assets: rawSnapshot.assets ?? [],
+      levels: rawSnapshot.levels ?? []
+    };
     const nextScene = await sceneResponse.json() as GameKitScene;
     setSnapshot(nextSnapshot);
     setScene(nextScene);
@@ -62,6 +71,10 @@ export function App() {
   useEffect(() => {
     refresh().catch((error: unknown) => setStatus(error instanceof Error ? error.message : "Load failed"));
   }, []);
+
+  useEffect(() => {
+    refresh().catch((error: unknown) => setStatus(error instanceof Error ? error.message : "Load failed"));
+  }, [currentSceneFile]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -81,14 +94,21 @@ export function App() {
 
     setSaveState("saving");
     try {
-      const response = await fetch(`/api/scene?file=${sceneFile}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(nextScene)
-      });
+      const [sceneResponse, projectResponse] = await Promise.all([
+        fetch(`/api/scene?file=${currentSceneFile}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(nextScene)
+        }),
+        fetch("/api/project", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ levels: snapshot.levels })
+        })
+      ]);
 
-      if (!response.ok) {
-        const body = await response.json() as { error?: string; errors?: string[] };
+      if (!sceneResponse.ok) {
+        const body = await sceneResponse.json() as { error?: string; errors?: string[] };
         throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
       }
 
@@ -156,6 +176,111 @@ export function App() {
     });
   }
 
+  function handleCreateScene(name: string) {
+    const newScene = createEmptyScene(name);
+    const fileName = `${newScene.id}.scene.json`;
+
+    fetch(`/api/scene?file=${fileName}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(newScene)
+    }).then(() => {
+      setSnapshot((prev) => ({
+        ...prev,
+        scenes: [...prev.scenes, fileName]
+      }));
+      setCurrentSceneFile(fileName);
+      refresh();
+    });
+  }
+
+  function handleDeleteScene(sceneId: string) {
+    if (snapshot.scenes.length <= 1) {
+      alert("Cannot delete the last scene");
+      return;
+    }
+
+    fetch(`/api/scene?file=${sceneId}`, { method: "DELETE" }).then(() => {
+      const remaining = snapshot.scenes.filter((s) => s !== sceneId);
+      setSnapshot((prev) => ({
+        ...prev,
+        scenes: remaining
+      }));
+      if (currentSceneFile === sceneId) {
+        setCurrentSceneFile(remaining[0]);
+      }
+      refresh();
+    });
+  }
+
+  function handleCreateLevel(name: string) {
+    const newLevel: GameKitLevel = {
+      id: name.toLowerCase().replace(/\s+/g, "-"),
+      name,
+      order: snapshot.levels.length + 1,
+      sceneIds: [],
+      unlocked: snapshot.levels.length === 0
+    };
+
+    setSnapshot((prev) => ({
+      ...prev,
+      levels: [...prev.levels, newLevel]
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
+  function handleDeleteLevel(levelId: string) {
+    setSnapshot((prev) => ({
+      ...prev,
+      levels: prev.levels.filter((l) => l.id !== levelId)
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
+  function handleToggleUnlockLevel(levelId: string) {
+    setSnapshot((prev) => ({
+      ...prev,
+      levels: prev.levels.map((l) =>
+        l.id === levelId ? { ...l, unlocked: !l.unlocked } : l
+      )
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
+  function handleReorderLevels(levels: GameKitLevel[]) {
+    setSnapshot((prev) => ({
+      ...prev,
+      levels
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
+  function handleAssignSceneToLevel(levelId: string, sceneId: string) {
+    setSnapshot((prev) => ({
+      ...prev,
+      levels: prev.levels.map((l) =>
+        l.id === levelId ? { ...l, sceneIds: [...l.sceneIds, sceneId] } : l
+      )
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
+  function handleRemoveSceneFromLevel(levelId: string, sceneId: string) {
+    setSnapshot((prev) => ({
+      ...prev,
+      levels: prev.levels.map((l) =>
+        l.id === levelId ? { ...l, sceneIds: l.sceneIds.filter((s) => s !== sceneId) } : l
+      )
+    }));
+    setIsDirty(true);
+    triggerAutoSave();
+  }
+
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
 
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
@@ -190,14 +315,72 @@ export function App() {
       />
 
       <section className="workspace">
-        <Sidebar
-          assets={snapshot.assets}
-          entities={scene?.entities ?? []}
-          selectedAssetId={selectedAssetId}
-          selectedEntityId={selectedEntityId}
-          onSelectAsset={setSelectedAssetId}
-          onSelectEntity={setSelectedEntityId}
-        />
+        <div className="panel sidebar-tabs">
+          <div className="tab-bar">
+            <button
+              type="button"
+              className={activeTab === "entities" ? "active" : ""}
+              onClick={() => setActiveTab("entities")}
+            >
+              Entities
+            </button>
+            <button
+              type="button"
+              className={activeTab === "scenes" ? "active" : ""}
+              onClick={() => setActiveTab("scenes")}
+            >
+              Scenes
+            </button>
+            <button
+              type="button"
+              className={activeTab === "levels" ? "active" : ""}
+              onClick={() => setActiveTab("levels")}
+            >
+              Levels
+            </button>
+          </div>
+
+          {activeTab === "entities" && (
+            <Sidebar
+              assets={snapshot.assets}
+              entities={scene?.entities ?? []}
+              selectedAssetId={selectedAssetId}
+              selectedEntityId={selectedEntityId}
+              onSelectAsset={setSelectedAssetId}
+              onSelectEntity={setSelectedEntityId}
+            />
+          )}
+
+          {activeTab === "scenes" && (
+            <ScenePanel
+              scenes={snapshot.scenes}
+              currentSceneId={currentSceneFile}
+              onSelectScene={setCurrentSceneFile}
+              onCreateScene={handleCreateScene}
+              onDeleteScene={handleDeleteScene}
+            />
+          )}
+
+          {activeTab === "levels" && (
+            <LevelPanel
+              levels={snapshot.levels}
+              scenes={snapshot.scenes}
+              currentLevelId={snapshot.levels.find((l) => l.sceneIds.includes(currentSceneFile))?.id ?? null}
+              onSelectLevel={(levelId) => {
+                const level = snapshot.levels.find((l) => l.id === levelId);
+                if (level && level.sceneIds.length > 0) {
+                  setCurrentSceneFile(level.sceneIds[0]);
+                }
+              }}
+              onCreateLevel={handleCreateLevel}
+              onDeleteLevel={handleDeleteLevel}
+              onToggleUnlock={handleToggleUnlockLevel}
+              onReorderLevels={handleReorderLevels}
+              onAssignScene={handleAssignSceneToLevel}
+              onRemoveScene={handleRemoveSceneFromLevel}
+            />
+          )}
+        </div>
 
         <SceneCanvas
           scene={scene}
@@ -216,16 +399,24 @@ export function App() {
           }}
         />
 
-        <Inspector
-          entity={selectedEntity}
-          assets={snapshot.assets}
-          onChange={(mutator) => updateScene((draft) => {
-            const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
-            if (entity) {
-              mutator(entity);
-            }
-          })}
-        />
+        <div className="inspector-column">
+          {scene && (
+            <SceneSettings
+              scene={scene}
+              onChange={updateScene}
+            />
+          )}
+          <Inspector
+            entity={selectedEntity}
+            assets={snapshot.assets}
+            onChange={(mutator) => updateScene((draft) => {
+              const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
+              if (entity) {
+                mutator(entity);
+              }
+            })}
+          />
+        </div>
       </section>
 
       <Footer

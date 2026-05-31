@@ -5,6 +5,34 @@ export type Vector2 = {
   y: number;
 };
 
+export type Orientation = "portrait" | "landscape" | "auto";
+
+export type SafeAreaConfig = {
+  enabled: boolean;
+  padding: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+};
+
+export type ResponsiveConfig = {
+  mode: "fixed" | "scale" | "adaptive";
+  referenceWidth: number;
+  referenceHeight: number;
+  orientation: Orientation;
+  safeArea: SafeAreaConfig;
+};
+
+export type GameKitLevel = {
+  id: string;
+  name: string;
+  order: number;
+  sceneIds: string[];
+  unlocked: boolean;
+};
+
 export type TransformComponent = {
   type: "Transform";
   position: Vector2;
@@ -65,6 +93,7 @@ export type GameKitScene = {
   gravity: Vector2;
   assets: string[];
   entities: GameKitEntity[];
+  responsive: ResponsiveConfig;
   timeline: {
     tracks: unknown[];
   };
@@ -85,6 +114,7 @@ export type GameKitProject = {
   schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
   name: string;
   scenes: string[];
+  levels: GameKitLevel[];
   assets: GameKitAsset[];
 };
 
@@ -105,6 +135,16 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
     gravity: { x: 0, y: 1800 },
     assets: [],
     entities: [],
+    responsive: {
+      mode: "scale",
+      referenceWidth: 390,
+      referenceHeight: 844,
+      orientation: "portrait",
+      safeArea: {
+        enabled: true,
+        padding: { top: 0, bottom: 0, left: 0, right: 0 }
+      }
+    },
     timeline: { tracks: [] },
     gui: { nodes: [] }
   };
@@ -115,6 +155,15 @@ export function createProject(name = "GameKit Game"): GameKitProject {
     schemaVersion: GAMEKIT_SCHEMA_VERSION,
     name,
     scenes: ["main.scene.json"],
+    levels: [
+      {
+        id: "level-1",
+        name: "Level 1",
+        order: 1,
+        sceneIds: ["main"],
+        unlocked: true
+      }
+    ],
     assets: []
   };
 }
@@ -131,6 +180,16 @@ export function createEntity(name: string, position: Vector2 = { x: 0, y: 0 }): 
         scale: { x: 1, y: 1 }
       }
     ]
+  };
+}
+
+export function createLevel(name: string, order: number, sceneIds: string[] = []): GameKitLevel {
+  return {
+    id: slugify(name) || `level-${order}`,
+    name,
+    order,
+    sceneIds,
+    unlocked: order === 1
   };
 }
 
@@ -157,6 +216,7 @@ export function validateScene(input: unknown): ValidationResult<GameKitScene> {
     gravity: validateVector(input.gravity, "gravity", errors),
     assets: validateStringArray(input.assets, "assets", errors),
     entities: validateEntities(input.entities, errors),
+    responsive: validateResponsive(input.responsive, input.viewport, errors),
     timeline: validateTimeline(input.timeline, errors),
     gui: validateGui(input.gui, errors)
   };
@@ -175,6 +235,7 @@ export function validateProject(input: unknown): ValidationResult<GameKitProject
     schemaVersion: expectSchemaVersion(input.schemaVersion, "schemaVersion", errors),
     name: expectString(input.name, "name", errors),
     scenes: validateStringArray(input.scenes, "scenes", errors),
+    levels: validateLevels(input.levels, errors),
     assets: validateAssets(input.assets, errors)
   };
 
@@ -414,4 +475,103 @@ function expectBoolean(input: unknown, path: string, errors: string[]): boolean 
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return typeof input === "object" && input !== null && !Array.isArray(input);
+}
+
+function validateResponsive(input: unknown, viewport: unknown, errors: string[]): ResponsiveConfig {
+  const defaults: ResponsiveConfig = {
+    mode: "scale",
+    referenceWidth: 390,
+    referenceHeight: 844,
+    orientation: "portrait",
+    safeArea: {
+      enabled: true,
+      padding: { top: 0, bottom: 0, left: 0, right: 0 }
+    }
+  };
+
+  if (input === undefined || input === null) {
+    if (isRecord(viewport)) {
+      defaults.referenceWidth = expectNumber(viewport.width, "responsive.referenceWidth (from viewport)", errors);
+      defaults.referenceHeight = expectNumber(viewport.height, "responsive.referenceHeight (from viewport)", errors);
+    }
+    return defaults;
+  }
+
+  if (!isRecord(input)) {
+    errors.push("responsive must be an object");
+    return defaults;
+  }
+
+  const mode = input.mode;
+  if (mode !== "fixed" && mode !== "scale" && mode !== "adaptive") {
+    errors.push('responsive.mode must be "fixed", "scale", or "adaptive"');
+  }
+
+  const orientation = input.orientation;
+  if (orientation !== "portrait" && orientation !== "landscape" && orientation !== "auto") {
+    errors.push('responsive.orientation must be "portrait", "landscape", or "auto"');
+  }
+
+  return {
+    mode: (mode as ResponsiveConfig["mode"]) ?? defaults.mode,
+    referenceWidth: optionalNumber(input.referenceWidth, "responsive.referenceWidth", errors) ?? defaults.referenceWidth,
+    referenceHeight: optionalNumber(input.referenceHeight, "responsive.referenceHeight", errors) ?? defaults.referenceHeight,
+    orientation: (orientation as ResponsiveConfig["orientation"]) ?? defaults.orientation,
+    safeArea: validateSafeArea(input.safeArea, errors)
+  };
+}
+
+function validateSafeArea(input: unknown, errors: string[]): SafeAreaConfig {
+  const defaults: SafeAreaConfig = {
+    enabled: true,
+    padding: { top: 0, bottom: 0, left: 0, right: 0 }
+  };
+
+  if (input === undefined || input === null) {
+    return defaults;
+  }
+
+  if (!isRecord(input)) {
+    errors.push("responsive.safeArea must be an object");
+    return defaults;
+  }
+
+  return {
+    enabled: typeof input.enabled === "boolean" ? input.enabled : defaults.enabled,
+    padding: isRecord(input.padding)
+      ? {
+          top: optionalNumber(input.padding.top, "responsive.safeArea.padding.top", errors) ?? 0,
+          bottom: optionalNumber(input.padding.bottom, "responsive.safeArea.padding.bottom", errors) ?? 0,
+          left: optionalNumber(input.padding.left, "responsive.safeArea.padding.left", errors) ?? 0,
+          right: optionalNumber(input.padding.right, "responsive.safeArea.padding.right", errors) ?? 0
+        }
+      : defaults.padding
+  };
+}
+
+function validateLevels(input: unknown, errors: string[]): GameKitLevel[] {
+  if (input === undefined || input === null) {
+    return [];
+  }
+
+  if (!Array.isArray(input)) {
+    errors.push("levels must be an array");
+    return [];
+  }
+
+  return input.map((level, index) => {
+    const path = `levels[${index}]`;
+    if (!isRecord(level)) {
+      errors.push(`${path} must be an object`);
+      return { id: "", name: "", order: 0, sceneIds: [], unlocked: false };
+    }
+
+    return {
+      id: expectString(level.id, `${path}.id`, errors),
+      name: expectString(level.name, `${path}.name`, errors),
+      order: expectNumber(level.order, `${path}.order`, errors),
+      sceneIds: validateStringArray(level.sceneIds, `${path}.sceneIds`, errors),
+      unlocked: typeof level.unlocked === "boolean" ? level.unlocked : false
+    };
+  });
 }

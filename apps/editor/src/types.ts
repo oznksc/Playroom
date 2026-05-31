@@ -1,8 +1,9 @@
-import type { GameKitAsset } from "@gamekit/schema";
+import type { GameKitAsset, GameKitLevel } from "@gamekit/schema";
 
 export type ProjectSnapshot = {
   scenes: string[];
   assets: GameKitAsset[];
+  levels: GameKitLevel[];
 };
 
 export type SaveState = "idle" | "saving" | "saved" | "error";

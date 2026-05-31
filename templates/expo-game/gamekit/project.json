@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "name": "Expo GameKit Game",
-  "scenes": ["main.scene.json"],
+  "scenes": [
+    "main.scene.json"
+  ],
+  "levels": [],
   "assets": [
     {
       "id": "player",

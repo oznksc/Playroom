@@ -187,6 +187,7 @@ export async function getProjectSnapshot(root: string): Promise<{
   project: GameKitProject;
   scenes: string[];
   assets: GameKitAsset[];
+  levels: GameKitProject["levels"];
 }> {
   await initProject(root);
   const gamekitRoot = getGameKitRoot(root);
@@ -196,7 +197,8 @@ export async function getProjectSnapshot(root: string): Promise<{
   return {
     project,
     scenes: sceneFiles.filter((file) => file.endsWith(".scene.json")).sort(),
-    assets: project.assets
+    assets: project.assets,
+    levels: project.levels ?? []
   };
 }
 

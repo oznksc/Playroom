@@ -11,7 +11,9 @@
     "x": 0,
     "y": 1800
   },
-  "assets": ["player"],
+  "assets": [
+    "player"
+  ],
   "entities": [
     {
       "id": "player",
@@ -20,8 +22,8 @@
         {
           "type": "Transform",
           "position": {
-            "x": 120,
-            "y": 360
+            "x": 41,
+            "y": 237
           },
           "rotation": 0,
           "scale": {
@@ -113,6 +115,21 @@
       ]
     }
   ],
+  "responsive": {
+    "mode": "fixed",
+    "referenceWidth": 400,
+    "referenceHeight": 844,
+    "orientation": "landscape",
+    "safeArea": {
+      "enabled": false,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
   "timeline": {
     "tracks": []
   },

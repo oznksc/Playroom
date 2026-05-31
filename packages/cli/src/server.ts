@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, unlink } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -8,7 +8,9 @@ import {
   importAssetBuffer,
   initProject,
   readScene,
-  writeScene
+  writeScene,
+  writeProject,
+  readProject
 } from "./project.js";
 import { validateScene } from "@gamekit/schema";
 
@@ -52,6 +54,19 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     return;
   }
 
+  if (url.pathname === "/api/project" && request.method === "POST") {
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as unknown;
+    if (!body || typeof body !== "object") {
+      sendJson(response, 400, { error: "Invalid project data" });
+      return;
+    }
+    const project = await readProject(options.root);
+    const updated = { ...project, ...body as Partial<typeof project> };
+    await writeProject(options.root, updated);
+    sendJson(response, 200, await getProjectSnapshot(options.root));
+    return;
+  }
+
   if (url.pathname === "/api/scene" && request.method === "GET") {
     sendJson(response, 200, await readScene(options.root, url.searchParams.get("file") ?? "main.scene.json"));
     return;
@@ -66,6 +81,18 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     }
     await writeScene(options.root, result.value, url.searchParams.get("file") ?? "main.scene.json");
     sendJson(response, 200, result.value);
+    return;
+  }
+
+  if (url.pathname === "/api/scene" && request.method === "DELETE") {
+    const file = url.searchParams.get("file") ?? "main.scene.json";
+    const scenePath = join(getGameKitRoot(options.root), "scenes", file);
+    try {
+      await unlink(scenePath);
+      sendJson(response, 200, { deleted: file });
+    } catch {
+      sendJson(response, 404, { error: `Scene file not found: ${file}` });
+    }
     return;
   }
 
