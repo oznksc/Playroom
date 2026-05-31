@@ -119,9 +119,9 @@
     "mode": "fixed",
     "referenceWidth": 400,
     "referenceHeight": 844,
-    "orientation": "landscape",
+    "orientation": "portrait",
     "safeArea": {
-      "enabled": true,
+      "enabled": false,
       "padding": {
         "top": 0,
         "bottom": 0,

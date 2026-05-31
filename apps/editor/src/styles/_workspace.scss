@@ -1,0 +1,13 @@
+.shell {
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr) 28px;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 240px minmax(320px, 1fr) 260px;
+  min-height: 0;
+}

@@ -1,0 +1,84 @@
+.level-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  transition: border-color var(--transition-fast);
+
+  &:hover {
+    border-color: var(--border-default);
+  }
+
+  &.selected {
+    border-color: var(--accent);
+  }
+}
+
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+}
+
+.level-order {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 16px;
+}
+
+.level-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.level-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.level-scenes {
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty-scenes {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.level-scene-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.scene-assign-select {
+  font-size: 11px;
+  min-height: 28px;
+}

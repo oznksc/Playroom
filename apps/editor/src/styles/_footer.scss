@@ -1,0 +1,16 @@
+footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+}

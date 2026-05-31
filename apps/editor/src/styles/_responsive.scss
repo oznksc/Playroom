@@ -1,0 +1,19 @@
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 200px minmax(280px, 1fr);
+  }
+
+  .inspector {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    display: none;
+  }
+}

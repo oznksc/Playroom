@@ -1,0 +1,11 @@
+.scene-settings {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px;
+}
+
+.safe-area-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}

@@ -1,0 +1,54 @@
+.assetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.asset {
+  display: grid;
+  grid-template-rows: 64px auto;
+  gap: 0;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &.selected {
+    border-color: var(--accent);
+    background: var(--accent-muted);
+    box-shadow: 0 0 0 1px var(--accent);
+
+    span {
+      color: var(--accent);
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    padding: 4px 2px 0;
+    color: var(--text-secondary);
+  }
+}
