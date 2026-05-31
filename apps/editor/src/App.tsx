@@ -7,7 +7,20 @@ import type {
   TransformComponent
 } from "@gamekit/schema";
 import { createEntity } from "@gamekit/schema";
-import { Box, ImagePlus, Plus, RefreshCw, Save, Upload } from "lucide-react";
+import {
+  Box,
+  ChevronRight,
+  Circle,
+  ImagePlus,
+  Layers,
+  Minus,
+  Plus,
+  RefreshCw,
+  Save,
+  Upload,
+  ZoomIn,
+  ZoomOut
+} from "lucide-react";
 import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type ProjectSnapshot = {
@@ -23,6 +36,7 @@ export function App() {
   const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
   const [status, setStatus] = useState("Loading");
+  const [zoom, setZoom] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function refresh() {
@@ -114,25 +128,32 @@ export function App() {
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
 
+  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") ? "error" : "";
+
   return (
     <main className="shell">
       <header className="topbar">
-        <div>
+        <div className="topbar-brand">
+          <div className="topbar-logo">G</div>
           <h1>GameKit</h1>
+          <ChevronRight size={14} style={{ opacity: 0.3 }} />
           <span>{scene?.name ?? "Scene"}</span>
         </div>
+
         <div className="toolbar">
           <button type="button" title="Refresh" onClick={() => refresh().catch(setError)}>
-            <RefreshCw size={18} />
+            <RefreshCw size={15} />
           </button>
+          <div className="toolbar-divider" />
           <button type="button" title="Import asset" onClick={() => fileInputRef.current?.click()}>
-            <Upload size={18} />
+            <Upload size={15} />
           </button>
           <button type="button" title="Add entity" onClick={addEntity}>
-            <Plus size={18} />
+            <Plus size={15} />
           </button>
-          <button type="button" title="Save scene" onClick={() => saveScene().catch(setError)}>
-            <Save size={18} />
+          <div className="toolbar-divider" />
+          <button type="button" title="Save" onClick={() => saveScene().catch(setError)}>
+            <Save size={15} />
           </button>
           <input
             ref={fileInputRef}
@@ -147,12 +168,23 @@ export function App() {
             }}
           />
         </div>
+
+        <div className="topbar-status">
+          <span className={`status-dot ${statusClass}`} />
+          {status}
+        </div>
       </header>
 
       <section className="workspace">
         <aside className="panel">
-          <PanelTitle icon={<ImagePlus size={16} />} label="Assets" />
+          <PanelTitle icon={<ImagePlus size={14} />} label="Assets" />
           <div className="assetGrid">
+            {snapshot.assets.length === 0 && (
+              <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
+                <ImagePlus size={24} />
+                <p>No assets yet</p>
+              </div>
+            )}
             {snapshot.assets.map((asset) => (
               <button
                 key={asset.id}
@@ -167,7 +199,7 @@ export function App() {
             ))}
           </div>
 
-          <PanelTitle icon={<Box size={16} />} label="Entities" />
+          <PanelTitle icon={<Layers size={14} />} label="Entities" />
           <div className="entityList">
             {scene?.entities.map((entity) => (
               <button
@@ -176,6 +208,9 @@ export function App() {
                 className={entity.id === selectedEntityId ? "entity selected" : "entity"}
                 onClick={() => setSelectedEntityId(entity.id)}
               >
+                <span className="entity-icon">
+                  <Box size={12} />
+                </span>
                 {entity.name}
               </button>
             ))}
@@ -186,6 +221,7 @@ export function App() {
           scene={scene}
           assets={snapshot.assets}
           selectedEntityId={selectedEntityId}
+          zoom={zoom}
           onSelect={setSelectedEntityId}
           onMove={(id, position) => {
             updateScene((draft) => {
@@ -210,7 +246,20 @@ export function App() {
         />
       </section>
 
-      <footer>{status}</footer>
+      <footer>
+        <span className="status-indicator">
+          <span className={`status-dot ${statusClass}`} />
+          {status}
+        </span>
+        {scene && (
+          <>
+            <span style={{ color: "var(--border-default)" }}>|</span>
+            <span>{scene.entities.length} entities</span>
+            <span style={{ color: "var(--border-default)" }}>|</span>
+            <span>{snapshot.assets.length} assets</span>
+          </>
+        )}
+      </footer>
     </main>
   );
 
@@ -223,12 +272,14 @@ function SceneCanvas({
   scene,
   assets,
   selectedEntityId,
+  zoom,
   onSelect,
   onMove
 }: {
   scene?: GameKitScene;
   assets: GameKitAsset[];
   selectedEntityId?: string;
+  zoom: number;
   onSelect: (id: string) => void;
   onMove: (id: string, position: { x: number; y: number }) => void;
 }) {
@@ -294,6 +345,15 @@ function SceneCanvas({
         }}
         onPointerUp={() => setDrag(undefined)}
       />
+      <div className="canvas-controls">
+        <button type="button" title="Zoom out">
+          <ZoomOut size={14} />
+        </button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button type="button" title="Zoom in">
+          <ZoomIn size={14} />
+        </button>
+      </div>
     </section>
   );
 }
@@ -313,25 +373,44 @@ function Inspector({
 
   return (
     <aside className="panel inspector">
-      <h2>{entity?.name ?? "Inspector"}</h2>
       {entity && transform ? (
         <>
-          <label>
-            Name
-            <input value={entity.name} onChange={(event) => onChange((draft) => { draft.name = event.target.value; })} />
-          </label>
-          <div className="fieldRow">
-            <NumberField label="X" value={transform.position.x} onChange={(value) => onChange((draft) => {
-              findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
-            })} />
-            <NumberField label="Y" value={transform.position.y} onChange={(value) => onChange((draft) => {
-              findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
-            })} />
+          <h2>{entity.name}</h2>
+
+          <div className="inspector-section">
+            <div className="inspector-section-title">
+              <Box size={12} />
+              General
+            </div>
+            <label>
+              Name
+              <input value={entity.name} onChange={(event) => onChange((draft) => { draft.name = event.target.value; })} />
+            </label>
           </div>
+
+          <div className="inspector-section">
+            <div className="inspector-section-title">
+              <Circle size={12} />
+              Transform
+            </div>
+            <div className="fieldRow">
+              <NumberField label="X" value={transform.position.x} onChange={(value) => onChange((draft) => {
+                findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
+              })} />
+              <NumberField label="Y" value={transform.position.y} onChange={(value) => onChange((draft) => {
+                findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
+              })} />
+            </div>
+          </div>
+
           {sprite ? (
-            <>
-              <label>
+            <div className="inspector-section">
+              <div className="inspector-section-title">
+                <ImagePlus size={12} />
                 Sprite
+              </div>
+              <label>
+                Asset
                 <select value={sprite.assetId} onChange={(event) => onChange((draft) => {
                   findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
                 })}>
@@ -346,10 +425,15 @@ function Inspector({
                   findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
                 })} />
               </div>
-            </>
+            </div>
           ) : null}
+
           {collider ? (
-            <>
+            <div className="inspector-section">
+              <div className="inspector-section-title">
+                <Box size={12} />
+                Collider
+              </div>
               <div className="fieldRow">
                 <NumberField label="CW" value={collider.size.x} onChange={(value) => onChange((draft) => {
                   findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
@@ -364,11 +448,14 @@ function Inspector({
                 })} />
                 Static collider
               </label>
-            </>
+            </div>
           ) : null}
         </>
       ) : (
-        <p className="muted">No entity selected</p>
+        <div className="empty-state">
+          <Box size={32} />
+          <p>No entity selected</p>
+        </div>
       )}
     </aside>
   );
@@ -454,20 +541,34 @@ function drawScene(
     }
 
     if (collider) {
-      context.strokeStyle = entity.id === selectedEntityId ? "#f8e16c" : collider.isStatic ? "#a7f3d0" : "#93c5fd";
-      context.lineWidth = entity.id === selectedEntityId ? 3 : 1.5;
+      const isSelected = entity.id === selectedEntityId;
+      context.strokeStyle = isSelected ? "#f0c846" : collider.isStatic ? "#34d399" : "#4f9cf7";
+      context.lineWidth = isSelected ? 2 : 1;
+      context.setLineDash(isSelected ? [] : [4, 4]);
       context.strokeRect(
         transform.position.x + collider.offset.x,
         transform.position.y + collider.offset.y,
         collider.size.x,
         collider.size.y
       );
+      context.setLineDash([]);
+    }
+  }
+
+  if (selectedEntityId) {
+    const entity = scene.entities.find((e) => e.id === selectedEntityId);
+    const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+    if (transform) {
+      context.fillStyle = "#f0c846";
+      context.beginPath();
+      context.arc(transform.position.x, transform.position.y, 4, 0, Math.PI * 2);
+      context.fill();
     }
   }
 }
 
 function drawGrid(context: CanvasRenderingContext2D, width: number, height: number) {
-  context.strokeStyle = "rgba(255,255,255,.08)";
+  context.strokeStyle = "rgba(255, 255, 255, 0.04)";
   context.lineWidth = 1;
   for (let x = 0; x <= width; x += 32) {
     context.beginPath();
@@ -515,7 +616,7 @@ function hitEntity(entity: GameKitEntity, point: { x: number; y: number }): bool
 
 function colorForAsset(assetId: string, assets: GameKitAsset[]): string {
   const index = Math.max(0, assets.findIndex((asset) => asset.id === assetId));
-  return ["#60a5fa", "#34d399", "#f8e16c", "#f472b6", "#c084fc"][index % 5];
+  return ["#4f9cf7", "#34d399", "#f0c846", "#f472b6", "#c084fc"][index % 5];
 }
 
 function findComponent<T extends { type: string }>(entity: GameKitEntity, type: T["type"]): T | undefined {
