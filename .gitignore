@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.expo/
+.turbo/
+.vite/
+coverage/
+*.log
+*.tsbuildinfo
+gamekit/generated/assets.ts
+!templates/expo-game/gamekit/generated/assets.ts

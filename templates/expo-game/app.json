@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Expo GameKit Game",
+    "slug": "expo-gamekit-game",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true
+  }
+}

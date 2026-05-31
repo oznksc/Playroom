@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "id": "main-scene",
+  "name": "Main Scene",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#101820"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 1800
+  },
+  "assets": ["player"],
+  "entities": [
+    {
+      "id": "player",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 120,
+            "y": 360
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "ground",
+      "name": "Ground",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 520
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "x": 900,
+            "y": 48
+          },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "name": "Camera",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player",
+          "smoothing": 0.18
+        }
+      ]
+    }
+  ],
+  "timeline": {
+    "tracks": []
+  },
+  "gui": {
+    "nodes": []
+  }
+}
