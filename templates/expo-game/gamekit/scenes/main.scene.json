@@ -121,7 +121,7 @@
     "referenceHeight": 844,
     "orientation": "landscape",
     "safeArea": {
-      "enabled": false,
+      "enabled": true,
       "padding": {
         "top": 0,
         "bottom": 0,
