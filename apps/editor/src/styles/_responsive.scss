@@ -10,6 +10,10 @@
 //   768–1023  Mid            Canvas-only, slide-over panels
 //   <768px    Narrow         Canvas with bottom nav, sheet panels
 
+.panel-backdrop {
+  display: none;
+}
+
 // ── Wide desktop (≥1440px) ───────────────────────────
 // Full 3-column layout. No changes needed — this is the default.
 
@@ -18,6 +22,18 @@
 @include mq-std {
   .workspace {
     grid-template-columns: 220px minmax(320px, 1fr) 260px;
+  }
+
+  .workspace.sidebar-collapsed {
+    grid-template-columns: 0px minmax(320px, 1fr) 260px;
+  }
+
+  .workspace.inspector-collapsed {
+    grid-template-columns: 220px minmax(320px, 1fr) 0px;
+  }
+
+  .workspace.sidebar-collapsed.inspector-collapsed {
+    grid-template-columns: 0px minmax(320px, 1fr) 0px;
   }
 }
 

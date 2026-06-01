@@ -144,7 +144,7 @@ export function Topbar({
 
       {/* Editor Tool Actions */}
       <div className="toolbar">
-        <button type="button" className="panel-toggle-btn" onClick={onToggleSidebar} title="Toggle sidebar panel">
+        <button type="button" className={`panel-toggle-btn${sidebarOpen ? " active" : ""}`} onClick={onToggleSidebar} title="Toggle sidebar panel">
           <PanelLeft size={14} />
         </button>
         <div className="toolbar-divider" />
@@ -168,7 +168,7 @@ export function Topbar({
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </button>
         <div className="toolbar-divider" />
-        <button type="button" className="panel-toggle-btn" onClick={onToggleInspector} title="Toggle inspector panel">
+        <button type="button" className={`panel-toggle-btn${inspectorOpen ? " active" : ""}`} onClick={onToggleInspector} title="Toggle inspector panel">
           <PanelRight size={14} />
         </button>
         <input

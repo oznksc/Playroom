@@ -19,6 +19,36 @@
   border-bottom: 1px solid var(--border-strong);
 }
 
+@media (min-width: $bp-std) {
+  .workspace.sidebar-collapsed {
+    grid-template-columns: 0px minmax(360px, 1fr) 300px;
+
+    .panel.sidebar-tabs {
+      overflow: hidden;
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      border-right: none;
+    }
+  }
+
+  .workspace.inspector-collapsed {
+    grid-template-columns: 260px minmax(360px, 1fr) 0px;
+
+    .inspector-column {
+      overflow: hidden;
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      border-left: none;
+    }
+  }
+
+  .workspace.sidebar-collapsed.inspector-collapsed {
+    grid-template-columns: 0px minmax(360px, 1fr) 0px;
+  }
+}
+
 .inspector-column {
   display: flex;
   flex-direction: column;

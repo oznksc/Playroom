@@ -335,13 +335,219 @@ evrilir.
 
 ---
 
-## Sprint Önerisi
+## 13. AI Game Agent (Editör İçi BYOK) — ÖNCELİKLİ
+
+Motorun birincil amacı: React Native ile tüm platformlara çıktı veren ve
+**editör içinden, kullanıcının kendi API anahtarıyla (BYOK) çalışan AI agent
+ile oyun geliştirilebilen** bir 2D motor. Aşağıdaki tasarım bu hedefe yönelik.
+
+### Kararlaştırılan Tasarım Kararları
+
+| Konu | Karar |
+| --- | --- |
+| Varsayılan onay modu | `destructive-only` (`add_*` otomatik, `remove_*`/`delete_*`/`overwrite` modal açar) |
+| BYOK depolama | Web: `localStorage` (proje bazlı), Tauri: OS Keychain (`tauri-plugin-stronghold`) |
+| Konuşma geçmişi | `gamekit/agent/<scene>.json` (MCP `FileIO` deseniyle aynı) |
+| İlk provider | Sadece Anthropic Claude (Sprint A); diğerleri Sprint B |
+
+### Mimari
+
+```
+┌──────────────────────────────────────────────────────┐
+│  Editor (apps/editor)                                │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │ Bottom Drawer│  │  AgentPanel  │  │ AgentSettings│ │
+│  │  + Agent tab │  │  (chat)      │  │  (BYOK UI)   │ │
+│  └──────┬──────┘  └──────┬───────┘  └──────┬───────┘ │
+└─────────┼────────────────┼──────────────────┼─────────┘
+          │ SSE            │ POST /api/agent/chat
+          ▼                ▼
+┌──────────────────────────────────────────────────────┐
+│  CLI (packages/cli) — 127.0.0.1:4177                 │
+│  ┌──────────────────┐   ┌──────────────────────────┐ │
+│  │ existing /api/*  │   │ new /api/agent/*         │ │
+│  └──────────────────┘   │  - chat (SSE stream)     │ │
+│                         │  - providers, models     │ │
+│                         │  - keys (in-memory)      │ │
+│                         │  - history, approve,     │ │
+│                         │    abort                  │ │
+│                         └─────┬────────────────────┘ │
+│                               │ stdio (MCP)            │
+│                               ▼                        │
+│  ┌────────────────────────────────────────────────┐   │
+│  │ @gamekit/agent  ──spawns──►  @gamekit/mcp      │   │
+│  │  (provider adapters,                            │   │
+│  │   ReAct loop, streaming,                        │   │
+│  │   approval, history)                            │   │
+│  └────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────┘
+```
+
+**Anahtar ilke:** Agent, MCP tool listesini **kopyalamaz**. CLI, editör oturumu
+başına `@gamekit/mcp` sürecini spawn eder ve aynı tool yüzeyini kullanır.
+Editör içi agent ile harici Claude/Cursor birebir aynı tool'larla çalışır.
+
+### Yeni Paket: `@gamekit/agent`
+
+```
+packages/agent/
+├── src/
+│   ├── index.ts
+│   ├── server.ts                 # spawn MCP child + AgentHost
+│   ├── providers/
+│   │   ├── types.ts              # ProviderAdapter interface
+│   │   ├── anthropic.ts          # Sprint A
+│   │   ├── openai.ts             # Sprint B
+│   │   ├── google.ts             # Sprint B
+│   │   ├── ollama.ts             # Sprint B
+│   │   └── openai-compatible.ts  # Sprint B (OpenRouter, Groq, vs.)
+│   ├── mcp/
+│   │   ├── client.ts             # stdio MCP client
+│   │   ├── tools.ts              # MCP tools → model tool şeması
+│   │   └── executor.ts           # tool call → MCP call → sonuç
+│   ├── loop/
+│   │   ├── agent.ts              # ReAct ana döngüsü
+│   │   ├── approval.ts           # onay mekanizması
+│   │   ├── history.ts            # konuşma + tool call geçmişi
+│   │   └── streaming.ts          # SSE encoder
+│   ├── system/
+│   │   ├── prompt.ts             # GameKit domain sistem prompt
+│   │   └── skills-loader.ts      # skill manifest → prompt injection
+│   └── store/
+│       ├── keys.ts               # BYOK vault
+│       └── history-store.ts      # .gamekit/agent/<scene>.json
+└── test/
+```
+
+### CLI Endpoint'leri (yeni)
+
+```
+GET    /api/agent/providers        # desteklenen provider preset listesi
+POST   /api/agent/keys             # { provider, apiKey, baseUrl?, model }
+DELETE /api/agent/keys/:provider
+GET    /api/agent/models/:provider # canlı model listesi
+POST   /api/agent/chat             # SSE stream
+POST   /api/agent/approve          # { requestId, decision }
+POST   /api/agent/abort
+GET    /api/agent/history/:sceneId
+```
+
+**SSE event tipleri:** `token` · `tool_start` · `tool_result` · `approval_request` · `done` · `error`
+
+### Editör UI
+
+**Bottom drawer** mevcut tab'ları korur, dördüncüsü eklenir:
+`"assets" | "timeline" | "console" | "agent"`
+
+**`AgentPanel.tsx`** (iki sütun):
+- Sol %60 — sohbet (mesajlar + input + slash komutlar)
+- Sağ %40 — tool call trace (hangi MCP tool'u ne parametreyle çağırdı, süresi)
+
+**`AgentSettings` modal** (Topbar `Sparkles` ikonu):
+- Provider listesi (connected / ekle), default model seçimi
+- Approval mode toggle: `destructive-only` | `always` | `off`
+- API key alanları (maskelenmiş), base URL, model dropdown
+
+**Onay modal'ı** — destructive tool geldiğinde editör ortasında:
+- Tool adı + argümanları
+- `Deny` / `Allow` butonları
+
+**Slash komutlar** (ConsolePanel kalıbı):
+`/spawn` · `/apply <skill>` · `/screenshot` · `/validate` · `/gravity <y>` · `/clear` · `/help`
+
+### BYOK Güvenlik Modeli
+
+| Katman | Web (CLI) | Tauri (Desktop) |
+| --- | --- | --- |
+| Depolama | `localStorage` (proje kökü bazlı) | OS Keychain |
+| Bellek | CLI process env (request lifetime) | Aynı |
+| Loglama | Key asla loglanmaz (`***REDACTED***`); audit log sadece provider + model | Aynı |
+| Ağ | Editör → CLI → Provider (CORS için CLI proxy) | Doğrudan Rust tarafı |
+
+API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dışı).
+
+### Tool-Use Döngüsü
+
+1. Editör SSE açar → CLI agent loop'u başlatır
+2. Loop, MCP `tools/list` çağrısı yapar → 34 tool'un şemasını alır
+3. Şemaları model-native formata çevirir (Anthropic `tools[]`, OpenAI `tools[]`, vs.)
+4. Sistem prompt'una ekler: schema versiyonu + skill özetleri + aktif sahne envanteri + onay modu kuralları
+5. Model tool call üretir → executor MCP `tools/call` yapar
+6. Sonuç modele geri beslenir → ya cevap ya da yeni tool call
+7. Her adım SSE ile editöre `tool_start` / `tool_result` olarak yayınlanır
+8. Destructive tool → `approval_request` → editör onaylar → devam
+
+### Görevler (Sprint bazlı)
+
+#### Sprint A — Çekirdek (öncelikli)
+- [ ] `packages/agent` paket iskeleti + tsconfig + workspace kaydı
+- [ ] `providers/anthropic.ts` (streaming tool-use)
+- [ ] `mcp/client.ts` stdio client + `mcp/tools.ts` şema çevirici
+- [ ] `loop/agent.ts` ReAct döngüsü, abort handling
+- [ ] `system/prompt.ts` GameKit domain prompt + skills-loader
+- [ ] CLI: `spawn @gamekit/mcp` + `/api/agent/{chat,providers,keys,abort}` + SSE
+- [ ] Editör: `AgentPanel.tsx` + `AgentSettings.tsx` + bottom drawer entegrasyonu
+- [ ] Topbar `Sparkles` ikonu + tab activation
+- [ ] Onay modal'ı (sadece `destructive-only` modu)
+- [ ] Slash komutları: `/spawn`, `/apply`, `/validate`, `/clear`, `/help`
+- [ ] `localStorage` BYOK vault (proje bazlı)
+- [ ] `gamekit/agent/<scene>.json` history store + editörde listeleme
+- [ ] Testler: provider adapter mock + MCP client + ReAct loop integration
+
+#### Sprint B — Çoklu sağlayıcı + Tauri
+- [ ] OpenAI + Google provider adapter
+- [ ] Ollama + OpenAI-compatible adapter
+- [ ] `/api/agent/models/:provider` canlı listeleme
+- [ ] Tauri `tauri-plugin-stronghold` entegrasyonu
+- [ ] Tool call trace UI (sağ kolon polish)
+- [ ] Approval mode toggle UI (`destructive-only` / `always` / `off`)
+
+#### Sprint C — Vizyon + plan-then-execute
+- [ ] `/screenshot` komutu → canvas PNG → vision model
+- [ ] Plan-then-execute: agent önce adım listesi sunar, kullanıcı onaylar, sonra toplu çalışır
+- [ ] Undo snapshot: her agent oturumu başında otomatik undo noktası
+- [ ] Diff önizleme: 5+ tool call'luk değişiklikten önce modal
+- [ ] Konuşma geçmişi sayfalama + arama
+
+#### Sprint D — Orkestrasyon
+- [ ] Çoklu adım sub-agent: model gerektiğinde `apply_skill` tool'unu çağırır
+- [ ] Project-wide task: "tüm sahnelere coin entity'si ekle" gibi toplu işlemler
+- [ ] Anomaly detector: validation hataları artarsa otomatik geri sar
+
+### Yeni MCP Araçları (Sprint A'da gerekli olanlar)
+- `snapshot_undo_point` — manuel undo noktası (agent deneysel değişiklikler için)
+- `restore_snapshot` — snapshot'a geri dön
+- `diff_scene_versions` — iki sahne arasındaki farklar
+- `find_unused_assets` — referans edilmeyen asset'leri bul
+- `suggest_components` — verilen entity için tipik bileşen kombinasyonu öner
+- `explain_scene` — sahneyi özetle (entity sayısı, eksik asset, performans notu)
+
+### Yeni Skill Şablonları
+- `tutorial-walkthrough.json` — sıfırdan agent ile ilk oyun (Sprint C)
+- `agent-playground.json` — agent'ın test edileceği minimal sahne
+- `diff-review.json` — agent değişikliklerini görsel olarak karşılaştırma şablonu
+
+### Testler
+- [ ] Provider adapter'ları mock'la (token streaming, tool call, hata)
+- [ ] MCP stdio client: 34 tool'un listelenmesi, çağrılması
+- [ ] ReAct loop: 5+ tool call'da token bütçesi aşımı kontrolü
+- [ ] Approval flow: destructive tool geldiğinde SSE event'i + editör kararı
+- [ ] BYOK vault: localStorage'a yazma/okuma, key maskeleme, redacted log
+- [ ] Editör: `AgentPanel` mount + mesaj gönder + tool trace render
+- [ ] E2E: editör → chat → tool call → sahne değişikliği → canvas'ta görünür
+
+---
+
+## Sprint Önerisi (güncellenmiş)
 
 | Sprint | Odak | Çıktı |
 | --- | --- | --- |
+| **0** | **AI Game Agent — Sprint A** | **Editör içi chat + BYOK + MCP tool-use (Anthropic)** |
 | 1 | Hızlı kazanımlar + MCP test | `RigidBody` + `CircleCollider` + MCP test başlangıcı |
 | 2 | Play-in-editor + Tilemap | Editörde play butonu + tile paint |
 | 3 | Audio + Text + Save/Load | Asset tipi genişleme, persistent state |
 | 4 | State machine + Script + AI | Davranış sistemi |
-| 5 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
-| 6 | İçerik & dokümantasyon | 10 sample skill + docs sitesi |
+| 5 | Agent Sprint B (çoklu sağlayıcı + Tauri) | OpenAI/Google/Ollama + keychain |
+| 6 | Agent Sprint C (vizyon + plan-execute) | `/screenshot` + diff preview |
+| 7 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
+| 8 | İçerik & dokümantasyon | 10 sample skill + docs sitesi |

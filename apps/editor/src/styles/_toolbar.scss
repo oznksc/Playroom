@@ -121,10 +121,3 @@
     background: $accent-hover-bg;
   }
 }
-
-// Hide toggle buttons on wide desktop (panels are always visible)
-@include mq-wide {
-  .panel-toggle-btn {
-    display: none;
-  }
-}

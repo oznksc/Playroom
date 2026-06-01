@@ -1,6 +1,6 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
@@ -77,11 +77,15 @@ export function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState<"assets" | "timeline" | "console">("assets");
+  const isDesktop = useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+    []
+  );
   const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale">("translate");
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
+  const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Ignite Engine debugger initialized.", timestamp: new Date() },
@@ -997,7 +1001,7 @@ export function App() {
         onCloseProject={handleCloseProject}
       />
 
-      <section className="workspace">
+      <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
         <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
           <div className="tab-bar">
             <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
