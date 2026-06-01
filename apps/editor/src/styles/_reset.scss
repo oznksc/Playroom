@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 * {
   box-sizing: border-box;
 
@@ -15,7 +17,7 @@
     border-radius: 10px;
 
     &:hover {
-      background: rgba(0, 240, 255, 0.2);
+      background: $accent-glow;
     }
   }
 }

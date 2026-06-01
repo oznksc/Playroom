@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .canvasPanel {
   display: grid;
   place-items: center;
@@ -12,7 +14,7 @@
 
     .canvas-viewport {
       border-color: var(--accent-green);
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 20px $success-feedback-bg;
     }
   }
 
@@ -83,27 +85,7 @@ canvas {
   }
 
   .hud-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm);
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    transition: var(--transition-fast);
-
-    &:hover {
-      color: var(--text-primary);
-      background: var(--bg-hover);
-    }
-
-    &.active {
-      color: var(--accent);
-      background: var(--accent-muted);
-      box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.2);
-    }
+    @include icon-btn;
   }
 
   .hud-select {
@@ -132,7 +114,7 @@ canvas {
   top: 56px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(16, 185, 129, 0.15);
+  background: $success-feedback-bg;
   border: 1px solid var(--accent-green);
   backdrop-filter: blur(6px);
   padding: 4px 12px;

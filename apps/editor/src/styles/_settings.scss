@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .scene-settings {
   display: flex;
   flex-direction: column;
@@ -52,21 +54,14 @@
 
 // Scene Name text field inside card
 .scene-name-input-field {
-  background: var(--bg-base);
+  @include compact-field;
   color: var(--text-primary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
   font-size: 10px;
   font-family: monospace;
   padding: 4px 8px;
   width: 100%;
   height: 22px;
   outline: none;
-  transition: var(--transition-fast);
-
-  &:focus {
-    border-color: var(--accent);
-  }
 }
 
 // Color Picker custom row
@@ -76,17 +71,7 @@
   gap: 4px;
 
   .color-row-wrapper {
-    display: flex;
-    align-items: center;
-    background: var(--bg-base);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    height: 22px;
-    overflow: hidden;
-
-    &:focus-within {
-      border-color: var(--accent);
-    }
+    @include compact-field;
 
     .color-box {
       width: 24px;

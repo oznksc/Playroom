@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .sidebar-tabs {
   display: flex;
   flex-direction: column;
@@ -39,7 +41,7 @@
       color: var(--accent);
       border-bottom-color: var(--accent);
       background: var(--bg-surface);
-      text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+      text-shadow: 0 0 8px $accent-glow;
     }
   }
 }

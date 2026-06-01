@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .topbar {
   display: flex;
   align-items: center;
@@ -64,8 +66,8 @@
       transition: var(--transition-fast);
 
       &:hover {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.4);
+        background: $danger-feedback-bg;
+        border-color: $danger-hover-border;
         color: #ef4444;
       }
     }
@@ -81,7 +83,7 @@
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
     font-size: 12px;
     flex-shrink: 0;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 10px $accent-glow;
   }
 
   &-status {
@@ -133,13 +135,13 @@
 
     &.sim-play.active {
       color: var(--accent-green);
-      background: rgba(16, 185, 129, 0.1);
+      background: $success-bg;
       box-shadow: var(--glow-green);
     }
 
     &.sim-pause.active {
       color: var(--accent);
-      background: rgba(0, 240, 255, 0.1);
+      background: $accent-hover-bg;
       box-shadow: var(--glow-cyan);
     }
   }
@@ -173,21 +175,12 @@
 }
 
 .dirty-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--warning);
-  flex-shrink: 0;
-  margin-left: 6px;
+  @include status-dot(var(--warning));
   animation: pulse-glow 1.5s ease-in-out infinite;
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  flex-shrink: 0;
+  @include status-dot;
 
   &.error {
     background: var(--accent-red);

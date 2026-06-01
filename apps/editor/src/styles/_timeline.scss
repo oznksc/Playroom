@@ -1,76 +1,29 @@
+@use 'tokens' as *;
+
 .timeline-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-surface);
-  padding: 0;
+  @include panel-shell;
+  border-right: none;
 
   .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    padding: 24px;
-    
+    @include panel-empty;
+
     p {
       font-size: 11px;
-      margin: 0;
     }
   }
 
   .button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border: 1px dashed var(--border-strong);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 700;
-    transition: var(--transition-fast);
-    
-    &:hover {
-      border-color: var(--accent-purple);
-      color: var(--text-primary);
-      background: rgba(139, 92, 246, 0.05);
-    }
+    @include dashed-add-btn;
   }
 }
 
 .timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  @include panel-header;
   padding: 8px 12px;
-  background: var(--bg-base);
-  border-bottom: 1px solid var(--border-default);
-  height: 38px;
-  flex-shrink: 0;
 
   h3 {
+    @include panel-title(var(--accent-purple));
     font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    &::before {
-      content: "";
-      display: inline-block;
-      width: 3px;
-      height: 10px;
-      background: var(--accent-purple);
-      border-radius: 2px;
-    }
   }
 }
 
@@ -113,12 +66,7 @@
 }
 
 .timeline-tracks-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  @include panel-scroll(12px, 8px);
 }
 
 .timeline-tracks {
