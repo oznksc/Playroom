@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "yatay",
+  "name": "yatay",
+  "viewport": {
+    "width": 844,
+    "height": 390,
+    "background": "#a3a3a3"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 1800
+  },
+  "assets": [],
+  "entities": [],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "landscape",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": []
+  }
+}

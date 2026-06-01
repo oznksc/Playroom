@@ -3,7 +3,7 @@ import { basename, join, resolve } from "node:path";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
 import { startEditorServer } from "./server.js";
-import { createMcpServer } from "@gamekit/mcp/server";
+import { startMcpServer } from "@gamekit/mcp/server";
 
 export { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
 export { startEditorServer } from "./server.js";
@@ -54,11 +54,8 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "mcp": {
-      const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
       const projectPath = args.find((arg) => !arg.startsWith("--")) ?? cwd;
-      const server = createMcpServer(resolve(projectPath));
-      const transport = new StdioServerTransport();
-      await server.connect(transport);
+      await startMcpServer(resolve(projectPath));
       return;
     }
     case "skills": {

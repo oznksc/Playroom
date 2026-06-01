@@ -8,6 +8,8 @@ import { registerSkillTools } from "./tools/skills.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
+export { printBanner, countSkills, startMcpServer } from "./banner.js";
+
 export function createMcpServer(basePath: string): McpServer {
   const server = new McpServer({
     name: "gamekit-mcp",

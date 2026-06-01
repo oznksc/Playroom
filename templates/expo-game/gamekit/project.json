@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "name": "Expo GameKit Game",
   "scenes": [
-    "main.scene.json"
+    "main.scene.json",
+    "yatay.scene.json"
   ],
   "levels": [],
   "assets": [
