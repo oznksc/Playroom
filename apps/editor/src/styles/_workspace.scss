@@ -16,7 +16,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: 260px minmax(360px, 1fr) 300px;
+  grid-template-columns: 300px minmax(360px, 1fr) 300px;
   min-height: 0;
   gap: 1px;
   background: var(--border-default);
@@ -37,7 +37,7 @@
   }
 
   .workspace.inspector-collapsed {
-    grid-template-columns: 260px minmax(360px, 1fr) 0px;
+    grid-template-columns: 300px minmax(360px, 1fr) 0px;
 
     .inspector-column {
       overflow: hidden;

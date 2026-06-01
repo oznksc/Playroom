@@ -1,6 +1,108 @@
+import { readFile } from "node:fs/promises";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const codingSkillsDir = join(__dirname, "..", "..", "skills", "coding");
+
+async function loadCodingSkill(id: string): Promise<string> {
+  try {
+    return await readFile(join(codingSkillsDir, `${id}.md`), "utf8");
+  } catch {
+    return `Skill not found: ${id}`;
+  }
+}
+
 export function registerPrompts(server: McpServer): void {
+  server.prompt(
+    "skia_best_practices",
+    "Load @shopify/react-native-skia best practices for Canvas, drawing, shaders, and GPU rendering",
+    {},
+    async () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: await loadCodingSkill("shopify-skia"),
+          },
+        },
+      ],
+    }),
+  );
+
+  server.prompt(
+    "reanimated_best_practices",
+    "Load react-native-reanimated best practices for worklets, shared values, and animations",
+    {},
+    async () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: await loadCodingSkill("reanimated"),
+          },
+        },
+      ],
+    }),
+  );
+
+  server.prompt(
+    "phaser_guide",
+    "Load Phaser best practices — covering game setup, canvas rendering, scene management, physics, and input",
+    {},
+    async () => {
+      const [phaser, canvas, scene, physics, input] = await Promise.all([
+        loadCodingSkill("phaser"),
+        loadCodingSkill("phaser-canvas"),
+        loadCodingSkill("phaser-scene"),
+        loadCodingSkill("phaser-physics"),
+        loadCodingSkill("phaser-input"),
+      ]);
+
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `# Phaser Complete Guide\n\n## General\n${phaser}\n\n## Canvas & Rendering\n${canvas}\n\n## Scene Management\n${scene}\n\n## Physics\n${physics}\n\n## Input Handling\n${input}`,
+            },
+          },
+        ],
+      };
+    },
+  );
+
+  server.prompt(
+    "react_native_guide",
+    "Load React Native best practices — covering core patterns, navigation, styling, performance, Reanimated, and Skia",
+    {},
+    async () => {
+      const [rn, perf, reanimated, skia] = await Promise.all([
+        loadCodingSkill("react-native"),
+        loadCodingSkill("rn-performance"),
+        loadCodingSkill("reanimated"),
+        loadCodingSkill("shopify-skia"),
+      ]);
+
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `# React Native Complete Guide\n\n## General Patterns\n${rn}\n\n## Performance\n${perf}\n\n## Animations (Reanimated)\n${reanimated}\n\n## GPU Rendering (Skia)\n${skia}`,
+            },
+          },
+        ],
+      };
+    },
+  );
+
   server.prompt(
     "create_game",
     "Guided prompt for creating a new 2D game with GameKit",

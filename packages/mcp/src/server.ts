@@ -8,6 +8,7 @@ import { registerSkillTools } from "./tools/skills.js";
 import { registerPhysicsTools } from "./tools/physics.js";
 import { registerGuiTools } from "./tools/gui.js";
 import { registerGuiComponentTools } from "./tools/gui-components.js";
+import { registerCodingSkillTools } from "./tools/coding-skills.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -29,6 +30,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerPhysicsTools(server, fileIO);
   registerGuiTools(server, fileIO);
   registerGuiComponentTools(server, fileIO);
+  registerCodingSkillTools(server);
   registerResources(server, fileIO);
   registerPrompts(server);
 

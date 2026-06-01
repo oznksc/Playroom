@@ -1011,6 +1011,7 @@ export function App() {
             <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
             <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
           </div>
+          <div className="sidebar-content">
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -1096,6 +1097,7 @@ export function App() {
               onPlaceInstance={addGuiComponentInstance}
             />
           )}
+          </div>
         </div>
 
         <SceneCanvas

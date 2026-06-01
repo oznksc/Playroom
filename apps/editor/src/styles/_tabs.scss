@@ -2,20 +2,23 @@
 
 .sidebar-tabs {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   overflow: hidden;
   height: 100%;
 }
 
 .tab-bar {
   display: flex;
-  border-bottom: 1px solid var(--border-default);
+  flex-direction: column;
+  border-right: 1px solid var(--border-default);
   background: var(--bg-base);
-  height: 32px;
+  width: 24px;
   flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
+  padding: 6px 0;
+  gap: 6px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -23,8 +26,10 @@
 
   button {
     flex: 0 0 auto;
-    padding: 0 8px;
-    font-size: 10px;
+    width: 100%;
+    height: auto;
+    padding: 4px 0;
+    font-size: 8px;
     font-weight: 700;
     color: var(--text-muted);
     background: transparent;
@@ -33,17 +38,17 @@
     transition: all var(--transition-fast);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 2px solid transparent;
+    border-left: 2px solid transparent;
     outline: none;
     white-space: nowrap;
+    writing-mode: vertical-lr;
 
     &:hover {
       color: var(--text-secondary);
-      background: rgba(255, 255, 255, 0.01);
+      background: rgba(255, 255, 255, 0.03);
     }
 
     &:active {
@@ -56,9 +61,15 @@
 
     &.active {
       color: var(--accent);
-      border-bottom-color: var(--accent);
+      border-left-color: var(--accent);
       background: var(--bg-surface);
       text-shadow: 0 0 8px $accent-glow;
     }
   }
+}
+
+.sidebar-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
