@@ -11,7 +11,8 @@ import {
   Square,
   Cpu,
   PanelLeft,
-  PanelRight
+  PanelRight,
+  Sparkles
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 
@@ -37,6 +38,8 @@ type TopbarProps = {
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
+  onToggleAgent?: () => void;
+  agentActive?: boolean;
 };
 
 export function Topbar({
@@ -60,7 +63,9 @@ export function Topbar({
   onToggleInspector,
   formatLastSaved,
   projectPath,
-  onCloseProject
+  onCloseProject,
+  onToggleAgent,
+  agentActive
 }: TopbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
@@ -166,6 +171,15 @@ export function Topbar({
           onClick={onSave}
         >
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
+        </button>
+        <div className="toolbar-divider" />
+        <button
+          type="button"
+          title="AI Agent"
+          className={`toolbar-action-btn${agentActive ? " active" : ""}`}
+          onClick={onToggleAgent}
+        >
+          <Sparkles size={14} />
         </button>
         <div className="toolbar-divider" />
         <button type="button" className={`panel-toggle-btn${inspectorOpen ? " active" : ""}`} onClick={onToggleInspector} title="Toggle inspector panel">

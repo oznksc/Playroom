@@ -9,6 +9,10 @@ import { registerPhysicsTools } from "./tools/physics.js";
 import { registerGuiTools } from "./tools/gui.js";
 import { registerGuiComponentTools } from "./tools/gui-components.js";
 import { registerCodingSkillTools } from "./tools/coding-skills.js";
+import { registerSnapshotTools } from "./tools/snapshot.js";
+import { registerSceneMetaTools } from "./tools/scene-meta.js";
+import { registerSuggestionTools } from "./tools/suggestions.js";
+import { registerGravityTools } from "./tools/gravity.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -31,6 +35,10 @@ export function createMcpServer(basePath: string): McpServer {
   registerGuiTools(server, fileIO);
   registerGuiComponentTools(server, fileIO);
   registerCodingSkillTools(server);
+  registerSnapshotTools(server, fileIO);
+  registerSceneMetaTools(server, fileIO);
+  registerSuggestionTools(server);
+  registerGravityTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 

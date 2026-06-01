@@ -1,0 +1,156 @@
+import { useState } from "react";
+import { X, Key, Check, Plus, Trash2 } from "lucide-react";
+import { useAgentKeys, type AgentKeyEntry } from "../hooks/useAgentKeys.js";
+
+type AgentSettingsProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+const PROVIDERS = [
+  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5" },
+  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o" },
+  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash" },
+  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b" },
+];
+
+export function AgentSettings({ open, onClose }: AgentSettingsProps) {
+  const { keys, addKey, removeKey } = useAgentKeys();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [passphrase, setPassphrase] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState("");
+
+  if (!open) return null;
+
+  function getKeyStatus(providerId: string): AgentKeyEntry | undefined {
+    return keys.find((k) => k.provider === providerId);
+  }
+
+  async function handleSave() {
+    if (!editing || !apiKey || !passphrase) return;
+    await addKey(editing, apiKey, passphrase, model || undefined);
+    setEditing(null);
+    setApiKey("");
+    setPassphrase("");
+    setModel("");
+  }
+
+  return (
+    <div className="agent-settings-overlay" onClick={onClose}>
+      <div className="agent-settings-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="agent-settings-header">
+          <Key size={16} />
+          <span>AI Providers</span>
+          <button type="button" className="agent-settings-close" onClick={onClose}>
+            <X size={14} />
+          </button>
+        </div>
+
+        <div className="agent-settings-body">
+          <table className="agent-settings-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Model</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROVIDERS.map((p) => {
+                const entry = getKeyStatus(p.id);
+                return (
+                  <tr key={p.id}>
+                    <td>{p.label}</td>
+                    <td className="agent-settings-model">{entry?.model ?? p.defaultModel}</td>
+                    <td>
+                      {entry ? (
+                        <span className="agent-settings-status connected">connected</span>
+                      ) : (
+                        <span className="agent-settings-status">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {entry ? (
+                        <button
+                          type="button"
+                          className="agent-settings-action-btn remove"
+                          onClick={() => removeKey(p.id)}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="agent-settings-action-btn add"
+                          onClick={() => { setEditing(p.id); setModel(p.defaultModel); }}
+                        >
+                          <Plus size={12} /> Add
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {editing && (
+            <div className="agent-settings-add-form">
+              <h4>Connect {PROVIDERS.find((p) => p.id === editing)?.label}</h4>
+              <div className="agent-settings-field">
+                <label>API Key</label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..."
+                />
+              </div>
+              <div className="agent-settings-field">
+                <label>Model</label>
+                <input
+                  type="text"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  placeholder={PROVIDERS.find((p) => p.id === editing)?.defaultModel}
+                />
+              </div>
+              <div className="agent-settings-field">
+                <label>Passphrase (to encrypt key locally)</label>
+                <input
+                  type="password"
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder="Enter passphrase"
+                />
+              </div>
+              <div className="agent-settings-field-hint">
+                Key is encrypted and stored in this browser only. It never leaves your machine.
+              </div>
+              <div className="agent-settings-form-actions">
+                <button type="button" className="btn-cancel" onClick={() => setEditing(null)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-connect"
+                  onClick={handleSave}
+                  disabled={!apiKey || !passphrase}
+                >
+                  <Check size={12} /> Connect
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="agent-settings-footer">
+          <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn-save" onClick={onClose}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer } from "./server.js";
 
-const TOOL_COUNT = 34;
+const TOOL_COUNT = 41;
 
 const c = {
   reset: "\x1b[0m",

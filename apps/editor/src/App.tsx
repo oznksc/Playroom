@@ -13,6 +13,8 @@ import { SceneSettings } from "./components/SceneSettings.js";
 import { TimelinePanel } from "./components/TimelinePanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
+import { AgentPanel } from "./components/AgentPanel.js";
+import { AgentSettings } from "./components/AgentSettings.js";
 import { GuiPanel } from "./components/GuiPanel.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
@@ -76,7 +78,8 @@ export function App() {
   // Premium Simulator State Hooks
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<"assets" | "timeline" | "console">("assets");
+  const [activeBottomTab, setActiveBottomTab] = useState<"assets" | "timeline" | "console" | "agent">("assets");
+  const [showAgentSettings, setShowAgentSettings] = useState(false);
   const isDesktop = useMemo(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
     []
@@ -978,29 +981,31 @@ export function App() {
 
   return (
     <main className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}`}>
-      <Topbar
-        sceneName={scene?.name ?? "Scene"}
-        isDirty={isDirty}
-        saveState={saveState}
-        status={status}
-        lastSaved={lastSaved}
-        isPlaying={isPlaying}
-        isPaused={isPaused}
-        sidebarOpen={sidebarOpen}
-        inspectorOpen={inspectorOpen}
-        onPlayToggle={handlePlayToggle}
-        onPauseToggle={() => setIsPaused((p) => !p)}
-        onStop={handleStop}
-        onRefresh={() => refresh().catch(setError)}
-        onImport={(file) => importAsset(file).catch(setError)}
-        onSave={() => saveScene().catch(setError)}
-        onAddEntity={addEntity}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        onToggleInspector={() => setInspectorOpen((v) => !v)}
-        formatLastSaved={formatLastSaved}
-        projectPath={projectPath}
-        onCloseProject={handleCloseProject}
-      />
+        <Topbar
+          sceneName={scene?.name ?? currentSceneFile}
+          isDirty={isDirty}
+          saveState={saveState}
+          status={status}
+          lastSaved={lastSaved}
+          isPlaying={isPlaying}
+          isPaused={isPaused}
+          sidebarOpen={sidebarOpen}
+          inspectorOpen={inspectorOpen}
+          onPlayToggle={handlePlayToggle}
+          onPauseToggle={handlePlayToggle}
+          onStop={handleStop}
+          onRefresh={refresh}
+          onImport={importAsset}
+          onSave={saveScene}
+          onAddEntity={addEntity}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          onToggleInspector={() => setInspectorOpen((v) => !v)}
+          formatLastSaved={formatLastSaved}
+          projectPath={isTauri ? projectPath : null}
+          onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
+          onToggleAgent={() => setActiveBottomTab((v) => v === "agent" ? "assets" : "agent")}
+          agentActive={activeBottomTab === "agent"}
+        />
 
       <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
         <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
@@ -1247,6 +1252,13 @@ export function App() {
             </button>
             <button
               type="button"
+              className={activeBottomTab === "agent" ? "drawer-tab active" : "drawer-tab"}
+              onClick={() => setActiveBottomTab("agent")}
+            >
+              AI Agent
+            </button>
+            <button
+              type="button"
               className="drawer-collapse-btn"
               onClick={() => setBottomDrawerCollapsed((v) => !v)}
               title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
@@ -1277,6 +1289,13 @@ export function App() {
                 onClearLogs={() => setLogs([])}
               />
             )}
+            {activeBottomTab === "agent" && (
+              <AgentPanel
+                sceneId={currentSceneFile}
+                isPlaying={isPlaying}
+                onSettings={() => setShowAgentSettings(true)}
+              />
+            )}
           </div>
         </section>
       )}
@@ -1289,6 +1308,8 @@ export function App() {
         isDirty={isDirty}
         statusClass={statusClass}
       />
+
+      <AgentSettings open={showAgentSettings} onClose={() => setShowAgentSettings(false)} />
     </main>
   );
 }
