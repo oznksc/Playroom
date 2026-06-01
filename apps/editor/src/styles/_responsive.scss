@@ -104,14 +104,10 @@
     grid-template-rows: 48px minmax(0, 1fr) 32px 24px;
   }
 
-  // Hide the sidebar tab bar labels, show only icons
+  // Compact sidebar tab bar labels on mid screens
   .tab-bar button {
-    font-size: 0;
-    padding: 0 8px;
-
-    &::after {
-      font-size: 10px;
-    }
+    font-size: 9px;
+    padding: 0 5px;
   }
 }
 

@@ -13,10 +13,17 @@
   background: var(--bg-base);
   height: 32px;
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   button {
-    flex: 1;
-    padding: 0 4px;
+    flex: 0 0 auto;
+    padding: 0 8px;
     font-size: 10px;
     font-weight: 700;
     color: var(--text-muted);
@@ -32,6 +39,7 @@
     justify-content: center;
     border-bottom: 2px solid transparent;
     outline: none;
+    white-space: nowrap;
 
     &:hover {
       color: var(--text-secondary);
