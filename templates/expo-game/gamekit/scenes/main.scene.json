@@ -138,6 +138,36 @@
     ]
   },
   "gui": {
-    "nodes": []
+    "nodes": [
+      {
+        "id": "text-cjrj69",
+        "x": 120,
+        "y": 300,
+        "width": 200,
+        "height": 40,
+        "visible": true,
+        "interactive": false,
+        "type": "Text",
+        "text": "Text23",
+        "fontSize": 16,
+        "color": "#ffffff",
+        "align": "left"
+      },
+      {
+        "id": "button-6ebifq",
+        "x": 20,
+        "y": 320,
+        "width": 200,
+        "height": 40,
+        "visible": true,
+        "interactive": false,
+        "type": "Button",
+        "text": "Button",
+        "action": "",
+        "fontSize": 14,
+        "color": "#ffffff",
+        "backgroundColor": "#333333"
+      }
+    ]
   }
 }

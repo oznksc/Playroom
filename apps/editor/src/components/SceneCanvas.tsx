@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
-import { drawScene, hitEntity } from "../lib/canvas.js";
+import { drawScene, hitEntity, hitGuiNode } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
 
@@ -28,6 +28,7 @@ type SceneCanvasProps = {
   scene?: GameKitScene;
   assets: GameKitAsset[];
   selectedEntityIds: Set<string>;
+  selectedGuiNodeId?: string | null;
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
@@ -43,6 +44,7 @@ type SceneCanvasProps = {
   onToggleGrid: (val: boolean) => void;
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
+  onSelectGuiNode: (id: string) => void;
   onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
@@ -60,6 +62,7 @@ export function SceneCanvas({
   scene,
   assets,
   selectedEntityIds,
+  selectedGuiNodeId,
   zoom,
   snap,
   hasClipboard,
@@ -75,6 +78,7 @@ export function SceneCanvas({
   onToggleGrid,
   onToggleColliders,
   onSelect,
+  onSelectGuiNode,
   onTransform,
   onAddEntity,
   onPasteEntity,
@@ -114,8 +118,8 @@ export function SceneCanvas({
 
     context.resetTransform();
     context.scale(pixelRatio, pixelRatio);
-    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders);
-  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders]);
+    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId);
+  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId]);
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -315,8 +319,18 @@ export function SceneCanvas({
                 }
 
                 const point = pointerPosition(event);
+                // Check GUI nodes first (they overlay entities)
+                const guiNodes = scene.gui?.nodes ?? [];
+                const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
+                if (hitGui) {
+                  onSelectGuiNode(hitGui.id);
+                  return;
+                }
                 const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
-                if (!hit) return;
+                if (!hit) {
+                  onSelect("", false);
+                  return;
+                }
                 
                 const transform = findComponent<TransformComponent>(hit, "Transform");
                 if (!transform) return;

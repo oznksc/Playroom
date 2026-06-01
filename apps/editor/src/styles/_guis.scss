@@ -1,0 +1,145 @@
+.gui-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-surface);
+  padding: 0;
+  border-right: 1px solid var(--border-default);
+}
+
+.gui-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-default);
+  height: 38px;
+  flex-shrink: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 3px;
+      height: 10px;
+      background: #a855f7;
+      border-radius: 2px;
+    }
+  }
+}
+
+.gui-add-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.gui-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gui-item {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  gap: 6px;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+
+    .gui-item-delete {
+      opacity: 1;
+    }
+  }
+
+  &.selected {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.1);
+  }
+
+  .gui-item-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    .icon-gui-text { color: #60a5fa; }
+    .icon-gui-button { color: #f97316; }
+    .icon-gui-image { color: #34d399; }
+  }
+
+  .gui-item-type {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 42px;
+  }
+
+  .gui-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .gui-item-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: var(--transition-fast);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+
+    &:hover {
+      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+}
+
+.gui-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}

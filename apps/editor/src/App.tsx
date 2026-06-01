@@ -1,5 +1,5 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent } from "@gamekit/schema";
-import { createEntity, createEmptyScene } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode } from "@gamekit/schema";
+import { createEntity, createEmptyScene, createId } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
@@ -12,6 +12,8 @@ import { SceneSettings } from "./components/SceneSettings.js";
 import { TimelinePanel } from "./components/TimelinePanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
+import { GuiPanel } from "./components/GuiPanel.js";
+import { GuiInspector } from "./components/GuiInspector.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
@@ -35,12 +37,13 @@ export function App() {
   const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(new Set());
   const selectedEntityId = [...selectedEntityIds][0]; // first selected for single-entity operations
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
+  const [selectedGuiNodeId, setSelectedGuiNodeId] = useState<string | null>(null);
   const [status, setStatus] = useState("Loading");
   const [zoom, setZoom] = useState(1);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels">("entities");
+  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels" | "guis">("entities");
   const [snap, setSnap] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const clipboardRef = useRef<GameKitEntity | null>(null);
@@ -48,6 +51,8 @@ export function App() {
   sceneRef.current = scene;
   const selectedEntityIdsRef = useRef(selectedEntityIds);
   selectedEntityIdsRef.current = selectedEntityIds;
+  const selectedGuiNodeIdRef = useRef(selectedGuiNodeId);
+  selectedGuiNodeIdRef.current = selectedGuiNodeId;
 
   // Premium Simulator State Hooks
   const [isPlaying, setIsPlaying] = useState(false);
@@ -108,6 +113,7 @@ export function App() {
       .then((nextScene: GameKitScene) => {
         reset(nextScene);
         setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
+        setSelectedGuiNodeId(null);
         setIsDirty(false);
         setLastSaved(new Date());
         setStatus("Ready");
@@ -191,9 +197,10 @@ export function App() {
         return;
       }
       if (event.key === "Escape") {
-        if (selectedEntityIdsRef.current.size > 0) {
+        if (selectedEntityIdsRef.current.size > 0 || selectedGuiNodeIdRef.current) {
           event.preventDefault();
           setSelectedEntityIds(new Set());
+          setSelectedGuiNodeId(null);
         }
         return;
       }
@@ -550,6 +557,56 @@ export function App() {
     triggerAutoSave();
   }
 
+  // GUI node management
+  function addGuiNode(type: GuiNode["type"]) {
+    updateScene((draft) => {
+      const base = {
+        id: createId(type),
+        x: 20,
+        y: 20,
+        width: 200,
+        height: 40,
+        visible: true,
+        interactive: false
+      };
+      let node: GuiNode;
+      switch (type) {
+        case "Text":
+          node = { ...base, type: "Text", text: "Text", fontSize: 16, color: "#ffffff", align: "left" };
+          break;
+        case "Button":
+          node = { ...base, type: "Button", text: "Button", action: "", fontSize: 14, color: "#ffffff", backgroundColor: "#333333" };
+          break;
+        case "Image":
+          node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" };
+          break;
+      }
+      draft.gui.nodes.push(node);
+      setSelectedGuiNodeId(node.id);
+      addConsoleLog("system", `Created GUI ${type} node: ${node.id}`);
+    });
+  }
+
+  function deleteGuiNode(id: string) {
+    updateScene((draft) => {
+      const index = draft.gui.nodes.findIndex((n) => n.id === id);
+      if (index === -1) return;
+      draft.gui.nodes.splice(index, 1);
+      if (selectedGuiNodeId === id) {
+        setSelectedGuiNodeId(null);
+      }
+      addConsoleLog("system", `Deleted GUI node: ${id}`);
+    });
+  }
+
+  function updateGuiNode(mutator: (node: GuiNode) => void) {
+    if (!selectedGuiNodeId) return;
+    updateScene((draft) => {
+      const node = draft.gui.nodes.find((n) => n.id === selectedGuiNodeId);
+      if (node) mutator(node);
+    });
+  }
+
   // Play controls
   function handlePlayToggle() {
     if (!isPlaying) {
@@ -723,6 +780,7 @@ export function App() {
             <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
             <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
             <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
+            <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
           </div>
           {activeTab === "entities" && (
             <Sidebar
@@ -783,12 +841,25 @@ export function App() {
               onRemoveScene={handleRemoveSceneFromLevel}
             />
           )}
+          {activeTab === "guis" && (
+            <GuiPanel
+              nodes={scene?.gui?.nodes ?? []}
+              selectedGuiNodeId={selectedGuiNodeId}
+              onSelectNode={(id) => {
+                setSelectedGuiNodeId(id);
+                setSelectedEntityIds(new Set());
+              }}
+              onAddNode={addGuiNode}
+              onDeleteNode={deleteGuiNode}
+            />
+          )}
         </div>
 
         <SceneCanvas
           scene={scene}
           assets={snapshot.assets}
           selectedEntityIds={selectedEntityIds}
+          selectedGuiNodeId={selectedGuiNodeId}
           zoom={zoom}
           snap={snap}
           hasClipboard={clipboardRef.current !== null}
@@ -804,12 +875,21 @@ export function App() {
           onToggleGrid={setShowGrid}
           onToggleColliders={setShowColliders}
           onSelect={(id, shift) => {
+            setSelectedGuiNodeId(null);
+            if (!id) {
+              setSelectedEntityIds(new Set());
+              return;
+            }
             setSelectedEntityIds((prev) => {
               const next = new Set(shift ? prev : undefined);
               if (next.has(id)) next.delete(id);
               else next.add(id);
               return next;
             });
+          }}
+          onSelectGuiNode={(id) => {
+            setSelectedEntityIds(new Set());
+            setSelectedGuiNodeId(id);
           }}
           onTransform={(id, updates) => {
             push((draft) => {
@@ -851,17 +931,26 @@ export function App() {
 
         <div className="inspector-column">
           {scene && <SceneSettings scene={scene} onChange={updateScene} />}
-          <Inspector
-            entity={selectedEntity}
-            assets={snapshot.assets}
-            entityIds={scene?.entities.map((e) => e.id) ?? []}
-            multiCount={selectedEntityIds.size}
-            onChange={(mutator) => updateScene((draft) => {
-              const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
-              if (entity) mutator(entity);
-            })}
-            onDelete={selectedEntityIds.size > 0 ? () => selectedEntityIds.forEach((id) => deleteEntity(id)) : undefined}
-          />
+          {selectedGuiNodeId && scene ? (
+            <GuiInspector
+              node={scene.gui.nodes.find((n) => n.id === selectedGuiNodeId)}
+              assets={snapshot.assets}
+              onChange={updateGuiNode}
+              onDelete={() => deleteGuiNode(selectedGuiNodeId)}
+            />
+          ) : (
+            <Inspector
+              entity={selectedEntity}
+              assets={snapshot.assets}
+              entityIds={scene?.entities.map((e) => e.id) ?? []}
+              multiCount={selectedEntityIds.size}
+              onChange={(mutator) => updateScene((draft) => {
+                const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
+                if (entity) mutator(entity);
+              })}
+              onDelete={selectedEntityIds.size > 0 ? () => selectedEntityIds.forEach((id) => deleteEntity(id)) : undefined}
+            />
+          )}
         </div>
       </section>
 
