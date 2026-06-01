@@ -37,7 +37,11 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "generate": {
-      const output = await generateAssetRegistry(cwd);
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile") {
+        throw new Error("--platform must be 'web' or 'mobile'");
+      }
+      const output = await generateAssetRegistry(cwd, platform);
       console.log(`Generated asset registry: ${output}`);
       return;
     }
@@ -48,9 +52,16 @@ async function main(argv: string[]): Promise<void> {
     }
     case "export": {
       const path = args.find((arg) => !arg.startsWith("--")) ?? join(cwd, "build");
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile") {
+        throw new Error("--platform must be 'web' or 'mobile'");
+      }
       await initProject(cwd);
-      const output = await exportProject(cwd, resolve(cwd, path));
-      console.log(`Exported runnable Expo app: ${output}`);
+      const output = await exportProject(cwd, resolve(cwd, path), platform);
+      console.log(`Exported runnable ${platform === "web" ? "web" : "Expo"} app: ${output}`);
+      if (platform === "web") {
+        console.log(`Run 'cd ${output} && pnpm install && pnpm dev' to start.`);
+      }
       return;
     }
     case "mcp": {
@@ -142,8 +153,8 @@ Usage:
   gamekit editor [--port 4177]
   gamekit import <file>
   gamekit remove <asset-id>
-  gamekit export [path]
-  gamekit generate
+  gamekit export [path] [--platform web|mobile]
+  gamekit generate [--platform web|mobile]
   gamekit mcp [project-path]
   gamekit skills list
 `);

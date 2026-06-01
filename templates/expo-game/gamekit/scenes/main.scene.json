@@ -119,7 +119,23 @@
     }
   },
   "timeline": {
-    "tracks": []
+    "tracks": [
+      {
+        "entityId": "player",
+        "property": "position.x",
+        "keyframes": []
+      },
+      {
+        "entityId": "player",
+        "property": "position.x",
+        "keyframes": []
+      },
+      {
+        "entityId": "player",
+        "property": "position.x",
+        "keyframes": []
+      }
+    ]
   },
   "gui": {
     "nodes": []

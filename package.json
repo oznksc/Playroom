@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm -r --filter './packages/**' build && pnpm --filter @gamekit/editor build",
     "typecheck": "pnpm --filter @gamekit/schema build && pnpm -r --filter './packages/**' --filter './apps/**' typecheck",
-    "test": "pnpm --filter @gamekit/schema build && vitest run",
+    "test": "pnpm --filter @gamekit/schema build && pnpm --filter @gamekit/runtime build && vitest run",
     "dev:editor": "pnpm --filter @gamekit/editor dev",
     "gamekit": "pnpm --filter @gamekit/cli gamekit"
   },
