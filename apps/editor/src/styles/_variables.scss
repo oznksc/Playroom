@@ -51,6 +51,21 @@
   --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  // Motion system — easing curves
+  --ease-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1);    // entrances, reveals
+  --ease-accelerate: cubic-bezier(0.4, 0.0, 1, 1);       // exits, dismissals
+  --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);       // general transitions
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);          // playful accents, overshoot
+
+  // Motion system — duration scale
+  --dur-instant: 80ms;
+  --dur-quick: 120ms;
+  --dur-fast: 150ms;
+  --dur-normal: 200ms;
+  --dur-medium: 250ms;
+  --dur-slow: 300ms;
+  --dur-reveal: 400ms;
+
   background: var(--bg-base);
   color: var(--text-primary);
 }

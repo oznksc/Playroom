@@ -62,6 +62,7 @@ canvas {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   z-index: 20;
+  @include motion-slide-up(var(--dur-normal));
 
   &.hud-left {
     left: 16px;
@@ -133,6 +134,7 @@ canvas {
   gap: 6px;
   box-shadow: var(--shadow-sm), var(--glow-green);
   z-index: 15;
+  @include motion-slide-up;
 
   .playing-pulse {
     width: 6px;
@@ -159,6 +161,7 @@ canvas {
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-md);
   z-index: 10;
+  @include motion-slide-up;
 
   button {
     display: flex;

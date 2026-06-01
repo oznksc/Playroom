@@ -322,3 +322,132 @@ $purple-glow: rgba(139, 92, 246, 0.08);
 @keyframes token-spin {
   to { transform: rotate(360deg); }
 }
+
+// ── Motion mixins ────────────────────────────────────
+
+// Entrance: fade + slight scale up with decelerate easing.
+// Use for panels, overlays, modals appearing.
+@mixin motion-enter($duration: var(--dur-normal)) {
+  animation: motion-enter $duration var(--ease-decelerate) both;
+}
+
+@keyframes motion-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Exit: fade + slight scale down with accelerate easing.
+@mixin motion-exit($duration: var(--dur-fast)) {
+  animation: motion-exit $duration var(--ease-accelerate) both;
+}
+
+@keyframes motion-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+// Slide in from left (for sidebar overlays)
+@mixin motion-slide-left($duration: var(--dur-medium)) {
+  animation: motion-slide-left $duration var(--ease-decelerate) both;
+}
+
+@keyframes motion-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Slide in from right (for inspector overlays)
+@mixin motion-slide-right($duration: var(--dur-medium)) {
+  animation: motion-slide-right $duration var(--ease-decelerate) both;
+}
+
+@keyframes motion-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Slide up from bottom (for sheets, toasts)
+@mixin motion-slide-up($duration: var(--dur-normal)) {
+  animation: motion-slide-up $duration var(--ease-decelerate) both;
+}
+
+@keyframes motion-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Success pulse: brief green glow
+@mixin motion-success-pulse {
+  animation: motion-success-pulse 400ms var(--ease-decelerate);
+}
+
+@keyframes motion-success-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 8px 2px rgba(16, 185, 129, 0.2); }
+  100% { box-shadow: none; }
+}
+
+// Error shake: brief horizontal shake
+@mixin motion-error-shake {
+  animation: motion-error-shake 300ms var(--ease-standard);
+}
+
+@keyframes motion-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(1px); }
+}
+
+// Stagger delay for list items
+@mixin motion-stagger($index, $base: 20ms, $max: 200ms) {
+  $delay: $index * $base;
+  @if $delay > $max { $delay: $max; }
+  animation-delay: #{$delay};
+}
+
+// Accordion expand using grid rows
+@mixin motion-accordion-expand($duration: var(--dur-slow)) {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows $duration var(--ease-decelerate);
+
+  &.expanded {
+    grid-template-rows: 1fr;
+  }
+
+  > * {
+    overflow: hidden;
+  }
+}

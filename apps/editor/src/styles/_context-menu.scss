@@ -10,18 +10,8 @@
   box-shadow: var(--shadow-lg);
   z-index: 1000;
   backdrop-filter: blur(12px);
-  animation: context-menu-in 120ms ease-out;
-}
-
-@keyframes context-menu-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  @include motion-enter(var(--dur-fast));
+  transform-origin: top left;
 }
 
 .context-menu-item {

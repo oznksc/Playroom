@@ -29,7 +29,7 @@
 
     &:active {
       background: var(--bg-active);
-      transform: scale(0.95);
+      transform: scale(0.97);
     }
 
     &:focus-visible {
@@ -44,11 +44,13 @@
     &.save-success {
       color: var(--success);
       background: $success-feedback-bg;
+      @include motion-success-pulse;
     }
 
     &.save-error {
       color: var(--error);
       background: $danger-feedback-bg;
+      @include motion-error-shake;
     }
 
     &[title]::after {
