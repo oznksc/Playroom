@@ -1,7 +1,7 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -86,6 +86,7 @@ export function App() {
   const [showColliders, setShowColliders] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
+  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Ignite Engine debugger initialized.", timestamp: new Date() },
@@ -976,7 +977,7 @@ export function App() {
   }
 
   return (
-    <main className="shell">
+    <main className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}`}>
       <Topbar
         sceneName={scene?.name ?? "Scene"}
         isDirty={isDirty}
@@ -1219,7 +1220,7 @@ export function App() {
       </section>
 
       {scene && (
-        <section className="bottom-drawer-panel">
+        <section className={`bottom-drawer-panel${bottomDrawerCollapsed ? " collapsed" : ""}`}>
           <div className="drawer-tabs-bar">
             <button
               type="button"
@@ -1241,6 +1242,14 @@ export function App() {
               onClick={() => setActiveBottomTab("console")}
             >
               Developer Console
+            </button>
+            <button
+              type="button"
+              className="drawer-collapse-btn"
+              onClick={() => setBottomDrawerCollapsed((v) => !v)}
+              title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
+            >
+              {bottomDrawerCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           </div>
           <div className="drawer-content-box">
