@@ -43,7 +43,7 @@ type SceneCanvasProps = {
   onToggleGrid: (val: boolean) => void;
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
-  onMove: (id: string, position: { x: number; y: number }) => void;
+  onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
   onSelectAll: () => void;
@@ -75,7 +75,7 @@ export function SceneCanvas({
   onToggleGrid,
   onToggleColliders,
   onSelect,
-  onMove,
+  onTransform,
   onAddEntity,
   onPasteEntity,
   onSelectAll,
@@ -85,7 +85,18 @@ export function SceneCanvas({
   onDeleteEntity
 }: SceneCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | undefined>();
+  
+  // Drag states containing initial parameters
+  const [drag, setDrag] = useState<{
+    id: string;
+    dx: number;
+    dy: number;
+    startPosition: { x: number; y: number };
+    startRotation: number;
+    startScale: { x: number; y: number };
+    startPointer: { x: number; y: number };
+  } | undefined>();
+  
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panning, setPanning] = useState<{ startX: number; startY: number; panStartX: number; panStartY: number } | undefined>();
   const images = useImageCache(assets);
@@ -306,10 +317,21 @@ export function SceneCanvas({
                 const point = pointerPosition(event);
                 const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
                 if (!hit) return;
+                
                 const transform = findComponent<TransformComponent>(hit, "Transform");
                 if (!transform) return;
                 onSelect(hit.id, event.shiftKey);
-                setDrag({ id: hit.id, dx: point.x - transform.position.x, dy: point.y - transform.position.y });
+                
+                // Store starting transform structures
+                setDrag({
+                  id: hit.id,
+                  dx: point.x - transform.position.x,
+                  dy: point.y - transform.position.y,
+                  startPosition: { x: transform.position.x, y: transform.position.y },
+                  startRotation: transform.rotation,
+                  startScale: { x: transform.scale.x, y: transform.scale.y },
+                  startPointer: { x: point.x, y: point.y }
+                });
                 event.currentTarget.setPointerCapture(event.pointerId);
               }}
               onPointerMove={(event) => {
@@ -321,13 +343,55 @@ export function SceneCanvas({
                 }
                 if (!drag || !scene) return;
                 const point = pointerPosition(event);
-                let x = point.x - drag.dx;
-                let y = point.y - drag.dy;
-                if (snap) {
-                  x = Math.round(x / snapSize) * snapSize;
-                  y = Math.round(y / snapSize) * snapSize;
+
+                // Q: Raw select mode - dragging disabled
+                if (activeTool === "select") {
+                  return;
                 }
-                onMove(drag.id, { x: Math.round(x), y: Math.round(y) });
+
+                // W: Translate mode
+                if (activeTool === "translate") {
+                  let x = point.x - drag.dx;
+                  let y = point.y - drag.dy;
+                  if (snap) {
+                    x = Math.round(x / snapSize) * snapSize;
+                    y = Math.round(y / snapSize) * snapSize;
+                  }
+                  onTransform(drag.id, { position: { x: Math.round(x), y: Math.round(y) } });
+                  return;
+                }
+
+                // E: Rotate mode
+                if (activeTool === "rotate") {
+                  const deltaX = point.x - drag.startPointer.x;
+                  let rotation = drag.startRotation + Math.round(deltaX * 0.5);
+                  if (snap) {
+                    // Snap rotation to 15-degree increments
+                    rotation = Math.round(rotation / 15) * 15;
+                  }
+                  onTransform(drag.id, { rotation });
+                  return;
+                }
+
+                // R: Scale mode
+                if (activeTool === "scale") {
+                  const deltaX = point.x - drag.startPointer.x;
+                  const deltaY = point.y - drag.startPointer.y;
+                  
+                  let sx = drag.startScale.x + deltaX * 0.01;
+                  let sy = drag.startScale.y - deltaY * 0.01;
+                  
+                  if (snap) {
+                    sx = Math.round(sx / 0.1) * 0.1;
+                    sy = Math.round(sy / 0.1) * 0.1;
+                  }
+                  
+                  sx = Math.max(0.1, Math.round(sx * 100) / 100);
+                  sy = Math.max(0.1, Math.round(sy * 100) / 100);
+                  
+                  onTransform(drag.id, { scale: { x: sx, y: sy } });
+                  return;
+                }
               }}
               onPointerUp={() => { setDrag(undefined); setPanning(undefined); }}
               onWheel={(event) => {

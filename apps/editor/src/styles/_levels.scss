@@ -47,14 +47,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 2px;
-  }
 }
 
 .level-item {

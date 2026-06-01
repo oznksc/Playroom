@@ -4,4 +4,6 @@ packages:
   - "templates/*"
 allowBuilds:
   '@parcel/watcher': true
+  '@shopify/react-native-skia': true
   esbuild: true
+  msgpackr-extract: true

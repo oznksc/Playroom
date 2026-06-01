@@ -119,14 +119,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-
-  &::-webkit-scrollbar {
-    width: 5px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 3px;
-  }
 }
 
 .timeline-tracks {

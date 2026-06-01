@@ -811,12 +811,16 @@ export function App() {
               return next;
             });
           }}
-          onMove={(id, position) => {
+          onTransform={(id, updates) => {
             push((draft) => {
               if (!draft) return;
               const entity = draft.entities.find((candidate) => candidate.id === id);
               const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
-              if (transform) transform.position = position;
+              if (transform) {
+                if (updates.position) transform.position = updates.position;
+                if (updates.rotation !== undefined) transform.rotation = updates.rotation;
+                if (updates.scale) transform.scale = updates.scale;
+              }
             });
             setIsDirty(true);
             triggerAutoSave();
