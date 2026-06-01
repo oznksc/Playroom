@@ -1,0 +1,125 @@
+{
+  "name": "Platformer",
+  "description": "Side-scrolling platformer with jumping mechanics. Includes a player with physics-based movement, a ground platform, and floating platforms.",
+  "orientation": "landscape",
+  "viewport": {
+    "width": 844,
+    "height": 390,
+    "background": "#101820"
+  },
+  "gravity": { "x": 0, "y": 1800 },
+  "entities": [
+    {
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 100, "y": 200 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 48,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 48, "y": 48 },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 300,
+          "jumpVelocity": 600,
+          "gravity": 1800
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "Player",
+          "smoothing": 0.1
+        }
+      ]
+    },
+    {
+      "name": "Ground",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 422, "y": 370 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "ground",
+          "width": 844,
+          "height": 40,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 844, "y": 40 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "Platform1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 300, "y": 260 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 150, "y": 20 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "Platform2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 550, "y": 200 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 150, "y": 20 },
+          "isStatic": true
+        }
+      ]
+    }
+  ],
+  "requiredAssets": [
+    { "id": "player", "file": "player.svg", "sourceFile": "player.svg" },
+    { "id": "ground", "file": "ground.svg", "sourceFile": "ground.svg" },
+    { "id": "platform", "file": "platform.svg", "sourceFile": "platform.svg" }
+  ]
+}

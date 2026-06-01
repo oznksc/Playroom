@@ -1,0 +1,200 @@
+{
+  "name": "Puzzle",
+  "description": "Grid-based puzzle game. Player pushes objects to designated targets. Uses simple physics with zero gravity for grid-aligned movement.",
+  "orientation": "portrait",
+  "viewport": {
+    "width": 390,
+    "height": 390,
+    "background": "#2d2d44"
+  },
+  "gravity": { "x": 0, "y": 0 },
+  "entities": [
+    {
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 97, "y": 97 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 64,
+          "height": 64,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 64, "y": 64 },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 200,
+          "jumpVelocity": 0,
+          "gravity": 0
+        }
+      ]
+    },
+    {
+      "name": "Crate1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 195, "y": 195 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "crate",
+          "width": 64,
+          "height": 64,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 64, "y": 64 },
+          "isStatic": false
+        }
+      ]
+    },
+    {
+      "name": "Crate2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 293, "y": 195 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "crate",
+          "width": 64,
+          "height": 64,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 64, "y": 64 },
+          "isStatic": false
+        }
+      ]
+    },
+    {
+      "name": "WallTop",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 195, "y": 16 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 390, "y": 32 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "WallBottom",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 195, "y": 374 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 390, "y": 32 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "WallLeft",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 16, "y": 195 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 32, "y": 390 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "WallRight",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 374, "y": 195 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": 0, "y": 0 },
+          "size": { "x": 32, "y": 390 },
+          "isStatic": true
+        }
+      ]
+    },
+    {
+      "name": "Target1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 293, "y": 293 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 64,
+          "height": 64,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "name": "Target2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 195, "y": 293 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 64,
+          "height": 64,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        }
+      ]
+    }
+  ],
+  "requiredAssets": [
+    { "id": "player", "file": "player.svg", "sourceFile": "player.svg" },
+    { "id": "crate", "file": "crate.svg", "sourceFile": "crate.svg" },
+    { "id": "target", "file": "target.svg", "sourceFile": "target.svg" }
+  ]
+}
