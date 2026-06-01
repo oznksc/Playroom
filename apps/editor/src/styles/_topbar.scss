@@ -50,6 +50,25 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-default);
     }
+
+    .btn-close-project {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 12px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #ef4444;
+      }
+    }
   }
 
   &-logo {

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { findComponent } from "../lib/components.js";
+import { getApiUrl } from "../lib/api.js";
 
 type NumberFieldProps = {
   label: string;
@@ -281,7 +282,7 @@ export function Inspector({
                   <div className="sprite-preview-inline">
                     {assets.find(a => a.id === sprite.assetId) ? (
                       <div className="sprite-preview-img-box">
-                        <img src={`/gamekit/assets/${assets.find(a => a.id === sprite.assetId)?.file}`} alt="" />
+                        <img src={getApiUrl(`/gamekit/assets/${assets.find(a => a.id === sprite.assetId)?.file}`)} alt="" />
                       </div>
                     ) : (
                       <div className="sprite-preview-img-box empty">

@@ -29,6 +29,8 @@ type TopbarProps = {
   onSave: () => void;
   onAddEntity: () => void;
   formatLastSaved: () => string;
+  projectPath?: string | null;
+  onCloseProject?: () => void;
 };
 
 export function Topbar({
@@ -46,7 +48,9 @@ export function Topbar({
   onImport,
   onSave,
   onAddEntity,
-  formatLastSaved
+  formatLastSaved,
+  projectPath,
+  onCloseProject
 }: TopbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
@@ -77,6 +81,16 @@ export function Topbar({
         <ChevronRight size={12} className="brand-arrow" />
         <span className="scene-name-label">{sceneName}</span>
         {isDirty && <span className="dirty-indicator" title="Unsaved changes pending auto-save" />}
+        {projectPath && onCloseProject && (
+          <button
+            type="button"
+            className="btn-close-project"
+            onClick={onCloseProject}
+            title="Close project folder and return to dashboard"
+          >
+            Close Project
+          </button>
+        )}
       </div>
 
       {/* Center Panel: Simulation Ticker State Controls */}

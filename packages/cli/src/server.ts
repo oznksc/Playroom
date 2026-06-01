@@ -48,6 +48,17 @@ export async function startEditorServer(options: EditorServerOptions): Promise<v
 }
 
 async function handleRequest(options: EditorServerOptions, request: IncomingMessage, response: ServerResponse): Promise<void> {
+  if (request.method === "OPTIONS") {
+    response.writeHead(204, {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+      "access-control-allow-headers": "content-type",
+      "access-control-max-age": "86400"
+    });
+    response.end();
+    return;
+  }
+
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
 
   if (url.pathname === "/api/project" && request.method === "GET") {
@@ -141,7 +152,10 @@ async function serveProjectAsset(root: string, pathname: string, response: Serve
 
   const filePath = join(getGameKitRoot(root), "assets", normalized);
   try {
-    response.writeHead(200, { "content-type": contentType(filePath) });
+    response.writeHead(200, {
+      "content-type": contentType(filePath),
+      "access-control-allow-origin": "*"
+    });
     response.end(await readFile(filePath));
   } catch {
     sendJson(response, 404, { error: "Asset not found" });
@@ -192,7 +206,7 @@ async function readBody(request: IncomingMessage): Promise<Buffer> {
 function sendJson(response: ServerResponse, status: number, body: unknown): void {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "http://localhost:5173"
+    "access-control-allow-origin": "*"
   });
   response.end(JSON.stringify(body, null, 2));
 }

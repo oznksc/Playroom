@@ -1,5 +1,6 @@
 import type { GameKitAsset } from "@gamekit/schema";
 import { useEffect, useMemo, useState } from "react";
+import { getApiUrl } from "../lib/api.js";
 
 export function useImageCache(assets: GameKitAsset[]): Map<string, HTMLImageElement> {
   const [version, setVersion] = useState(0);
@@ -15,7 +16,7 @@ export function useImageCache(assets: GameKitAsset[]): Map<string, HTMLImageElem
           setVersion((current) => current + 1);
         }
       };
-      image.src = `/gamekit/assets/${asset.file}`;
+      image.src = getApiUrl(`/gamekit/assets/${asset.file}`);
     }
     return () => {
       cancelled = true;

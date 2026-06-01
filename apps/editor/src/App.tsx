@@ -1,6 +1,7 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Gamepad2, FolderOpen } from "lucide-react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -19,10 +20,22 @@ import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
+import { getApiUrl } from "./lib/api.js";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 
 export function App() {
+  const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
+  const [projectPath, setProjectPath] = useState<string | null>(null);
+  const [recentProjects, setRecentProjects] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("gamekit_recent_projects");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [], guiComponents: [] });
   const [currentSceneFile, setCurrentSceneFile] = useState<string>("main.scene.json");
   const {
@@ -88,12 +101,66 @@ export function App() {
     }, AUTO_SAVE_DELAY_MS);
   }, []);
 
+  const handleOpenProject = async () => {
+    try {
+      setStatus("Opening dialog...");
+      const { invoke } = await import("@tauri-apps/api/core");
+      const selected = await invoke<string | null>("select_directory");
+      if (selected) {
+        await loadProjectFolder(selected);
+      } else {
+        setStatus("Select a project folder to get started.");
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus(e instanceof Error ? e.message : "Failed to open project");
+    }
+  };
+
+  const loadProjectFolder = async (path: string) => {
+    try {
+      setStatus("Starting server...");
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("start_server", { projectPath: path });
+      setProjectPath(path);
+      addToRecentProjects(path);
+      setStatus("Initializing project files...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await refresh();
+      addConsoleLog("system", `Loaded project directory: ${path}`);
+    } catch (e) {
+      console.error(e);
+      setStatus(e instanceof Error ? e.message : "Failed to start server");
+    }
+  };
+
+  const handleCloseProject = async () => {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("stop_server");
+      setProjectPath(null);
+      setStatus("Select a project folder to get started.");
+      addConsoleLog("system", "Closed project folder.");
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const addToRecentProjects = (path: string) => {
+    setRecentProjects((prev) => {
+      const filtered = prev.filter((p) => p !== path);
+      const updated = [path, ...filtered].slice(0, 5);
+      localStorage.setItem("gamekit_recent_projects", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   useEffect(() => () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); }, []);
 
   async function refresh() {
     const [projectResponse, sceneResponse] = await Promise.all([
-      fetch("/api/project"),
-      fetch(`/api/scene?file=${currentSceneFile}`)
+      fetch(getApiUrl("/api/project")),
+      fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`))
     ]);
     const rawSnapshot = await projectResponse.json() as { project?: unknown; scenes: string[]; assets: GameKitAsset[]; levels?: GameKitLevel[]; guiComponents?: import("@gamekit/schema").GuiComponent[] };
     const nextSnapshot: ProjectSnapshot = {
@@ -112,10 +179,18 @@ export function App() {
     setStatus("Ready");
   }
 
-  useEffect(() => { refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Load failed")); }, []);
+  useEffect(() => {
+    if (!isTauri) {
+      refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
+    } else {
+      setStatus("Select a project folder to get started.");
+    }
+  }, []);
 
   useEffect(() => {
-    fetch(`/api/scene?file=${currentSceneFile}`)
+    if (isTauri && !projectPath) return;
+
+    fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`))
       .then((r) => r.json())
       .then((nextScene: GameKitScene) => {
         reset(nextScene);
@@ -127,7 +202,7 @@ export function App() {
         setStatus("Ready");
       })
       .catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
-  }, [currentSceneFile]);
+  }, [currentSceneFile, projectPath]);
 
   // Global Keyboard listener for editor tools & keyframes
   useEffect(() => {
@@ -349,7 +424,7 @@ export function App() {
     if (!nextScene) return;
     setSaveState("saving");
     try {
-      const response = await fetch(`/api/scene?file=${currentSceneFile}`, {
+      const response = await fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(nextScene)
@@ -378,7 +453,7 @@ export function App() {
       if (!confirm(`Asset "${assetId}" is used by ${usingSprites.length} entity(s). Delete anyway?`)) return;
     }
     setStatus("Deleting");
-    const response = await fetch(`/api/assets?id=${encodeURIComponent(assetId)}`, { method: "DELETE" });
+    const response = await fetch(getApiUrl(`/api/assets?id=${encodeURIComponent(assetId)}`), { method: "DELETE" });
     if (!response.ok) {
       const body = await response.json() as { error?: string };
       throw new Error(body.error ?? "Delete failed");
@@ -389,7 +464,7 @@ export function App() {
 
   async function importAsset(file: File) {
     setStatus("Importing");
-    const response = await fetch(`/api/assets?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: await file.arrayBuffer() });
+    const response = await fetch(getApiUrl(`/api/assets?filename=${encodeURIComponent(file.name)}`), { method: "POST", body: await file.arrayBuffer() });
     if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? "Import failed");
     await refresh();
     addConsoleLog("system", `Imported asset from file: ${file.name}`);
@@ -489,7 +564,7 @@ export function App() {
   function handleCreateScene(name: string) {
     const newScene = createEmptyScene(name);
     const fileName = `${newScene.id}.scene.json`;
-    fetch(`/api/scene?file=${fileName}`, {
+    fetch(getApiUrl(`/api/scene?file=${fileName}`), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(newScene)
@@ -503,7 +578,7 @@ export function App() {
 
   function handleDeleteScene(sceneId: string) {
     if (snapshot.scenes.length <= 1) { alert("Cannot delete the last scene"); return; }
-    fetch(`/api/scene?file=${sceneId}`, { method: "DELETE" }).then(() => {
+    fetch(getApiUrl(`/api/scene?file=${sceneId}`), { method: "DELETE" }).then(() => {
       const remaining = snapshot.scenes.filter((s) => s !== sceneId);
       setSnapshot((prev) => ({ ...prev, scenes: remaining }));
       if (currentSceneFile === sceneId) setCurrentSceneFile(remaining[0]);
@@ -695,7 +770,7 @@ export function App() {
   }
 
   async function persistProject(partial: Partial<import("@gamekit/schema").GameKitProject>) {
-    await fetch("/api/project", {
+    await fetch(getApiUrl("/api/project"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(partial),
@@ -849,6 +924,51 @@ export function App() {
     addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
   }
 
+  if (isTauri && !projectPath) {
+    return (
+      <div className="tauri-dashboard">
+        <div className="tauri-dashboard-card">
+          <div className="glow-effect"></div>
+          <div className="logo-section">
+            <Gamepad2 size={48} className="dashboard-logo" />
+            <h1>GAMEKIT</h1>
+            <p className="subtitle">High-fidelity 2D Engine & Visual Editor</p>
+          </div>
+          
+          <div className="action-section">
+            <button type="button" className="btn-dashboard-primary" onClick={handleOpenProject}>
+              <FolderOpen size={18} />
+              <span>Open Project Folder</span>
+            </button>
+          </div>
+
+          {recentProjects.length > 0 && (
+            <div className="recent-projects-section">
+              <h3>Recent Projects</h3>
+              <div className="recent-list">
+                {recentProjects.map((p) => (
+                  <button 
+                    key={p} 
+                    type="button" 
+                    className="recent-item" 
+                    onClick={() => loadProjectFolder(p)}
+                  >
+                    <FolderOpen size={13} />
+                    <span className="recent-path" title={p}>{p}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="dashboard-footer">
+            <span>Powered by Tauri v2 & Rust</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="shell">
       <Topbar
@@ -867,6 +987,8 @@ export function App() {
         onSave={() => saveScene().catch(setError)}
         onAddEntity={addEntity}
         formatLastSaved={formatLastSaved}
+        projectPath={projectPath}
+        onCloseProject={handleCloseProject}
       />
 
       <section className="workspace">

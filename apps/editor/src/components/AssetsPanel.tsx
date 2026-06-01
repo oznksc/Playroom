@@ -1,6 +1,7 @@
 import type { GameKitAsset } from "@gamekit/schema";
 import { ImagePlus, Trash2, Search, Upload, FileImage } from "lucide-react";
 import { useRef, useState } from "react";
+import { getApiUrl } from "../lib/api.js";
 
 type AssetsPanelProps = {
   assets: GameKitAsset[];
@@ -75,7 +76,7 @@ export function AssetsPanel({
                 onClick={() => onSelectAsset(asset.id)}
               >
                 <div className="asset-preview-box">
-                  <img src={`/gamekit/assets/${asset.file}`} alt="" onError={(e) => {
+                  <img src={getApiUrl(`/gamekit/assets/${asset.file}`)} alt="" onError={(e) => {
                     // Fallback to placeholder icon if image fails
                     e.currentTarget.style.display = "none";
                     const fallback = e.currentTarget.parentElement?.querySelector(".asset-fallback-icon");
