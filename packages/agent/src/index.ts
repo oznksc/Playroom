@@ -9,6 +9,7 @@ export type {
 } from "./providers/types.js";
 
 export { AnthropicAdapter } from "./providers/anthropic.js";
+export { LmStudioAdapter } from "./providers/lmstudio.js";
 
 export type { SseEvent } from "./loop/streaming.js";
 export { encodeSse } from "./loop/streaming.js";

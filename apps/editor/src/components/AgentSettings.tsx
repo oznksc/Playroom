@@ -8,10 +8,11 @@ type AgentSettingsProps = {
 };
 
 const PROVIDERS = [
-  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5" },
-  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o" },
-  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash" },
-  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b" },
+  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5", requiresKey: true },
+  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o", requiresKey: true },
+  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash", requiresKey: true },
+  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b", requiresKey: false },
+  { id: "lmstudio", label: "LM Studio (local)", defaultModel: "local-model", requiresKey: false },
 ];
 
 export function AgentSettings({ open, onClose }: AgentSettingsProps) {
@@ -20,6 +21,10 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
   const [passphrase, setPassphrase] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+
+  const currentProvider = PROVIDERS.find((p) => p.id === editing);
+  const needsKey = currentProvider?.requiresKey ?? true;
 
   if (!open) return null;
 
@@ -28,12 +33,16 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
   }
 
   async function handleSave() {
-    if (!editing || !apiKey || !passphrase) return;
-    await addKey(editing, apiKey, passphrase, model || undefined);
+    if (!editing) return;
+    if (needsKey && (!apiKey || !passphrase)) return;
+    const pass = needsKey ? passphrase : "local";
+    const key = needsKey ? apiKey : "local";
+    await addKey(editing, key, pass, model || undefined, baseUrl || undefined);
     setEditing(null);
     setApiKey("");
     setPassphrase("");
     setModel("");
+    setBaseUrl("");
   }
 
   return (
@@ -98,37 +107,54 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
 
           {editing && (
             <div className="agent-settings-add-form">
-              <h4>Connect {PROVIDERS.find((p) => p.id === editing)?.label}</h4>
-              <div className="agent-settings-field">
-                <label>API Key</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                />
-              </div>
+              <h4>Connect {currentProvider?.label}</h4>
+              {needsKey && (
+                <div className="agent-settings-field">
+                  <label>API Key</label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="sk-..."
+                  />
+                </div>
+              )}
               <div className="agent-settings-field">
                 <label>Model</label>
                 <input
                   type="text"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder={PROVIDERS.find((p) => p.id === editing)?.defaultModel}
+                  placeholder={currentProvider?.defaultModel}
                 />
               </div>
-              <div className="agent-settings-field">
-                <label>Passphrase (to encrypt key locally)</label>
-                <input
-                  type="password"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  placeholder="Enter passphrase"
-                />
-              </div>
-              <div className="agent-settings-field-hint">
-                Key is encrypted and stored in this browser only. It never leaves your machine.
-              </div>
+              {!needsKey && (
+                <div className="agent-settings-field">
+                  <label>Base URL</label>
+                  <input
+                    type="text"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="http://127.0.0.1:1234"
+                  />
+                </div>
+              )}
+              {needsKey && (
+                <div className="agent-settings-field">
+                  <label>Passphrase (to encrypt key locally)</label>
+                  <input
+                    type="password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder="Enter passphrase"
+                  />
+                </div>
+              )}
+              {needsKey && (
+                <div className="agent-settings-field-hint">
+                  Key is encrypted and stored in this browser only. It never leaves your machine.
+                </div>
+              )}
               <div className="agent-settings-form-actions">
                 <button type="button" className="btn-cancel" onClick={() => setEditing(null)}>
                   Cancel
@@ -137,7 +163,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   type="button"
                   className="btn-connect"
                   onClick={handleSave}
-                  disabled={!apiKey || !passphrase}
+                  disabled={needsKey ? (!apiKey || !passphrase) : false}
                 >
                   <Check size={12} /> Connect
                 </button>

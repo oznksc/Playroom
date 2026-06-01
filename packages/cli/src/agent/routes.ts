@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import {
   McpClient,
   AnthropicAdapter,
+  LmStudioAdapter,
   runAgent,
   type ApprovalMode,
   type PromptContext,
@@ -68,6 +69,14 @@ export async function handleAgentRoute(
           defaultModel: "llama3.1:8b",
           supported: false,
         },
+        {
+          id: "lmstudio",
+          label: "LM Studio (local)",
+          defaultBaseUrl: "http://127.0.0.1:1234",
+          requiresApiKey: false,
+          defaultModel: "local-model",
+          supported: true,
+        },
       ],
     });
     return true;
@@ -105,7 +114,8 @@ export async function handleAgentRoute(
     }
 
     const storedKey = keyStore.get(body.provider ?? "anthropic");
-    if (!storedKey) {
+    const isLmStudio = body.provider === "lmstudio";
+    if (!storedKey && !isLmStudio) {
       sendJson(response, 401, { error: `No API key for provider: ${body.provider ?? "anthropic"}` });
       return true;
     }
@@ -148,7 +158,9 @@ export async function handleAgentRoute(
       return true;
     }
 
-    const provider = new AnthropicAdapter();
+    const provider = isLmStudio
+      ? new LmStudioAdapter()
+      : new AnthropicAdapter();
     const abortController = new AbortController();
     const chatId = `${body.sceneId}:${Date.now()}`;
     activeChats.set(chatId, abortController);
@@ -159,9 +171,9 @@ export async function handleAgentRoute(
       const stream = runAgent(
         {
           message: body.message,
-          model: body.model ?? "claude-sonnet-4-5",
-          apiKey: storedKey.apiKey,
-          baseUrl: storedKey.baseUrl,
+          model: body.model ?? (isLmStudio ? "local-model" : "claude-sonnet-4-5"),
+          apiKey: storedKey?.apiKey ?? "lm-studio",
+          baseUrl: storedKey?.baseUrl ?? (isLmStudio ? "http://127.0.0.1:1234" : undefined),
           approvalMode: body.approvalMode ?? "destructive-only",
           sceneContext,
           signal: abortController.signal,
