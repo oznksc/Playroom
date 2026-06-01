@@ -77,3 +77,33 @@
   background: var(--border-subtle);
   margin: 0 2px;
 }
+
+// Panel toggle buttons — always visible in toolbar
+.panel-toggle-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    color: var(--accent);
+    background: $accent-hover-bg;
+  }
+}
+
+// Hide toggle buttons on wide desktop (panels are always visible)
+@include mq-wide {
+  .panel-toggle-btn {
+    display: none;
+  }
+}

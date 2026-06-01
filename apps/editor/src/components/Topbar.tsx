@@ -9,7 +9,9 @@ import {
   Play,
   Pause,
   Square,
-  Cpu
+  Cpu,
+  PanelLeft,
+  PanelRight
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 
@@ -21,6 +23,8 @@ type TopbarProps = {
   lastSaved: Date | null;
   isPlaying: boolean;
   isPaused: boolean;
+  sidebarOpen: boolean;
+  inspectorOpen: boolean;
   onPlayToggle: () => void;
   onPauseToggle: () => void;
   onStop: () => void;
@@ -28,6 +32,8 @@ type TopbarProps = {
   onImport: (file: File) => void;
   onSave: () => void;
   onAddEntity: () => void;
+  onToggleSidebar: () => void;
+  onToggleInspector: () => void;
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
@@ -41,6 +47,8 @@ export function Topbar({
   lastSaved,
   isPlaying,
   isPaused,
+  sidebarOpen,
+  inspectorOpen,
   onPlayToggle,
   onPauseToggle,
   onStop,
@@ -48,6 +56,8 @@ export function Topbar({
   onImport,
   onSave,
   onAddEntity,
+  onToggleSidebar,
+  onToggleInspector,
   formatLastSaved,
   projectPath,
   onCloseProject
@@ -134,6 +144,10 @@ export function Topbar({
 
       {/* Editor Tool Actions */}
       <div className="toolbar">
+        <button type="button" className="panel-toggle-btn" onClick={onToggleSidebar} title="Toggle sidebar panel">
+          <PanelLeft size={14} />
+        </button>
+        <div className="toolbar-divider" />
         <button type="button" className="toolbar-action-btn" title="Refresh local state" onClick={onRefresh}>
           <RefreshCw size={14} />
         </button>
@@ -152,6 +166,10 @@ export function Topbar({
           onClick={onSave}
         >
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
+        </button>
+        <div className="toolbar-divider" />
+        <button type="button" className="panel-toggle-btn" onClick={onToggleInspector} title="Toggle inspector panel">
+          <PanelRight size={14} />
         </button>
         <input
           ref={fileInputRef}

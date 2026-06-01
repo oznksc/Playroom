@@ -1,7 +1,7 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Gamepad2, FolderOpen } from "lucide-react";
+import { Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -80,6 +80,8 @@ export function App() {
   const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale">("translate");
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Ignite Engine debugger initialized.", timestamp: new Date() },
@@ -979,6 +981,8 @@ export function App() {
         lastSaved={lastSaved}
         isPlaying={isPlaying}
         isPaused={isPaused}
+        sidebarOpen={sidebarOpen}
+        inspectorOpen={inspectorOpen}
         onPlayToggle={handlePlayToggle}
         onPauseToggle={() => setIsPaused((p) => !p)}
         onStop={handleStop}
@@ -986,13 +990,15 @@ export function App() {
         onImport={(file) => importAsset(file).catch(setError)}
         onSave={() => saveScene().catch(setError)}
         onAddEntity={addEntity}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        onToggleInspector={() => setInspectorOpen((v) => !v)}
         formatLastSaved={formatLastSaved}
         projectPath={projectPath}
         onCloseProject={handleCloseProject}
       />
 
       <section className="workspace">
-        <div className="panel sidebar-tabs">
+        <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
           <div className="tab-bar">
             <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
             <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
@@ -1170,7 +1176,12 @@ export function App() {
           onDeleteEntity={(id) => deleteEntity(id)}
         />
 
-        <div className="inspector-column">
+        <div
+          className={`panel-backdrop${sidebarOpen || inspectorOpen ? " visible" : ""}`}
+          onClick={() => { setSidebarOpen(false); setInspectorOpen(false); }}
+        />
+
+        <div className={`inspector-column${inspectorOpen ? " panel-open" : ""}`}>
           {scene && <SceneSettings scene={scene} onChange={updateScene} />}
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector

@@ -2,6 +2,34 @@
 // Design Tokens — Reusable SCSS mixins for repeated patterns
 // ──────────────────────────────────────────────────────
 
+// Breakpoint system
+// Content-driven breakpoints for the game editor:
+//   wide:   ≥1440px — full 3-column, generous canvas
+//   std:    1024–1439px — compressed sidebar/inspector
+//   mid:    768–1023px — canvas-only with slide-over panels
+//   narrow: <768px — canvas with bottom nav, sheet panels
+$bp-wide: 1440px;
+$bp-std: 1024px;
+$bp-mid: 768px;
+$bp-narrow: 768px;
+
+@mixin mq-wide  { @media (min-width: $bp-wide) { @content; } }
+@mixin mq-std   { @media (min-width: $bp-std) and (max-width: $bp-wide - 1) { @content; } }
+@mixin mq-below-std { @media (max-width: $bp-std - 1) { @content; } }
+@mixin mq-mid   { @media (min-width: $bp-mid) and (max-width: $bp-std - 1) { @content; } }
+@mixin mq-narrow { @media (max-width: $bp-narrow - 1) { @content; } }
+@mixin mq-above-narrow { @media (min-width: $bp-narrow) { @content; } }
+
+// Coarse pointer detection (touch devices)
+@mixin coarse-pointer {
+  @media (pointer: coarse) { @content; }
+}
+
+// Hover capability detection
+@mixin can-hover {
+  @media (hover: hover) and (pointer: fine) { @content; }
+}
+
 // Additional color role tokens (not in _variables.scss because they're
 // semantic rgba compositions, not raw palette values)
 $danger-hover-bg: rgba(239, 68, 68, 0.1);
