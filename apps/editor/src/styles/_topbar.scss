@@ -64,11 +64,16 @@
       margin-left: 12px;
       cursor: pointer;
       transition: var(--transition-fast);
+      outline: none;
 
       &:hover {
         background: $danger-feedback-bg;
         border-color: $danger-hover-border;
         color: #ef4444;
+      }
+
+      &:focus-visible {
+        box-shadow: 0 0 0 2px $accent-glow;
       }
     }
   }
@@ -122,6 +127,7 @@
     background: transparent;
     color: var(--text-muted);
     transition: var(--transition-fast);
+    outline: none;
 
     &:disabled {
       opacity: 0.2;
@@ -131,6 +137,10 @@
     &:hover:not(:disabled) {
       color: var(--text-primary);
       background: var(--bg-hover);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
     }
 
     &.sim-play.active {

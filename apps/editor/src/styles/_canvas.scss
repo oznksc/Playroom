@@ -100,10 +100,15 @@ canvas {
     height: 24px;
     cursor: pointer;
     transition: var(--transition-fast);
+    outline: none;
 
     &:hover {
       border-color: var(--accent);
       color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
     }
   }
 }
@@ -166,10 +171,15 @@ canvas {
     background: transparent;
     color: var(--text-muted);
     transition: var(--transition-fast);
+    outline: none;
 
     &:hover {
       background: var(--bg-hover);
       color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
     }
   }
 

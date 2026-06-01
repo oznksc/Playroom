@@ -38,6 +38,7 @@
   text-align: left;
   cursor: pointer;
   transition: all var(--transition-fast);
+  outline: none;
 
   &:hover:not(:disabled) {
     background: var(--bg-hover);
@@ -47,11 +48,19 @@
     background: var(--bg-active);
   }
 
+  &:focus-visible:not(:disabled) {
+    box-shadow: inset 0 0 0 2px $accent-glow;
+  }
+
   &.danger {
     color: var(--error);
 
     &:hover:not(:disabled) {
       background: $danger-hover-bg;
+    }
+
+    &:focus-visible:not(:disabled) {
+      box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.3);
     }
   }
 

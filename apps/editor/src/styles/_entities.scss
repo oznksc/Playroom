@@ -70,11 +70,20 @@
     transition: var(--transition-fast);
     flex: 1;
     justify-content: center;
+    outline: none;
 
     &:hover {
       color: var(--accent);
       border-color: var(--accent);
       background: var(--bg-hover);
+    }
+
+    &:active {
+      background: var(--bg-active);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
     }
   }
 }

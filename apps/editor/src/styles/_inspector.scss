@@ -112,6 +112,14 @@
     flex: 1;
     text-align: left;
     min-width: 0;
+    outline: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
+    }
 
     svg {
       color: var(--text-secondary);
@@ -285,10 +293,14 @@
     padding: 4px;
     width: 100%;
     cursor: pointer;
+    outline: none;
     
     &:focus {
       border-color: var(--accent);
-      outline: none;
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
     }
   }
 }
@@ -370,7 +382,8 @@
     transition: var(--transition-fast);
     position: relative;
 
-    &:hover {
+    &:hover,
+    &:focus-within {
       border-color: var(--accent);
       background: var(--bg-hover);
     }

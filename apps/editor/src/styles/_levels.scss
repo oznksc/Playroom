@@ -145,9 +145,14 @@
   outline: none;
   transition: var(--transition-fast);
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     border-color: var(--accent-purple);
     color: var(--text-secondary);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px $purple-glow;
   }
 
   option {

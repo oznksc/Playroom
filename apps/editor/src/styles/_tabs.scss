@@ -31,10 +31,19 @@
     align-items: center;
     justify-content: center;
     border-bottom: 2px solid transparent;
+    outline: none;
 
     &:hover {
       color: var(--text-secondary);
       background: rgba(255, 255, 255, 0.01);
+    }
+
+    &:active {
+      background: var(--bg-active);
+    }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px $accent-glow;
     }
 
     &.active {

@@ -20,6 +20,7 @@
     color: var(--text-secondary);
     transition: all var(--transition-fast);
     position: relative;
+    outline: none;
 
     &:hover {
       background: var(--bg-hover);
@@ -29,6 +30,15 @@
     &:active {
       background: var(--bg-active);
       transform: scale(0.95);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px $accent-glow;
+    }
+
+    &:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
     }
 
     &.save-success {
@@ -89,10 +99,19 @@
   background: transparent;
   color: var(--text-muted);
   transition: all var(--transition-fast);
+  outline: none;
 
   &:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+  }
+
+  &:active {
+    background: var(--bg-active);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px $accent-glow;
   }
 
   &.active {

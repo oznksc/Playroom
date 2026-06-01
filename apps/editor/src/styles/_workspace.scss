@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .shell {
   display: grid;
   grid-template-rows: 48px minmax(0, 1fr) 240px 24px;
@@ -62,10 +64,15 @@
       height: 28px;
       display: flex;
       align-items: center;
+      outline: none;
 
       &:hover {
         color: var(--text-secondary);
         background: rgba(255, 255, 255, 0.02);
+      }
+
+      &:focus-visible {
+        box-shadow: 0 0 0 2px $accent-glow;
       }
 
       &.active {
