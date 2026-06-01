@@ -5,9 +5,11 @@ import type {
   TransformComponent,
   SpriteComponent,
   AabbColliderComponent,
+  CircleColliderComponent,
   PlayerControllerComponent,
   CameraFollowComponent,
   AnimationComponent,
+  RigidBodyComponent,
 } from "@gamekit/schema";
 import { createPlayerController, type PlayerControllerInput } from "@gamekit/runtime/player";
 import { playTimeline, type TimelineState } from "@gamekit/runtime/timeline";
@@ -165,7 +167,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
     const spriteComp = findComponent<SpriteComponent>(entity, "Sprite");
     const animComp = findComponent<AnimationComponent>(entity, "Animation");
     const colliderComp = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+    const circleColliderComp = findComponent<CircleColliderComponent>(entity, "CircleCollider");
     const playerComp = findComponent<PlayerControllerComponent>(entity, "PlayerController");
+    const rigidBodyComp = findComponent<RigidBodyComponent>(entity, "RigidBody");
     const cameraComp = findComponent<CameraFollowComponent>(entity, "CameraFollow");
 
     let gameObject: Phaser.GameObjects.GameObject;
@@ -218,33 +222,57 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     let body: Phaser.Physics.Arcade.Body | null = null;
 
-    if (colliderComp) {
-      const displayWidth =
-        "displayWidth" in gameObject
-          ? (gameObject as { displayWidth: number }).displayWidth
-          : colliderComp.size.x;
-      const displayHeight =
-        "displayHeight" in gameObject
-          ? (gameObject as { displayHeight: number }).displayHeight
-          : colliderComp.size.y;
+    const effectiveCollider = colliderComp ?? circleColliderComp;
+    if (effectiveCollider) {
+      if (colliderComp) {
+        const displayWidth =
+          "displayWidth" in gameObject
+            ? (gameObject as { displayWidth: number }).displayWidth
+            : colliderComp.size.x;
+        const displayHeight =
+          "displayHeight" in gameObject
+            ? (gameObject as { displayHeight: number }).displayHeight
+            : colliderComp.size.y;
 
-      const offsetX = colliderComp.offset.x + originX * displayWidth;
-      const offsetY = colliderComp.offset.y + originY * displayHeight;
+        const offsetX = colliderComp.offset.x + originX * displayWidth;
+        const offsetY = colliderComp.offset.y + originY * displayHeight;
 
-      if (colliderComp.isStatic) {
-        staticGroup.add(gameObject);
-        body = gameObject.body as Phaser.Physics.Arcade.Body;
-        body.setSize(colliderComp.size.x, colliderComp.size.y);
-        body.setOffset(offsetX, offsetY);
-        body.setImmovable(true);
-        body.updateFromGameObject();
-      } else {
-        this.physics.add.existing(gameObject, false);
-        body = gameObject.body as Phaser.Physics.Arcade.Body;
-        body.setSize(colliderComp.size.x, colliderComp.size.y);
-        body.setOffset(offsetX, offsetY);
-        body.setCollideWorldBounds(true);
+        if (colliderComp.isStatic) {
+          staticGroup.add(gameObject);
+          body = gameObject.body as Phaser.Physics.Arcade.Body;
+          body.setSize(colliderComp.size.x, colliderComp.size.y);
+          body.setOffset(offsetX, offsetY);
+          body.setImmovable(true);
+          body.updateFromGameObject();
+        } else {
+          this.physics.add.existing(gameObject, false);
+          body = gameObject.body as Phaser.Physics.Arcade.Body;
+          body.setSize(colliderComp.size.x, colliderComp.size.y);
+          body.setOffset(offsetX, offsetY);
+          body.setCollideWorldBounds(true);
+        }
+      } else if (circleColliderComp) {
+        if (circleColliderComp.isStatic) {
+          staticGroup.add(gameObject);
+          body = gameObject.body as Phaser.Physics.Arcade.Body;
+          body.setCircle(circleColliderComp.radius, circleColliderComp.offset.x, circleColliderComp.offset.y);
+          body.setImmovable(true);
+          body.updateFromGameObject();
+        } else {
+          this.physics.add.existing(gameObject, false);
+          body = gameObject.body as Phaser.Physics.Arcade.Body;
+          body.setCircle(circleColliderComp.radius, circleColliderComp.offset.x, circleColliderComp.offset.y);
+          body.setCollideWorldBounds(true);
+        }
       }
+    }
+
+    if (rigidBodyComp && body) {
+      body.setVelocity(rigidBodyComp.velocity.x, rigidBodyComp.velocity.y);
+      if (rigidBodyComp.useGravity) {
+        body.setGravityY(rigidBodyComp.gravityScale);
+      }
+      body.setDrag(rigidBodyComp.drag * 1000, 0);
     }
 
     const binding: EntityBinding = {

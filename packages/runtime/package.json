@@ -36,6 +36,10 @@
     "./manager": {
       "types": "./dist/manager.d.ts",
       "import": "./dist/manager.js"
+    },
+    "./rigid-body": {
+      "types": "./dist/rigid-body.d.ts",
+      "import": "./dist/rigid-body.js"
     }
   },
   "scripts": {

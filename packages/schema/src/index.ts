@@ -53,6 +53,7 @@ export type AabbColliderComponent = {
   offset: Vector2;
   size: Vector2;
   isStatic: boolean;
+  isTrigger?: boolean;
   layer?: number;
   mask?: number;
 };
@@ -81,11 +82,34 @@ export type AnimationComponent = {
   currentFrame?: number;
 };
 
+export type RigidBodyComponent = {
+  type: "RigidBody";
+  velocity: Vector2;
+  angularVelocity: number;
+  mass: number;
+  drag: number;
+  isKinematic: boolean;
+  gravityScale: number;
+  useGravity: boolean;
+};
+
+export type CircleColliderComponent = {
+  type: "CircleCollider";
+  offset: Vector2;
+  radius: number;
+  isStatic: boolean;
+  isTrigger: boolean;
+  layer?: number;
+  mask?: number;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
   | AabbColliderComponent
+  | CircleColliderComponent
   | PlayerControllerComponent
+  | RigidBodyComponent
   | CameraFollowComponent
   | AnimationComponent;
 
@@ -445,6 +469,7 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           offset: validateVector(component.offset, `${path}.offset`, errors),
           size: validateVector(component.size, `${path}.size`, errors),
           isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
+          ...(component.isTrigger !== undefined ? { isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors) } : {}),
           ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
           ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
         });
@@ -474,6 +499,29 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           framesPerSecond: expectNumber(component.framesPerSecond, `${path}.framesPerSecond`, errors),
           loop: expectBoolean(component.loop, `${path}.loop`, errors),
           ...(component.currentFrame !== undefined ? { currentFrame: expectNumber(component.currentFrame, `${path}.currentFrame`, errors) } : {}),
+        });
+        return;
+      case "RigidBody":
+        components.push({
+          type: "RigidBody",
+          velocity: validateVector(component.velocity, `${path}.velocity`, errors),
+          angularVelocity: expectNumber(component.angularVelocity, `${path}.angularVelocity`, errors),
+          mass: expectNumber(component.mass, `${path}.mass`, errors),
+          drag: expectNumber(component.drag, `${path}.drag`, errors),
+          isKinematic: expectBoolean(component.isKinematic, `${path}.isKinematic`, errors),
+          gravityScale: expectNumber(component.gravityScale, `${path}.gravityScale`, errors),
+          useGravity: expectBoolean(component.useGravity, `${path}.useGravity`, errors),
+        });
+        return;
+      case "CircleCollider":
+        components.push({
+          type: "CircleCollider",
+          offset: validateVector(component.offset, `${path}.offset`, errors),
+          radius: expectNumber(component.radius, `${path}.radius`, errors),
+          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
+          isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors),
+          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
+          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
         });
         return;
       default:

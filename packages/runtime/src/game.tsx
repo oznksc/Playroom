@@ -1,12 +1,13 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, TransformComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, RigidBodyComponent, TransformComponent } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GameKitView } from "./view.js";
 import { useGameLoop } from "./loop.js";
 import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
+import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, getEntityAabb, type CollisionSolid } from "./collision.js";
+import { applyAabbCollisions, applyCircleCollisions, getEntityAabb, getEntityCircle, type CollisionSolid, intersectsCircleAabb, intersectsCircleCircle, solidAabb } from "./collision.js";
 import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
@@ -21,6 +22,7 @@ export type GameKitGameProps = {
 export function GameKitGame({ scene, assets = {}, showControls = true }: GameKitGameProps) {
   const entitiesRef = useRef(structuredClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
+  const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
   const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
   const cameraStateRef = useRef<CameraState>({ position: { x: 0, y: 0 }, zoom: 1 });
   const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
@@ -31,6 +33,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
   useEffect(() => {
     entitiesRef.current = structuredClone(scene.entities);
     controllersRef.current.clear();
+    rigidBodyRefs.current.clear();
     cameraFollowRef.current = null;
     animationStatesRef.current.clear();
     timelineRef.current = { elapsed: 0, playing: scene.timeline.playing };
@@ -39,6 +42,13 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
       if (pc) {
         controllersRef.current.set(entity.id, createPlayerController(pc));
+      }
+    }
+
+    for (const entity of entitiesRef.current) {
+      const rb = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+      if (rb) {
+        rigidBodyRefs.current.set(entity.id, createRigidBody(rb));
       }
     }
 
@@ -74,10 +84,66 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
 
     const solids: CollisionSolid[] = [];
     for (const entity of entities) {
-      const collider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-      if (collider && collider.isStatic) {
+      const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+      if (aabbCollider && aabbCollider.isStatic) {
         const aabb = getEntityAabb(entity);
-        if (aabb) solids.push({ ...aabb, layer: collider.layer ?? 1 });
+        if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1 });
+      }
+      const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+      if (circleCollider && circleCollider.isStatic) {
+        const circle = getEntityCircle(entity);
+        if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1 });
+      }
+    }
+
+    for (const entity of entities) {
+      const rb = rigidBodyRefs.current.get(entity.id);
+      if (!rb) continue;
+
+      const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+      if (!transform) continue;
+
+      const controller = controllersRef.current.get(entity.id);
+      if (controller) {
+        controller.update(input, dt);
+        rb.state.velocity.x = controller.state.velocity.x;
+        rb.state.velocity.y = controller.state.velocity.y;
+        controller.state.velocity = rb.state.velocity;
+        controller.setGrounded(false);
+      }
+
+      rb.integrateForces(dt, scene.gravity);
+
+      const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+      const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+
+      if (aabbCollider) {
+        const movingAabb = getEntityAabb(entity);
+        if (movingAabb) {
+          const mask = aabbCollider.mask;
+          const result = applyAabbCollisions(movingAabb, rb.state.velocity, solids, mask);
+          transform.position.x = result.position.x - aabbCollider.offset.x;
+          transform.position.y = result.position.y - aabbCollider.offset.y;
+          rb.state.velocity = result.velocity;
+          if (controller && result.grounded) {
+            controller.setGrounded(true);
+          }
+        }
+      } else if (circleCollider) {
+        const circle = getEntityCircle(entity);
+        if (circle) {
+          const mask = circleCollider.mask;
+          const result = applyCircleCollisions(circle, rb.state.velocity, solids, mask);
+          transform.position.x = result.position.x - circleCollider.offset.x;
+          transform.position.y = result.position.y - circleCollider.offset.y;
+          rb.state.velocity = result.velocity;
+          if (controller && result.grounded) {
+            controller.setGrounded(true);
+          }
+        }
+      } else {
+        transform.position.x += rb.state.velocity.x * dt;
+        transform.position.y += rb.state.velocity.y * dt;
       }
     }
 
@@ -85,12 +151,16 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
       const controller = controllersRef.current.get(entity.id);
       if (!controller) continue;
 
+      const rigBody = rigidBodyRefs.current.get(entity.id);
+      if (rigBody) continue;
+
       const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
       if (!transform) continue;
 
       controller.update(input, dt);
 
       const collider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+      const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
 
       if (collider) {
         const movingAabb = getEntityAabb(entity);
@@ -98,6 +168,15 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
           const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids, collider.mask);
           transform.position.x = result.position.x - collider.offset.x;
           transform.position.y = result.position.y - collider.offset.y;
+          controller.state.velocity = result.velocity;
+          controller.setGrounded(result.grounded);
+        }
+      } else if (circleCollider) {
+        const circle = getEntityCircle(entity);
+        if (circle) {
+          const result = applyCircleCollisions(circle, controller.state.velocity, solids, circleCollider.mask);
+          transform.position.x = result.position.x - circleCollider.offset.x;
+          transform.position.y = result.position.y - circleCollider.offset.y;
           controller.state.velocity = result.velocity;
           controller.setGrounded(result.grounded);
         }
@@ -135,7 +214,6 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
       anim.currentFrame = updateAnimation(anim, state, dt);
     }
 
-    // Apply current scene (with updated entities) to timeline
     const currentEntities = entitiesRef.current;
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);

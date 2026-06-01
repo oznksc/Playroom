@@ -1,6 +1,7 @@
 export type {
   AabbColliderComponent,
   CameraFollowComponent,
+  CircleColliderComponent,
   GameKitAsset,
   GameKitComponent,
   GameKitEntity,
@@ -10,6 +11,7 @@ export type {
   Orientation,
   PlayerControllerComponent,
   ResponsiveConfig,
+  RigidBodyComponent,
   SafeAreaConfig,
   SpriteComponent,
   TransformComponent,
@@ -24,9 +26,16 @@ export { SceneManager } from "./manager.js";
 export { loadScene } from "./scene.js";
 export {
   type Aabb,
+  type Circle,
+  type CollisionSolid,
   applyAabbCollisions,
+  applyCircleCollisions,
   getEntityAabb,
-  intersectsAabb
+  getEntityCircle,
+  intersectsAabb,
+  intersectsCircleAabb,
+  intersectsCircleCircle,
+  solidAabb
 } from "./collision.js";
 export {
   type CameraState,
@@ -38,5 +47,10 @@ export {
   createPlayerController
 } from "./player.js";
 export { useGameLoop } from "./loop.js";
-export type { GameLoopCallback } from "./loop.js";
+export type { GameLoopCallback, FixedTimestepOptions } from "./loop.js";
+export {
+  createRigidBody,
+  type RigidBodyState,
+  RIGID_BODY_FIXED_DT
+} from "./rigid-body.js";
 export { usePlayerInput } from "./input.js";
