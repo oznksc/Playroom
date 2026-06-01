@@ -29,7 +29,7 @@ fn start_server(project_path: String) -> Result<String, String> {
   // 2. Resolve relative path to node CLI index.js
   let manifest_dir = env!("CARGO_MANIFEST_DIR");
   let cli_path = std::path::Path::new(manifest_dir)
-    .join("../../packages/cli/dist/index.js");
+    .join("../../../packages/cli/dist/index.js");
 
   if !cli_path.exists() {
     return Err("GameKit CLI dist file not found. Please build the project first using 'pnpm build'.".to_string());
