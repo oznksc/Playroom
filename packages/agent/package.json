@@ -1,10 +1,7 @@
 {
-  "name": "@gamekit/cli",
+  "name": "@gamekit/agent",
   "version": "0.1.0",
   "type": "module",
-  "bin": {
-    "gamekit": "./dist/index.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,18 +13,16 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
-    "gamekit": "tsx src/index.ts"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@gamekit/agent": "workspace:*",
-    "@gamekit/mcp": "workspace:*",
     "@gamekit/schema": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "eventsource-parser": "^3.0.0",
+    "nanoid": "^5.0.9"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

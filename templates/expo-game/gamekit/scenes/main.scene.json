@@ -121,7 +121,7 @@
   "timeline": {
     "tracks": [
       {
-        "entityId": "player",
+        "entityId": "ground",
         "property": "position.x",
         "keyframes": []
       },

@@ -14,7 +14,8 @@
     "paths": {
       "@gamekit/schema": ["packages/schema/src/index.ts"],
       "@gamekit/runtime": ["packages/runtime/src/index.ts"],
-      "@gamekit/runtime-web": ["packages/runtime-web/src/index.ts"]
+      "@gamekit/runtime-web": ["packages/runtime-web/src/index.ts"],
+      "@gamekit/agent": ["packages/agent/src/index.ts"]
     }
   }
 }

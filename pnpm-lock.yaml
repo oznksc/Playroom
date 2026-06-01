@@ -67,8 +67,36 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.19)(lightningcss@1.27.0)(sass@1.100.0)(terser@5.48.0)
 
+  packages/agent:
+    dependencies:
+      '@gamekit/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.12.1
+        version: 1.29.0(zod@3.25.76)
+      eventsource-parser:
+        specifier: ^3.0.0
+        version: 3.1.0
+      nanoid:
+        specifier: ^5.0.9
+        version: 5.1.11
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.19
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.19.19)(lightningcss@1.27.0)(sass@1.100.0)(terser@5.48.0)
+
   packages/cli:
     dependencies:
+      '@gamekit/agent':
+        specifier: workspace:*
+        version: link:../agent
       '@gamekit/mcp':
         specifier: workspace:*
         version: link:../mcp
@@ -3661,6 +3689,11 @@ packages:
   nanoid@3.3.12:
     resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@5.1.11:
+    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
+    engines: {node: ^18 || >=20}
     hasBin: true
 
   negotiator@0.6.3:
@@ -8704,6 +8737,8 @@ snapshots:
       thenify-all: 1.6.0
 
   nanoid@3.3.12: {}
+
+  nanoid@5.1.11: {}
 
   negotiator@0.6.3: {}
 

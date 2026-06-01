@@ -14,6 +14,7 @@ import {
   readProject
 } from "./project.js";
 import { validateScene } from "@gamekit/schema";
+import { handleAgentRoute } from "./agent/routes.js";
 
 export type EditorServerOptions = {
   root: string;
@@ -137,6 +138,12 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   if (url.pathname.startsWith("/gamekit/assets/") && request.method === "GET") {
     await serveProjectAsset(options.root, url.pathname, response);
     return;
+  }
+
+  // Agent routes — delegate to agent handler
+  if (url.pathname.startsWith("/api/agent/")) {
+    const handled = await handleAgentRoute(options.root, request, response, url.pathname, request.method ?? "GET");
+    if (handled) return;
   }
 
   await serveEditorAsset(options, url.pathname, response);

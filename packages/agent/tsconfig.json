@@ -1,13 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../..",
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
     "composite": true
   },
-  "references": [{ "path": "../schema" }, { "path": "../agent" }],
+  "references": [
+    { "path": "../schema" }
+  ],
   "include": ["src"]
 }
