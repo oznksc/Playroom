@@ -95,8 +95,6 @@ export type GameKitEntity = {
   components: GameKitComponent[];
 };
 
-export type GuiNode = GuiText | GuiButton | GuiImage;
-
 export type GuiBase = {
   id: string;
   type: string;
@@ -130,6 +128,24 @@ export type GuiButton = GuiBase & {
 export type GuiImage = GuiBase & {
   type: "Image";
   assetId: string;
+};
+
+export type GuiNode = GuiText | GuiButton | GuiImage;
+
+export type GuiComponent = {
+  id: string;
+  name: string;
+  nodes: GuiNode[];
+};
+
+export type GuiComponentInstance = {
+  id: string;
+  componentId: string;
+  x: number;
+  y: number;
+  visible?: boolean;
+  interactive?: boolean;
+  nodeOverrides?: Record<string, Partial<GuiNode>>;
 };
 
 export type Keyframe = {
@@ -167,6 +183,7 @@ export type GameKitScene = {
   timeline: TimelineData;
   gui: {
     nodes: GuiNode[];
+    componentInstances: GuiComponentInstance[];
   };
 };
 
@@ -184,6 +201,7 @@ export type GameKitProject = {
   scenes: string[];
   levels: GameKitLevel[];
   assets: GameKitAsset[];
+  guiComponents: GuiComponent[];
 };
 
 export type ValidationResult<T> =
@@ -214,7 +232,7 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
       }
     },
     timeline: { tracks: [], duration: 0, loop: false, playing: false },
-    gui: { nodes: [] }
+    gui: { nodes: [], componentInstances: [] }
   };
 }
 
@@ -232,7 +250,8 @@ export function createProject(name = "GameKit Game"): GameKitProject {
         unlocked: true
       }
     ],
-    assets: []
+    assets: [],
+    guiComponents: []
   };
 }
 
@@ -258,6 +277,27 @@ export function createLevel(name: string, order: number, sceneIds: string[] = []
     order,
     sceneIds,
     unlocked: order === 1
+  };
+}
+
+export function createGuiComponent(name: string): GuiComponent {
+  return {
+    id: slugify(name) || `component-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    nodes: []
+  };
+}
+
+export function createGuiComponentInstance(
+  componentId: string,
+  position: Vector2 = { x: 0, y: 0 }
+): GuiComponentInstance {
+  return {
+    id: createId("inst"),
+    componentId,
+    x: position.x,
+    y: position.y,
+    visible: true
   };
 }
 
@@ -304,7 +344,8 @@ export function validateProject(input: unknown): ValidationResult<GameKitProject
     name: expectString(input.name, "name", errors),
     scenes: validateStringArray(input.scenes, "scenes", errors),
     levels: validateLevels(input.levels, errors),
-    assets: validateAssets(input.assets, errors)
+    assets: validateAssets(input.assets, errors),
+    guiComponents: validateGuiComponents(input.guiComponents, errors)
   };
 
   return errors.length === 0 ? { ok: true, value: project } : { ok: false, errors };
@@ -527,35 +568,41 @@ function validateTimeline(input: unknown, errors: string[]): GameKitScene["timel
 }
 
 function validateGui(input: unknown, errors: string[]): GameKitScene["gui"] {
-  if (input === undefined) return { nodes: [] };
+  if (input === undefined) return { nodes: [], componentInstances: [] };
   if (!isRecord(input)) {
     errors.push("gui must be an object");
-    return { nodes: [] };
+    return { nodes: [], componentInstances: [] };
   }
 
-  const rawNodes = input.nodes;
-  if (!Array.isArray(rawNodes)) {
-    errors.push("gui.nodes must be an array");
-    return { nodes: [] };
+  const nodes = validateGuiNodesArray(input.nodes, "gui.nodes", errors);
+  const componentInstances = validateGuiComponentInstances(input.componentInstances, errors);
+
+  return { nodes, componentInstances };
+}
+
+function validateGuiNodesArray(input: unknown, path: string, errors: string[]): GuiNode[] {
+  if (!Array.isArray(input)) {
+    errors.push(`${path} must be an array`);
+    return [];
   }
 
   const nodes: GuiNode[] = [];
-  for (let i = 0; i < rawNodes.length; i++) {
-    const node = rawNodes[i];
+  for (let i = 0; i < input.length; i++) {
+    const node = input[i];
     if (!isRecord(node) || typeof node.type !== "string") {
-      errors.push(`gui.nodes[${i}].type is required`);
+      errors.push(`${path}[${i}].type is required`);
       continue;
     }
     const common = {
-      id: expectString(node.id, `gui.nodes[${i}].id`, errors),
-      x: expectNumber(node.x, `gui.nodes[${i}].x`, errors),
-      y: expectNumber(node.y, `gui.nodes[${i}].y`, errors),
-      width: expectNumber(node.width, `gui.nodes[${i}].width`, errors),
-      height: expectNumber(node.height, `gui.nodes[${i}].height`, errors),
-      visible: node.visible !== undefined ? expectBoolean(node.visible, `gui.nodes[${i}].visible`, errors) : undefined,
-      interactive: node.interactive !== undefined ? expectBoolean(node.interactive, `gui.nodes[${i}].interactive`, errors) : undefined,
-      anchorX: node.anchorX !== undefined ? expectNumber(node.anchorX, `gui.nodes[${i}].anchorX`, errors) : undefined,
-      anchorY: node.anchorY !== undefined ? expectNumber(node.anchorY, `gui.nodes[${i}].anchorY`, errors) : undefined,
+      id: expectString(node.id, `${path}[${i}].id`, errors),
+      x: expectNumber(node.x, `${path}[${i}].x`, errors),
+      y: expectNumber(node.y, `${path}[${i}].y`, errors),
+      width: expectNumber(node.width, `${path}[${i}].width`, errors),
+      height: expectNumber(node.height, `${path}[${i}].height`, errors),
+      visible: node.visible !== undefined ? expectBoolean(node.visible, `${path}[${i}].visible`, errors) : undefined,
+      interactive: node.interactive !== undefined ? expectBoolean(node.interactive, `${path}[${i}].interactive`, errors) : undefined,
+      anchorX: node.anchorX !== undefined ? expectNumber(node.anchorX, `${path}[${i}].anchorX`, errors) : undefined,
+      anchorY: node.anchorY !== undefined ? expectNumber(node.anchorY, `${path}[${i}].anchorY`, errors) : undefined,
     };
 
     switch (node.type) {
@@ -563,36 +610,82 @@ function validateGui(input: unknown, errors: string[]): GameKitScene["gui"] {
         nodes.push({
           ...common,
           type: "Text",
-          text: expectString(node.text, `gui.nodes[${i}].text`, errors),
-          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `gui.nodes[${i}].fontSize`, errors) : undefined,
-          color: node.color !== undefined ? expectString(node.color, `gui.nodes[${i}].color`, errors) : undefined,
-          align: node.align !== undefined ? expectString(node.align, `gui.nodes[${i}].align`, errors) as "left" | "center" | "right" : undefined,
+          text: expectString(node.text, `${path}[${i}].text`, errors),
+          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `${path}[${i}].fontSize`, errors) : undefined,
+          color: node.color !== undefined ? expectString(node.color, `${path}[${i}].color`, errors) : undefined,
+          align: node.align !== undefined ? expectString(node.align, `${path}[${i}].align`, errors) as "left" | "center" | "right" : undefined,
         });
         break;
       case "Button":
         nodes.push({
           ...common,
           type: "Button",
-          text: expectString(node.text, `gui.nodes[${i}].text`, errors),
-          action: node.action !== undefined ? expectString(node.action, `gui.nodes[${i}].action`, errors) : undefined,
-          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `gui.nodes[${i}].fontSize`, errors) : undefined,
-          color: node.color !== undefined ? expectString(node.color, `gui.nodes[${i}].color`, errors) : undefined,
-          backgroundColor: node.backgroundColor !== undefined ? expectString(node.backgroundColor, `gui.nodes[${i}].backgroundColor`, errors) : undefined,
+          text: expectString(node.text, `${path}[${i}].text`, errors),
+          action: node.action !== undefined ? expectString(node.action, `${path}[${i}].action`, errors) : undefined,
+          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `${path}[${i}].fontSize`, errors) : undefined,
+          color: node.color !== undefined ? expectString(node.color, `${path}[${i}].color`, errors) : undefined,
+          backgroundColor: node.backgroundColor !== undefined ? expectString(node.backgroundColor, `${path}[${i}].backgroundColor`, errors) : undefined,
         });
         break;
       case "Image":
         nodes.push({
           ...common,
           type: "Image",
-          assetId: expectString(node.assetId, `gui.nodes[${i}].assetId`, errors),
+          assetId: expectString(node.assetId, `${path}[${i}].assetId`, errors),
         });
         break;
       default:
-        errors.push(`gui.nodes[${i}].type "${node.type}" is not a supported GUI node type`);
+        errors.push(`${path}[${i}].type "${node.type}" is not a supported GUI node type`);
     }
   }
 
-  return { nodes };
+  return nodes;
+}
+
+function validateGuiComponentInstances(input: unknown, errors: string[]): GuiComponentInstance[] {
+  if (input === undefined) return [];
+  if (!Array.isArray(input)) {
+    errors.push("gui.componentInstances must be an array");
+    return [];
+  }
+
+  return input.map((inst, index) => {
+    const path = `gui.componentInstances[${index}]`;
+    if (!isRecord(inst)) {
+      errors.push(`${path} must be an object`);
+      return { id: "", componentId: "", x: 0, y: 0 };
+    }
+    return {
+      id: expectString(inst.id, `${path}.id`, errors),
+      componentId: expectString(inst.componentId, `${path}.componentId`, errors),
+      x: expectNumber(inst.x, `${path}.x`, errors),
+      y: expectNumber(inst.y, `${path}.y`, errors),
+      visible: inst.visible !== undefined ? expectBoolean(inst.visible, `${path}.visible`, errors) : undefined,
+      interactive: inst.interactive !== undefined ? expectBoolean(inst.interactive, `${path}.interactive`, errors) : undefined,
+      nodeOverrides: undefined,
+    };
+  });
+}
+
+function validateGuiComponents(input: unknown, errors: string[]): GuiComponent[] {
+  if (input === undefined) return [];
+  if (!Array.isArray(input)) {
+    errors.push("guiComponents must be an array");
+    return [];
+  }
+
+  return input.map((comp, index) => {
+    const path = `guiComponents[${index}]`;
+    if (!isRecord(comp)) {
+      errors.push(`${path} must be an object`);
+      return { id: "", name: "", nodes: [] };
+    }
+    return {
+      id: expectString(comp.id, `${path}.id`, errors),
+      name: expectString(comp.name, `${path}.name`, errors),
+      nodes: validateGuiNodesArray(comp.nodes, `${path}.nodes`, errors),
+    };
+  });
 }
 
 function validateReservedArray(input: unknown, path: string, key: string, errors: string[]): unknown[] {

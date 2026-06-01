@@ -1,5 +1,5 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode } from "@gamekit/schema";
-import { createEntity, createEmptyScene, createId } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
+import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
@@ -14,6 +14,8 @@ import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
 import { GuiPanel } from "./components/GuiPanel.js";
 import { GuiInspector } from "./components/GuiInspector.js";
+import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
+import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
@@ -21,7 +23,7 @@ import { useUndo } from "./hooks/useUndo.js";
 const AUTO_SAVE_DELAY_MS = 1500;
 
 export function App() {
-  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [] });
+  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [], guiComponents: [] });
   const [currentSceneFile, setCurrentSceneFile] = useState<string>("main.scene.json");
   const {
     current: scene,
@@ -38,12 +40,14 @@ export function App() {
   const selectedEntityId = [...selectedEntityIds][0]; // first selected for single-entity operations
   const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
   const [selectedGuiNodeId, setSelectedGuiNodeId] = useState<string | null>(null);
+  const [selectedComponentInstanceId, setSelectedComponentInstanceId] = useState<string | null>(null);
+  const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
   const [status, setStatus] = useState("Loading");
   const [zoom, setZoom] = useState(1);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels" | "guis">("entities");
+  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels" | "guis" | "components">("entities");
   const [snap, setSnap] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const clipboardRef = useRef<GameKitEntity | null>(null);
@@ -53,6 +57,8 @@ export function App() {
   selectedEntityIdsRef.current = selectedEntityIds;
   const selectedGuiNodeIdRef = useRef(selectedGuiNodeId);
   selectedGuiNodeIdRef.current = selectedGuiNodeId;
+  const selectedComponentInstanceIdRef = useRef(selectedComponentInstanceId);
+  selectedComponentInstanceIdRef.current = selectedComponentInstanceId;
 
   // Premium Simulator State Hooks
   const [isPlaying, setIsPlaying] = useState(false);
@@ -89,11 +95,12 @@ export function App() {
       fetch("/api/project"),
       fetch(`/api/scene?file=${currentSceneFile}`)
     ]);
-    const rawSnapshot = await projectResponse.json() as { project?: unknown; scenes: string[]; assets: GameKitAsset[]; levels?: GameKitLevel[] };
+    const rawSnapshot = await projectResponse.json() as { project?: unknown; scenes: string[]; assets: GameKitAsset[]; levels?: GameKitLevel[]; guiComponents?: import("@gamekit/schema").GuiComponent[] };
     const nextSnapshot: ProjectSnapshot = {
       scenes: rawSnapshot.scenes ?? [],
       assets: rawSnapshot.assets ?? [],
-      levels: rawSnapshot.levels ?? []
+      levels: rawSnapshot.levels ?? [],
+      guiComponents: rawSnapshot.guiComponents ?? []
     };
     const nextScene = await sceneResponse.json() as GameKitScene;
     setSnapshot(nextSnapshot);
@@ -114,6 +121,7 @@ export function App() {
         reset(nextScene);
         setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
         setSelectedGuiNodeId(null);
+        setSelectedComponentInstanceId(null);
         setIsDirty(false);
         setLastSaved(new Date());
         setStatus("Ready");
@@ -197,10 +205,11 @@ export function App() {
         return;
       }
       if (event.key === "Escape") {
-        if (selectedEntityIdsRef.current.size > 0 || selectedGuiNodeIdRef.current) {
+        if (selectedEntityIdsRef.current.size > 0 || selectedGuiNodeIdRef.current || selectedComponentInstanceIdRef.current) {
           event.preventDefault();
           setSelectedEntityIds(new Set());
           setSelectedGuiNodeId(null);
+          setSelectedComponentInstanceId(null);
         }
         return;
       }
@@ -607,6 +616,92 @@ export function App() {
     });
   }
 
+  // GUI Component definition management
+  function addGuiComponent(name: string) {
+    const component = createGuiComponent(name);
+    const newComponents = [...snapshot.guiComponents, component];
+    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
+    setEditingComponentId(component.id);
+    persistProject({ guiComponents: newComponents });
+    addConsoleLog("system", `Created GUI component: ${name}`);
+  }
+
+  function deleteGuiComponent(componentId: string) {
+    const newComponents = snapshot.guiComponents.filter((c) => c.id !== componentId);
+    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
+    updateScene((draft) => {
+      draft.gui.componentInstances = (draft.gui.componentInstances ?? []).filter(
+        (inst) => inst.componentId !== componentId
+      );
+    });
+    if (editingComponentId === componentId) setEditingComponentId(null);
+    persistProject({ guiComponents: newComponents });
+    addConsoleLog("system", `Deleted GUI component`);
+  }
+
+  function addNodeToEditingComponent(type: GuiNode["type"]) {
+    if (!editingComponentId) return;
+    const base = { id: createId(type), x: 10, y: 10, width: 200, height: 40, visible: true, interactive: false };
+    let node: GuiNode;
+    switch (type) {
+      case "Text": node = { ...base, type: "Text", text: "Text", fontSize: 16, color: "#ffffff" }; break;
+      case "Button": node = { ...base, type: "Button", text: "Button", fontSize: 14, color: "#ffffff", backgroundColor: "#333333" }; break;
+      case "Image": node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" }; break;
+    }
+    const newComponents = snapshot.guiComponents.map((c) =>
+      c.id === editingComponentId ? { ...c, nodes: [...c.nodes, node] } : c
+    );
+    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
+    persistProject({ guiComponents: newComponents });
+  }
+
+  function deleteNodeFromEditingComponent(nodeId: string) {
+    if (!editingComponentId) return;
+    const newComponents = snapshot.guiComponents.map((c) =>
+      c.id === editingComponentId ? { ...c, nodes: c.nodes.filter((n) => n.id !== nodeId) } : c
+    );
+    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
+    persistProject({ guiComponents: newComponents });
+  }
+
+  // GUI Component instance management
+  function addGuiComponentInstance(componentId: string) {
+    updateScene((draft) => {
+      if (!draft.gui.componentInstances) draft.gui.componentInstances = [];
+      const instance = createGuiComponentInstance(componentId, { x: 20, y: 20 });
+      draft.gui.componentInstances.push(instance);
+      setSelectedComponentInstanceId(instance.id);
+      setSelectedEntityIds(new Set());
+      setSelectedGuiNodeId(null);
+    });
+    addConsoleLog("system", `Placed component instance`);
+  }
+
+  function deleteGuiComponentInstance(instanceId: string) {
+    updateScene((draft) => {
+      draft.gui.componentInstances = (draft.gui.componentInstances ?? []).filter(
+        (i) => i.id !== instanceId
+      );
+    });
+    if (selectedComponentInstanceId === instanceId) setSelectedComponentInstanceId(null);
+  }
+
+  function updateGuiComponentInstance(mutator: (inst: import("@gamekit/schema").GuiComponentInstance) => void) {
+    if (!selectedComponentInstanceId) return;
+    updateScene((draft) => {
+      const inst = (draft.gui.componentInstances ?? []).find((i) => i.id === selectedComponentInstanceId);
+      if (inst) mutator(inst);
+    });
+  }
+
+  async function persistProject(partial: Partial<import("@gamekit/schema").GameKitProject>) {
+    await fetch("/api/project", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(partial),
+    });
+  }
+
   // Play controls
   function handlePlayToggle() {
     if (!isPlaying) {
@@ -781,6 +876,7 @@ export function App() {
             <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
             <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
             <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
+            <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
           </div>
           {activeTab === "entities" && (
             <Sidebar
@@ -848,9 +944,23 @@ export function App() {
               onSelectNode={(id) => {
                 setSelectedGuiNodeId(id);
                 setSelectedEntityIds(new Set());
+                setSelectedComponentInstanceId(null);
               }}
               onAddNode={addGuiNode}
               onDeleteNode={deleteGuiNode}
+            />
+          )}
+          {activeTab === "components" && (
+            <GuiComponentPanel
+              components={snapshot.guiComponents}
+              editingComponentId={editingComponentId}
+              onAddComponent={addGuiComponent}
+              onDeleteComponent={deleteGuiComponent}
+              onStartEdit={setEditingComponentId}
+              onStopEdit={() => setEditingComponentId(null)}
+              onAddNodeToComponent={addNodeToEditingComponent}
+              onDeleteNodeFromComponent={deleteNodeFromEditingComponent}
+              onPlaceInstance={addGuiComponentInstance}
             />
           )}
         </div>
@@ -860,6 +970,8 @@ export function App() {
           assets={snapshot.assets}
           selectedEntityIds={selectedEntityIds}
           selectedGuiNodeId={selectedGuiNodeId}
+          guiComponents={snapshot.guiComponents}
+          selectedComponentInstanceId={selectedComponentInstanceId}
           zoom={zoom}
           snap={snap}
           hasClipboard={clipboardRef.current !== null}
@@ -876,6 +988,7 @@ export function App() {
           onToggleColliders={setShowColliders}
           onSelect={(id, shift) => {
             setSelectedGuiNodeId(null);
+            setSelectedComponentInstanceId(null);
             if (!id) {
               setSelectedEntityIds(new Set());
               return;
@@ -889,7 +1002,13 @@ export function App() {
           }}
           onSelectGuiNode={(id) => {
             setSelectedEntityIds(new Set());
+            setSelectedComponentInstanceId(null);
             setSelectedGuiNodeId(id);
+          }}
+          onSelectComponentInstance={(id) => {
+            setSelectedEntityIds(new Set());
+            setSelectedGuiNodeId(null);
+            setSelectedComponentInstanceId(id);
           }}
           onTransform={(id, updates) => {
             push((draft) => {
@@ -931,7 +1050,15 @@ export function App() {
 
         <div className="inspector-column">
           {scene && <SceneSettings scene={scene} onChange={updateScene} />}
-          {selectedGuiNodeId && scene ? (
+          {selectedComponentInstanceId && scene ? (
+            <GuiInstanceInspector
+              instance={scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)!}
+              component={snapshot.guiComponents.find((c) => c.id === scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)?.componentId)}
+              assets={snapshot.assets}
+              onChange={updateGuiComponentInstance}
+              onDelete={() => deleteGuiComponentInstance(selectedComponentInstanceId)}
+            />
+          ) : selectedGuiNodeId && scene ? (
             <GuiInspector
               node={scene.gui.nodes.find((n) => n.id === selectedGuiNodeId)}
               assets={snapshot.assets}

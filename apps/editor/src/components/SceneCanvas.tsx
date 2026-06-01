@@ -1,4 +1,4 @@
-import type { GameKitAsset, GameKitScene, TransformComponent } from "@gamekit/schema";
+import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent } from "@gamekit/schema";
 import {
   ZoomIn,
   ZoomOut,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
-import { drawScene, hitEntity, hitGuiNode } from "../lib/canvas.js";
+import { drawScene, hitEntity, hitGuiNode, hitComponentInstance } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
 
@@ -29,6 +29,8 @@ type SceneCanvasProps = {
   assets: GameKitAsset[];
   selectedEntityIds: Set<string>;
   selectedGuiNodeId?: string | null;
+  guiComponents?: GuiComponent[];
+  selectedComponentInstanceId?: string | null;
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
@@ -45,6 +47,7 @@ type SceneCanvasProps = {
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
   onSelectGuiNode: (id: string) => void;
+  onSelectComponentInstance: (id: string) => void;
   onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
@@ -63,6 +66,8 @@ export function SceneCanvas({
   assets,
   selectedEntityIds,
   selectedGuiNodeId,
+  guiComponents,
+  selectedComponentInstanceId,
   zoom,
   snap,
   hasClipboard,
@@ -79,6 +84,7 @@ export function SceneCanvas({
   onToggleColliders,
   onSelect,
   onSelectGuiNode,
+  onSelectComponentInstance,
   onTransform,
   onAddEntity,
   onPasteEntity,
@@ -118,8 +124,8 @@ export function SceneCanvas({
 
     context.resetTransform();
     context.scale(pixelRatio, pixelRatio);
-    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId);
-  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId]);
+    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId);
+  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId]);
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -319,7 +325,18 @@ export function SceneCanvas({
                 }
 
                 const point = pointerPosition(event);
-                // Check GUI nodes first (they overlay entities)
+                // Check component instances first (highest layer)
+                const instances = scene.gui?.componentInstances ?? [];
+                const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
+                const hitInst = [...instances].reverse().find((inst) => {
+                  const comp = compMap.get(inst.componentId);
+                  return comp && hitComponentInstance(inst, comp, point);
+                });
+                if (hitInst) {
+                  onSelectComponentInstance(hitInst.id);
+                  return;
+                }
+                // Check loose GUI nodes next
                 const guiNodes = scene.gui?.nodes ?? [];
                 const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
                 if (hitGui) {

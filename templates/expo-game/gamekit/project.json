@@ -17,5 +17,51 @@
       "file": "player.svg",
       "kind": "image"
     }
+  ],
+  "guiComponents": [
+    {
+      "id": "deneme",
+      "name": "deneme",
+      "nodes": [
+        {
+          "id": "text-2qsuqr",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "type": "Text",
+          "text": "Text",
+          "fontSize": 16,
+          "color": "#ffffff"
+        },
+        {
+          "id": "button-ulhdqq",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "type": "Button",
+          "text": "Button",
+          "fontSize": 14,
+          "color": "#ffffff",
+          "backgroundColor": "#333333"
+        },
+        {
+          "id": "image-lruxrg",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "type": "Image",
+          "assetId": "block-yellow-alt"
+        }
+      ]
+    }
   ]
 }

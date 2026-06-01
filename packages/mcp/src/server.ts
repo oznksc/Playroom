@@ -6,6 +6,7 @@ import { registerAssetTools } from "./tools/assets.js";
 import { registerProjectTools } from "./tools/project.js";
 import { registerSkillTools } from "./tools/skills.js";
 import { registerGuiTools } from "./tools/gui.js";
+import { registerGuiComponentTools } from "./tools/gui-components.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -25,6 +26,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerProjectTools(server, fileIO);
   registerSkillTools(server, fileIO);
   registerGuiTools(server, fileIO);
+  registerGuiComponentTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 

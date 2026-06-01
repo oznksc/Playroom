@@ -42,7 +42,7 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       const scene = await fileIO.readScene(filename);
 
       if (!scene.gui) {
-        scene.gui = { nodes: [] };
+        scene.gui = { nodes: [], componentInstances: [] };
       }
 
       const newNode: GuiNode = {
