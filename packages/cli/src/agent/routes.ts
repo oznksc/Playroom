@@ -6,6 +6,7 @@ import {
   McpClient,
   AnthropicAdapter,
   LmStudioAdapter,
+  OpenRouterAdapter,
   runAgent,
   type ApprovalMode,
   type PromptContext,
@@ -43,6 +44,14 @@ export async function handleAgentRoute(
           defaultBaseUrl: "https://api.anthropic.com",
           requiresApiKey: true,
           defaultModel: "claude-sonnet-4-5",
+          supported: true,
+        },
+        {
+          id: "openrouter",
+          label: "OpenRouter",
+          defaultBaseUrl: "https://openrouter.ai/api/v1",
+          requiresApiKey: true,
+          defaultModel: "meta-llama/llama-3.3-70b-instruct",
           supported: true,
         },
         {
@@ -90,10 +99,16 @@ export async function handleAgentRoute(
       return true;
     }
     keyStore.set(body.provider, body);
+    const defaultModel = body.provider === "openrouter"
+      ? "meta-llama/llama-3.3-70b-instruct"
+      : body.provider === "lmstudio"
+      ? "local-model"
+      : "claude-sonnet-4-5";
+
     sendJson(response, 200, {
       ok: true,
       provider: body.provider,
-      model: body.model ?? "claude-sonnet-4-5",
+      model: body.model ?? defaultModel,
     });
     return true;
   }
@@ -113,9 +128,17 @@ export async function handleAgentRoute(
       return true;
     }
 
+    let provider;
+    if (body.provider === "lmstudio") {
+      provider = new LmStudioAdapter();
+    } else if (body.provider === "openrouter") {
+      provider = new OpenRouterAdapter();
+    } else {
+      provider = new AnthropicAdapter();
+    }
+
     const storedKey = keyStore.get(body.provider ?? "anthropic");
-    const isLmStudio = body.provider === "lmstudio";
-    if (!storedKey && !isLmStudio) {
+    if (provider.requiresApiKey && !storedKey) {
       sendJson(response, 401, { error: `No API key for provider: ${body.provider ?? "anthropic"}` });
       return true;
     }
@@ -158,22 +181,27 @@ export async function handleAgentRoute(
       return true;
     }
 
-    const provider = isLmStudio
-      ? new LmStudioAdapter()
-      : new AnthropicAdapter();
     const abortController = new AbortController();
     const chatId = `${body.sceneId}:${Date.now()}`;
     activeChats.set(chatId, abortController);
 
     beginSse(response);
 
+    const defaultModel = provider.id === "lmstudio"
+      ? "local-model"
+      : provider.id === "openrouter"
+      ? "meta-llama/llama-3.3-70b-instruct"
+      : "claude-sonnet-4-5";
+
+    const defaultBaseUrl = provider.id === "anthropic" ? undefined : provider.defaultBaseUrl;
+
     try {
       const stream = runAgent(
         {
           message: body.message,
-          model: body.model ?? (isLmStudio ? "local-model" : "claude-sonnet-4-5"),
-          apiKey: storedKey?.apiKey ?? "lm-studio",
-          baseUrl: storedKey?.baseUrl ?? (isLmStudio ? "http://127.0.0.1:1234" : undefined),
+          model: body.model ?? defaultModel,
+          apiKey: storedKey?.apiKey ?? "local",
+          baseUrl: storedKey?.baseUrl ?? defaultBaseUrl,
           approvalMode: body.approvalMode ?? "destructive-only",
           sceneContext,
           signal: abortController.signal,

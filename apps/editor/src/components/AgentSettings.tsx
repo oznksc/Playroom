@@ -9,6 +9,7 @@ type AgentSettingsProps = {
 
 const PROVIDERS = [
   { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5", requiresKey: true },
+  { id: "openrouter", label: "OpenRouter", defaultModel: "meta-llama/llama-3.3-70b-instruct", requiresKey: true },
   { id: "openai", label: "OpenAI", defaultModel: "gpt-4o", requiresKey: true },
   { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash", requiresKey: true },
   { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b", requiresKey: false },
@@ -38,6 +39,14 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
     const pass = needsKey ? passphrase : "local";
     const key = needsKey ? apiKey : "local";
     await addKey(editing, key, pass, model || undefined, baseUrl || undefined);
+    
+    localStorage.setItem("gamekit:agent:activeProvider", editing);
+    if (model) {
+      localStorage.setItem("gamekit:agent:activeModel", model);
+    } else {
+      localStorage.removeItem("gamekit:agent:activeModel");
+    }
+
     setEditing(null);
     setApiKey("");
     setPassphrase("");
@@ -128,14 +137,14 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   placeholder={currentProvider?.defaultModel}
                 />
               </div>
-              {!needsKey && (
+              {(!needsKey || editing === "openrouter" || editing === "openai") && (
                 <div className="agent-settings-field">
-                  <label>Base URL</label>
+                  <label>Base URL {needsKey && "(optional)"}</label>
                   <input
                     type="text"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="http://127.0.0.1:1234"
+                    placeholder={editing === "openrouter" ? "https://openrouter.ai/api/v1" : editing === "openai" ? "https://api.openai.com/v1" : "http://127.0.0.1:1234"}
                   />
                 </div>
               )}

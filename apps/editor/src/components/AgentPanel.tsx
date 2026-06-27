@@ -3,6 +3,7 @@ import { Sparkles, Send, Square, Settings, X, Info } from "lucide-react";
 import { AgentMessage } from "./AgentMessage.js";
 import { AgentToolTrace } from "./AgentToolTrace.js";
 import { useAgent } from "../hooks/useAgent.js";
+import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
 
 type AgentPanelProps = {
@@ -13,9 +14,15 @@ type AgentPanelProps = {
 
 export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) {
   const [input, setInput] = useState("");
-  const [model] = useState("claude-sonnet-4-5");
-  const [provider] = useState("anthropic");
+  const { keys } = useAgentKeys();
+  const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
+  const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
   const [approvalMode] = useState<ApprovalMode>("destructive-only");
+
+  const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
+  const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
+  const resolvedModel = activeModel || activeKeyEntry?.model || (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -28,7 +35,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
     abort,
     approveTool,
     clear,
-  } = useAgent(sceneId, model, provider, approvalMode);
+  } = useAgent(sceneId, resolvedModel, resolvedProvider, approvalMode);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,7 +62,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
         <div className="agent-header-left">
           <Sparkles size={14} className="agent-header-icon" />
           <span className="agent-header-title">Agent</span>
-          <span className="agent-header-model">{model}</span>
+          <span className="agent-header-model">{resolvedModel}</span>
           <span className="agent-header-mode">{approvalMode}</span>
         </div>
         <div className="agent-header-right">

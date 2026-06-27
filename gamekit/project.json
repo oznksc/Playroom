@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "GameKit Game",
+  "scenes": [
+    "main.scene.json"
+  ],
+  "levels": [
+    {
+      "id": "level-1",
+      "name": "Level 1",
+      "order": 1,
+      "sceneIds": [
+        "main"
+      ],
+      "unlocked": true
+    }
+  ],
+  "assets": [],
+  "guiComponents": []
+}

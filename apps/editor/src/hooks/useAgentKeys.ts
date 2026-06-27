@@ -7,6 +7,7 @@ import {
   encryptApiKey,
   decryptApiKey,
 } from "../lib/agent-keys.js";
+import { getApiUrl } from "../lib/api.js";
 
 export type AgentKeyEntry = {
   provider: string;
@@ -26,6 +27,17 @@ export function useAgentKeys() {
   const addKey = useCallback(async (provider: string, apiKey: string, passphrase: string, model?: string, baseUrl?: string) => {
     const encrypted = await encryptApiKey(apiKey, passphrase);
     saveEncryptedKey(provider, encrypted, model, baseUrl);
+
+    try {
+      await fetch(getApiUrl("/api/agent/keys"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, apiKey, model, baseUrl }),
+      });
+    } catch (e) {
+      console.error("Failed to sync key to backend:", e);
+    }
+
     setKeys(listEncryptedProviders().map((p) => {
       const entry = getEncryptedKey(p);
       return { provider: p, model: entry?.model, baseUrl: entry?.baseUrl, connected: true };
