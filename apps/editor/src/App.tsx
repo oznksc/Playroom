@@ -13,8 +13,7 @@ import { SceneSettings } from "./components/SceneSettings.js";
 import { TimelinePanel } from "./components/TimelinePanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
-import { AgentPanel } from "./components/AgentPanel.js";
-import { AgentSettings } from "./components/AgentSettings.js";
+// AgentPanel and AgentSettings — hidden for MVP, preserved for future use
 import { GuiPanel } from "./components/GuiPanel.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
@@ -25,6 +24,13 @@ import { useUndo } from "./hooks/useUndo.js";
 import { getApiUrl } from "./lib/api.js";
 
 const AUTO_SAVE_DELAY_MS = 1500;
+const MVP_SHOW_GUI_TOOLS = false;
+const MVP_SHOW_LEVELS = false;
+const MVP_SHOW_TIMELINE = false;
+const MVP_SHOW_CONSOLE = false;
+
+type SidebarTab = "entities" | "scenes" | "levels" | "guis" | "components";
+type BottomTab = "assets" | "timeline" | "console";
 
 export function App() {
   const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
@@ -62,7 +68,7 @@ export function App() {
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [activeTab, setActiveTab] = useState<"entities" | "scenes" | "levels" | "guis" | "components">("entities");
+  const [activeTab, setActiveTab] = useState<SidebarTab>("entities");
   const [snap, setSnap] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const clipboardRef = useRef<GameKitEntity | null>(null);
@@ -75,11 +81,10 @@ export function App() {
   const selectedComponentInstanceIdRef = useRef(selectedComponentInstanceId);
   selectedComponentInstanceIdRef.current = selectedComponentInstanceId;
 
-  // Premium Simulator State Hooks
+  // Experimental play-in-editor state is preserved, but hidden for MVP.
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<"assets" | "timeline" | "console" | "agent">("assets");
-  const [showAgentSettings, setShowAgentSettings] = useState(false);
+  const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>("assets");
   const isDesktop = useMemo(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
     []
@@ -92,8 +97,8 @@ export function App() {
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
-    { type: "system", message: "Ignite Engine debugger initialized.", timestamp: new Date() },
-    { type: "system", message: "Ready to test collision dynamics and input scripts.", timestamp: new Date() }
+    { type: "system", message: "GameKit editor initialized.", timestamp: new Date() },
+    { type: "system", message: "Ready to edit scenes and image assets.", timestamp: new Date() }
   ]);
 
   const preSimulationSceneRef = useRef<GameKitScene | undefined>(undefined);
@@ -942,7 +947,7 @@ export function App() {
           <div className="logo-section">
             <Gamepad2 size={48} className="dashboard-logo" />
             <h1>GAMEKIT</h1>
-            <p className="subtitle">High-fidelity 2D Engine & Visual Editor</p>
+            <p className="subtitle">Local 2D scene editor for Expo projects</p>
           </div>
           
           <div className="action-section">
@@ -1003,8 +1008,7 @@ export function App() {
           formatLastSaved={formatLastSaved}
           projectPath={isTauri ? projectPath : null}
           onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
-          onToggleAgent={() => setActiveBottomTab((v) => v === "agent" ? "assets" : "agent")}
-          agentActive={activeBottomTab === "agent"}
+
         />
 
       <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
@@ -1012,9 +1016,15 @@ export function App() {
           <div className="tab-bar">
             <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
             <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
-            <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
-            <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
-            <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
+            {MVP_SHOW_LEVELS && (
+              <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
+            )}
+            {MVP_SHOW_GUI_TOOLS && (
+              <>
+                <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
+                <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
+              </>
+            )}
           </div>
           <div className="sidebar-content">
           {activeTab === "entities" && (
@@ -1059,7 +1069,7 @@ export function App() {
               onDeleteScene={handleDeleteScene}
             />
           )}
-          {activeTab === "levels" && (
+          {MVP_SHOW_LEVELS && activeTab === "levels" && (
             <LevelPanel
               levels={snapshot.levels}
               scenes={snapshot.scenes}
@@ -1076,7 +1086,7 @@ export function App() {
               onRemoveScene={handleRemoveSceneFromLevel}
             />
           )}
-          {activeTab === "guis" && (
+          {MVP_SHOW_GUI_TOOLS && activeTab === "guis" && (
             <GuiPanel
               nodes={scene?.gui?.nodes ?? []}
               selectedGuiNodeId={selectedGuiNodeId}
@@ -1089,7 +1099,7 @@ export function App() {
               onDeleteNode={deleteGuiNode}
             />
           )}
-          {activeTab === "components" && (
+          {MVP_SHOW_GUI_TOOLS && activeTab === "components" && (
             <GuiComponentPanel
               components={snapshot.guiComponents}
               editingComponentId={editingComponentId}
@@ -1112,6 +1122,7 @@ export function App() {
           selectedGuiNodeId={selectedGuiNodeId}
           guiComponents={snapshot.guiComponents}
           selectedComponentInstanceId={selectedComponentInstanceId}
+          showGuiTools={MVP_SHOW_GUI_TOOLS}
           zoom={zoom}
           snap={snap}
           hasClipboard={clipboardRef.current !== null}
@@ -1236,27 +1247,24 @@ export function App() {
             >
               Content Browser
             </button>
-            <button
-              type="button"
-              className={activeBottomTab === "timeline" ? "drawer-tab active" : "drawer-tab"}
-              onClick={() => setActiveBottomTab("timeline")}
-            >
-              Sequencer Timeline
-            </button>
-            <button
-              type="button"
-              className={activeBottomTab === "console" ? "drawer-tab active" : "drawer-tab"}
-              onClick={() => setActiveBottomTab("console")}
-            >
-              Developer Console
-            </button>
-            <button
-              type="button"
-              className={activeBottomTab === "agent" ? "drawer-tab active" : "drawer-tab"}
-              onClick={() => setActiveBottomTab("agent")}
-            >
-              AI Agent
-            </button>
+            {MVP_SHOW_TIMELINE && (
+              <button
+                type="button"
+                className={activeBottomTab === "timeline" ? "drawer-tab active" : "drawer-tab"}
+                onClick={() => setActiveBottomTab("timeline")}
+              >
+                Sequencer Timeline
+              </button>
+            )}
+            {MVP_SHOW_CONSOLE && (
+              <button
+                type="button"
+                className={activeBottomTab === "console" ? "drawer-tab active" : "drawer-tab"}
+                onClick={() => setActiveBottomTab("console")}
+              >
+                Developer Console
+              </button>
+            )}
             <button
               type="button"
               className="drawer-collapse-btn"
@@ -1276,24 +1284,17 @@ export function App() {
                 onImport={(file) => importAsset(file).catch(setError)}
               />
             )}
-            {activeBottomTab === "timeline" && (
+            {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
               <TimelinePanel
                 scene={scene}
                 onChange={updateScene}
               />
             )}
-            {activeBottomTab === "console" && (
+            {MVP_SHOW_CONSOLE && activeBottomTab === "console" && (
               <ConsolePanel
                 logs={logs}
                 onExecuteCommand={executeConsoleCommand}
                 onClearLogs={() => setLogs([])}
-              />
-            )}
-            {activeBottomTab === "agent" && (
-              <AgentPanel
-                sceneId={currentSceneFile}
-                isPlaying={isPlaying}
-                onSettings={() => setShowAgentSettings(true)}
               />
             )}
           </div>
@@ -1309,7 +1310,6 @@ export function App() {
         statusClass={statusClass}
       />
 
-      <AgentSettings open={showAgentSettings} onClose={() => setShowAgentSettings(false)} />
     </main>
   );
 }

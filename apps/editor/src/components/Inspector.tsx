@@ -29,6 +29,8 @@ import { useState } from "react";
 import { findComponent } from "../lib/components.js";
 import { getApiUrl } from "../lib/api.js";
 
+const MVP_SHOW_ADVANCED_PHYSICS = false;
+
 type NumberFieldProps = {
   label: string;
   value: number;
@@ -208,9 +210,9 @@ export function Inspector({
   if (entity) {
     if (!sprite) missingComponents.push({ val: "Sprite", label: "Sprite Renderer" });
     if (!collider) missingComponents.push({ val: "AabbCollider", label: "Box Collider 2D" });
-    if (!circleCollider) missingComponents.push({ val: "CircleCollider", label: "Circle Collider 2D" });
+    if (MVP_SHOW_ADVANCED_PHYSICS && !circleCollider) missingComponents.push({ val: "CircleCollider", label: "Circle Collider 2D" });
     if (!player) missingComponents.push({ val: "PlayerController", label: "Player Controller" });
-    if (!rigidBody) missingComponents.push({ val: "RigidBody", label: "RigidBody 2D" });
+    if (MVP_SHOW_ADVANCED_PHYSICS && !rigidBody) missingComponents.push({ val: "RigidBody", label: "RigidBody 2D" });
     if (!camera) missingComponents.push({ val: "CameraFollow", label: "Camera Follow" });
   }
 
@@ -431,22 +433,24 @@ export function Inspector({
                         })}
                       />
                     </div>
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Layer"
-                        value={collider.layer ?? 1}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Mask"
-                        value={collider.mask ?? 1}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
-                        })}
-                      />
-                    </div>
+                    {MVP_SHOW_ADVANCED_PHYSICS && (
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Layer"
+                          value={collider.layer ?? 1}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Mask"
+                          value={collider.mask ?? 1}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
+                          })}
+                        />
+                      </div>
+                    )}
                     <div className="field-checkbox-row">
                       <input
                         id="collider-static-check"
@@ -456,7 +460,7 @@ export function Inspector({
                           findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
                         })}
                       />
-                      <label htmlFor="collider-static-check">Is Static (Rigid obstacle)</label>
+                      <label htmlFor="collider-static-check">Static collider</label>
                     </div>
                   </div>
                 </div>
@@ -468,190 +472,193 @@ export function Inspector({
               )}
             </div>
 
-            {/* Circle Collider Component */}
-            <div className="inspector-section-card">
-              <SectionHeader
-                icon={<Circle size={12} />}
-                label="Circle Collider 2D"
-                isOpen={!collapsed.CircleCollider}
-                onToggle={() => toggleCollapse("CircleCollider")}
-                removable={!!circleCollider}
-                onRemove={() => onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "CircleCollider");
-                })}
-                accentClass="accent-collider"
-              />
-              {!collapsed.CircleCollider && circleCollider && (
-                <div className="inspector-card-body">
-                  <div className="inspector-field-grid">
-                    <div className="field-grid-row single-field">
-                      <NumberField
-                        label="Radius"
-                        value={circleCollider.radius}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.radius = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Offset X"
-                        value={circleCollider.offset.x}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.x = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Offset Y"
-                        value={circleCollider.offset.y}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.y = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Layer"
-                        value={circleCollider.layer ?? 1}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.layer = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Mask"
-                        value={circleCollider.mask ?? 1}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.mask = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-checkbox-row">
-                      <input
-                        id="circle-collider-static-check"
-                        type="checkbox"
-                        checked={circleCollider.isStatic}
-                        onChange={(event) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = event.target.checked;
-                        })}
-                      />
-                      <label htmlFor="circle-collider-static-check">Is Static (Rigid obstacle)</label>
-                    </div>
-                    <div className="field-checkbox-row">
-                      <input
-                        id="circle-collider-trigger-check"
-                        type="checkbox"
-                        checked={circleCollider.isTrigger}
-                        onChange={(event) => onChange((draft) => {
-                          findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = event.target.checked;
-                        })}
-                      />
-                      <label htmlFor="circle-collider-trigger-check">Is Trigger (Overlap only)</label>
+            {MVP_SHOW_ADVANCED_PHYSICS && (
+              <div className="inspector-section-card">
+                <SectionHeader
+                  icon={<Circle size={12} />}
+                  label="Circle Collider 2D"
+                  isOpen={!collapsed.CircleCollider}
+                  onToggle={() => toggleCollapse("CircleCollider")}
+                  removable={!!circleCollider}
+                  onRemove={() => onChange((draft) => {
+                    draft.components = draft.components.filter((c) => c.type !== "CircleCollider");
+                  })}
+                  accentClass="accent-collider"
+                />
+                {!collapsed.CircleCollider && circleCollider && (
+                  <div className="inspector-card-body">
+                    <div className="inspector-field-grid">
+                      <div className="field-grid-row single-field">
+                        <NumberField
+                          label="Radius"
+                          value={circleCollider.radius}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.radius = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Offset X"
+                          value={circleCollider.offset.x}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.x = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Offset Y"
+                          value={circleCollider.offset.y}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.y = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Layer"
+                          value={circleCollider.layer ?? 1}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.layer = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Mask"
+                          value={circleCollider.mask ?? 1}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.mask = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-checkbox-row">
+                        <input
+                          id="circle-collider-static-check"
+                          type="checkbox"
+                          checked={circleCollider.isStatic}
+                          onChange={(event) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = event.target.checked;
+                          })}
+                        />
+                        <label htmlFor="circle-collider-static-check">Is Static (Rigid obstacle)</label>
+                      </div>
+                      <div className="field-checkbox-row">
+                        <input
+                          id="circle-collider-trigger-check"
+                          type="checkbox"
+                          checked={circleCollider.isTrigger}
+                          onChange={(event) => onChange((draft) => {
+                            findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = event.target.checked;
+                          })}
+                        />
+                        <label htmlFor="circle-collider-trigger-check">Is Trigger (Overlap only)</label>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              {!circleCollider && !collapsed.CircleCollider && (
-                <div className="inspector-card-body-empty">
-                  <span>No Circle Collider attached</span>
-                </div>
-              )}
-            </div>
+                )}
+                {!circleCollider && !collapsed.CircleCollider && (
+                  <div className="inspector-card-body-empty">
+                    <span>No Circle Collider attached</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* RigidBody Component */}
-            <div className="inspector-section-card">
-              <SectionHeader
-                icon={<Box size={12} />}
-                label="RigidBody 2D"
-                isOpen={!collapsed.RigidBody}
-                onToggle={() => toggleCollapse("RigidBody")}
-                removable={!!rigidBody}
-                onRemove={() => onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "RigidBody");
-                })}
-                accentClass="accent-player"
-              />
-              {!collapsed.RigidBody && rigidBody && (
-                <div className="inspector-card-body">
-                  <div className="inspector-field-grid">
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Vel X"
-                        value={rigidBody.velocity.x}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.x = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Vel Y"
-                        value={rigidBody.velocity.y}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.y = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Mass"
-                        value={rigidBody.mass}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.mass = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Ang Vel"
-                        value={rigidBody.angularVelocity}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.angularVelocity = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-grid-row dual-fields">
-                      <NumberField
-                        label="Drag"
-                        value={rigidBody.drag}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.drag = value;
-                        })}
-                      />
-                      <NumberField
-                        label="Gravity Scale"
-                        value={rigidBody.gravityScale}
-                        onChange={(value) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.gravityScale = value;
-                        })}
-                      />
-                    </div>
-                    <div className="field-checkbox-row">
-                      <input
-                        id="rigid-body-kinematic-check"
-                        type="checkbox"
-                        checked={rigidBody.isKinematic}
-                        onChange={(event) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = event.target.checked;
-                        })}
-                      />
-                      <label htmlFor="rigid-body-kinematic-check">Is Kinematic</label>
-                    </div>
-                    <div className="field-checkbox-row">
-                      <input
-                        id="rigid-body-gravity-check"
-                        type="checkbox"
-                        checked={rigidBody.useGravity}
-                        onChange={(event) => onChange((draft) => {
-                          findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = event.target.checked;
-                        })}
-                      />
-                      <label htmlFor="rigid-body-gravity-check">Use Gravity</label>
+            {MVP_SHOW_ADVANCED_PHYSICS && (
+              <div className="inspector-section-card">
+                <SectionHeader
+                  icon={<Box size={12} />}
+                  label="RigidBody 2D"
+                  isOpen={!collapsed.RigidBody}
+                  onToggle={() => toggleCollapse("RigidBody")}
+                  removable={!!rigidBody}
+                  onRemove={() => onChange((draft) => {
+                    draft.components = draft.components.filter((c) => c.type !== "RigidBody");
+                  })}
+                  accentClass="accent-player"
+                />
+                {!collapsed.RigidBody && rigidBody && (
+                  <div className="inspector-card-body">
+                    <div className="inspector-field-grid">
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Vel X"
+                          value={rigidBody.velocity.x}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.x = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Vel Y"
+                          value={rigidBody.velocity.y}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.y = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Mass"
+                          value={rigidBody.mass}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.mass = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Ang Vel"
+                          value={rigidBody.angularVelocity}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.angularVelocity = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-grid-row dual-fields">
+                        <NumberField
+                          label="Drag"
+                          value={rigidBody.drag}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.drag = value;
+                          })}
+                        />
+                        <NumberField
+                          label="Gravity Scale"
+                          value={rigidBody.gravityScale}
+                          onChange={(value) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.gravityScale = value;
+                          })}
+                        />
+                      </div>
+                      <div className="field-checkbox-row">
+                        <input
+                          id="rigid-body-kinematic-check"
+                          type="checkbox"
+                          checked={rigidBody.isKinematic}
+                          onChange={(event) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = event.target.checked;
+                          })}
+                        />
+                        <label htmlFor="rigid-body-kinematic-check">Is Kinematic</label>
+                      </div>
+                      <div className="field-checkbox-row">
+                        <input
+                          id="rigid-body-gravity-check"
+                          type="checkbox"
+                          checked={rigidBody.useGravity}
+                          onChange={(event) => onChange((draft) => {
+                            findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = event.target.checked;
+                          })}
+                        />
+                        <label htmlFor="rigid-body-gravity-check">Use Gravity</label>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              {!rigidBody && !collapsed.RigidBody && (
-                <div className="inspector-card-body-empty">
-                  <span>No RigidBody attached</span>
-                </div>
-              )}
-            </div>
+                )}
+                {!rigidBody && !collapsed.RigidBody && (
+                  <div className="inspector-card-body-empty">
+                    <span>No RigidBody attached</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Player Controller Component */}
             <div className="inspector-section-card">

@@ -21,7 +21,8 @@ export function drawScene(
   showColliders = true,
   selectedGuiNodeId?: string | null,
   guiComponents?: GuiComponent[],
-  selectedComponentInstanceId?: string | null
+  selectedComponentInstanceId?: string | null,
+  showGuiOverlays = true
 ) {
   context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
   context.fillStyle = scene.viewport.background;
@@ -77,34 +78,36 @@ export function drawScene(
     }
   }
 
-  // Draw component instances (underneath loose GUI nodes)
-  const componentMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
-  for (const instance of scene.gui?.componentInstances ?? []) {
-    if (instance.visible === false) continue;
-    const component = componentMap.get(instance.componentId);
-    if (!component) continue;
+  if (showGuiOverlays) {
+    // Draw component instances (underneath loose GUI nodes)
+    const componentMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
+    for (const instance of scene.gui?.componentInstances ?? []) {
+      if (instance.visible === false) continue;
+      const component = componentMap.get(instance.componentId);
+      if (!component) continue;
 
-    const isSelected = instance.id === selectedComponentInstanceId;
-    if (isSelected) {
-      const bounds = computeComponentBounds(component);
-      context.strokeStyle = "#ffb300";
-      context.lineWidth = 2;
-      context.setLineDash([6, 3]);
-      context.strokeRect(instance.x + bounds.x, instance.y + bounds.y, bounds.width, bounds.height);
-      context.setLineDash([]);
+      const isSelected = instance.id === selectedComponentInstanceId;
+      if (isSelected) {
+        const bounds = computeComponentBounds(component);
+        context.strokeStyle = "#ffb300";
+        context.lineWidth = 2;
+        context.setLineDash([6, 3]);
+        context.strokeRect(instance.x + bounds.x, instance.y + bounds.y, bounds.width, bounds.height);
+        context.setLineDash([]);
+      }
+
+      for (const node of component.nodes) {
+        const effectiveNode = applyNodeOverrides(node, instance);
+        drawGuiNode(context, effectiveNode, images, assets, false);
+      }
     }
 
-    for (const node of component.nodes) {
-      const effectiveNode = applyNodeOverrides(node, instance);
-      drawGuiNode(context, effectiveNode, images, assets, false);
-    }
-  }
-
-  // Draw loose GUI overlay nodes
-  if (scene.gui?.nodes) {
-    for (const node of scene.gui.nodes) {
-      if (node.visible === false) continue;
-      drawGuiNode(context, node, images, assets, node.id === selectedGuiNodeId);
+    // Draw loose GUI overlay nodes
+    if (scene.gui?.nodes) {
+      for (const node of scene.gui.nodes) {
+        if (node.visible === false) continue;
+        drawGuiNode(context, node, images, assets, node.id === selectedGuiNodeId);
+      }
     }
   }
 }

@@ -12,9 +12,10 @@ import {
   Cpu,
   PanelLeft,
   PanelRight,
-  Sparkles
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+
+const MVP_SHOW_PLAY_CONTROLS = false;
 
 type TopbarProps = {
   sceneName: string;
@@ -38,8 +39,6 @@ type TopbarProps = {
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
-  onToggleAgent?: () => void;
-  agentActive?: boolean;
 };
 
 export function Topbar({
@@ -64,8 +63,6 @@ export function Topbar({
   formatLastSaved,
   projectPath,
   onCloseProject,
-  onToggleAgent,
-  agentActive
 }: TopbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
@@ -88,10 +85,10 @@ export function Topbar({
     <header className="topbar">
       {/* Brand logo & active scene */}
       <div className="topbar-brand">
-        <div className="topbar-logo">🔥</div>
+        <div className="topbar-logo">GK</div>
         <div className="brand-titles">
-          <h1>Ignite Engine</h1>
-          <span className="brand-tag">PLAYROOM IDE</span>
+          <h1>GameKit</h1>
+          <span className="brand-tag">MVP EDITOR</span>
         </div>
         <ChevronRight size={12} className="brand-arrow" />
         <span className="scene-name-label">{sceneName}</span>
@@ -109,43 +106,45 @@ export function Topbar({
       </div>
 
       {/* Center Panel: Simulation Ticker State Controls */}
-      <div className="engine-simulation-controls">
-        <button
-          type="button"
-          className={`sim-btn sim-play ${isPlaying && !isPaused ? "active pulsing" : ""}`}
-          onClick={onPlayToggle}
-          title="Run Simulation (Play Game)"
-        >
-          <Play size={13} fill={isPlaying && !isPaused ? "currentColor" : "none"} />
-        </button>
-        <button
-          type="button"
-          className={`sim-btn sim-pause ${isPaused ? "active" : ""}`}
-          onClick={onPauseToggle}
-          disabled={!isPlaying}
-          title="Pause Active Simulation"
-        >
-          <Pause size={13} fill={isPaused ? "currentColor" : "none"} />
-        </button>
-        <button
-          type="button"
-          className="sim-btn sim-stop"
-          onClick={onStop}
-          disabled={!isPlaying}
-          title="Stop Simulation & Reset Entities"
-        >
-          <Square size={13} fill="none" />
-        </button>
+      {MVP_SHOW_PLAY_CONTROLS && (
+        <div className="engine-simulation-controls">
+          <button
+            type="button"
+            className={`sim-btn sim-play ${isPlaying && !isPaused ? "active pulsing" : ""}`}
+            onClick={onPlayToggle}
+            title="Run Simulation (Play Game)"
+          >
+            <Play size={13} fill={isPlaying && !isPaused ? "currentColor" : "none"} />
+          </button>
+          <button
+            type="button"
+            className={`sim-btn sim-pause ${isPaused ? "active" : ""}`}
+            onClick={onPauseToggle}
+            disabled={!isPlaying}
+            title="Pause Active Simulation"
+          >
+            <Pause size={13} fill={isPaused ? "currentColor" : "none"} />
+          </button>
+          <button
+            type="button"
+            className="sim-btn sim-stop"
+            onClick={onStop}
+            disabled={!isPlaying}
+            title="Stop Simulation & Reset Entities"
+          >
+            <Square size={13} fill="none" />
+          </button>
 
-        {isPlaying && (
-          <div className="engine-telemetry">
-            <Cpu size={12} className="telemetry-icon" />
-            <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{fps}</strong></span>
-            <span className="telemetry-divider" />
-            <span className="telemetry-stat">Latency: <strong>{tickMs}ms</strong></span>
-          </div>
-        )}
-      </div>
+          {isPlaying && (
+            <div className="engine-telemetry">
+              <Cpu size={12} className="telemetry-icon" />
+              <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{fps}</strong></span>
+              <span className="telemetry-divider" />
+              <span className="telemetry-stat">Latency: <strong>{tickMs}ms</strong></span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Editor Tool Actions */}
       <div className="toolbar">
@@ -173,14 +172,6 @@ export function Topbar({
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </button>
         <div className="toolbar-divider" />
-        <button
-          type="button"
-          title="AI Agent"
-          className={`toolbar-action-btn${agentActive ? " active" : ""}`}
-          onClick={onToggleAgent}
-        >
-          <Sparkles size={14} />
-        </button>
         <div className="toolbar-divider" />
         <button type="button" className={`panel-toggle-btn${inspectorOpen ? " active" : ""}`} onClick={onToggleInspector} title="Toggle inspector panel">
           <PanelRight size={14} />

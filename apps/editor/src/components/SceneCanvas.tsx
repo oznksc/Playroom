@@ -31,6 +31,7 @@ type SceneCanvasProps = {
   selectedGuiNodeId?: string | null;
   guiComponents?: GuiComponent[];
   selectedComponentInstanceId?: string | null;
+  showGuiTools?: boolean;
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
@@ -68,6 +69,7 @@ export function SceneCanvas({
   selectedGuiNodeId,
   guiComponents,
   selectedComponentInstanceId,
+  showGuiTools = true,
   zoom,
   snap,
   hasClipboard,
@@ -124,8 +126,8 @@ export function SceneCanvas({
 
     context.resetTransform();
     context.scale(pixelRatio, pixelRatio);
-    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId);
-  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId]);
+    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId, showGuiTools);
+  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId, showGuiTools]);
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -325,23 +327,25 @@ export function SceneCanvas({
                 }
 
                 const point = pointerPosition(event);
-                // Check component instances first (highest layer)
-                const instances = scene.gui?.componentInstances ?? [];
-                const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
-                const hitInst = [...instances].reverse().find((inst) => {
-                  const comp = compMap.get(inst.componentId);
-                  return comp && hitComponentInstance(inst, comp, point);
-                });
-                if (hitInst) {
-                  onSelectComponentInstance(hitInst.id);
-                  return;
-                }
-                // Check loose GUI nodes next
-                const guiNodes = scene.gui?.nodes ?? [];
-                const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
-                if (hitGui) {
-                  onSelectGuiNode(hitGui.id);
-                  return;
+                if (showGuiTools) {
+                  // Check component instances first (highest layer)
+                  const instances = scene.gui?.componentInstances ?? [];
+                  const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
+                  const hitInst = [...instances].reverse().find((inst) => {
+                    const comp = compMap.get(inst.componentId);
+                    return comp && hitComponentInstance(inst, comp, point);
+                  });
+                  if (hitInst) {
+                    onSelectComponentInstance(hitInst.id);
+                    return;
+                  }
+                  // Check loose GUI nodes next
+                  const guiNodes = scene.gui?.nodes ?? [];
+                  const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
+                  if (hitGui) {
+                    onSelectGuiNode(hitGui.id);
+                    return;
+                  }
                 }
                 const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
                 if (!hit) {
