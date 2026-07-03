@@ -14,14 +14,290 @@
   "assets": [],
   "entities": [
     {
+      "id": "3038dbaa-caeb-40b2-a91f-65addbc7702b",
+      "name": "Player (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 187,
+            "y": 639
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "d4d72277-2980-4c8c-977b-54d8d5122596",
+      "name": "Player (copy) (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 219,
+            "y": 671
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "426f65ba-006a-4542-81f1-e394ceea2526",
+      "name": "Player (copy) (copy) (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 251,
+            "y": 703
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "7f810b4c-d087-4256-8c26-d43e177f199e",
+      "name": "Player (copy) (copy) (copy) (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 283,
+            "y": 735
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "625a7539-e5cd-4a80-a464-b2b05f42c3ac",
+      "name": "Player (copy) (copy) (copy) (copy) (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 315,
+            "y": 767
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
       "id": "player",
       "name": "Player",
       "components": [
         {
           "type": "Transform",
           "position": {
-            "x": 120,
-            "y": 360
+            "x": 59,
+            "y": 511
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    },
+    {
+      "id": "89c63c6c-272c-42a3-bdcb-e4df0cedf362",
+      "name": "Player (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 91,
+            "y": 543
           },
           "rotation": 0,
           "scale": {
@@ -66,8 +342,8 @@
         {
           "type": "Transform",
           "position": {
-            "x": 0,
-            "y": 520
+            "x": -581,
+            "y": 356
           },
           "rotation": 0,
           "scale": {

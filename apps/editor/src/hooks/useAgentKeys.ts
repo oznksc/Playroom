@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   saveEncryptedKey,
   getEncryptedKey,
@@ -24,6 +24,23 @@ export function useAgentKeys() {
     }),
   );
 
+  const refreshKeys = useCallback(() => {
+    setKeys(listEncryptedProviders().map((p) => {
+      const entry = getEncryptedKey(p);
+      return { provider: p, model: entry?.model, baseUrl: entry?.baseUrl, connected: true };
+    }));
+  }, []);
+
+  useEffect(() => {
+    const handleSync = () => refreshKeys();
+    window.addEventListener("gamekit:agent:keys-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("gamekit:agent:keys-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, [refreshKeys]);
+
   const addKey = useCallback(async (provider: string, apiKey: string, passphrase: string, model?: string, baseUrl?: string) => {
     const encrypted = await encryptApiKey(apiKey, passphrase);
     saveEncryptedKey(provider, encrypted, model, baseUrl);
@@ -38,15 +55,12 @@ export function useAgentKeys() {
       console.error("Failed to sync key to backend:", e);
     }
 
-    setKeys(listEncryptedProviders().map((p) => {
-      const entry = getEncryptedKey(p);
-      return { provider: p, model: entry?.model, baseUrl: entry?.baseUrl, connected: true };
-    }));
+    window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
   }, []);
 
   const removeKey = useCallback((provider: string) => {
     deleteEncryptedKey(provider);
-    setKeys((prev) => prev.filter((k) => k.provider !== provider));
+    window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
   }, []);
 
   const getKey = useCallback(async (provider: string, passphrase: string): Promise<string | null> => {

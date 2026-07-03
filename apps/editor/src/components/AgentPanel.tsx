@@ -6,6 +6,15 @@ import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
 
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: "Anthropic Claude",
+  openrouter: "OpenRouter",
+  openai: "OpenAI",
+  google: "Google AI",
+  ollama: "Ollama (local)",
+  lmstudio: "LM Studio (local)",
+};
+
 type AgentPanelProps = {
   sceneId: string;
   isPlaying: boolean;
@@ -62,6 +71,33 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
         <div className="agent-header-left">
           <Sparkles size={14} className="agent-header-icon" />
           <span className="agent-header-title">Agent</span>
+          <select
+            className="agent-provider-select"
+            value={resolvedProvider}
+            onChange={(e) => {
+              const newProvider = e.target.value;
+              setActiveProvider(newProvider);
+              localStorage.setItem("gamekit:agent:activeProvider", newProvider);
+              const entry = keys.find(k => k.provider === newProvider);
+              const defaultModel = newProvider === "openrouter"
+                ? "meta-llama/llama-3.3-70b-instruct"
+                : newProvider === "lmstudio"
+                ? "local-model"
+                : "claude-sonnet-4-5";
+              const newModel = entry?.model || defaultModel;
+              setActiveModel(newModel);
+              localStorage.setItem("gamekit:agent:activeModel", newModel);
+            }}
+          >
+            {keys.map((k) => (
+              <option key={k.provider} value={k.provider}>
+                {PROVIDER_LABELS[k.provider] || k.provider}
+              </option>
+            ))}
+            {keys.length === 0 && (
+              <option value="anthropic">Anthropic Claude</option>
+            )}
+          </select>
           <span className="agent-header-model">{resolvedModel}</span>
           <span className="agent-header-mode">{approvalMode}</span>
         </div>

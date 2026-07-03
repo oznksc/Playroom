@@ -1,7 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { readFile, writeFile, readdir, unlink, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import {
   McpClient,
   AnthropicAdapter,
@@ -169,8 +173,11 @@ export async function handleAgentRoute(
     };
 
     // Spawn MCP client
+    const cliDir = __dirname.includes("dist")
+      ? join(__dirname, "..")
+      : join(__dirname, "..", "..", "dist");
     const mcpClient = new McpClient(
-      join(__dirname, "..", "index.js"),
+      join(cliDir, "index.js"),
       root,
     );
 
