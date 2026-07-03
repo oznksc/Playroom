@@ -2,6 +2,7 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, extname, join, relative } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { fileURLToPath } from "node:url";
 import {
   type GameKitAsset,
   type GameKitProject,
@@ -247,7 +248,8 @@ export async function exportProject(root: string, outputDir: string, platform: "
   const { project, scenes, assets } = await getProjectSnapshot(root);
   const gamekitRoot = getGameKitRoot(root);
   const outputGamekit = join(outputDir, "gamekit");
-  const pkgJson = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as Record<string, unknown>;
+  const playroomRoot = fileURLToPath(new URL("../../..", import.meta.url));
+  const pkgJson = JSON.parse(await readFile(join(playroomRoot, "package.json"), "utf8")) as Record<string, unknown>;
 
   await mkdir(outputDir, { recursive: true });
   await mkdir(join(outputGamekit, "scenes"), { recursive: true });
@@ -255,7 +257,7 @@ export async function exportProject(root: string, outputDir: string, platform: "
   await mkdir(join(outputGamekit, "generated"), { recursive: true });
 
   if (platform === "web") {
-    const templateDir = join(root, "templates", "web-game");
+    const templateDir = join(playroomRoot, "templates", "web-game");
     const filesToCopy = [
       { src: join(templateDir, "index.html"), dest: join(outputDir, "index.html") },
       { src: join(templateDir, "vite.config.ts"), dest: join(outputDir, "vite.config.ts") },
@@ -281,7 +283,7 @@ export async function exportProject(root: string, outputDir: string, platform: "
     deps["phaser"] = "^3.87.0";
     await writeFile(join(outputDir, "package.json"), JSON.stringify(templatePkg, null, 2) + "\n");
   } else {
-    const templateDir = join(root, "templates", "expo-game");
+    const templateDir = join(playroomRoot, "templates", "expo-game");
     const filesToCopy = [
       { src: join(templateDir, "App.tsx"), dest: join(outputDir, "App.tsx") },
       { src: join(templateDir, "app.json"), dest: join(outputDir, "app.json") },

@@ -96,4 +96,25 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       };
     },
   );
+
+  server.tool(
+    "validate_scene",
+    "Validate a scene file structure",
+    {
+      path: z.string().describe("Scene filename (e.g., main.scene.json) or full path"),
+    },
+    async ({ path }) => {
+      try {
+        const filename = fileIO.resolveScenePath(path);
+        const scene = await fileIO.readScene(filename);
+        return {
+          content: [{ type: "text", text: JSON.stringify({ ok: true, scene }, null, 2) }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) }],
+        };
+      }
+    }
+  );
 }
