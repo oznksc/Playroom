@@ -261,6 +261,31 @@ export function App() {
         if (event.key === "r" || event.key === "R") { setActiveTool("scale"); return; }
       }
 
+      // Arrow keys entity nudging
+      if (!isInput && !isPlaying && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+        const ids = selectedEntityIdsRef.current;
+        if (ids.size > 0) {
+          event.preventDefault();
+          const amount = event.shiftKey ? 10 : 1;
+          push((draft) => {
+            if (!draft) return;
+            for (const id of ids) {
+              const entity = draft.entities.find((candidate) => candidate.id === id);
+              const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
+              if (transform) {
+                if (event.key === "ArrowUp") transform.position.y -= amount;
+                if (event.key === "ArrowDown") transform.position.y += amount;
+                if (event.key === "ArrowLeft") transform.position.x -= amount;
+                if (event.key === "ArrowRight") transform.position.x += amount;
+              }
+            }
+          });
+          setIsDirty(true);
+          triggerAutoSave();
+          return;
+        }
+      }
+
       if (!isInput && (event.key === "Delete" || event.key === "Backspace")) {
         const ids = selectedEntityIdsRef.current;
         if (ids.size > 0) {
