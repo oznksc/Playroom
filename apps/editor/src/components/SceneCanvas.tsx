@@ -111,7 +111,80 @@ export function SceneCanvas({
   
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panning, setPanning] = useState<{ startX: number; startY: number; panStartX: number; panStartY: number } | undefined>();
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const images = useImageCache(assets);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const ctrl = e.metaKey || e.ctrlKey;
+      const isInput = document.activeElement instanceof HTMLInputElement ||
+                      document.activeElement instanceof HTMLTextAreaElement ||
+                      document.activeElement instanceof HTMLSelectElement;
+
+      if (!isInput) {
+        if (e.code === "Space" || e.key === " ") {
+          e.preventDefault();
+          setIsSpacePressed(true);
+        }
+
+        if (ctrl && (e.key === "=" || e.key === "+")) {
+          e.preventDefault();
+          onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1));
+        } else if (ctrl && e.key === "-") {
+          e.preventDefault();
+          onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1));
+        } else if (ctrl && e.key === "0") {
+          e.preventDefault();
+          onZoomChange(1);
+          setPan({ x: 0, y: 0 });
+        }
+      }
+    }
+
+    function handleKeyUp(e: KeyboardEvent) {
+      if (e.code === "Space" || e.key === " ") {
+        setIsSpacePressed(false);
+      }
+    }
+
+    function handleBlur() {
+      setIsSpacePressed(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, [zoom, onZoomChange, setPan]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    function handleWheel(event: WheelEvent) {
+      event.preventDefault();
+      if (event.ctrlKey) {
+        // Pinch-to-zoom (trackpad) or Ctrl + scroll wheel
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        onZoomChange(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom + delta)));
+      } else {
+        // 2-finger panning (trackpad) or mouse wheel panning
+        setPan((prev) => ({
+          x: prev.x + event.deltaX / zoom,
+          y: prev.y + event.deltaY / zoom,
+        }));
+      }
+    }
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener("wheel", handleWheel);
+    };
+  }, [zoom, onZoomChange]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -207,7 +280,7 @@ export function SceneCanvas({
         height: scene.viewport.height,
         transform: `scale(${zoom}) translate(${-pan.x}px, ${-pan.y}px)`,
         transformOrigin: "0 0",
-        cursor: panning ? "grabbing" : "default",
+        cursor: panning ? "grabbing" : isSpacePressed ? "grab" : "default",
       }
     : {};
 
@@ -317,10 +390,11 @@ export function SceneCanvas({
           <div style={containerStyle}>
             <canvas
               ref={canvasRef}
+              tabIndex={0}
               onPointerDown={(event) => {
                 if (!scene) return;
 
-                if (event.button === 1 || (event.button === 0 && event.altKey)) {
+                if (event.button === 1 || (event.button === 0 && event.altKey) || (event.button === 0 && isSpacePressed)) {
                   event.currentTarget.setPointerCapture(event.pointerId);
                   setPanning({ startX: event.clientX, startY: event.clientY, panStartX: pan.x, panStartY: pan.y });
                   return;
@@ -429,11 +503,6 @@ export function SceneCanvas({
                 }
               }}
               onPointerUp={() => { setDrag(undefined); setPanning(undefined); }}
-              onWheel={(event) => {
-                event.preventDefault();
-                const delta = event.deltaY > 0 ? -0.1 : 0.1;
-                onZoomChange(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom + delta)));
-              }}
             />
           </div>
         </div>

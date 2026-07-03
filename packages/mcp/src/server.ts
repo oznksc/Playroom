@@ -13,6 +13,7 @@ import { registerSnapshotTools } from "./tools/snapshot.js";
 import { registerSceneMetaTools } from "./tools/scene-meta.js";
 import { registerSuggestionTools } from "./tools/suggestions.js";
 import { registerGravityTools } from "./tools/gravity.js";
+import { registerSearchTools } from "./tools/search.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -39,6 +40,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerSceneMetaTools(server, fileIO);
   registerSuggestionTools(server);
   registerGravityTools(server, fileIO);
+  registerSearchTools(server, basePath);
   registerResources(server, fileIO);
   registerPrompts(server);
 

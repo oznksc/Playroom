@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { basename, join, resolve } from "node:path";
 import { readdir, readFile, writeFile } from "node:fs/promises";
+import { execSync } from "node:child_process";
 import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
@@ -130,6 +131,101 @@ async function main(argv: string[]): Promise<void> {
       }
       throw new Error("Usage: gamekit skills <list|apply> [name]");
     }
+    case "search": {
+      const query = args[0];
+      if (!query) {
+        throw new Error("Usage: gamekit search <query>");
+      }
+      try {
+        console.log(`Searching for "${query}" using colgrep...`);
+        execSync(`colgrep "${query}" --results 10`, { cwd, stdio: "inherit" });
+      } catch (err) {
+        console.log("colgrep search failed or not installed. Running fallback text search...");
+        const results: Array<{ file: string; line: number; content: string }> = [];
+        const excludeDirs = [".git", "node_modules", "dist", "target", ".playwright-cli"];
+        async function walk(currentDir: string) {
+          const entries = await readdir(currentDir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = join(currentDir, entry.name);
+            if (entry.isDirectory()) {
+              if (excludeDirs.includes(entry.name)) continue;
+              await walk(fullPath);
+            } else if (entry.isFile()) {
+              if (/\.(ts|tsx|json|md|txt|css|scss|js|jsx)$/.test(entry.name)) {
+                try {
+                  const content = await readFile(fullPath, "utf-8");
+                  if (content.toLowerCase().includes(query.toLowerCase())) {
+                    const lines = content.split("\n");
+                    lines.forEach((line, idx) => {
+                      if (line.toLowerCase().includes(query.toLowerCase())) {
+                        results.push({
+                          file: relative(cwd, fullPath),
+                          line: idx + 1,
+                          content: line.trim(),
+                        });
+                      }
+                    });
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
+        const { relative } = await import("node:path");
+        await walk(cwd);
+        if (results.length === 0) {
+          console.log("No matches found.");
+        } else {
+          results.slice(0, 20).forEach((m) => {
+            console.log(`${m.file}:${m.line}: ${m.content}`);
+          });
+          if (results.length > 20) {
+            console.log(`\n...and ${results.length - 20} more matches.`);
+          }
+        }
+      }
+      return;
+    }
+    case "validate": {
+      const { validateProject, validateScene } = await import("@gamekit/schema");
+      const gamekitDir = join(cwd, "gamekit");
+      
+      console.log("🔍 Validating project.json...");
+      try {
+        const projectRaw = JSON.parse(await readFile(join(gamekitDir, "project.json"), "utf-8"));
+        const projectResult = validateProject(projectRaw);
+        if (projectResult.ok) {
+          console.log("✅ project.json is VALID.");
+        } else {
+          console.error("❌ project.json has ERRORS:\n" + projectResult.errors.map(e => `  - ${e}`).join("\n"));
+        }
+      } catch (err: any) {
+        console.error("❌ Failed to read or parse project.json: " + err.message);
+      }
+
+      console.log("\n🔍 Validating scene files...");
+      try {
+        const scenesDir = join(gamekitDir, "scenes");
+        const files = await readdir(scenesDir);
+        const sceneFiles = files.filter(f => f.endsWith(".scene.json"));
+        for (const file of sceneFiles) {
+          try {
+            const sceneRaw = JSON.parse(await readFile(join(scenesDir, file), "utf-8"));
+            const sceneResult = validateScene(sceneRaw);
+            if (sceneResult.ok) {
+              console.log(`✅ ${file} is VALID.`);
+            } else {
+              console.error(`❌ ${file} has ERRORS:\n` + sceneResult.errors.map(e => `  - ${e}`).join("\n"));
+            }
+          } catch (err: any) {
+            console.error(`❌ Failed to read or parse ${file}: ` + err.message);
+          }
+        }
+      } catch (err: any) {
+        console.error("❌ Failed to read scenes directory: " + err.message);
+      }
+      return;
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -157,10 +253,24 @@ Usage:
   gamekit generate [--platform web|mobile]
   gamekit mcp [project-path]
   gamekit skills list
+  gamekit search <query>
+  gamekit validate
 `);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+import { realpathSync } from "node:fs";
+
+let isEntrypoint = false;
+try {
+  if (process.argv[1]) {
+    const realArgv1 = realpathSync(process.argv[1]);
+    isEntrypoint = import.meta.url === `file://${realArgv1}`;
+  }
+} catch {
+  // ignore
+}
+
+if (isEntrypoint || import.meta.url.endsWith("/packages/cli/dist/index.js")) {
   main(process.argv.slice(2)).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

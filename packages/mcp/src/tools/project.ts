@@ -37,4 +37,22 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
       };
     },
   );
+
+  server.tool(
+    "validate_project",
+    "Validate project.json file structure against schema rules",
+    {},
+    async () => {
+      try {
+        const project = await fileIO.readProject();
+        return {
+          content: [{ type: "text", text: JSON.stringify({ ok: true, project }, null, 2) }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) }],
+        };
+      }
+    }
+  );
 }
