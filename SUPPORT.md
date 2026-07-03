@@ -1,6 +1,6 @@
 # Support
 
-GameKit is an early open-source MVP. The best support channel is GitHub issues.
+Playroom is an early open-source MVP. The best support channel is GitHub issues.
 
 Use:
 

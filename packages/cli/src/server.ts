@@ -42,7 +42,7 @@ export async function startEditorServer(options: EditorServerOptions): Promise<v
     server.once("error", reject);
     server.listen(port, host, () => {
       server.off("error", reject);
-      console.log(`GameKit editor: http://${host}:${port}`);
+      console.log(`Playroom editor: http://${host}:${port}`);
       resolve();
     });
   });
@@ -238,7 +238,7 @@ const fallbackHtml = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GameKit Editor</title>
+    <title>Playroom Editor</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; background: #101820; color: white; display: grid; place-items: center; min-height: 100vh; }
       main { max-width: 560px; padding: 32px; }
@@ -247,7 +247,7 @@ const fallbackHtml = `<!doctype html>
   </head>
   <body>
     <main>
-      <h1>GameKit Editor</h1>
+      <h1>Playroom Editor</h1>
       <p>The editor API is running. Build <code>@gamekit/editor</code> to serve the full WebUI from this CLI.</p>
     </main>
   </body>

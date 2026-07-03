@@ -1,6 +1,6 @@
-# Contributing to GameKit
+# Contributing to Playroom
 
-Thanks for taking the time to contribute. GameKit is currently an MVP focused
+Thanks for taking the time to contribute. Playroom is currently an MVP focused
 on a local 2D scene editor, JSON project files, and an Expo/Skia runtime.
 Contributions should keep that scope sharp: prefer complete, reliable editor
 workflows over broad unfinished engine features.

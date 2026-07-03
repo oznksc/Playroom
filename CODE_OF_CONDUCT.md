@@ -1,6 +1,6 @@
 # Code of Conduct
 
-GameKit uses the Contributor Covenant Code of Conduct, version 2.1.
+Playroom uses the Contributor Covenant Code of Conduct, version 2.1.
 
 ## Our Pledge
 

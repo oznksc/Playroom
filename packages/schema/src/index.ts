@@ -260,7 +260,7 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
   };
 }
 
-export function createProject(name = "GameKit Game"): GameKitProject {
+export function createProject(name = "Playroom Game"): GameKitProject {
   return {
     schemaVersion: GAMEKIT_SCHEMA_VERSION,
     name,
@@ -328,7 +328,7 @@ export function createGuiComponentInstance(
 export function parseScene(input: unknown): GameKitScene {
   const result = validateScene(input);
   if (!result.ok) {
-    throw new Error(`Invalid GameKit scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(`Invalid Playroom scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
   }
   return result.value;
 }

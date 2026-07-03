@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "name": "GameKit Game",
+  "name": "Playroom Game",
   "scenes": [
     "main.scene.json"
   ],

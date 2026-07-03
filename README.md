@@ -1,10 +1,14 @@
-# GameKit
+<p align="center">
+  <img src="./logo.png" alt="Playroom logo" width="120" />
+</p>
 
-GameKit is an Expo-focused mini 2D game editor/runtime MVP. It provides a
+# Playroom
+
+Playroom is an Expo-focused mini 2D game editor/runtime MVP. It provides a
 local browser editor, a JSON scene/project schema, and runtimes that consume the
 generated project files.
 
-The current public scope is intentionally small: GameKit should do the core
+The current public scope is intentionally small: Playroom should do the core
 scene-editing workflow well before expanding into a larger engine.
 
 ## What is included

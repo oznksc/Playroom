@@ -1,9 +1,9 @@
-# GameKit — Editör İçi AI Game Agent Tasarım Dokümanı
+# Playroom — Editör İçi AI Game Agent Tasarım Dokümanı
 
 > Bu doküman, `ROADMAP.md §13`'teki kararları uygulama seviyesinde detaylandırır.
 > Yeni katman: **`@gamekit/agent`** paketi + CLI agent endpoint'leri + editör
 > `AgentPanel` bileşeni. Editör içinden, kullanıcının kendi API anahtarıyla
-> (BYOK) çalışan, GameKit MCP tool'larını kullanan bir AI agent.
+> (BYOK) çalışan, Playroom MCP tool'larını kullanan bir AI agent.
 
 ## İçindekiler
 1. [Amaç ve Kapsam](#1-amaç-ve-kapsam)
@@ -33,7 +33,7 @@
 ### Amaç
 - Editör açıkken, kullanıcı **doğal dille** veya **slash komutlarla** sahne
   inşa edebilsin.
-- Agent, GameKit MCP'nin tüm tool'larını kullanabilsin (harici Claude/Cursor
+- Agent, Playroom MCP'nin tüm tool'larını kullanabilsin (harici Claude/Cursor
   ile aynı yüzey).
 - Kullanıcı kendi API anahtarını (BYOK) bağlasın; anahtar sunucuda
   kalıcı olmasın, editörden dışarı sızmasın.
@@ -439,7 +439,7 @@ Tauri modunda Rust tarafı doğrudan provider'a gidebilir (webview'den
 
 - "Anonymous usage stats" checkbox AgentSettings'te varsayılan OFF.
 - Açılırsa: hangi tool çağrıldı, kaç token harcandı, hangi model kullanıldı
-  (içerik yok, sadece metrik). GameKit sunucusuna POST (kullanıcı URL'i
+  (içerik yok, sadece metrik). Playroom sunucusuna POST (kullanıcı URL'i
   ayarlanabilir, varsayılan boş).
 
 ---
@@ -644,9 +644,9 @@ async function buildSystemPrompt(ctx: PromptContext): Promise<string> {
   const sections: string[] = [];
 
   // 1. Identity
-  sections.push(`You are GameKit Agent, an AI assistant inside the GameKit 2D game engine editor. You build scenes, entities, and game logic by calling the provided tools.
+  sections.push(`You are Playroom Agent, an AI assistant inside the Playroom 2D game engine editor. You build scenes, entities, and game logic by calling the provided tools.
 
-GameKit is a JSON-driven 2D engine targeting React Native (Skia) and Web (Phaser). The project file is at: <project>${ctx.projectPath}</project>. Active scene: <scene>${ctx.sceneId}</scene>.`);
+Playroom is a JSON-driven 2D engine targeting React Native (Skia) and Web (Phaser). The project file is at: <project>${ctx.projectPath}</project>. Active scene: <scene>${ctx.sceneId}</scene>.`);
 
   // 2. Schema
   sections.push(`## Available Components
@@ -1213,7 +1213,7 @@ Read-only metrik raporu.
 | **BYOK** | Bring Your Own Key — kullanıcı kendi API anahtarını
   sağlar, platform ücreti yok |
 | **MCP** | Model Context Protocol — tool'ları standardize eden
-  protokol, GameKit'in resmi arayüzü |
+  protokol, Playroom'un resmi arayüzü |
 | **ReAct** | Reason + Act — modelin düşünüp tool çağırıp sonucu
   gözlemleyip tekrar düşündüğü döngü |
 | **SSE** | Server-Sent Events — tek yönlü streaming, agent çıktısı

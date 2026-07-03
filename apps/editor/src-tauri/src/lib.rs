@@ -9,14 +9,14 @@ fn stop_active_server() {
   if let Some(mut child) = guard.take() {
     let _ = child.kill();
     let _ = child.wait();
-    println!("GameKit Editor Server cleanly terminated.");
+    println!("Playroom Editor Server cleanly terminated.");
   }
 }
 
 #[tauri::command]
 fn select_directory() -> Option<String> {
   let dir = rfd::FileDialog::new()
-    .set_title("Open GameKit Project Folder")
+        .set_title("Open Playroom Project Folder")
     .pick_folder();
   dir.map(|path| path.to_string_lossy().to_string())
 }
@@ -32,7 +32,7 @@ fn start_server(project_path: String) -> Result<String, String> {
     .join("../../../packages/cli/dist/index.js");
 
   if !cli_path.exists() {
-    return Err("GameKit CLI dist file not found. Please build the project first using 'pnpm build'.".to_string());
+        return Err("Playroom CLI dist file not found. Please build the project first using 'pnpm build'.".to_string());
   }
 
   // 3. Spawn Node server

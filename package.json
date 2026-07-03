@@ -1,9 +1,9 @@
 {
-  "name": "gamekit-monorepo",
+  "name": "playroom-monorepo",
   "private": true,
   "version": "0.1.0",
   "license": "MIT",
-  "description": "Expo-focused 2D game editor/runtime MVP.",
+  "description": "Playroom is an Expo-focused 2D game editor/runtime MVP.",
   "type": "module",
   "packageManager": "pnpm@11.3.0",
   "repository": {
