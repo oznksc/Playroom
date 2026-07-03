@@ -14,6 +14,7 @@ import {
   PanelRight,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import logoUrl from "../../../../logo.png";
 
 const MVP_SHOW_PLAY_CONTROLS = false;
 
@@ -85,9 +86,9 @@ export function Topbar({
     <header className="topbar">
       {/* Brand logo & active scene */}
       <div className="topbar-brand">
-        <div className="topbar-logo">GK</div>
+        <img className="topbar-logo" src={logoUrl} alt="Playroom" />
         <div className="brand-titles">
-          <h1>GameKit</h1>
+          <h1>Playroom</h1>
           <span className="brand-tag">MVP EDITOR</span>
         </div>
         <ChevronRight size={12} className="brand-arrow" />

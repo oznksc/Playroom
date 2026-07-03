@@ -22,6 +22,7 @@ import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
 import { getApiUrl } from "./lib/api.js";
+import logoUrl from "../../../logo.png";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -97,7 +98,7 @@ export function App() {
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
-    { type: "system", message: "GameKit editor initialized.", timestamp: new Date() },
+    { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
     { type: "system", message: "Ready to edit scenes and image assets.", timestamp: new Date() }
   ]);
 
@@ -945,8 +946,8 @@ export function App() {
         <div className="tauri-dashboard-card">
           <div className="glow-effect"></div>
           <div className="logo-section">
-            <Gamepad2 size={48} className="dashboard-logo" />
-            <h1>GAMEKIT</h1>
+            <img src={logoUrl} alt="Playroom" className="dashboard-logo" />
+            <h1>Playroom</h1>
             <p className="subtitle">Local 2D scene editor for Expo projects</p>
           </div>
           

@@ -1,4 +1,4 @@
-# GameKit Editor — Design Brief
+# Playroom Editor — Design Brief
 
 ## Register
 

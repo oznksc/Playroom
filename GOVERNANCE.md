@@ -1,6 +1,6 @@
 # Governance
 
-GameKit is maintained by the repository owner and trusted maintainers.
+Playroom is maintained by the repository owner and trusted maintainers.
 
 ## Decision Making
 

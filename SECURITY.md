@@ -23,6 +23,6 @@ coordinate a fix before public disclosure.
 
 ## Secret Handling
 
-GameKit should not require committed secrets. Keep API keys in local developer
+Playroom should not require committed secrets. Keep API keys in local developer
 storage or environment-specific configuration. Do not commit `.env` files,
 tokens, service account files, or private keys.

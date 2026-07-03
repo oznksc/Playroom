@@ -15,7 +15,7 @@ async function main(argv: string[]): Promise<void> {
   switch (command) {
     case "init": {
       const project = await initProject(cwd, { name: readOption(args, "--name") ?? basename(cwd) });
-      console.log(`Created GameKit project: ${project.projectPath}`);
+      console.log(`Created Playroom project: ${project.projectPath}`);
       return;
     }
     case "import": {
@@ -146,7 +146,7 @@ function readOption(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`GameKit CLI
+  console.log(`Playroom CLI
 
 Usage:
   gamekit init [--name MyGame]

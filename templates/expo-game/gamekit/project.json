@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "name": "Expo GameKit Game",
+  "name": "Expo Playroom Game",
   "scenes": [
     "main.scene.json",
     "yatay.scene.json"

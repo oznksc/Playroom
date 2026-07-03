@@ -1,6 +1,6 @@
-# GameKit → Gerçek Oyun Motoru Yol Haritası
+# Playroom → Gerçek Oyun Motoru Yol Haritası
 
-Bu doküman, GameKit'in MVP 0.1 seviyesinden üretime hazır bir 2D oyun motoruna
+Bu doküman, Playroom'un MVP 0.1 seviyesinden üretime hazır bir 2D oyun motoruna
 geçişi için gereken işleri izler. Her bölüm: görev → uygulama noktaları → ilgili
 **MCP araçları** (yeni eklenenler dahil) → ilgili **Skill şablonları** (yeni
 eklenenler dahil). Şema sözleşmesi motor; runtime + editör + MCP üçlüsü birlikte
@@ -91,7 +91,7 @@ evrilir.
 ### Görevler
 - [ ] Virtual joystick / d-pad bileşeni (mobile için zorunlu)
 - [ ] Input action map (`"jump"`, `"fire"`) → key/touch/gamepad binding
-- [ ] Gamepad API desteği (web), GameKit vibration (mobile)
+- [ ] Gamepad API desteği (web), Playroom vibration (mobile)
 - [ ] Pointer event normalizasyonu (canvas → world koordinat)
 - [ ] Gesture: swipe, pinch, hold
 
@@ -411,7 +411,7 @@ packages/agent/
 │   │   ├── history.ts            # konuşma + tool call geçmişi
 │   │   └── streaming.ts          # SSE encoder
 │   ├── system/
-│   │   ├── prompt.ts             # GameKit domain sistem prompt
+│   │   ├── prompt.ts             # Playroom domain sistem prompt
 │   │   └── skills-loader.ts      # skill manifest → prompt injection
 │   └── store/
 │       ├── keys.ts               # BYOK vault
@@ -484,7 +484,7 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 - [ ] `providers/anthropic.ts` (streaming tool-use)
 - [ ] `mcp/client.ts` stdio client + `mcp/tools.ts` şema çevirici
 - [ ] `loop/agent.ts` ReAct döngüsü, abort handling
-- [ ] `system/prompt.ts` GameKit domain prompt + skills-loader
+- [ ] `system/prompt.ts` Playroom domain prompt + skills-loader
 - [ ] CLI: `spawn @gamekit/mcp` + `/api/agent/{chat,providers,keys,abort}` + SSE
 - [ ] Editör: `AgentPanel.tsx` + `AgentSettings.tsx` + bottom drawer entegrasyonu
 - [ ] Topbar `Sparkles` ikonu + tab activation

@@ -79,14 +79,10 @@
   }
 
   &-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 24px;
     height: 24px;
     border-radius: 5px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
-    font-size: 12px;
+    object-fit: contain;
     flex-shrink: 0;
     box-shadow: 0 0 10px $accent-glow;
   }

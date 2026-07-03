@@ -1,6 +1,6 @@
-# GameKit — Agent Guide
+# Playroom — Agent Guide
 
-GameKit is a pnpm monorepo for a 2D game editor/runtime. The Node CLI owns
+Playroom is a pnpm monorepo for a 2D game editor/runtime. The Node CLI owns
 project files on disk; a browser-based editor (`apps/editor`) and an MCP
 server (`packages/mcp`) talk to it. Two runtimes consume the produced JSON:
 `@gamekit/runtime` for Expo/Skia, `@gamekit/runtime-web` for Phaser.
