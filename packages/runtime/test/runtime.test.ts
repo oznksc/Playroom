@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyScene } from "@gamekit/schema";
+import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { createCameraFollow } from "../src/camera.js";
-import { applyAabbCollisions, intersectsAabb } from "../src/collision.js";
+import { getEntityAabb, getEntityCircle, getEntityPolygon, intersectsAabb, intersectsPolygonAabb, applyAabbCollisions } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
 import { loadScene } from "../src/scene.js";
 
@@ -50,5 +50,51 @@ describe("player and camera helpers", () => {
     const camera = createCameraFollow({ viewport: { x: 100, y: 100 }, smoothing: 1 });
 
     expect(camera.update({ x: 200, y: 150 }).position).toEqual({ x: 150, y: 100 });
+  });
+});
+
+describe("polygon collision", () => {
+  it("getEntityPolygon returns correct world-space points from transform + PolygonCollider", () => {
+    const entity = createEntity("Shield", { x: 100, y: 200 });
+    entity.components.push({
+      type: "PolygonCollider",
+      offset: { x: 10, y: 20 },
+      points: [
+        { x: 0, y: -32 },
+        { x: 32, y: 0 },
+        { x: 0, y: 32 },
+        { x: -32, y: 0 },
+      ],
+      isStatic: false,
+    });
+
+    const poly = getEntityPolygon(entity)!;
+    expect(poly).toBeDefined();
+    expect(poly.x).toBe(110);
+    expect(poly.y).toBe(220);
+    expect(poly.points).toHaveLength(4);
+    expect(poly.points[0]).toEqual({ x: 110, y: 188 });
+    expect(poly.points[1]).toEqual({ x: 142, y: 220 });
+    expect(poly.points[2]).toEqual({ x: 110, y: 252 });
+    expect(poly.points[3]).toEqual({ x: 78, y: 220 });
+  });
+
+  it("intersectsPolygonAabb returns true for overlapping polygon and AABB", () => {
+    const poly = {
+      x: 100,
+      y: 100,
+      points: [
+        { x: 100, y: 100 },
+        { x: 200, y: 100 },
+        { x: 200, y: 200 },
+        { x: 100, y: 200 },
+      ],
+    };
+
+    const overlapping = { x: 150, y: 150, width: 50, height: 50 };
+    const nonOverlapping = { x: 300, y: 300, width: 10, height: 10 };
+
+    expect(intersectsPolygonAabb(poly, overlapping)).toBe(true);
+    expect(intersectsPolygonAabb(poly, nonOverlapping)).toBe(false);
   });
 });

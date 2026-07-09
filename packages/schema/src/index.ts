@@ -103,11 +103,22 @@ export type CircleColliderComponent = {
   mask?: number;
 };
 
+export type PolygonColliderComponent = {
+  type: "PolygonCollider";
+  offset: Vector2;
+  points: Vector2[];
+  isStatic: boolean;
+  isTrigger?: boolean;
+  layer?: number;
+  mask?: number;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
   | AabbColliderComponent
   | CircleColliderComponent
+  | PolygonColliderComponent
   | PlayerControllerComponent
   | RigidBodyComponent
   | CameraFollowComponent
@@ -520,6 +531,19 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           radius: expectNumber(component.radius, `${path}.radius`, errors),
           isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
           isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors),
+          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
+          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
+        });
+        return;
+      case "PolygonCollider":
+        components.push({
+          type: "PolygonCollider",
+          offset: validateVector(component.offset, `${path}.offset`, errors),
+          points: (component.points as Vector2[] ?? []).map((p: Vector2, i: number) =>
+            validateVector(p, `${path}.points[${i}]`, errors)
+          ),
+          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
+          ...(component.isTrigger !== undefined ? { isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors) } : {}),
           ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
           ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
         });

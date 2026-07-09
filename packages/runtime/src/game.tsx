@@ -114,6 +114,8 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
 
       rb.integrateForces(dt, scene.gravity);
 
+      transform.rotation = (transform.rotation ?? 0) + rb.state.angularVelocity * dt;
+
       const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
       const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
 
@@ -219,7 +221,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     playTimeline(workingScene, timelineRef.current, dt);
 
     setTick((t) => t + 1);
-  });
+  }, true, { fixedDt: RIGID_BODY_FIXED_DT });
 
   const currentScene = { ...scene, entities: entitiesRef.current };
 

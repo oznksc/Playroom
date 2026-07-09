@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyScene, createLevel, createProject, parseScene, validateProject, validateScene } from "../src/index.js";
+import { createEmptyScene, createEntity, createLevel, createProject, parseScene, sceneToJson, validateProject, validateScene } from "../src/index.js";
 
 describe("scene schema", () => {
   it("creates a valid empty scene with reserved timeline and gui fields", () => {
@@ -196,5 +196,45 @@ describe("project schema", () => {
     });
 
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("polygon collider round-trip", () => {
+  it("preserves PolygonCollider points through sceneToJson/parseScene", () => {
+    const scene = createEmptyScene("PolyTest");
+    const entity = createEntity("PolyShape", { x: 100, y: 200 });
+    entity.components.push({
+      type: "PolygonCollider",
+      offset: { x: 5, y: -5 },
+      points: [
+        { x: -30, y: -20 },
+        { x: 30, y: -20 },
+        { x: 20, y: 20 },
+        { x: -20, y: 20 },
+      ],
+      isStatic: false,
+      isTrigger: true,
+      layer: 3,
+      mask: 7,
+    });
+    scene.entities.push(entity);
+
+    const json = sceneToJson(scene);
+    const loaded = parseScene(JSON.parse(json));
+
+    const polyEntity = loaded.entities.find((e) => e.name === "PolyShape")!;
+    expect(polyEntity).toBeDefined();
+
+    const pc = polyEntity.components.find((c) => c.type === "PolygonCollider") as any;
+    expect(pc).toBeDefined();
+    expect(pc.points).toHaveLength(4);
+    expect(pc.points[0]).toEqual({ x: -30, y: -20 });
+    expect(pc.points[1]).toEqual({ x: 30, y: -20 });
+    expect(pc.points[2]).toEqual({ x: 20, y: 20 });
+    expect(pc.points[3]).toEqual({ x: -20, y: 20 });
+    expect(pc.offset).toEqual({ x: 5, y: -5 });
+    expect(pc.isTrigger).toBe(true);
+    expect(pc.layer).toBe(3);
+    expect(pc.mask).toBe(7);
   });
 });

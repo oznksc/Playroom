@@ -77,11 +77,22 @@ export const CircleColliderInputSchema = z.object({
   mask: z.number().int().optional(),
 });
 
+export const PolygonColliderInputSchema = z.object({
+  type: z.literal("PolygonCollider"),
+  offset: z.object({ x: z.number(), y: z.number() }).optional().default({ x: 0, y: 0 }),
+  points: z.array(z.object({ x: z.number(), y: z.number() })).min(3).describe("At least 3 vertices in local coordinates"),
+  isStatic: z.boolean().optional().default(false),
+  isTrigger: z.boolean().optional().default(false),
+  layer: z.number().int().optional(),
+  mask: z.number().int().optional(),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
   AabbColliderInputSchema,
   CircleColliderInputSchema,
+  PolygonColliderInputSchema,
   PlayerControllerInputSchema,
   RigidBodyInputSchema,
   CameraFollowInputSchema,
@@ -93,6 +104,7 @@ export const ComponentTypeSchema = z.enum([
   "Sprite",
   "AabbCollider",
   "CircleCollider",
+  "PolygonCollider",
   "PlayerController",
   "RigidBody",
   "CameraFollow",

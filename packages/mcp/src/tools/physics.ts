@@ -2,25 +2,26 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
 import { CircleColliderInputSchema, RigidBodyInputSchema } from "../schemas/component.js";
-import type { AabbColliderComponent, CircleColliderComponent, GameKitComponent } from "@gamekit/schema";
+import type { AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, GameKitComponent } from "@gamekit/schema";
 
 export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
     "add_collider",
-    "Add an AabbCollider or CircleCollider to an entity",
+    "Add an AabbCollider, CircleCollider, or PolygonCollider to an entity",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      type: z.enum(["AabbCollider", "CircleCollider"]).describe("Collider type"),
+      type: z.enum(["AabbCollider", "CircleCollider", "PolygonCollider"]).describe("Collider type"),
       offset: z.object({ x: z.number(), y: z.number() }).optional().describe("Collider offset from transform position"),
       size: z.object({ x: z.number().positive(), y: z.number().positive() }).optional().describe("Size for AabbCollider"),
       radius: z.number().positive().optional().describe("Radius for CircleCollider"),
+      points: z.array(z.object({ x: z.number(), y: z.number() })).min(3).optional().describe("Points for PolygonCollider (min 3)"),
       isStatic: z.boolean().default(false).describe("Whether the collider is static (immovable)"),
       isTrigger: z.boolean().default(false).describe("Whether the collider is a trigger (overlap only, no collision response)"),
       layer: z.number().int().optional().describe("Collision layer bitmask"),
       mask: z.number().int().optional().describe("Collision mask bitmask"),
     },
-    async ({ scenePath, entityId, type, offset, size, radius, isStatic, isTrigger, layer, mask }) => {
+    async ({ scenePath, entityId, type, offset, size, radius, points, isStatic, isTrigger, layer, mask }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
@@ -33,7 +34,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const existingCollider = entity.components.find(
-        (c) => c.type === "AabbCollider" || c.type === "CircleCollider"
+        (c) => c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider"
       );
       if (existingCollider) {
         return {
@@ -58,7 +59,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
           ...(mask !== undefined ? { mask } : {}),
         };
         entity.components.push(component as GameKitComponent);
-      } else {
+      } else if (type === "CircleCollider") {
         if (!radius) {
           return {
             content: [{ type: "text", text: JSON.stringify({ error: "radius is required for CircleCollider" }) }],
@@ -71,6 +72,23 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
           radius,
           isStatic,
           isTrigger,
+          ...(layer !== undefined ? { layer } : {}),
+          ...(mask !== undefined ? { mask } : {}),
+        };
+        entity.components.push(component as GameKitComponent);
+      } else if (type === "PolygonCollider") {
+        if (!points) {
+          return {
+            content: [{ type: "text", text: JSON.stringify({ error: "points is required for PolygonCollider" }) }],
+            isError: true,
+          };
+        }
+        const component: PolygonColliderComponent = {
+          type: "PolygonCollider",
+          offset: offset ?? { x: 0, y: 0 },
+          points,
+          isStatic,
+          ...(isTrigger ? { isTrigger } : {}),
           ...(layer !== undefined ? { layer } : {}),
           ...(mask !== undefined ? { mask } : {}),
         };
@@ -157,8 +175,8 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const collider = entity.components.find(
-        (c): c is AabbColliderComponent | CircleColliderComponent =>
-          c.type === "AabbCollider" || c.type === "CircleCollider"
+        (c): c is AabbColliderComponent | CircleColliderComponent | PolygonColliderComponent =>
+          c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider"
       );
 
       if (!collider) {
@@ -204,8 +222,11 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const aabbCollider = entity.components.find(
         (c): c is AabbColliderComponent => c.type === "AabbCollider"
       );
+      const polygonCollider = entity.components.find(
+        (c): c is PolygonColliderComponent => c.type === "PolygonCollider"
+      );
 
-      if (!circleCollider && !aabbCollider) {
+      if (!circleCollider && !aabbCollider && !polygonCollider) {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: "Entity has no collider" }) }],
           isError: true,
@@ -217,6 +238,9 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       }
       if (aabbCollider) {
         Object.assign(aabbCollider, { isTrigger });
+      }
+      if (polygonCollider) {
+        Object.assign(polygonCollider, { isTrigger });
       }
 
       await fileIO.writeScene(filename, scene);

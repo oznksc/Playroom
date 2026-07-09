@@ -2,6 +2,7 @@ export type {
   AabbColliderComponent,
   CameraFollowComponent,
   CircleColliderComponent,
+  PolygonColliderComponent,
   GameKitAsset,
   GameKitComponent,
   GameKitEntity,
@@ -27,14 +28,17 @@ export { loadScene } from "./scene.js";
 export {
   type Aabb,
   type Circle,
+  type Polygon,
   type CollisionSolid,
   applyAabbCollisions,
   applyCircleCollisions,
   getEntityAabb,
   getEntityCircle,
+  getEntityPolygon,
   intersectsAabb,
   intersectsCircleAabb,
   intersectsCircleCircle,
+  intersectsPolygonAabb,
   solidAabb
 } from "./collision.js";
 export {
