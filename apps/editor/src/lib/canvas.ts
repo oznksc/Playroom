@@ -1,5 +1,7 @@
 import type {
   AabbColliderComponent,
+  CircleColliderComponent,
+  PolygonColliderComponent,
   GameKitAsset,
   GameKitEntity,
   GameKitScene,
@@ -35,35 +37,83 @@ export function drawScene(
   for (const entity of scene.entities) {
     const transform = findComponent<TransformComponent>(entity, "Transform");
     const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-    const collider = findComponent<AabbColliderComponent>(entity, "AabbCollider");
     if (!transform) {
       continue;
     }
 
     if (sprite) {
-      const image = images.get(sprite.assetId);
       const x = transform.position.x - sprite.width * sprite.anchor.x;
       const y = transform.position.y - sprite.height * sprite.anchor.y;
+      const rotation = transform.rotation ?? 0;
+      if (rotation !== 0) {
+        context.save();
+        context.translate(transform.position.x, transform.position.y);
+        context.rotate(rotation);
+        context.translate(-transform.position.x, -transform.position.y);
+      }
+      const image = images.get(sprite.assetId);
       if (image) {
         context.drawImage(image, x, y, sprite.width, sprite.height);
       } else {
         context.fillStyle = colorForAsset(sprite.assetId, assets);
         context.fillRect(x, y, sprite.width, sprite.height);
       }
+      if (rotation !== 0) {
+        context.restore();
+      }
     }
 
-    if (collider && showColliders) {
-      const isSelected = selectedEntityIds.has(entity.id);
-      context.strokeStyle = isSelected ? "#ffb300" : collider.isStatic ? "#10b981" : "#00f0ff";
-      context.lineWidth = isSelected ? 2 : 1;
-      context.setLineDash(isSelected ? [] : [4, 4]);
-      context.strokeRect(
-        transform.position.x + collider.offset.x,
-        transform.position.y + collider.offset.y,
-        collider.size.x,
-        collider.size.y
-      );
-      context.setLineDash([]);
+    if (showColliders) {
+      const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+      if (aabb) {
+        const isSelected = selectedEntityIds.has(entity.id);
+        context.strokeStyle = isSelected ? "#ffb300" : aabb.isStatic ? "#10b981" : "#00f0ff";
+        context.lineWidth = isSelected ? 2 : 1;
+        context.setLineDash(isSelected ? [] : [4, 4]);
+        context.strokeRect(
+          transform.position.x + aabb.offset.x,
+          transform.position.y + aabb.offset.y,
+          aabb.size.x,
+          aabb.size.y
+        );
+        context.setLineDash([]);
+      }
+
+      const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
+      if (circle) {
+        const isSelected = selectedEntityIds.has(entity.id);
+        context.strokeStyle = isSelected ? "#ffb300" : circle.isStatic ? "#10b981" : "#00f0ff";
+        context.lineWidth = isSelected ? 2 : 1;
+        context.setLineDash(isSelected ? [] : [4, 4]);
+        context.beginPath();
+        context.arc(
+          transform.position.x + circle.offset.x,
+          transform.position.y + circle.offset.y,
+          circle.radius,
+          0,
+          Math.PI * 2
+        );
+        context.stroke();
+        context.setLineDash([]);
+      }
+
+      const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
+      if (polygon && polygon.points.length >= 3) {
+        const isSelected = selectedEntityIds.has(entity.id);
+        context.strokeStyle = isSelected ? "#ffb300" : polygon.isStatic ? "#10b981" : "#00f0ff";
+        context.lineWidth = isSelected ? 2 : 1;
+        context.setLineDash(isSelected ? [] : [4, 4]);
+        context.beginPath();
+        const ox = transform.position.x + polygon.offset.x;
+        const oy = transform.position.y + polygon.offset.y;
+        context.moveTo(ox + polygon.points[0].x, oy + polygon.points[0].y);
+        for (let i = 1; i < polygon.points.length; i++) {
+          context.lineTo(ox + polygon.points[i].x, oy + polygon.points[i].y);
+        }
+        context.closePath();
+        context.stroke();
+        context.setLineDash([]);
+      }
     }
   }
 
@@ -248,29 +298,58 @@ export function hitGuiNode(node: GuiNode, point: { x: number; y: number }): bool
 export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }): boolean {
   const transform = findComponent<TransformComponent>(entity, "Transform");
   const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-  const collider = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+  const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+  const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
   if (!transform) {
     return false;
   }
-  const box = collider
-    ? {
-        x: transform.position.x + collider.offset.x,
-        y: transform.position.y + collider.offset.y,
-        width: collider.size.x,
-        height: collider.size.y
-      }
-    : sprite
-      ? {
-          x: transform.position.x - sprite.width * sprite.anchor.x,
-          y: transform.position.y - sprite.height * sprite.anchor.y,
-          width: sprite.width,
-          height: sprite.height
-        }
-      : undefined;
 
-  return !!box &&
-    point.x >= box.x &&
-    point.x <= box.x + box.width &&
-    point.y >= box.y &&
-    point.y <= box.y + box.height;
+  if (aabb) {
+    const bx = transform.position.x + aabb.offset.x;
+    const by = transform.position.y + aabb.offset.y;
+    return (
+      point.x >= bx &&
+      point.x <= bx + aabb.size.x &&
+      point.y >= by &&
+      point.y <= by + aabb.size.y
+    );
+  }
+
+  if (circle) {
+    const cx = transform.position.x + circle.offset.x;
+    const cy = transform.position.y + circle.offset.y;
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    return dx * dx + dy * dy <= circle.radius * circle.radius;
+  }
+
+  const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
+  if (polygon && polygon.points.length >= 3) {
+    const ox = transform.position.x + polygon.offset.x;
+    const oy = transform.position.y + polygon.offset.y;
+    const pts = polygon.points.map((p) => ({ x: ox + p.x, y: oy + p.y }));
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const xi = pts[i].x, yi = pts[i].y;
+      const xj = pts[j].x, yj = pts[j].y;
+      if ((yi > point.y) !== (yj > point.y) &&
+          point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  if (sprite) {
+    const bx = transform.position.x - sprite.width * sprite.anchor.x;
+    const by = transform.position.y - sprite.height * sprite.anchor.y;
+    return (
+      point.x >= bx &&
+      point.x <= bx + sprite.width &&
+      point.y >= by &&
+      point.y <= by + sprite.height
+    );
+  }
+
+  return false;
 }

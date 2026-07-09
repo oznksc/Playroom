@@ -16,7 +16,7 @@ import {
 import { useRef, useEffect, useState } from "react";
 import logoUrl from "../../../../logo.png";
 
-const MVP_SHOW_PLAY_CONTROLS = false;
+const MVP_SHOW_PLAY_CONTROLS = true;
 
 type TopbarProps = {
   sceneName: string;
