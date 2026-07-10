@@ -1,4 +1,4 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GameKitView } from "./view.js";
@@ -12,6 +12,9 @@ import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
+import { updateTween } from "./tween.js";
+import { updateFollowPath } from "./path.js";
+import { evaluateScriptEvent, transitionFsm } from "./script.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -83,11 +86,46 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       }
       break;
     }
+
+    // Initialize StateMachine and trigger start event scripts
+    for (const entity of entitiesRef.current) {
+      const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+      if (sm && !sm.currentState) {
+        sm.currentState = sm.initialState;
+      }
+    }
+
+    for (const entity of entitiesRef.current) {
+      const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+      if (script) {
+        evaluateScriptEvent("start", script, {
+          entityId: entity.id,
+          entities: entitiesRef.current,
+          rigidBodies: rigidBodyRefs.current
+        });
+      }
+    }
   }, [scene.id, scene.viewport.width, scene.viewport.height]);
 
   useGameLoop((dt) => {
     const entities = entitiesRef.current;
     const input = inputRef.current;
+
+    // Update Tweens and FollowPaths
+    for (const entity of entities) {
+      const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+      if (!transform) continue;
+
+      const tweens = entity.components.filter((c): c is TweenComponent => c.type === "Tween");
+      for (const tween of tweens) {
+        updateTween(tween, transform, dt);
+      }
+
+      const followPath = entity.components.find((c): c is FollowPathComponent => c.type === "FollowPath");
+      if (followPath) {
+        updateFollowPath(followPath, transform, dt);
+      }
+    }
 
     const solids: CollisionSolid[] = [];
     const collisionContacts: CollisionEvent[] = [];
@@ -266,12 +304,69 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     const triggerUpdate = updateTriggerEvents(currentEntities, triggerStateRef.current);
     triggerStateRef.current = triggerUpdate.active;
     for (const event of triggerUpdate.events) {
-      if (event.type === "enter") onTriggerEnter?.(event);
-      else onTriggerExit?.(event);
+      if (event.type === "enter") {
+        onTriggerEnter?.(event);
+
+        const e1 = currentEntities.find((e) => e.id === event.triggerEntityId);
+        const e2 = currentEntities.find((e) => e.id === event.otherEntityId);
+
+        for (const entity of [e1, e2]) {
+          if (!entity) continue;
+          const context = {
+            entityId: entity.id,
+            entities: currentEntities,
+            rigidBodies: rigidBodyRefs.current
+          };
+
+          const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+          if (sm && sm.currentState) {
+            const stateObj = sm.states.find((s) => s.name === sm.currentState);
+            if (stateObj && stateObj.on && stateObj.on["triggerEnter"]) {
+              transitionFsm(sm, stateObj.on["triggerEnter"], context);
+            }
+          }
+
+          const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+          if (script) {
+            evaluateScriptEvent("triggerEnter", script, context);
+          }
+        }
+      } else {
+        onTriggerExit?.(event);
+      }
     }
+
     const collisionUpdate = updateCollisionEvents(collisionContacts, collisionStateRef.current);
     collisionStateRef.current = collisionUpdate.active;
-    for (const event of collisionUpdate.events) onCollisionEnter?.(event);
+    for (const event of collisionUpdate.events) {
+      onCollisionEnter?.(event);
+
+      const e1 = currentEntities.find((e) => e.id === event.entityId);
+      const e2 = currentEntities.find((e) => e.id === event.otherEntityId);
+
+      for (const entity of [e1, e2]) {
+        if (!entity) continue;
+        const context = {
+          entityId: entity.id,
+          entities: currentEntities,
+          rigidBodies: rigidBodyRefs.current
+        };
+
+        const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+        if (sm && sm.currentState) {
+          const stateObj = sm.states.find((s) => s.name === sm.currentState);
+          if (stateObj && stateObj.on && stateObj.on["collisionEnter"]) {
+            transitionFsm(sm, stateObj.on["collisionEnter"], context);
+          }
+        }
+
+        const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+        if (script) {
+          evaluateScriptEvent("collisionEnter", script, context);
+        }
+      }
+    }
+
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);
 

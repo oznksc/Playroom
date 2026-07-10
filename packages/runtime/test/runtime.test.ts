@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { SceneManager, InMemoryStorage } from "../src/manager.js";
+import { updateTween } from "../src/tween.js";
+import { updateFollowPath } from "../src/path.js";
+import { executeActions, transitionFsm } from "../src/script.js";
 import { createCameraFollow } from "../src/camera.js";
 import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
@@ -325,5 +328,114 @@ describe("SceneManager persistent state", () => {
 
     const success = await manager.loadGame("nonexistent");
     expect(success).toBe(false);
+  });
+});
+
+describe("behavior systems runtime logic", () => {
+  it("executes updateTween correctly over time", () => {
+    const transform = {
+      type: "Transform" as const,
+      position: { x: 0, y: 0 },
+      rotation: 0,
+      scale: { x: 1, y: 1 }
+    };
+
+    const tween = {
+      type: "Tween" as const,
+      property: "position.x" as const,
+      startValue: 0,
+      endValue: 100,
+      duration: 2.0,
+      easing: "linear" as const,
+      loop: false,
+      pingPong: false,
+      active: true
+    };
+
+    // First frame (1s elapsed out of 2s duration)
+    updateTween(tween, transform, 1.0);
+    expect(transform.position.x).toBe(50);
+    expect(tween.active).toBe(true);
+
+    // Second frame (reaches end)
+    updateTween(tween, transform, 1.0);
+    expect(transform.position.x).toBe(100);
+    expect(tween.active).toBe(false);
+  });
+
+  it("executes updateFollowPath correctly step-by-step", () => {
+    const transform = {
+      type: "Transform" as const,
+      position: { x: 0, y: 0 },
+      rotation: 0,
+      scale: { x: 1, y: 1 }
+    };
+
+    const followPath = {
+      type: "FollowPath" as const,
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      speed: 10,
+      loop: false
+    };
+
+    // First step: move towards point index 1 (x: 10, y: 0)
+    updateFollowPath(followPath, transform, 0.5);
+    expect(transform.position).toEqual({ x: 5, y: 0 });
+    expect(followPath.currentPointIndex).toBe(0);
+    expect(followPath.targetPointIndex).toBe(1);
+
+    // Second step: reach point index 1
+    updateFollowPath(followPath, transform, 0.5);
+    expect(transform.position).toEqual({ x: 10, y: 0 });
+    expect(followPath.currentPointIndex).toBe(1);
+    expect(followPath.targetPointIndex).toBe(2);
+  });
+
+  it("handles state transitions and DSL actions", () => {
+    const mockStorage = new InMemoryStorage();
+    const sceneManager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 }
+    }, [], mockStorage);
+
+    const entity = {
+      id: "bot",
+      name: "Robot",
+      components: [
+        {
+          type: "StateMachine" as const,
+          initialState: "idle",
+          currentState: "idle",
+          states: [
+            { name: "idle", on: { "collisionEnter": "walking" } },
+            { name: "walking" }
+          ]
+        },
+        {
+          type: "Script" as const,
+          handlers: [
+            {
+              event: "enter:walking",
+              actions: [
+                { type: "setVariable", key: "walk_triggered", value: true }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const context = {
+      entityId: "bot",
+      entities: [entity],
+      sceneManager
+    };
+
+    // Trigger transition to walking state
+    const sm = entity.components[0] as StateMachineComponent;
+    transitionFsm(sm, "walking", context);
+
+    expect(sm.currentState).toBe("walking");
+    expect(sceneManager.getPersistentVar("walk_triggered")).toBe(true);
   });
 });

@@ -72,3 +72,6 @@ export {
   RIGID_BODY_SLEEP_ANGULAR_THRESHOLD
 } from "./rigid-body.js";
 export { usePlayerInput } from "./input.js";
+export { updateTween } from "./tween.js";
+export { updateFollowPath } from "./path.js";
+export { executeActions, transitionFsm, evaluateScriptEvent, type ScriptContext } from "./script.js";
