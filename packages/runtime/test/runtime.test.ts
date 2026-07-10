@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyScene, createEntity } from "@gamekit/schema";
+import { SceneManager, InMemoryStorage } from "../src/manager.js";
 import { createCameraFollow } from "../src/camera.js";
 import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
@@ -280,5 +281,49 @@ describe("collision events", () => {
     const resumed = updateCollisionEvents(contacts, separated.active);
 
     expect(resumed.events).toEqual(contacts);
+  });
+});
+
+describe("SceneManager persistent state", () => {
+  it("manages and persists state variables correctly", async () => {
+    const scene = createEmptyScene("Main");
+    const loaded = loadScene(scene);
+    const storage = new InMemoryStorage();
+    const manager = new SceneManager({
+      scenes: { "main": loaded },
+      transition: { type: "none", duration: 0 }
+    }, [], storage);
+
+    // Initial state
+    expect(manager.getPersistentVar("score")).toBeUndefined();
+    expect(manager.getPersistentVar("score", 10)).toBe(10);
+
+    // Set variable
+    manager.setPersistentVar("score", 100);
+    manager.setPersistentVar("name", "Alice");
+    expect(manager.getPersistentVar("score")).toBe(100);
+
+    // Save game
+    await manager.saveGame("slot1");
+
+    // Clear state
+    manager.clearPersistentState();
+    expect(manager.getPersistentVar("score")).toBeUndefined();
+
+    // Load game
+    const success = await manager.loadGame("slot1");
+    expect(success).toBe(true);
+    expect(manager.getPersistentVar("score")).toBe(100);
+    expect(manager.getPersistentVar("name")).toBe("Alice");
+  });
+
+  it("returns false if loading an empty or non-existent slot", async () => {
+    const manager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 }
+    });
+
+    const success = await manager.loadGame("nonexistent");
+    expect(success).toBe(false);
   });
 });

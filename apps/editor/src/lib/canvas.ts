@@ -3,6 +3,7 @@ import type {
   CircleColliderComponent,
   PolygonColliderComponent,
   RigidBodyComponent,
+  TextComponent,
   GameKitAsset,
   GameKitEntity,
   GameKitScene,
@@ -96,6 +97,17 @@ export function drawScene(
           context.strokeRect(x, y, tilemap.tileWidth, tilemap.tileHeight);
         }
       }
+    }
+
+    const textComp = findComponent<TextComponent>(entity, "Text");
+    if (textComp) {
+      context.save();
+      context.fillStyle = textComp.color;
+      context.font = `${textComp.size}px sans-serif`;
+      context.textAlign = textComp.align;
+      context.textBaseline = "top";
+      context.fillText(textComp.text, transform.position.x, transform.position.y);
+      context.restore();
     }
 
     if (showColliders) {

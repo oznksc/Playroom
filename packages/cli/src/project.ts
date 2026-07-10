@@ -97,8 +97,15 @@ export async function importAsset(root: string, sourceFile: string): Promise<Gam
   await initProject(root);
 
   const extension = extname(sourceFile).toLowerCase();
-  if (![".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(extension)) {
-    throw new Error("Only png, jpg, jpeg, webp, and svg image assets are supported in MVP 0.1.");
+  let kind: "image" | "audio" | "font";
+  if ([".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(extension)) {
+    kind = "image";
+  } else if ([".mp3", ".ogg", ".wav"].includes(extension)) {
+    kind = "audio";
+  } else if ([".ttf", ".otf"].includes(extension)) {
+    kind = "font";
+  } else {
+    throw new Error("Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf).");
   }
 
   const sourceInfo = await stat(sourceFile);
@@ -116,7 +123,7 @@ export async function importAsset(root: string, sourceFile: string): Promise<Gam
   const asset: GameKitAsset = {
     id: assetId,
     file: fileName,
-    kind: "image"
+    kind
   };
 
   project.assets = [
@@ -132,8 +139,15 @@ export async function importAsset(root: string, sourceFile: string): Promise<Gam
 export async function importAssetBuffer(root: string, fileName: string, data: Buffer): Promise<GameKitAsset> {
   await initProject(root);
   const extension = extname(fileName).toLowerCase();
-  if (![".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(extension)) {
-    throw new Error("Only png, jpg, jpeg, webp, and svg image assets are supported in MVP 0.1.");
+  let kind: "image" | "audio" | "font";
+  if ([".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(extension)) {
+    kind = "image";
+  } else if ([".mp3", ".ogg", ".wav"].includes(extension)) {
+    kind = "audio";
+  } else if ([".ttf", ".otf"].includes(extension)) {
+    kind = "font";
+  } else {
+    throw new Error("Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf).");
   }
 
   const assetId = slugify(basename(fileName, extension));
@@ -144,7 +158,7 @@ export async function importAssetBuffer(root: string, fileName: string, data: Bu
   const asset: GameKitAsset = {
     id: assetId,
     file: savedFile,
-    kind: "image"
+    kind
   };
   project.assets = [
     ...project.assets.filter((existing) => existing.id !== asset.id),

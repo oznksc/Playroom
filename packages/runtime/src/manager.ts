@@ -24,11 +24,46 @@ export type SceneManagerState = {
 
 type SceneManagerListener = (state: SceneManagerState) => void;
 
+export interface StorageProvider {
+  getItem(key: string): string | null | Promise<string | null>;
+  setItem(key: string, value: string): void | Promise<void>;
+}
+
+export class InMemoryStorage implements StorageProvider {
+  private data: Record<string, string> = {};
+  getItem(key: string): string | null {
+    return this.data[key] ?? null;
+  }
+  setItem(key: string, value: string): void {
+    this.data[key] = value;
+  }
+}
+
+export class LocalStorageProvider implements StorageProvider {
+  getItem(key: string): string | null {
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem(key);
+    }
+    return null;
+  }
+  setItem(key: string, value: string): void {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(key, value);
+    }
+  }
+}
+
 export class SceneManager {
   private state: SceneManagerState;
   private listeners: Set<SceneManagerListener> = new Set();
+  private persistentState: Record<string, unknown> = {};
+  private storageProvider: StorageProvider;
 
-  constructor(config: SceneManagerConfig, levels: GameKitLevel[] = []) {
+  constructor(
+    config: SceneManagerConfig,
+    levels: GameKitLevel[] = [],
+    storageProvider?: StorageProvider
+  ) {
     const sceneIds = Object.keys(config.scenes);
     const sortedLevels = [...levels].sort((a, b) => a.order - b.order);
 
@@ -41,6 +76,9 @@ export class SceneManager {
       transition: config.transition,
       isTransitioning: false
     };
+
+    this.storageProvider = storageProvider ?? 
+      (typeof localStorage !== "undefined" ? new LocalStorageProvider() : new InMemoryStorage());
   }
 
   getState(): SceneManagerState {
@@ -217,6 +255,36 @@ export class SceneManager {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  getPersistentVar(key: string, defaultValue?: unknown): unknown {
+    return this.persistentState[key] ?? defaultValue;
+  }
+
+  setPersistentVar(key: string, value: unknown): void {
+    this.persistentState[key] = value;
+  }
+
+  async saveGame(slotName: string): Promise<void> {
+    const key = `playroom_save_${slotName}`;
+    const value = JSON.stringify(this.persistentState);
+    await this.storageProvider.setItem(key, value);
+  }
+
+  async loadGame(slotName: string): Promise<boolean> {
+    const key = `playroom_save_${slotName}`;
+    try {
+      const value = await this.storageProvider.getItem(key);
+      if (value === null) return false;
+      this.persistentState = JSON.parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  clearPersistentState(): void {
+    this.persistentState = {};
   }
 
   private notify(): void {

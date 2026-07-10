@@ -238,3 +238,72 @@ describe("polygon collider round-trip", () => {
     expect(pc.mask).toBe(7);
   });
 });
+
+describe("sprint 4 extensions: audio, text, and font", () => {
+  it("validates scenes containing Text, AudioSource, and AudioListener components", () => {
+    const scene = createEmptyScene("AudioTextTest");
+    const entity = createEntity("MediaEntity", { x: 50, y: 50 });
+
+    entity.components.push({
+      type: "Text",
+      text: "Hello World",
+      fontAssetId: "custom-font",
+      size: 24,
+      color: "#ff0000",
+      align: "center"
+    });
+
+    entity.components.push({
+      type: "AudioSource",
+      assetId: "laser-sound",
+      volume: 0.8,
+      loop: true,
+      playOnStart: false
+    });
+
+    entity.components.push({
+      type: "AudioListener",
+      enabled: true
+    });
+
+    scene.entities.push(entity);
+
+    const result = validateScene(scene);
+    expect(result.ok).toBe(true);
+
+    const json = sceneToJson(scene);
+    const loaded = parseScene(JSON.parse(json));
+    const loadedEntity = loaded.entities[0];
+
+    const textComp = loadedEntity.components.find((c) => c.type === "Text") as any;
+    expect(textComp.text).toBe("Hello World");
+    expect(textComp.align).toBe("center");
+
+    const audioComp = loadedEntity.components.find((c) => c.type === "AudioSource") as any;
+    expect(audioComp.volume).toBe(0.8);
+    expect(audioComp.loop).toBe(true);
+
+    const listenerComp = loadedEntity.components.find((c) => c.type === "AudioListener") as any;
+    expect(listenerComp.enabled).toBe(true);
+  });
+
+  it("validates assets with audio and font kinds", () => {
+    const project = {
+      schemaVersion: 1 as const,
+      name: "TestProject",
+      scenes: [],
+      levels: [],
+      assets: [
+        { id: "img", file: "img.png", kind: "image" as const },
+        { id: "laser-sound", file: "laser.mp3", kind: "audio" as const },
+        { id: "custom-font", file: "font.ttf", kind: "font" as const }
+      ],
+      guiComponents: []
+    };
+
+    const result = validateProject(project);
+    expect(result.ok).toBe(true);
+    expect(result.value.assets[1].kind).toBe("audio");
+    expect(result.value.assets[2].kind).toBe("font");
+  });
+});
