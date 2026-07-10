@@ -25,21 +25,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 100, "y": 200 },
+          "position": {
+            "x": 80,
+            "y": 191
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "player",
           "width": 48,
           "height": 48,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -24, "y": -24 },
-          "size": { "x": 48, "y": 48 },
+          "offset": {
+            "x": -24,
+            "y": -24
+          },
+          "size": {
+            "x": 48,
+            "y": 48
+          },
           "isStatic": false,
           "isTrigger": false,
           "layer": 1,
@@ -47,7 +62,10 @@
         },
         {
           "type": "RigidBody",
-          "velocity": { "x": 0, "y": 0 },
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
           "angularVelocity": 0,
           "mass": 1,
           "drag": 0.05,
@@ -74,21 +92,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 422, "y": 370 },
+          "position": {
+            "x": 422,
+            "y": 370
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "ground",
           "width": 844,
           "height": 40,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -422, "y": -20 },
-          "size": { "x": 844, "y": 40 },
+          "offset": {
+            "x": -422,
+            "y": -20
+          },
+          "size": {
+            "x": 844,
+            "y": 40
+          },
           "isStatic": true,
           "isTrigger": false,
           "layer": 1,
@@ -102,21 +135,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 300, "y": 260 },
+          "position": {
+            "x": 300,
+            "y": 260
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "platform",
           "width": 150,
           "height": 20,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -75, "y": -10 },
-          "size": { "x": 150, "y": 20 },
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
           "isStatic": true,
           "isTrigger": false,
           "layer": 1,
@@ -130,21 +178,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 550, "y": 200 },
+          "position": {
+            "x": 550,
+            "y": 200
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "platform",
           "width": 150,
           "height": 20,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -75, "y": -10 },
-          "size": { "x": 150, "y": 20 },
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
           "isStatic": true,
           "isTrigger": false,
           "layer": 1,
@@ -158,21 +221,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 720, "y": 140 },
+          "position": {
+            "x": 720,
+            "y": 140
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "block-yellow-alt",
           "width": 120,
           "height": 20,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -60, "y": -10 },
-          "size": { "x": 120, "y": 20 },
+          "offset": {
+            "x": -60,
+            "y": -10
+          },
+          "size": {
+            "x": 120,
+            "y": 20
+          },
           "isStatic": true,
           "isTrigger": false,
           "layer": 1,
@@ -186,21 +264,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 300, "y": 220 },
+          "position": {
+            "x": 300,
+            "y": 220
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "target",
           "width": 28,
           "height": 28,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -14, "y": -14 },
-          "size": { "x": 28, "y": 28 },
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
           "isStatic": true,
           "isTrigger": true,
           "layer": 2,
@@ -214,21 +307,36 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 550, "y": 160 },
+          "position": {
+            "x": 550,
+            "y": 160
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Sprite",
           "assetId": "target",
           "width": 28,
           "height": 28,
-          "anchor": { "x": 0.5, "y": 0.5 }
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": -14, "y": -14 },
-          "size": { "x": 28, "y": 28 },
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
           "isStatic": true,
           "isTrigger": true,
           "layer": 2,
@@ -242,9 +350,15 @@
       "components": [
         {
           "type": "Transform",
-          "position": { "x": 24, "y": 16 },
+          "position": {
+            "x": 24,
+            "y": 16
+          },
           "rotation": 0,
-          "scale": { "x": 1, "y": 1 }
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
         {
           "type": "Text",
@@ -264,15 +378,13 @@
     "orientation": "landscape",
     "safeArea": {
       "enabled": true,
-      "padding": { "top": 0, "bottom": 0, "left": 0, "right": 0 }
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
     }
-  },
-  "inputMap": {
-    "bindings": [
-      { "action": "move_left", "keys": ["ArrowLeft", "a", "A"], "touchControl": "left" },
-      { "action": "move_right", "keys": ["ArrowRight", "d", "D"], "touchControl": "right" },
-      { "action": "jump", "keys": ["ArrowUp", " ", "w", "W"], "touchControl": "jump" }
-    ]
   },
   "timeline": {
     "tracks": [],
@@ -283,5 +395,37 @@
   "gui": {
     "nodes": [],
     "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump"
+      }
+    ]
   }
 }

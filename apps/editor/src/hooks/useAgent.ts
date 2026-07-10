@@ -11,6 +11,7 @@ const READ_ONLY_TOOLS = new Set([
   "list_scenes",
   "list_entities",
   "list_components",
+  "list_prefabs",
   "validate_scene",
   "validate_project",
   "explain_scene",
@@ -23,6 +24,8 @@ const READ_ONLY_TOOLS = new Set([
   "search_project",
   "get_project",
   "get_scene",
+  "get_active_scene",
+  "simulate_runtime_step",
 ]);
 
 export type UseAgentReturn = {
@@ -274,10 +277,22 @@ export function useAgent(
     if (isStreaming) return;
 
     if (text.startsWith("/screenshot")) {
-      const prompt = text.slice(11).trim() || "Analyze this scene visual layout.";
-      const canvas = document.querySelector("canvas");
+      const prompt =
+        text.slice(11).trim() ||
+        "Analyze this scene visual layout. List entities you can infer, spacing issues, and concrete edit suggestions.";
+      const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
       if (canvas) {
+        // Prefer higher-res capture when the canvas is HiDPI-backed
         const dataUrl = canvas.toDataURL("image/png");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: nanoid(),
+            role: "system",
+            content: `Captured canvas screenshot (${canvas.width}×${canvas.height}px buffer).`,
+            ts: Date.now(),
+          },
+        ]);
         await sendChatMessage(prompt, dataUrl);
       } else {
         setMessages((prev) => [

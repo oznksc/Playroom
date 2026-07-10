@@ -55,7 +55,16 @@ export async function* runAgent(
     system += `\n\n## Session Safety\nAn undo snapshot was created before this run: \`${input.sessionSnapshotId}\`. You can call restore_snapshot with this id if the user wants to roll back.`;
   }
   history.append({ role: "system", content: system });
-  history.append({ role: "user", content: input.message, screenshot: input.screenshot });
+  let userContent = input.message;
+  if (input.screenshot) {
+    userContent = `${input.message}
+
+[VISION] A canvas screenshot of the active scene is attached as an image.
+Viewport: ${input.sceneContext.viewport.width}×${input.sceneContext.viewport.height} (${input.sceneContext.orientation}).
+Describe spatial layout precisely (left/right/above/below, approximate pixel positions).
+Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off-screen entities).`;
+  }
+  history.append({ role: "user", content: userContent, screenshot: input.screenshot });
 
   // Fetch MCP tools
   let mcpTools;

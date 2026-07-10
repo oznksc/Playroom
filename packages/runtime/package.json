@@ -48,6 +48,10 @@
     "./input-map": {
       "types": "./dist/input-map.d.ts",
       "import": "./dist/input-map.js"
+    },
+    "./audio": {
+      "types": "./dist/audio.d.ts",
+      "import": "./dist/audio.js"
     }
   },
   "scripts": {

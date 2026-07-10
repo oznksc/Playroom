@@ -5,12 +5,11 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.5): 10+ bileşen tipi (+`Tilemap`, `Text`, `AudioSource`),
-> `inputMap` on scenes + runtime resolution, `simulate_runtime_step` MCP tool,
-> Expo template = landscape platformer demo (RigidBody, coins, pads, assets),
-> persistence paths fixed (`gamekit/state.json`), agent history load/save (PUT/GET),
-> agent approval + session undo + plan mode, play-in-editor + virtual pad,
-> 87 tests green.
+> Şu anki durum (v0.1.6): prefabs (`create_prefab`/`instantiate_prefab`),
+> `batch_apply_edit`, `load_scene` + `define_scene_transition` + `get_active_scene`,
+> project.activeScene/transitions schema, vision prompt enrichment for /screenshot,
+> topdown skill refreshed (RigidBody, bounds, gem trigger, inputMap),
+> 96 tests green.
 
 ---
 
@@ -559,7 +558,8 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | 3 | Play-in-editor + Gizmos + virtual pad | ✅ Physics play loop, collider/velocity gizmos, on-screen controls |
 | 4 | Audio + Text (minimum) | ✅ Text/AudioSource schema+editor; HTMLAudio controller; import audio |
 | 5 | Agent unhide + approval + snapshots + plan mode | ✅ v0.1.4 |
-| 6 | Agent Sprint B (çoklu sağlayıcı + Tauri) | OpenAI/Google/Ollama + keychain polish |
-| 7 | Agent Sprint C deep (vision model wiring) | `/screenshot` already; deeper vision adapters |
+| 6 | Prefabs + batch edit + scene transitions | ✅ create/instantiate prefab, batch_apply_edit, load_scene |
+| 7 | Agent vision enrichment | ✅ /screenshot capture + multimodal prompts (providers already wired) |
+| 7b | Agent Sprint B residual | Tauri Stronghold keychain polish still open |
 | 8 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
 | 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi |
