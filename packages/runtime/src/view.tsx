@@ -1,5 +1,5 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent } from "@gamekit/schema";
-import { Canvas, Group, Rect, Skia, Image as SkiaImage, useImage } from "@shopify/react-native-skia";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent } from "@gamekit/schema";
+import { Canvas, Group, Rect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
@@ -162,6 +162,18 @@ export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1
               );
             }
 
+            const textComp = entity.components.find((component): component is TextComponent => component.type === "Text");
+            if (textComp) {
+              nodes.push(
+                <TextNode
+                  key={`${entity.id}-text`}
+                  textComponent={textComp}
+                  transform={transform}
+                  source={assets[textComp.fontAssetId]}
+                />
+              );
+            }
+
             return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;
           })}
         </Group>
@@ -303,6 +315,41 @@ function AnimatedSpriteNode({
         height={anim.frameHeight}
       />
     </Group>
+  );
+}
+
+function TextNode({
+  textComponent,
+  transform,
+  source
+}: {
+  textComponent: TextComponent;
+  transform: TransformComponent;
+  source: unknown;
+}): ReactElement | null {
+  const font = useFont(source as string, textComponent.size);
+  if (!font) return null;
+
+  let x = transform.position.x;
+  const y = transform.position.y;
+
+  if (textComponent.align === "center" || textComponent.align === "right") {
+    const width = font.getTextWidth(textComponent.text);
+    if (textComponent.align === "center") {
+      x -= width / 2;
+    } else {
+      x -= width;
+    }
+  }
+
+  return (
+    <SkiaText
+      font={font}
+      text={textComponent.text}
+      x={x}
+      y={y}
+      color={Skia.Color(textComponent.color)}
+    />
   );
 }
 

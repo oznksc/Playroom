@@ -2,6 +2,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { regenerateAssetsManifest } from "../utils/assets-gen.js";
 import type { FileIO } from "../utils/file-io.js";
+import { copyFile } from "node:fs/promises";
+import { extname, join } from "node:path";
 
 export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
   server.tool("list_assets", "List all assets from project.json", {}, async () => {
@@ -17,7 +19,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
     {
       id: z.string().describe("Asset ID (kebab-case, e.g., 'player')"),
       file: z.string().describe("Asset filename (e.g., 'player.svg')"),
-      kind: z.literal("image").describe("Asset type"),
+      kind: z.enum(["image", "audio", "font"]).describe("Asset type"),
     },
     async ({ id, file, kind }) => {
       const project = await fileIO.readProject();
@@ -75,4 +77,52 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       content: [{ type: "text", text: JSON.stringify({ success: true, message: "Assets manifest regenerated", assetCount: project.assets.length }) }],
     };
   });
+
+  server.tool(
+    "import_audio",
+    "Import an audio file (mp3/ogg/wav) into the project assets",
+    {
+      id: z.string().describe("Desired Asset ID (kebab-case, e.g., 'jump-sound')"),
+      sourcePath: z.string().describe("Absolute path to the source audio file"),
+    },
+    async ({ id, sourcePath }) => {
+      const extension = extname(sourcePath).toLowerCase();
+      if (![".mp3", ".ogg", ".wav"].includes(extension)) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Unsupported audio extension: ${extension}. Only mp3, ogg, and wav are supported.` }) }],
+          isError: true,
+        };
+      }
+
+      const project = await fileIO.readProject();
+      const existing = project.assets.find((a) => a.id === id);
+      if (existing) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) }],
+          isError: true,
+        };
+      }
+
+      const fileName = `${id}${extension}`;
+      const destination = join(fileIO.assetsDir, fileName);
+
+      try {
+        await copyFile(sourcePath, destination);
+      } catch (err) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Failed to copy file: ${(err as Error).message}` }) }],
+          isError: true,
+        };
+      }
+
+      const asset = { id, file: fileName, kind: "audio" as const };
+      project.assets.push(asset);
+      await fileIO.writeProject(project);
+      await regenerateAssetsManifest(fileIO.assetsDir.replace(/\/assets$/, ""), project);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: true, assetId: id, asset, message: "Audio asset imported successfully" }, null, 2) }],
+      };
+    }
+  );
 }

@@ -124,6 +124,28 @@ export type TilemapComponent = {
   tiles: number[];
 };
 
+export type TextComponent = {
+  type: "Text";
+  text: string;
+  fontAssetId: string;
+  size: number;
+  color: string;
+  align: "left" | "center" | "right";
+};
+
+export type AudioSourceComponent = {
+  type: "AudioSource";
+  assetId: string;
+  volume: number;
+  loop: boolean;
+  playOnStart: boolean;
+};
+
+export type AudioListenerComponent = {
+  type: "AudioListener";
+  enabled: boolean;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -134,7 +156,10 @@ export type GameKitComponent =
   | RigidBodyComponent
   | CameraFollowComponent
   | AnimationComponent
-  | TilemapComponent;
+  | TilemapComponent
+  | TextComponent
+  | AudioSourceComponent
+  | AudioListenerComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -237,7 +262,7 @@ export type GameKitScene = {
 export type GameKitAsset = {
   id: string;
   file: string;
-  kind: "image";
+  kind: "image" | "audio" | "font";
   width?: number;
   height?: number;
 };
@@ -574,6 +599,31 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
             : (errors.push(`${path}.tiles must be an array`), []),
         });
         return;
+      case "Text":
+        components.push({
+          type: "Text",
+          text: expectString(component.text, `${path}.text`, errors),
+          fontAssetId: expectString(component.fontAssetId, `${path}.fontAssetId`, errors),
+          size: expectNumber(component.size, `${path}.size`, errors),
+          color: expectString(component.color, `${path}.color`, errors),
+          align: (component.align === "center" || component.align === "right") ? component.align : "left"
+        });
+        return;
+      case "AudioSource":
+        components.push({
+          type: "AudioSource",
+          assetId: expectString(component.assetId, `${path}.assetId`, errors),
+          volume: expectNumber(component.volume, `${path}.volume`, errors),
+          loop: expectBoolean(component.loop, `${path}.loop`, errors),
+          playOnStart: expectBoolean(component.playOnStart, `${path}.playOnStart`, errors)
+        });
+        return;
+      case "AudioListener":
+        components.push({
+          type: "AudioListener",
+          enabled: expectBoolean(component.enabled, `${path}.enabled`, errors)
+        });
+        return;
       default:
         errors.push(`${path}.type has unsupported component type: ${String((component as Record<string, unknown>).type ?? "unknown")}`);
     }
@@ -595,14 +645,15 @@ function validateAssets(input: unknown, errors: string[]): GameKitAsset[] {
       return { id: "", file: "", kind: "image" };
     }
 
-    if (asset.kind !== "image") {
-      errors.push(`${path}.kind must be "image"`);
+    const kind = asset.kind;
+    if (kind !== "image" && kind !== "audio" && kind !== "font") {
+      errors.push(`${path}.kind must be "image", "audio", or "font"`);
     }
 
     return {
       id: expectString(asset.id, `${path}.id`, errors),
       file: expectString(asset.file, `${path}.file`, errors),
-      kind: "image",
+      kind: (kind === "audio" || kind === "font") ? kind : "image",
       width: optionalNumber(asset.width, `${path}.width`, errors),
       height: optionalNumber(asset.height, `${path}.height`, errors)
     };

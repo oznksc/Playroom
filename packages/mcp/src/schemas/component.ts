@@ -98,6 +98,28 @@ export const TilemapInputSchema = z.object({
   tiles: z.array(z.number().int().min(0)).default([]),
 });
 
+export const TextInputSchema = z.object({
+  type: z.literal("Text"),
+  text: z.string(),
+  fontAssetId: z.string().min(1),
+  size: z.number().positive().default(16),
+  color: z.string().default("#ffffff"),
+  align: z.enum(["left", "center", "right"]).default("left"),
+});
+
+export const AudioSourceInputSchema = z.object({
+  type: z.literal("AudioSource"),
+  assetId: z.string().min(1),
+  volume: z.number().min(0).max(1).default(1),
+  loop: z.boolean().default(false),
+  playOnStart: z.boolean().default(true),
+});
+
+export const AudioListenerInputSchema = z.object({
+  type: z.literal("AudioListener"),
+  enabled: z.boolean().default(true),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -109,6 +131,9 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   CameraFollowInputSchema,
   AnimationInputSchema,
   TilemapInputSchema,
+  TextInputSchema,
+  AudioSourceInputSchema,
+  AudioListenerInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -122,4 +147,7 @@ export const ComponentTypeSchema = z.enum([
   "CameraFollow",
   "Animation",
   "Tilemap",
+  "Text",
+  "AudioSource",
+  "AudioListener",
 ]);
