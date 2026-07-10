@@ -20,21 +20,22 @@ evrilir.
 2. [ ] `Tilemap` + paint tool → içerik üretimi 10x hızlanır
 3. [x] Play-in-editor → geri bildirim döngüsü dakikadan saniyeye düşer
    (`MVP_SHOW_PLAY_CONTROLS=true`, mock floor ile, v0.1.1)
-4. [x] MCP için test + editör için en az 1 smoke test → regresyon güvenliği
-   (MCP physics-test: 10 test, editör smoke testi kaldı, v0.1.1)
-5. [x] `CircleCollider` + raycast → mouse picking açılır, AI/laser mümkün olur
-   (CircleCollider runtime collision + editör render, raycast kaldı, v0.1.1)
+4. [x] MCP test → 10 physics test eklendi (editör smoke testi hâlâ eksik)
+5. [x] `CircleCollider` runtime collision + editör render
+6. [ ] Raycast → mouse picking, AI, laser
 
 ---
 
 ## 1. Fizik & Çarpışma (en kritik eksik)
 
 ### Görevler
-- [x] `CircleCollider` ve `PolygonCollider` ekle (şema + editör inspector + runtime)
+- [x] `CircleCollider` ve `PolygonCollider` ekle (şema + editör inspector + MCP)
+- [~] `PolygonCollider` runtime collision — SAT algılaması hazır, `applyPolygonCollisions` stub
 - [x] `RigidBody` bileşeni: velocity, angularVelocity, mass, drag, isKinematic, gravityScale
-- [x] Velocity-verlet entegrasyonu (sabit dt = 1/60) ve `fixedTimestep` accumulator (`loop.ts`'te substep yok)
-- [x] Katı layer/mask sistemi: `AabbCollider` zaten `layer`/`mask` taşıyor ama runtime bunu hiç kullanmıyor
-- [x] Trigger alanları (overlap-only) + enter/exit olayları
+- [x] Velocity-verlet entegrasyonu (sabit dt = 1/60) ve `fixedTimestep` accumulator
+- [x] Katı layer/mask sistemi: runtime'da `applyAabbCollisions`/`applyCircleCollisions` mask filtresi kullanıyor
+- [x] Trigger alanları şema/MCP'de tanımlı (`isTrigger`), runtime'da overlap-only mantığı eksik
+- [ ] Trigger enter/exit olayları (`onTriggerEnter`, `onTriggerExit`)
 - [ ] Raycast (mouse picking, AI, laser) — editörde de lazım olacak
 - [ ] Sleeping body optimizasyonu
 - [ ] Collision callback'leri (`onCollisionEnter`, `onTriggerEnter`)
@@ -42,7 +43,7 @@ evrilir.
 ### MCP Araçları (yeni)
 - [x] `add_collider` — sahneye `AabbCollider` / `CircleCollider` / `PolygonCollider` ekler
 - [x] `add_rigid_body` — entity'ye `RigidBody` bağlar (`mass`, `isKinematic`, `gravityScale`)
-- [x] `set_physics_gravity` — proje/sahne yerçekimini ayarlar
+- [x] `set_gravity` — proje/sahne yerçekimini ayarlar
 - [x] `set_collision_layer` — entity layer/mask günceller
 - [ ] `raycast` — verilen noktadan verilen yöne ışın atar, ilk çarpışanı döner
 - [ ] `query_overlaps` — alan içindeki tüm collider'ları listeler (AI için)
