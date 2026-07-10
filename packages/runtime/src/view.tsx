@@ -1,4 +1,4 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TransformComponent } from "@gamekit/schema";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent } from "@gamekit/schema";
 import { Canvas, Group, Rect, Skia, Image as SkiaImage, useImage } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
@@ -124,11 +124,25 @@ export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1
             const transform = entity.components.find((component): component is TransformComponent => component.type === "Transform");
             if (!transform) return null;
 
+            const nodes: ReactElement[] = [];
+
+            const tilemap = entity.components.find((component): component is TilemapComponent => component.type === "Tilemap");
+            if (tilemap) {
+              nodes.push(
+                <TilemapNode
+                  key={`${entity.id}-tilemap`}
+                  tilemap={tilemap}
+                  transform={transform}
+                  source={assets[tilemap.tilesetId]}
+                />
+              );
+            }
+
             const anim = entity.components.find((component): component is AnimationComponent => component.type === "Animation");
             if (anim) {
-              return (
+              nodes.push(
                 <AnimatedSpriteNode
-                  key={entity.id}
+                  key={`${entity.id}-anim`}
                   anim={anim}
                   transform={transform}
                   source={assets[anim.assetId]}
@@ -137,16 +151,18 @@ export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1
             }
 
             const sprite = entity.components.find((component): component is SpriteComponent => component.type === "Sprite");
-            if (!sprite) return null;
+            if (sprite) {
+              nodes.push(
+                <SpriteNode
+                  key={`${entity.id}-sprite`}
+                  sprite={sprite}
+                  transform={transform}
+                  source={assets[sprite.assetId]}
+                />
+              );
+            }
 
-            return (
-              <SpriteNode
-                key={entity.id}
-                sprite={sprite}
-                transform={transform}
-                source={assets[sprite.assetId]}
-              />
-            );
+            return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;
           })}
         </Group>
       </Canvas>
@@ -188,6 +204,64 @@ function SpriteNode({
       height={sprite.height}
     />
   );
+}
+
+function TilemapNode({
+  tilemap,
+  transform,
+  source
+}: {
+  tilemap: TilemapComponent;
+  transform: TransformComponent;
+  source: unknown;
+}): ReactElement | null {
+  const image = useImage(source as Parameters<typeof useImage>[0]);
+
+  const tiles: ReactElement[] = [];
+
+  for (let i = 0; i < tilemap.tiles.length; i++) {
+    const tileId = tilemap.tiles[i];
+    if (tileId === 0) continue;
+
+    const gx = i % tilemap.gridWidth;
+    const gy = Math.floor(i / tilemap.gridWidth);
+    const x = transform.position.x + gx * tilemap.tileWidth;
+    const y = transform.position.y + gy * tilemap.tileHeight;
+
+    const srcTileIndex = tileId - 1;
+    const srcX = (srcTileIndex % tilemap.columns) * tilemap.tileWidth;
+    const srcY = Math.floor(srcTileIndex / tilemap.columns) * tilemap.tileHeight;
+
+    if (!image) {
+      tiles.push(
+        <Rect
+          key={i}
+          x={x}
+          y={y}
+          width={tilemap.tileWidth}
+          height={tilemap.tileHeight}
+          color={"#a78bfa"}
+        />
+      );
+    } else {
+      tiles.push(
+        <Group
+          key={i}
+          clip={Skia.RRectXY(Skia.XYWHRect(x, y, tilemap.tileWidth, tilemap.tileHeight), 0, 0)}
+        >
+          <SkiaImage
+            image={image}
+            x={x - srcX}
+            y={y - srcY}
+            width={tilemap.columns * tilemap.tileWidth}
+            height={Math.ceil(tilemap.tiles.length / tilemap.columns) * tilemap.tileHeight}
+          />
+        </Group>
+      );
+    }
+  }
+
+  return tiles.length > 0 ? <>{tiles}</> : null;
 }
 
 function AnimatedSpriteNode({
