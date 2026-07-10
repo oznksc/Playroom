@@ -63,6 +63,9 @@ export type { GameLoopCallback, FixedTimestepOptions } from "./loop.js";
 export {
   createRigidBody,
   type RigidBodyState,
-  RIGID_BODY_FIXED_DT
+  RIGID_BODY_FIXED_DT,
+  RIGID_BODY_SLEEP_DELAY,
+  RIGID_BODY_SLEEP_LINEAR_THRESHOLD,
+  RIGID_BODY_SLEEP_ANGULAR_THRESHOLD
 } from "./rigid-body.js";
 export { usePlayerInput } from "./input.js";

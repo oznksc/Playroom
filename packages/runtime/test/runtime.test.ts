@@ -3,6 +3,7 @@ import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { createCameraFollow } from "../src/camera.js";
 import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateTriggerEvents } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
+import { createRigidBody, RIGID_BODY_SLEEP_DELAY } from "../src/rigid-body.js";
 import { loadScene } from "../src/scene.js";
 
 describe("runtime scene loading", () => {
@@ -195,5 +196,59 @@ describe("trigger events", () => {
     const ignored = createBox("Ignored", 5, false, 4, 1);
 
     expect(updateTriggerEvents([trigger, ignored]).events).toEqual([]);
+  });
+});
+
+describe("rigid body sleeping", () => {
+  function createBody() {
+    return createRigidBody({
+      type: "RigidBody",
+      velocity: { x: 0, y: 0 },
+      angularVelocity: 0,
+      mass: 1,
+      drag: 0,
+      isKinematic: false,
+      gravityScale: 1,
+      useGravity: true,
+    });
+  }
+
+  it("sleeps after remaining supported and still for the delay", () => {
+    const body = createBody();
+
+    body.updateSleep(RIGID_BODY_SLEEP_DELAY / 2, true);
+    expect(body.state.sleeping).toBe(false);
+    body.updateSleep(RIGID_BODY_SLEEP_DELAY / 2, true);
+
+    expect(body.state.sleeping).toBe(true);
+    expect(body.state.velocity).toEqual({ x: 0, y: 0 });
+  });
+
+  it("does not sleep while unsupported or moving", () => {
+    const body = createBody();
+    body.updateSleep(RIGID_BODY_SLEEP_DELAY, false);
+    body.state.velocity.x = 1;
+    body.updateSleep(RIGID_BODY_SLEEP_DELAY, true);
+
+    expect(body.state.sleeping).toBe(false);
+    expect(body.state.sleepTimer).toBe(0);
+  });
+
+  it("wakes when an impulse is applied", () => {
+    const body = createBody();
+    body.sleep();
+    body.applyImpulse({ x: 2, y: -1 });
+
+    expect(body.state.sleeping).toBe(false);
+    expect(body.state.velocity).toEqual({ x: 2, y: -1 });
+  });
+
+  it("skips force and position integration while sleeping", () => {
+    const body = createBody();
+    body.sleep();
+    body.integrateForces(1, { x: 0, y: 100 });
+
+    expect(body.state.velocity).toEqual({ x: 0, y: 0 });
+    expect(body.integratePosition({ x: 10, y: 20 }, 1)).toEqual({ x: 10, y: 20 });
   });
 });
