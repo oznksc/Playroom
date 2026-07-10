@@ -4,18 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Gamepad2,
   FolderOpen,
-  PanelLeft,
-  PanelRight,
-  X,
   Folder,
   Clock3,
   Terminal,
 } from "lucide-react";
-import { Topbar } from "./components/Topbar.js";
+import { BrandCorner } from "./components/BrandCorner.js";
+import { AppTabBar } from "./components/AppTabBar.js";
 import { Sidebar } from "./components/Sidebar.js";
-import { SidebarRail, type SidebarTabId } from "./components/SidebarRail.js";
+import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { Inspector } from "./components/Inspector.js";
 import { Footer } from "./components/Footer.js";
@@ -1477,69 +1474,63 @@ export function App() {
         )}
       </div>
 
-      {/* Floating left activity rail */}
-      <aside className="float-rail" aria-label="Workspace panels">
-        <SidebarRail
-          active={activeTab}
-          onChange={(id) => {
-            setActiveTab(id);
+      {/* Top-left: logo + settings only */}
+      <BrandCorner
+        isDirty={isDirty}
+        onSettings={() => setAgentSettingsOpen(true)}
+      />
+
+      {/* Apple-style tab bar — primary actions */}
+      <AppTabBar
+        active={
+          !bottomDrawerCollapsed
+            ? "content"
+            : sidebarOpen && activeTab === "agent"
+              ? "agent"
+              : sidebarOpen
+                ? "hierarchy"
+                : inspectorOpen
+                  ? "inspector"
+                  : null
+        }
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        saveState={saveState}
+        playFps={playFps}
+        onHierarchy={() => {
+          if (sidebarOpen && activeTab === "entities") {
+            setSidebarOpen(false);
+          } else {
+            setActiveTab("entities");
             setSidebarOpen(true);
             setBottomDrawerCollapsed(true);
-          }}
-          items={[
-            { id: "entities", label: "Hierarchy" },
-            { id: "scenes", label: "Scenes" },
-            { id: "prefabs", label: "Prefabs" },
-            { id: "agent", label: "Agent" },
-            ...(MVP_SHOW_LEVELS ? [{ id: "levels" as const, label: "Levels" }] : []),
-            ...(MVP_SHOW_GUI_TOOLS
-              ? [
-                  { id: "guis" as const, label: "GUI" },
-                  { id: "components" as const, label: "Comps" },
-                ]
-              : []),
-          ]}
-        />
-      </aside>
-
-      {/* Floating top toolbar */}
-      <div className="float-topbar">
-        <Topbar
-          sceneName={scene?.name ?? currentSceneFile}
-          isDirty={isDirty}
-          saveState={saveState}
-          status={status}
-          lastSaved={lastSaved}
-          isPlaying={isPlaying}
-          isPaused={isPaused}
-          playFps={playFps}
-          playFrameMs={playFrameMs}
-          entityCount={scene?.entities.length ?? 0}
-          sidebarOpen={sidebarOpen}
-          inspectorOpen={inspectorOpen}
-          onPlayToggle={handlePlayToggle}
-          onPauseToggle={handlePlayToggle}
-          onStop={handleStop}
-          onRefresh={refresh}
-          onImport={importAsset}
-          onSave={saveScene}
-          onAddEntity={addEntity}
-          onToggleSidebar={() => {
-            setSidebarOpen((v) => !v);
-            if (!sidebarOpen) setBottomDrawerCollapsed(true);
-          }}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
-          onOpenAgent={() => {
+          }
+        }}
+        onInspector={() => {
+          setInspectorOpen((v) => !v);
+        }}
+        onContent={() => {
+          if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
+            setBottomDrawerCollapsed(true);
+          } else {
+            setActiveBottomTab("assets");
+            setBottomDrawerCollapsed(false);
+            setSidebarOpen(false);
+          }
+        }}
+        onAgent={() => {
+          if (sidebarOpen && activeTab === "agent") {
+            setSidebarOpen(false);
+          } else {
             setActiveTab("agent");
             setSidebarOpen(true);
             setBottomDrawerCollapsed(true);
-          }}
-          onOpenWizard={() => setWizardOpen(true)}
-          formatLastSaved={formatLastSaved}
-          projectPath={isTauri ? projectPath : null}
-          onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
-        />
-      </div>
+          }
+        }}
+        onPlayToggle={handlePlayToggle}
+        onStop={handleStop}
+        onSave={saveScene}
+      />
 
       {/* Left floating sheet */}
       <div className={`float-sheet-left${sidebarOpen ? " open" : ""}`} role="dialog" aria-label="Workspace panel">
