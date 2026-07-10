@@ -11,6 +11,9 @@ export type {
 export { AnthropicAdapter } from "./providers/anthropic.js";
 export { LmStudioAdapter } from "./providers/lmstudio.js";
 export { OpenRouterAdapter } from "./providers/openrouter.js";
+export { OpenAIAdapter } from "./providers/openai.js";
+export { OllamaAdapter } from "./providers/ollama.js";
+export { GoogleAdapter } from "./providers/google.js";
 
 export type { SseEvent } from "./loop/streaming.js";
 export { encodeSse } from "./loop/streaming.js";
