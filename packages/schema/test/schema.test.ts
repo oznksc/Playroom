@@ -333,6 +333,29 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     expect(listenerComp.enabled).toBe(true);
   });
 
+  it("validates ParticleSystem components", () => {
+    const scene = createEmptyScene("Particles");
+    const entity = createEntity("Emitter", { x: 0, y: 0 });
+    entity.components.push({
+      type: "ParticleSystem",
+      maxParticles: 32,
+      emissionRate: 10,
+      lifetime: 1,
+      speed: 50,
+      gravityScale: 0.5,
+      colorStart: "#00f0ff",
+      colorEnd: "#000000",
+      sizeStart: 4,
+      sizeEnd: 0,
+      shape: "point",
+      width: 0,
+      height: 0,
+      active: true,
+    });
+    scene.entities.push(entity);
+    expect(validateScene(scene).ok).toBe(true);
+  });
+
   it("allows empty fontAssetId for system font Text labels", () => {
     const scene = createEmptyScene("SystemFont");
     const label = createEntity("Score", { x: 0, y: 0 });

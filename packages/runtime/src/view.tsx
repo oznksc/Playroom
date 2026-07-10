@@ -1,9 +1,11 @@
 import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent } from "@gamekit/schema";
-import { Canvas, Group, Rect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont } from "@shopify/react-native-skia";
+import { Canvas, Group, Rect, Circle, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { Particle } from "./particles.js";
+import { particleRenderColor, particleRenderSize } from "./particles.js";
 
 export type GameKitViewProps = {
   scene: GameKitScene;
@@ -13,6 +15,8 @@ export type GameKitViewProps = {
     y: number;
     zoom?: number;
   };
+  /** Live particle snapshots keyed by emitter entity id (from GameKitGame loop). */
+  particlesByEntity?: Record<string, Particle[]>;
 };
 
 type ViewportScale = {
@@ -91,7 +95,12 @@ function calculateViewportScale(
   };
 }
 
-export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1 } }: GameKitViewProps): ReactElement {
+export function GameKitView({
+  scene,
+  assets = {},
+  camera = { x: 0, y: 0, zoom: 1 },
+  particlesByEntity = {},
+}: GameKitViewProps): ReactElement {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -172,6 +181,23 @@ export function GameKitView({ scene, assets = {}, camera = { x: 0, y: 0, zoom: 1
                   source={assets[textComp.fontAssetId]}
                 />
               );
+            }
+
+            const liveParticles = particlesByEntity[entity.id];
+            if (liveParticles?.length) {
+              for (let i = 0; i < liveParticles.length; i++) {
+                const p = liveParticles[i];
+                nodes.push(
+                  <Circle
+                    key={`${entity.id}-p-${i}`}
+                    cx={p.x}
+                    cy={p.y}
+                    r={Math.max(0.5, particleRenderSize(p) / 2)}
+                    color={Skia.Color(particleRenderColor(p))}
+                    opacity={Math.max(0, 1 - p.age / Math.max(0.0001, p.lifetime))}
+                  />,
+                );
+              }
             }
 
             return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;

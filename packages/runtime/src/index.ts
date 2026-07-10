@@ -23,7 +23,13 @@ export { createLevel } from "@gamekit/schema";
 export { GameKitView } from "./view.js";
 export { GameKitGame } from "./game.js";
 export type { GameKitGameProps } from "./game.js";
-export { SceneManager, type StorageProvider, InMemoryStorage, LocalStorageProvider } from "./manager.js";
+export {
+  SceneManager,
+  type StorageProvider,
+  type GameSavePayload,
+  InMemoryStorage,
+  LocalStorageProvider,
+} from "./manager.js";
 export { loadScene } from "./scene.js";
 export {
   type Aabb,
@@ -91,3 +97,11 @@ export {
   type SimulateOptions,
   type SimulateResult,
 } from "./simulate.js";
+export {
+  createParticleEmitter,
+  updateParticleEmitter,
+  particleRenderSize,
+  particleRenderColor,
+  type Particle,
+  type ParticleEmitterState,
+} from "./particles.js";

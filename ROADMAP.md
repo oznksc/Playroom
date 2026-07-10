@@ -5,9 +5,9 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.8): Tauri OS keychain BYOK (`secret_set/get/delete` + keyring),
-> tile paint/erase tools + palette, skill list/apply API + New from template wizard,
-> cargo check green; 100 tests.
+> Şu anki durum (v0.1.9): SceneManager save includes level unlock + scene cursor;
+> completeLevel / locked switchLevel; ParticleSystem (schema+runtime+editor preview);
+> physics parity fixture tests; MCP set_level_unlocked / complete_level.
 
 ---
 
@@ -561,5 +561,6 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | 7b | Tauri OS keychain BYOK | ✅ keyring crate (macOS/Windows/Linux secrets) |
 | 7c | Tile paint UI | ✅ paint/erase tools + tile palette |
 | 7d | Genre wizard | ✅ `/api/skills` + ProjectWizard modal |
-| 8 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
+| 8 | Level save + parity smoke + particles | ✅ SceneManager save/unlock; parity fixture; ParticleSystem MVP |
+| 8b | Full Skia/Phaser host + 1000 entity budget | Still open |
 | 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi (wizard done; docs site open) |

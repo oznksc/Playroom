@@ -10,6 +10,7 @@ import type {
   SpriteComponent,
   TransformComponent,
   TilemapComponent,
+  ParticleSystemComponent,
   TextComponent,
   AudioSourceComponent,
   AudioListenerComponent,
@@ -155,6 +156,7 @@ export function Inspector({
   const followPath = entity ? findComponent<FollowPathComponent>(entity, "FollowPath") : undefined;
   const stateMachine = entity ? findComponent<StateMachineComponent>(entity, "StateMachine") : undefined;
   const script = entity ? findComponent<ScriptComponent>(entity, "Script") : undefined;
+  const particleSystem = entity ? findComponent<ParticleSystemComponent>(entity, "ParticleSystem") : undefined;
 
   function toggleCollapse(comp: string) {
     setCollapsed((prev) => ({ ...prev, [comp]: !prev[comp] }));
@@ -278,6 +280,23 @@ export function Inspector({
           type: "Script",
           handlers: []
         });
+      } else if (val === "ParticleSystem") {
+        draft.components.push({
+          type: "ParticleSystem",
+          maxParticles: 40,
+          emissionRate: 18,
+          lifetime: 0.9,
+          speed: 70,
+          gravityScale: 0.35,
+          colorStart: "#00f0ff",
+          colorEnd: "#8b5cf6",
+          sizeStart: 5,
+          sizeEnd: 0,
+          shape: "point",
+          width: 0,
+          height: 0,
+          active: true,
+        });
       }
     });
 
@@ -311,6 +330,7 @@ export function Inspector({
     if (!followPath) missingComponents.push({ val: "FollowPath", label: "Path Follower" });
     if (!stateMachine) missingComponents.push({ val: "StateMachine", label: "FSM State Machine" });
     if (!script) missingComponents.push({ val: "Script", label: "Behavior Script" });
+    if (!particleSystem) missingComponents.push({ val: "ParticleSystem", label: "Particle System" });
   }
 
   return (

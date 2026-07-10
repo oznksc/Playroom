@@ -195,6 +195,23 @@ export type ScriptComponent = {
   handlers: ScriptHandler[];
 };
 
+export type ParticleSystemComponent = {
+  type: "ParticleSystem";
+  maxParticles: number;
+  emissionRate: number;
+  lifetime: number;
+  speed: number;
+  gravityScale: number;
+  colorStart: string;
+  colorEnd: string;
+  sizeStart: number;
+  sizeEnd: number;
+  shape: "point" | "box";
+  width: number;
+  height: number;
+  active: boolean;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -212,7 +229,8 @@ export type GameKitComponent =
   | TweenComponent
   | FollowPathComponent
   | StateMachineComponent
-  | ScriptComponent;
+  | ScriptComponent
+  | ParticleSystemComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -973,6 +991,30 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           handlers
         });
         return;
+      case "ParticleSystem": {
+        const shape =
+          component.shape === "box" || component.shape === "point" ? component.shape : "point";
+        if (component.shape !== undefined && shape !== component.shape) {
+          errors.push(`${path}.shape must be "point" or "box"`);
+        }
+        components.push({
+          type: "ParticleSystem",
+          maxParticles: expectNumber(component.maxParticles, `${path}.maxParticles`, errors),
+          emissionRate: expectNumber(component.emissionRate, `${path}.emissionRate`, errors),
+          lifetime: expectNumber(component.lifetime, `${path}.lifetime`, errors),
+          speed: expectNumber(component.speed, `${path}.speed`, errors),
+          gravityScale: expectNumber(component.gravityScale, `${path}.gravityScale`, errors),
+          colorStart: expectString(component.colorStart, `${path}.colorStart`, errors),
+          colorEnd: expectString(component.colorEnd, `${path}.colorEnd`, errors),
+          sizeStart: expectNumber(component.sizeStart, `${path}.sizeStart`, errors),
+          sizeEnd: expectNumber(component.sizeEnd, `${path}.sizeEnd`, errors),
+          shape,
+          width: expectNumber(component.width ?? 0, `${path}.width`, errors),
+          height: expectNumber(component.height ?? 0, `${path}.height`, errors),
+          active: expectBoolean(component.active ?? true, `${path}.active`, errors),
+        });
+        return;
+      }
       default:
         errors.push(`${path}.type has unsupported component type: ${String((component as Record<string, unknown>).type ?? "unknown")}`);
     }

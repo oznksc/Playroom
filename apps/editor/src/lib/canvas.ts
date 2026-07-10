@@ -7,6 +7,7 @@ import type {
   FollowPathComponent,
   CameraFollowComponent,
   AudioSourceComponent,
+  ParticleSystemComponent,
   TweenComponent,
   GameKitAsset,
   GameKitEntity,
@@ -271,6 +272,28 @@ export function drawScene(
           vh
         );
         context.setLineDash([]);
+      }
+
+      // ParticleSystem preview puffs
+      const particles = findComponent<ParticleSystemComponent>(entity, "ParticleSystem");
+      if (particles && particles.active) {
+        context.fillStyle = particles.colorStart;
+        const count = Math.min(12, particles.maxParticles);
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * Math.PI * 2;
+          const r = 8 + (i % 4) * 3;
+          context.globalAlpha = 0.35;
+          context.beginPath();
+          context.arc(
+            transform.position.x + Math.cos(a) * r,
+            transform.position.y + Math.sin(a) * r,
+            Math.max(1, particles.sizeStart * 0.4),
+            0,
+            Math.PI * 2,
+          );
+          context.fill();
+        }
+        context.globalAlpha = 1;
       }
 
       // AudioSource range indicator

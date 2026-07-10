@@ -101,4 +101,58 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       }
     }
   );
+
+  server.tool(
+    "set_level_unlocked",
+    "Set a level's unlocked flag in project.json",
+    {
+      levelId: z.string().describe("Level id"),
+      unlocked: z.boolean().describe("Whether the level is unlocked"),
+    },
+    async ({ levelId, unlocked }) => {
+      const project = await fileIO.readProject();
+      const level = project.levels.find((l) => l.id === levelId);
+      if (!level) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          isError: true,
+        };
+      }
+      level.unlocked = unlocked;
+      await fileIO.writeProject(project);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: true, levelId, unlocked }) }],
+      };
+    },
+  );
+
+  server.tool(
+    "complete_level",
+    "Unlock the next level after the given level id (by order) in project.json",
+    {
+      levelId: z.string().describe("Completed level id"),
+    },
+    async ({ levelId }) => {
+      const project = await fileIO.readProject();
+      const sorted = [...project.levels].sort((a, b) => a.order - b.order);
+      const index = sorted.findIndex((l) => l.id === levelId);
+      if (index === -1) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          isError: true,
+        };
+      }
+      const next = sorted[index + 1];
+      if (!next) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ success: true, unlocked: null, message: "No next level" }) }],
+        };
+      }
+      next.unlocked = true;
+      await fileIO.writeProject(project);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: true, unlocked: next.id, name: next.name }) }],
+      };
+    },
+  );
 }

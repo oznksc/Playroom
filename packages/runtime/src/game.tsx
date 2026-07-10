@@ -1,4 +1,4 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GameKitView } from "./view.js";
@@ -16,6 +16,7 @@ import { updateTween } from "./tween.js";
 import { updateFollowPath } from "./path.js";
 import { evaluateScriptEvent, transitionFsm } from "./script.js";
 import { createAudioController, type AudioController } from "./audio.js";
+import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -37,6 +38,8 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const triggerStateRef = useRef<TriggerState>(new Set());
   const collisionStateRef = useRef<CollisionState>(new Set());
   const audioRef = useRef<AudioController | null>(null);
+  const particleEmittersRef = useRef<Map<string, ParticleEmitterState>>(new Map());
+  const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -54,11 +57,16 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       const entry = assets[assetId];
       return typeof entry === "string" ? entry : undefined;
     });
+    particleEmittersRef.current.clear();
+    particlesByEntityRef.current = {};
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
       if (pc) {
         controllersRef.current.set(entity.id, createPlayerController(pc));
+      }
+      if (entity.components.some((c) => c.type === "ParticleSystem")) {
+        particleEmittersRef.current.set(entity.id, createParticleEmitter());
       }
     }
 
@@ -379,6 +387,27 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       }
     }
 
+    // Particles
+    const nextParticles: Record<string, Particle[]> = {};
+    for (const entity of currentEntities) {
+      const ps = entity.components.find((c): c is ParticleSystemComponent => c.type === "ParticleSystem");
+      const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+      if (!ps || !transform) continue;
+      let emitter = particleEmittersRef.current.get(entity.id);
+      if (!emitter) {
+        emitter = createParticleEmitter();
+        particleEmittersRef.current.set(entity.id, emitter);
+      }
+      nextParticles[entity.id] = updateParticleEmitter(
+        emitter,
+        ps,
+        transform.position,
+        scene.gravity?.y ?? 0,
+        dt,
+      );
+    }
+    particlesByEntityRef.current = nextParticles;
+
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);
 
@@ -397,6 +426,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           y: cameraStateRef.current.position.y,
           zoom: cameraStateRef.current.zoom,
         }}
+        particlesByEntity={particlesByEntityRef.current}
       />
       {showControls && (
         <VirtualControls
