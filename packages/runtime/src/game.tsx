@@ -1,4 +1,4 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, RigidBodyComponent, TransformComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GameKitView } from "./view.js";
@@ -7,7 +7,7 @@ import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, applyCircleCollisions, getEntityAabb, getEntityCircle, type CollisionSolid, intersectsCircleAabb, intersectsCircleCircle, solidAabb } from "./collision.js";
+import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, type CollisionSolid } from "./collision.js";
 import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
@@ -94,6 +94,11 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
         const circle = getEntityCircle(entity);
         if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1 });
       }
+      const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+      if (polygonCollider && polygonCollider.isStatic) {
+        const polygon = getEntityPolygon(entity);
+        if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1 });
+      }
     }
 
     for (const entity of entities) {
@@ -118,6 +123,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
 
       const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
       const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+      const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
 
       if (aabbCollider) {
         const movingAabb = getEntityAabb(entity);
@@ -143,6 +149,15 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
             controller.setGrounded(true);
           }
         }
+      } else if (polygonCollider) {
+        const polygon = getEntityPolygon(entity);
+        if (polygon) {
+          const result = applyPolygonCollisions(polygon, rb.state.velocity, solids, polygonCollider.mask);
+          transform.position.x = result.position.x - polygonCollider.offset.x;
+          transform.position.y = result.position.y - polygonCollider.offset.y;
+          rb.state.velocity = result.velocity;
+          if (controller && result.grounded) controller.setGrounded(true);
+        }
       } else {
         transform.position.x += rb.state.velocity.x * dt;
         transform.position.y += rb.state.velocity.y * dt;
@@ -163,6 +178,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
 
       const collider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
       const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+      const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
 
       if (collider) {
         const movingAabb = getEntityAabb(entity);
@@ -179,6 +195,15 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
           const result = applyCircleCollisions(circle, controller.state.velocity, solids, circleCollider.mask);
           transform.position.x = result.position.x - circleCollider.offset.x;
           transform.position.y = result.position.y - circleCollider.offset.y;
+          controller.state.velocity = result.velocity;
+          controller.setGrounded(result.grounded);
+        }
+      } else if (polygonCollider) {
+        const polygon = getEntityPolygon(entity);
+        if (polygon) {
+          const result = applyPolygonCollisions(polygon, controller.state.velocity, solids, polygonCollider.mask);
+          transform.position.x = result.position.x - polygonCollider.offset.x;
+          transform.position.y = result.position.y - polygonCollider.offset.y;
           controller.state.velocity = result.velocity;
           controller.setGrounded(result.grounded);
         }
