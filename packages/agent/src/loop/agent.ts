@@ -10,6 +10,7 @@ import type { SseEvent } from "./streaming.js";
 
 export type AgentInput = {
   message: string;
+  screenshot?: string;
   model: string;
   apiKey: string;
   baseUrl?: string;
@@ -36,7 +37,7 @@ export async function* runAgent(
   // Build system prompt
   const system = buildSystemPrompt(input.sceneContext);
   history.append({ role: "system", content: system });
-  history.append({ role: "user", content: input.message });
+  history.append({ role: "user", content: input.message, screenshot: input.screenshot });
 
   // Fetch MCP tools
   let mcpTools;

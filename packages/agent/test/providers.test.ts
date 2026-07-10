@@ -66,4 +66,46 @@ describe("agent provider adapters", () => {
     expect(models).toContain("gemini-2.0-flash");
     expect(models).toContain("gemini-1.5-pro");
   });
+
+  it("OpenAIAdapter formats vision payloads correctly if screenshot is present", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body: {
+        getReader: () => {
+          let done = false;
+          return {
+            read: async () => {
+              if (done) return { done: true, value: undefined };
+              done = true;
+              return { done: false, value: new TextEncoder().encode("data: [DONE]\n\n") };
+            },
+            releaseLock: () => {},
+          };
+        },
+      },
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const adapter = new OpenAIAdapter();
+    const stream = adapter.stream({
+      apiKey: "test-key",
+      model: "gpt-4o",
+      messages: [
+        { role: "user", content: "Check this screenshot", screenshot: "data:image/png;base64,mockbase64" },
+      ],
+      tools: [],
+      signal: new AbortController().signal,
+    });
+
+    // Consume stream to trigger the fetch call
+    for await (const _ of stream) {}
+
+    expect(mockFetch).toHaveBeenCalled();
+    const fetchArgs = mockFetch.mock.calls[0];
+    const requestBody = JSON.parse(fetchArgs[1].body) as { messages: any[] };
+    expect(requestBody.messages[0].content).toEqual([
+      { type: "image_url", image_url: { url: "data:image/png;base64,mockbase64" } },
+      { type: "text", text: "Check this screenshot" },
+    ]);
+  });
 });

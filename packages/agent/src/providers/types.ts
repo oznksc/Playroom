@@ -1,6 +1,6 @@
 export type ProviderMessage =
   | { role: "system"; content: string }
-  | { role: "user"; content: string }
+  | { role: "user"; content: string; screenshot?: string }
   | { role: "assistant"; content?: string; toolCalls?: ToolCall[] }
   | { role: "tool"; toolCallId: string; name: string; content: string };
 
