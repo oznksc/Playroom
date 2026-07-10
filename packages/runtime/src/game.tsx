@@ -7,7 +7,7 @@ import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, type CollisionSolid } from "./collision.js";
+import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, updateTriggerEvents, type CollisionSolid, type TriggerEvent, type TriggerState } from "./collision.js";
 import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
@@ -17,9 +17,11 @@ export type GameKitGameProps = {
   scene: GameKitScene;
   assets?: AssetRegistry;
   showControls?: boolean;
+  onTriggerEnter?: (event: TriggerEvent) => void;
+  onTriggerExit?: (event: TriggerEvent) => void;
 };
 
-export function GameKitGame({ scene, assets = {}, showControls = true }: GameKitGameProps) {
+export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit }: GameKitGameProps) {
   const entitiesRef = useRef(structuredClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
@@ -27,6 +29,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
   const cameraStateRef = useRef<CameraState>({ position: { x: 0, y: 0 }, zoom: 1 });
   const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
   const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: scene.timeline.playing });
+  const triggerStateRef = useRef<TriggerState>(new Set());
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -37,6 +40,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     cameraFollowRef.current = null;
     animationStatesRef.current.clear();
     timelineRef.current = { elapsed: 0, playing: scene.timeline.playing };
+    triggerStateRef.current.clear();
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
@@ -85,17 +89,17 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     const solids: CollisionSolid[] = [];
     for (const entity of entities) {
       const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-      if (aabbCollider && aabbCollider.isStatic) {
+      if (aabbCollider && aabbCollider.isStatic && !aabbCollider.isTrigger) {
         const aabb = getEntityAabb(entity);
         if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1 });
       }
       const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
-      if (circleCollider && circleCollider.isStatic) {
+      if (circleCollider && circleCollider.isStatic && !circleCollider.isTrigger) {
         const circle = getEntityCircle(entity);
         if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1 });
       }
       const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
-      if (polygonCollider && polygonCollider.isStatic) {
+      if (polygonCollider && polygonCollider.isStatic && !polygonCollider.isTrigger) {
         const polygon = getEntityPolygon(entity);
         if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1 });
       }
@@ -242,6 +246,12 @@ export function GameKitGame({ scene, assets = {}, showControls = true }: GameKit
     }
 
     const currentEntities = entitiesRef.current;
+    const triggerUpdate = updateTriggerEvents(currentEntities, triggerStateRef.current);
+    triggerStateRef.current = triggerUpdate.active;
+    for (const event of triggerUpdate.events) {
+      if (event.type === "enter") onTriggerEnter?.(event);
+      else onTriggerExit?.(event);
+    }
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { createCameraFollow } from "../src/camera.js";
-import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions } from "../src/collision.js";
+import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateTriggerEvents } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
 import { loadScene } from "../src/scene.js";
 
@@ -141,5 +141,59 @@ describe("polygon collision", () => {
     expect(result.position).toEqual({ x: 5, y: 13 });
     expect(result.velocity).toEqual({ x: 0, y: 8 });
     expect(result.grounded).toBe(false);
+  });
+});
+
+describe("trigger events", () => {
+  function createBox(name: string, x: number, isTrigger = false, layer = 1, mask = 1) {
+    const entity = createEntity(name, { x, y: 0 });
+    entity.components.push({
+      type: "AabbCollider",
+      offset: { x: 0, y: 0 },
+      size: { x: 10, y: 10 },
+      isStatic: isTrigger,
+      isTrigger,
+      layer,
+      mask,
+    });
+    return entity;
+  }
+
+  it("emits enter once while an entity remains inside a trigger", () => {
+    const trigger = createBox("Trigger", 0, true);
+    const player = createBox("Player", 5);
+
+    const first = updateTriggerEvents([trigger, player]);
+    const second = updateTriggerEvents([trigger, player], first.active);
+
+    expect(first.events).toEqual([{
+      type: "enter",
+      triggerEntityId: trigger.id,
+      otherEntityId: player.id,
+    }]);
+    expect(second.events).toEqual([]);
+  });
+
+  it("emits exit after an overlapping entity leaves", () => {
+    const trigger = createBox("Trigger", 0, true);
+    const player = createBox("Player", 5);
+    const first = updateTriggerEvents([trigger, player]);
+    const transform = player.components.find((component) => component.type === "Transform");
+    if (transform?.type === "Transform") transform.position.x = 20;
+
+    const second = updateTriggerEvents([trigger, player], first.active);
+
+    expect(second.events).toEqual([{
+      type: "exit",
+      triggerEntityId: trigger.id,
+      otherEntityId: player.id,
+    }]);
+  });
+
+  it("filters trigger overlaps using both collider masks", () => {
+    const trigger = createBox("Trigger", 0, true, 1, 2);
+    const ignored = createBox("Ignored", 5, false, 4, 1);
+
+    expect(updateTriggerEvents([trigger, ignored]).events).toEqual([]);
   });
 });

@@ -23,6 +23,14 @@ export type CollisionSolid = (Aabb | Circle | Polygon) & {
   layer: number;
 };
 
+export type TriggerEvent = {
+  type: "enter" | "exit";
+  triggerEntityId: string;
+  otherEntityId: string;
+};
+
+export type TriggerState = Set<string>;
+
 export function intersectsAabb(a: Aabb, b: Aabb): boolean {
   return a.x < b.x + b.width &&
     a.x + a.width > b.x &&
@@ -185,6 +193,87 @@ export function solidAabb(solid: CollisionSolid): Aabb {
     return { x: solid.x - (solid as Circle).radius, y: solid.y - (solid as Circle).radius, width: (solid as Circle).radius * 2, height: (solid as Circle).radius * 2 };
   }
   return solidPolygonBounds(solid as Polygon);
+}
+
+export function updateTriggerEvents(
+  entities: GameKitEntity[],
+  previous: TriggerState = new Set(),
+): { active: TriggerState; events: TriggerEvent[] } {
+  const colliders = entities.flatMap((entity) => {
+    const collider = getEntityCollider(entity);
+    return collider ? [{ entityId: entity.id, ...collider }] : [];
+  });
+  const active: TriggerState = new Set();
+  const events: TriggerEvent[] = [];
+
+  for (const trigger of colliders) {
+    if (!trigger.isTrigger) continue;
+    for (const other of colliders) {
+      if (other.entityId === trigger.entityId) continue;
+      if ((trigger.mask & other.layer) === 0 || (other.mask & trigger.layer) === 0) continue;
+      if (!colliderShapesIntersect(trigger.shape, other.shape)) continue;
+
+      const key = triggerPairKey(trigger.entityId, other.entityId);
+      active.add(key);
+      if (!previous.has(key)) {
+        events.push({ type: "enter", triggerEntityId: trigger.entityId, otherEntityId: other.entityId });
+      }
+    }
+  }
+
+  for (const key of previous) {
+    if (active.has(key)) continue;
+    const [triggerEntityId, otherEntityId] = key.split("\0");
+    events.push({ type: "exit", triggerEntityId, otherEntityId });
+  }
+
+  return { active, events };
+}
+
+type ColliderShape = Aabb | Circle | Polygon;
+
+function getEntityCollider(entity: GameKitEntity): {
+  shape: ColliderShape;
+  isTrigger: boolean;
+  layer: number;
+  mask: number;
+} | null {
+  const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+  if (aabb) {
+    const shape = getEntityAabb(entity);
+    return shape ? { shape, isTrigger: aabb.isTrigger ?? false, layer: aabb.layer ?? 1, mask: aabb.mask ?? 0xffffffff } : null;
+  }
+  const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
+  if (circle) {
+    const shape = getEntityCircle(entity);
+    return shape ? { shape, isTrigger: circle.isTrigger ?? false, layer: circle.layer ?? 1, mask: circle.mask ?? 0xffffffff } : null;
+  }
+  const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
+  if (polygon) {
+    const shape = getEntityPolygon(entity);
+    return shape ? { shape, isTrigger: polygon.isTrigger ?? false, layer: polygon.layer ?? 1, mask: polygon.mask ?? 0xffffffff } : null;
+  }
+  return null;
+}
+
+function colliderShapesIntersect(a: ColliderShape, b: ColliderShape): boolean {
+  if ("points" in a) {
+    if ("points" in b) return intersectsPolygonPolygon(a, b);
+    if ("radius" in b) return intersectsPolygonCircle(a, b);
+    return intersectsPolygonAabb(a, b);
+  }
+  if ("radius" in a) {
+    if ("points" in b) return intersectsPolygonCircle(b, a);
+    if ("radius" in b) return intersectsCircleCircle(a, b);
+    return intersectsCircleAabb(a, b);
+  }
+  if ("points" in b) return intersectsPolygonAabb(b, a);
+  if ("radius" in b) return intersectsCircleAabb(b, a);
+  return intersectsAabb(a, b);
+}
+
+function triggerPairKey(triggerEntityId: string, otherEntityId: string): string {
+  return `${triggerEntityId}\0${otherEntityId}`;
 }
 
 function circleVsSolid(circle: Circle, solid: CollisionSolid): boolean {

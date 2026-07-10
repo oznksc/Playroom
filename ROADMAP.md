@@ -34,11 +34,11 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `RigidBody` bileşeni: velocity, angularVelocity, mass, drag, isKinematic, gravityScale
 - [x] Velocity-verlet entegrasyonu (sabit dt = 1/60) ve `fixedTimestep` accumulator
 - [x] Katı layer/mask sistemi: runtime'da `applyAabbCollisions`/`applyCircleCollisions` mask filtresi kullanıyor
-- [x] Trigger alanları şema/MCP'de tanımlı (`isTrigger`), runtime'da overlap-only mantığı eksik
-- [ ] Trigger enter/exit olayları (`onTriggerEnter`, `onTriggerExit`)
+- [x] Trigger areas are overlap-only and never participate in solid collision resolution
+- [x] Trigger enter/exit events (`onTriggerEnter`, `onTriggerExit`) with layer/mask filtering
 - [x] Raycast (mouse picking, AI, laser) — `intersectRayAabb`/`Circle`/`Polygon` + `raycast()` entry point
 - [ ] Sleeping body optimizasyonu
-- [ ] Collision callback'leri (`onCollisionEnter`, `onTriggerEnter`)
+- [~] Collision callbacks — `onTriggerEnter`/`onTriggerExit` complete; `onCollisionEnter` pending
 
 ### MCP Araçları (yeni)
 - [x] `add_collider` — sahneye `AabbCollider` / `CircleCollider` / `PolygonCollider` ekler
