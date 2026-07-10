@@ -21,6 +21,7 @@ import {
   getSceneMtime,
 } from "./project.js";
 import { runDoctor } from "./doctor.js";
+import { buildProject } from "./build.js";
 import { validateScene } from "@gamekit/schema";
 import { handleAgentRoute } from "./agent/routes.js";
 
@@ -106,6 +107,27 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
   if (url.pathname === "/api/doctor" && request.method === "GET") {
     sendJson(response, 200, await runDoctor(options.root));
+    return;
+  }
+
+  if (url.pathname === "/api/build" && request.method === "POST") {
+    const body = JSON.parse((await readBody(request)).toString("utf8") || "{}") as {
+      platform?: "web" | "mobile";
+      outDir?: string;
+      skipDoctor?: boolean;
+    };
+    try {
+      const result = await buildProject(options.root, {
+        platform: body.platform ?? "mobile",
+        outDir: body.outDir,
+        skipDoctor: body.skipDoctor,
+      });
+      sendJson(response, 200, { ok: true, ...result });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Build failed",
+      });
+    }
     return;
   }
 
