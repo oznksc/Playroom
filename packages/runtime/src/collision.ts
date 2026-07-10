@@ -98,20 +98,11 @@ export function getEntityPolygon(entity: GameKitEntity): Polygon | undefined {
 }
 
 export function intersectsPolygonAabb(poly: Polygon, aabb: Aabb): boolean {
-  const polyAabb = solidPolygonBounds(poly);
-  if (
-    polyAabb.x > aabb.x + aabb.width ||
-    polyAabb.x + polyAabb.width < aabb.x ||
-    polyAabb.y > aabb.y + aabb.height ||
-    polyAabb.y + polyAabb.height < aabb.y
-  ) {
-    return false;
-  }
-  return true;
+  return convexPolygonsIntersect(poly, aabbToPolygon(aabb));
 }
 
 export function intersectsPolygonCircle(poly: Polygon, circle: Circle): boolean {
-  return circleInConvexPolygon(circle, poly);
+  return polygonCircleCollision(poly, circle) !== null;
 }
 
 export function intersectsPolygonPolygon(a: Polygon, b: Polygon): boolean {
@@ -131,20 +122,61 @@ export function solidPolygonBounds(poly: Polygon): Aabb {
 
 export function pushPolygonOutOfSolid(
   polygon: Polygon,
-  _solid: CollisionSolid,
+  solid: CollisionSolid,
   _velocityX: number,
   _velocityY: number
 ): { x: number; y: number } {
-  return { x: polygon.x, y: polygon.y };
+  const collision = polygonSolidCollision(polygon, solid);
+  if (!collision) return { x: polygon.x, y: polygon.y };
+  return {
+    x: polygon.x + collision.normal.x * collision.depth,
+    y: polygon.y + collision.normal.y * collision.depth,
+  };
 }
 
 export function applyPolygonCollisions(
-  _polygon: Polygon,
+  polygon: Polygon,
   velocity: Vector2,
-  _solids: CollisionSolid[],
-  _mask?: number
+  solids: CollisionSolid[],
+  mask?: number
 ): { position: Vector2; velocity: Vector2; grounded: boolean } {
-  return { position: { x: 0, y: 0 }, velocity, grounded: false };
+  const next: Polygon = {
+    x: polygon.x + velocity.x,
+    y: polygon.y + velocity.y,
+    points: polygon.points.map((point) => ({
+      x: point.x + velocity.x,
+      y: point.y + velocity.y,
+    })),
+  };
+  const nextVelocity = { ...velocity };
+  let grounded = false;
+
+  const effectiveSolids = mask !== undefined
+    ? solids.filter((solid) => (mask & solid.layer) !== 0)
+    : solids;
+
+  for (const solid of effectiveSolids) {
+    const collision = polygonSolidCollision(next, solid);
+    if (!collision) continue;
+
+    const correctionX = collision.normal.x * collision.depth;
+    const correctionY = collision.normal.y * collision.depth;
+    next.x += correctionX;
+    next.y += correctionY;
+    for (const point of next.points) {
+      point.x += correctionX;
+      point.y += correctionY;
+    }
+
+    const velocityIntoSurface = nextVelocity.x * collision.normal.x + nextVelocity.y * collision.normal.y;
+    if (velocityIntoSurface < 0) {
+      nextVelocity.x -= velocityIntoSurface * collision.normal.x;
+      nextVelocity.y -= velocityIntoSurface * collision.normal.y;
+    }
+    if (collision.normal.y < -0.5) grounded = true;
+  }
+
+  return { position: { x: next.x, y: next.y }, velocity: nextVelocity, grounded };
 }
 
 export function solidAabb(solid: CollisionSolid): Aabb {
@@ -309,34 +341,104 @@ function findComponent<T>(entity: GameKitEntity, type: T extends { type: infer N
   return entity.components.find((component) => component.type === type) as T | undefined;
 }
 
-function circleInConvexPolygon(circle: Circle, poly: Polygon): boolean {
-  let minDistSq = Infinity;
-  for (let i = 0; i < poly.points.length; i++) {
-    const j = (i + 1) % poly.points.length;
-    const ax = poly.points[i].x, ay = poly.points[i].y;
-    const bx = poly.points[j].x, by = poly.points[j].y;
-    const dx = bx - ax, dy = by - ay;
-    const lenSq = dx * dx + dy * dy;
-    let t = ((circle.x - ax) * dx + (circle.y - ay) * dy) / lenSq;
-    t = Math.max(0, Math.min(1, t));
-    const px = ax + t * dx, py = ay + t * dy;
-    const ex = circle.x - px, ey = circle.y - py;
-    const dSq = ex * ex + ey * ey;
-    if (dSq < minDistSq) minDistSq = dSq;
-  }
-  return minDistSq <= circle.radius * circle.radius;
+function convexPolygonsIntersect(a: Polygon, b: Polygon): boolean {
+  return polygonPolygonCollision(a, b) !== null;
 }
 
-function convexPolygonsIntersect(a: Polygon, b: Polygon): boolean {
-  const axes = getAxes(a).concat(getAxes(b));
-  for (const axis of axes) {
-    const projA = projectPolygon(a, axis);
-    const projB = projectPolygon(b, axis);
-    if (projA.max < projB.min || projB.max < projA.min) {
-      return false;
+type PolygonCollision = { normal: Vector2; depth: number };
+
+function polygonSolidCollision(polygon: Polygon, solid: CollisionSolid): PolygonCollision | null {
+  if ("width" in solid) return polygonPolygonCollision(polygon, aabbToPolygon(solid as Aabb));
+  if ("radius" in solid) return polygonCircleCollision(polygon, solid as Circle);
+  return polygonPolygonCollision(polygon, solid as Polygon);
+}
+
+function polygonPolygonCollision(a: Polygon, b: Polygon): PolygonCollision | null {
+  return collisionOnAxes(a, b, getAxes(a).concat(getAxes(b)));
+}
+
+function polygonCircleCollision(polygon: Polygon, circle: Circle): PolygonCollision | null {
+  let closest = polygon.points[0];
+  let closestDistanceSq = Infinity;
+  for (const point of polygon.points) {
+    const dx = circle.x - point.x;
+    const dy = circle.y - point.y;
+    const distanceSq = dx * dx + dy * dy;
+    if (distanceSq < closestDistanceSq) {
+      closest = point;
+      closestDistanceSq = distanceSq;
     }
   }
-  return true;
+
+  const axes = getAxes(polygon);
+  const dx = circle.x - closest.x;
+  const dy = circle.y - closest.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  if (length > 0) axes.push({ x: dx / length, y: dy / length });
+
+  let smallestOverlap = Infinity;
+  let smallestAxis: Vector2 | null = null;
+  for (const axis of axes) {
+    const polyProjection = projectPolygon(polygon, axis);
+    const circleCenter = circle.x * axis.x + circle.y * axis.y;
+    const circleProjection = { min: circleCenter - circle.radius, max: circleCenter + circle.radius };
+    const overlap = projectionOverlap(polyProjection, circleProjection);
+    if (overlap <= 0) return null;
+    if (overlap < smallestOverlap) {
+      smallestOverlap = overlap;
+      smallestAxis = axis;
+    }
+  }
+
+  if (!smallestAxis) return null;
+  return orientCollision(smallestAxis, smallestOverlap, polygonCenter(polygon), { x: circle.x, y: circle.y });
+}
+
+function collisionOnAxes(a: Polygon, b: Polygon, axes: Vector2[]): PolygonCollision | null {
+  let smallestOverlap = Infinity;
+  let smallestAxis: Vector2 | null = null;
+  for (const axis of axes) {
+    const overlap = projectionOverlap(projectPolygon(a, axis), projectPolygon(b, axis));
+    if (overlap <= 0) return null;
+    if (overlap < smallestOverlap) {
+      smallestOverlap = overlap;
+      smallestAxis = axis;
+    }
+  }
+  if (!smallestAxis) return null;
+  return orientCollision(smallestAxis, smallestOverlap, polygonCenter(a), polygonCenter(b));
+}
+
+function projectionOverlap(a: { min: number; max: number }, b: { min: number; max: number }): number {
+  return Math.min(a.max, b.max) - Math.max(a.min, b.min);
+}
+
+function orientCollision(axis: Vector2, depth: number, movingCenter: Vector2, solidCenter: Vector2): PolygonCollision {
+  const towardSolidX = solidCenter.x - movingCenter.x;
+  const towardSolidY = solidCenter.y - movingCenter.y;
+  const pointsTowardSolid = towardSolidX * axis.x + towardSolidY * axis.y > 0;
+  return {
+    normal: pointsTowardSolid ? { x: -axis.x, y: -axis.y } : axis,
+    depth,
+  };
+}
+
+function polygonCenter(polygon: Polygon): Vector2 {
+  const total = polygon.points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 });
+  return { x: total.x / polygon.points.length, y: total.y / polygon.points.length };
+}
+
+function aabbToPolygon(aabb: Aabb): Polygon {
+  return {
+    x: aabb.x + aabb.width / 2,
+    y: aabb.y + aabb.height / 2,
+    points: [
+      { x: aabb.x, y: aabb.y },
+      { x: aabb.x + aabb.width, y: aabb.y },
+      { x: aabb.x + aabb.width, y: aabb.y + aabb.height },
+      { x: aabb.x, y: aabb.y + aabb.height },
+    ],
+  };
 }
 
 function getAxes(poly: Polygon): { x: number; y: number }[] {

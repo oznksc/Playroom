@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { createCameraFollow } from "../src/camera.js";
-import { getEntityAabb, getEntityCircle, getEntityPolygon, intersectsAabb, intersectsPolygonAabb, applyAabbCollisions } from "../src/collision.js";
+import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
 import { loadScene } from "../src/scene.js";
 
@@ -96,5 +96,50 @@ describe("polygon collision", () => {
 
     expect(intersectsPolygonAabb(poly, overlapping)).toBe(true);
     expect(intersectsPolygonAabb(poly, nonOverlapping)).toBe(false);
+  });
+
+  it("uses SAT rather than polygon bounds for AABB intersections", () => {
+    const triangle = {
+      x: 5,
+      y: 5,
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 10 }],
+    };
+
+    expect(intersectsPolygonAabb(triangle, { x: 8, y: 8, width: 2, height: 2 })).toBe(false);
+  });
+
+  it("detects a circle fully inside a polygon", () => {
+    const square = {
+      x: 10,
+      y: 10,
+      points: [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 }],
+    };
+
+    expect(intersectsPolygonCircle(square, { x: 10, y: 10, radius: 1 })).toBe(true);
+  });
+
+  it("resolves a falling polygon against a static floor", () => {
+    const result = applyPolygonCollisions(
+      { x: 5, y: 5, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }] },
+      { x: 0, y: 8 },
+      [{ x: -20, y: 15, width: 100, height: 10, layer: 1 }],
+    );
+
+    expect(result.position).toEqual({ x: 5, y: 10 });
+    expect(result.velocity).toEqual({ x: 0, y: 0 });
+    expect(result.grounded).toBe(true);
+  });
+
+  it("honors collision masks when resolving polygons", () => {
+    const result = applyPolygonCollisions(
+      { x: 5, y: 5, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }] },
+      { x: 0, y: 8 },
+      [{ x: -20, y: 15, width: 100, height: 10, layer: 2 }],
+      1,
+    );
+
+    expect(result.position).toEqual({ x: 5, y: 13 });
+    expect(result.velocity).toEqual({ x: 0, y: 8 });
+    expect(result.grounded).toBe(false);
   });
 });

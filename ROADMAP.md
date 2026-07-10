@@ -30,7 +30,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 
 ### Tasks
 - [x] `CircleCollider` ve `PolygonCollider` ekle (şema + editör inspector + MCP)
-- [~] `PolygonCollider` runtime collision — SAT algılaması hazır, `applyPolygonCollisions` stub
+- [x] `PolygonCollider` runtime collision — SAT detection + MTV resolution against AABB, circle, and polygon solids
 - [x] `RigidBody` bileşeni: velocity, angularVelocity, mass, drag, isKinematic, gravityScale
 - [x] Velocity-verlet entegrasyonu (sabit dt = 1/60) ve `fixedTimestep` accumulator
 - [x] Katı layer/mask sistemi: runtime'da `applyAabbCollisions`/`applyCircleCollisions` mask filtresi kullanıyor
