@@ -5,10 +5,9 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.7): editor Prefabs tab + REST `/api/prefabs`,
-> puzzle skill refreshed + new physics-puzzle skill,
-> scene active badge, CLI prefab helpers with tests,
-> builds on v0.1.6 prefab/batch/scene MCP tools.
+> Şu anki durum (v0.1.8): Tauri OS keychain BYOK (`secret_set/get/delete` + keyring),
+> tile paint/erase tools + palette, skill list/apply API + New from template wizard,
+> cargo check green; 100 tests.
 
 ---
 
@@ -559,6 +558,8 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | 5 | Agent unhide + approval + snapshots + plan mode | ✅ v0.1.4 |
 | 6 | Prefabs + batch edit + scene transitions | ✅ create/instantiate prefab, batch_apply_edit, load_scene |
 | 7 | Agent vision enrichment | ✅ /screenshot capture + multimodal prompts (providers already wired) |
-| 7b | Agent Sprint B residual | Tauri Stronghold keychain polish still open |
+| 7b | Tauri OS keychain BYOK | ✅ keyring crate (macOS/Windows/Linux secrets) |
+| 7c | Tile paint UI | ✅ paint/erase tools + tile palette |
+| 7d | Genre wizard | ✅ `/api/skills` + ProjectWizard modal |
 | 8 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
-| 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi |
+| 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi (wizard done; docs site open) |

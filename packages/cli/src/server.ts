@@ -16,6 +16,8 @@ import {
   createPrefabFromEntity,
   instantiatePrefab,
   removePrefab,
+  listSkills,
+  applySkill,
 } from "./project.js";
 import { validateScene } from "@gamekit/schema";
 import { handleAgentRoute } from "./agent/routes.js";
@@ -217,6 +219,32 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       sendJson(response, 200, { ok: true, removed });
     } catch (error) {
       sendJson(response, 404, { error: error instanceof Error ? error.message : "Prefab not found" });
+    }
+    return;
+  }
+
+  // Skills (genre templates)
+  if (url.pathname === "/api/skills" && request.method === "GET") {
+    sendJson(response, 200, { skills: await listSkills() });
+    return;
+  }
+
+  if (url.pathname === "/api/skills/apply" && request.method === "POST") {
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
+      skillId?: string;
+      sceneName?: string;
+    };
+    if (!body.skillId) {
+      sendJson(response, 400, { error: "Missing skillId" });
+      return;
+    }
+    try {
+      const result = await applySkill(options.root, body.skillId, body.sceneName);
+      sendJson(response, 200, { ok: true, ...result });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Apply skill failed",
+      });
     }
     return;
   }

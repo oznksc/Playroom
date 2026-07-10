@@ -1,4 +1,4 @@
-import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent } from "@gamekit/schema";
+import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent, TilemapComponent } from "@gamekit/schema";
 import {
   ZoomIn,
   ZoomOut,
@@ -16,7 +16,9 @@ import {
   Scissors,
   Trash2,
   CopyPlus,
-  Focus
+  Focus,
+  Paintbrush,
+  Eraser,
 } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
@@ -35,22 +37,25 @@ type SceneCanvasProps = {
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
-  activeTool: "select" | "translate" | "rotate" | "scale";
+  activeTool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase";
   showGrid: boolean;
   showColliders: boolean;
   snapSize: number;
   isPlaying: boolean;
+  /** Active paint brush tile id (1-based tileset index; 0 clears). */
+  paintTileId?: number;
   onVirtualInput?: (action: "left" | "right" | "jump", pressed: boolean) => void;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
-  onActiveToolChange: (tool: "select" | "translate" | "rotate" | "scale") => void;
+  onActiveToolChange: (tool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase") => void;
   onToggleGrid: (val: boolean) => void;
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
   onSelectGuiNode: (id: string) => void;
   onSelectComponentInstance: (id: string) => void;
   onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
+  onPaintTile?: (entityId: string, gridX: number, gridY: number, tileId: number) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
   onSelectAll: () => void;
@@ -79,6 +84,7 @@ export function SceneCanvas({
   showColliders,
   snapSize,
   isPlaying,
+  paintTileId = 1,
   onVirtualInput,
   onZoomChange,
   onSnapToggle,
@@ -90,6 +96,7 @@ export function SceneCanvas({
   onSelectGuiNode,
   onSelectComponentInstance,
   onTransform,
+  onPaintTile,
   onAddEntity,
   onPasteEntity,
   onSelectAll,
@@ -330,6 +337,22 @@ export function SceneCanvas({
           >
             <Maximize size={14} />
           </button>
+          <button
+            type="button"
+            className={activeTool === "paint" ? "hud-btn active" : "hud-btn"}
+            onClick={() => onActiveToolChange("paint")}
+            title="Tile paint (B)"
+          >
+            <Paintbrush size={14} />
+          </button>
+          <button
+            type="button"
+            className={activeTool === "erase" ? "hud-btn active" : "hud-btn"}
+            onClick={() => onActiveToolChange("erase")}
+            title="Tile erase (X)"
+          >
+            <Eraser size={14} />
+          </button>
         </div>
 
         <div className="hud-divider" />
@@ -410,6 +433,51 @@ export function SceneCanvas({
                 }
 
                 const point = pointerPosition(event);
+
+                // Tile paint / erase — paint on selected tilemap entity or hit tilemap
+                if ((activeTool === "paint" || activeTool === "erase") && onPaintTile && !isPlaying) {
+                  const tileTarget =
+                    [...selectedEntityIds]
+                      .map((id) => scene.entities.find((e) => e.id === id))
+                      .find((e) => e && findComponent(e, "Tilemap")) ??
+                    [...scene.entities].reverse().find((entity) => {
+                      const tm = findComponent<TilemapComponent>(entity, "Tilemap");
+                      const tr = findComponent<TransformComponent>(entity, "Transform");
+                      if (!tm || !tr) return false;
+                      const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
+                      const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
+                      return gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight;
+                    });
+                  if (tileTarget) {
+                    const tm = findComponent<TilemapComponent>(tileTarget, "Tilemap");
+                    const tr = findComponent<TransformComponent>(tileTarget, "Transform");
+                    if (tm && tr) {
+                      const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
+                      const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
+                      if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
+                        onSelect(tileTarget.id, false);
+                        onPaintTile(
+                          tileTarget.id,
+                          gx,
+                          gy,
+                          activeTool === "erase" ? 0 : paintTileId,
+                        );
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        setDrag({
+                          id: tileTarget.id,
+                          dx: 0,
+                          dy: 0,
+                          startPosition: { x: 0, y: 0 },
+                          startRotation: 0,
+                          startScale: { x: 1, y: 1 },
+                          startPointer: { x: point.x, y: point.y },
+                        });
+                        return;
+                      }
+                    }
+                  }
+                }
+
                 if (showGuiTools) {
                   // Check component instances first (highest layer)
                   const instances = scene.gui?.componentInstances ?? [];
@@ -461,6 +529,21 @@ export function SceneCanvas({
                 }
                 if (!drag || !scene) return;
                 const point = pointerPosition(event);
+
+                // Paint drag
+                if ((activeTool === "paint" || activeTool === "erase") && onPaintTile) {
+                  const entity = scene.entities.find((e) => e.id === drag.id);
+                  const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
+                  const tr = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+                  if (tm && tr) {
+                    const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
+                    const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
+                    if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
+                      onPaintTile(drag.id, gx, gy, activeTool === "erase" ? 0 : paintTileId);
+                    }
+                  }
+                  return;
+                }
 
                 // Q: Raw select mode - dragging disabled
                 if (activeTool === "select") {

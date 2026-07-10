@@ -393,6 +393,102 @@ export async function instantiatePrefab(
   return { entityId: entity.id, name: entity.name };
 }
 
+export type SkillSummary = {
+  id: string;
+  name: string;
+  description: string;
+  entityCount: number;
+};
+
+function getSkillsDir(): string {
+  // packages/cli/src or packages/cli/dist → packages/mcp/skills
+  return fileURLToPath(new URL("../../mcp/skills/", import.meta.url));
+}
+
+export async function listSkills(): Promise<SkillSummary[]> {
+  const skillsDir = getSkillsDir();
+  try {
+    const files = (await readdir(skillsDir)).filter((f) => f.endsWith(".json"));
+    const skills: SkillSummary[] = [];
+    for (const file of files) {
+      try {
+        const raw = JSON.parse(await readFile(join(skillsDir, file), "utf8")) as {
+          name?: string;
+          description?: string;
+          entities?: unknown[];
+        };
+        skills.push({
+          id: file.replace(/\.json$/, ""),
+          name: raw.name ?? file,
+          description: raw.description ?? "",
+          entityCount: raw.entities?.length ?? 0,
+        });
+      } catch {
+        // skip
+      }
+    }
+    return skills.sort((a, b) => a.id.localeCompare(b.id));
+  } catch {
+    return [];
+  }
+}
+
+export async function applySkill(
+  root: string,
+  skillId: string,
+  sceneName?: string,
+): Promise<{ filename: string; sceneId: string; entityCount: number }> {
+  const skillsDir = getSkillsDir();
+  const skillPath = join(skillsDir, `${skillId}.json`);
+  const skill = JSON.parse(await readFile(skillPath, "utf8")) as {
+    name: string;
+    orientation?: "landscape" | "portrait";
+    viewport?: GameKitScene["viewport"];
+    gravity?: GameKitScene["gravity"];
+    inputMap?: GameKitScene["inputMap"];
+    entities: Array<{ name: string; components: GameKitComponent[] }>;
+  };
+
+  const scene = createEmptyScene(sceneName ?? skill.name);
+  if (skill.viewport) scene.viewport = skill.viewport;
+  if (skill.gravity) scene.gravity = skill.gravity;
+  if (skill.inputMap) scene.inputMap = skill.inputMap;
+  if (skill.orientation) {
+    scene.responsive.orientation = skill.orientation;
+    scene.responsive.referenceWidth = scene.viewport.width;
+    scene.responsive.referenceHeight = scene.viewport.height;
+  }
+
+  const idMap = new Map<string, string>();
+  for (const se of skill.entities ?? []) {
+    const entity = createEntity(se.name, { x: 0, y: 0 });
+    // Prefer skill-provided components (includes Transform)
+    entity.components = structuredClone(se.components) as GameKitComponent[];
+    idMap.set(se.name, entity.id);
+    scene.entities.push(entity);
+  }
+  for (const entity of scene.entities) {
+    for (const comp of entity.components) {
+      if (comp.type === "CameraFollow" && typeof (comp as { targetId?: string }).targetId === "string") {
+        const resolved = idMap.get((comp as { targetId: string }).targetId);
+        if (resolved) (comp as { targetId: string }).targetId = resolved;
+      }
+    }
+  }
+
+  const filename = `${slugify(sceneName ?? skill.name) || skillId}.scene.json`;
+  await writeScene(root, scene, filename);
+
+  const project = await readProject(root);
+  if (!project.scenes.includes(filename)) {
+    project.scenes.push(filename);
+  }
+  project.activeScene = filename;
+  await writeProject(root, project);
+
+  return { filename, sceneId: scene.id, entityCount: scene.entities.length };
+}
+
 export async function removePrefab(root: string, prefabId: string): Promise<string> {
   const file = prefabId.endsWith(".prefab.json")
     ? prefabId

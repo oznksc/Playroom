@@ -13,6 +13,7 @@ import {
   PanelLeft,
   PanelRight,
   Sparkles,
+  LayoutTemplate,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import logoUrl from "../../../../logo.png";
@@ -39,6 +40,7 @@ type TopbarProps = {
   onToggleSidebar: () => void;
   onToggleInspector: () => void;
   onOpenAgent?: () => void;
+  onOpenWizard?: () => void;
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
@@ -64,6 +66,7 @@ export function Topbar({
   onToggleSidebar,
   onToggleInspector,
   onOpenAgent,
+  onOpenWizard,
   formatLastSaved,
   projectPath,
   onCloseProject,
@@ -177,6 +180,14 @@ export function Topbar({
         </button>
         <div className="toolbar-divider" />
         <div className="toolbar-divider" />
+        {onOpenWizard && (
+          <>
+            <div className="toolbar-divider" />
+            <button type="button" className="toolbar-action-btn" title="New scene from template" onClick={onOpenWizard}>
+              <LayoutTemplate size={14} />
+            </button>
+          </>
+        )}
         {onOpenAgent && (
           <>
             <div className="toolbar-divider" />
