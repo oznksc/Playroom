@@ -5,9 +5,8 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.10): `gamekit doctor` + `/api/doctor`; real play FPS/frame/entity
-> telemetry; scene hot-reload via `/api/scene/meta`; Levels tab enabled; web Phaser
-> ParticleSystem parity; 107 tests.
+> Şu anki durum (v0.1.11): `gamekit build` / `gamekit dev`; docs/ guides; 1000-entity
+> perf budget test; MCP `run_doctor`; build-manifest pack output.
 
 ---
 
@@ -563,5 +562,6 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | 7d | Genre wizard | ✅ `/api/skills` + ProjectWizard modal |
 | 8 | Level save + parity smoke + particles | ✅ SceneManager save/unlock; parity fixture; ParticleSystem MVP |
 | 8b | Doctor + profiler + hot-reload + web particles | ✅ v0.1.10 |
-| 8c | Full Skia/Phaser host + 1000 entity budget | Still open |
-| 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi (wizard done; docs site open) |
+| 8c | build/dev CLI + docs + perf budget | ✅ v0.1.11 |
+| 8d | Full Skia/Phaser host in editor | Still open |
+| 9 | Hosted docs site (VitePress) | Markdown docs/ shipped; hosting optional |

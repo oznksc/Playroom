@@ -1,0 +1,33 @@
+# Schema & components
+
+Playroom scenes are JSON validated by `@gamekit/schema`.
+
+## Core components
+
+| Type | Role |
+|------|------|
+| `Transform` | Position, rotation, scale (required) |
+| `Sprite` | Image render |
+| `AabbCollider` / `CircleCollider` / `PolygonCollider` | Collision |
+| `RigidBody` | Velocity, mass, gravity scale |
+| `PlayerController` | Move / jump |
+| `CameraFollow` | Camera target |
+| `Animation` | Spritesheet frames |
+| `Tilemap` | Grid tiles + tileset |
+| `Text` | World-space label (`fontAssetId` empty = system font) |
+| `AudioSource` / `AudioListener` | Audio |
+| `Tween` / `FollowPath` | Motion helpers |
+| `StateMachine` / `Script` | Behavior |
+| `ParticleSystem` | Lightweight particle emitter |
+
+## Project file
+
+`gamekit/project.json` holds:
+
+- `scenes[]`, `levels[]`, `assets[]`
+- optional `activeScene`, `transitions[]`
+- `guiComponents[]`
+
+## Skills
+
+JSON templates under `packages/mcp/skills/*.json` expand into full scenes via `apply_skill` / `gamekit skills apply`.

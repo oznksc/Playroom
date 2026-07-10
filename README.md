@@ -32,13 +32,11 @@ In scope:
 - Expo/Skia runtime and starter export.
 - MCP tooling as an integration surface.
 
-Out of scope for the current MVP:
+Still evolving (see `ROADMAP.md`):
 
-- In-editor play mode.
-- Timeline/sequencer editing.
-- Level progression runtime flow.
-- Reusable GUI component editing.
-- Advanced physics, audio, tilemaps, particles, scripting, prefabs, save systems, and production cross-runtime parity.
+- Full Skia/Phaser play host inside the editor (current play mode is a fixed-timestep sim).
+- Production cross-runtime parity budgets and docs site hosting.
+- Deeper GUI editing and advanced VFX (beyond ParticleSystem MVP).
 
 ## Commands
 
@@ -48,9 +46,16 @@ pnpm build
 pnpm test
 pnpm gamekit init
 pnpm gamekit editor
+pnpm gamekit doctor
+pnpm gamekit build --platform mobile
+pnpm gamekit dev
 ```
 
 The editor server defaults to `http://127.0.0.1:4177`.
+
+## Documentation
+
+See [`docs/`](./docs/index.md) for getting started, CLI reference, editor/agent, and schema guides.
 
 ## Repository Structure
 

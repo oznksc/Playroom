@@ -248,6 +248,42 @@ async function main(argv: string[]): Promise<void> {
       }
       return;
     }
+    case "build": {
+      const { buildProject } = await import("./build.js");
+      const out = readOption(args, "--out") ?? join(cwd, "build", "gamekit");
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile") {
+        throw new Error("--platform must be 'web' or 'mobile'");
+      }
+      const skipDoctor = args.includes("--skip-doctor");
+      const result = await buildProject(cwd, { outDir: resolve(cwd, out), platform, skipDoctor });
+      console.log(`Built gamekit pack → ${result.outDir}`);
+      console.log(`  platform: ${result.platform}`);
+      console.log(`  scenes:   ${result.scenes.length}`);
+      console.log(`  assets:   ${result.assets}`);
+      console.log(`  duration: ${result.durationMs}ms`);
+      return;
+    }
+    case "dev": {
+      const { startDevWatch } = await import("./dev.js");
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile") {
+        throw new Error("--platform must be 'web' or 'mobile'");
+      }
+      const handle = startDevWatch(cwd, { platform });
+      await new Promise<void>((resolve) => {
+        process.on("SIGINT", () => {
+          handle.stop();
+          console.log("\n[gamekit dev] stopped");
+          resolve();
+        });
+        process.on("SIGTERM", () => {
+          handle.stop();
+          resolve();
+        });
+      });
+      return;
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -279,6 +315,8 @@ Usage:
   gamekit search <query>
   gamekit validate
   gamekit doctor
+  gamekit build [--out build/gamekit] [--platform web|mobile] [--skip-doctor]
+  gamekit dev [--platform web|mobile]
 `);
 }
 
