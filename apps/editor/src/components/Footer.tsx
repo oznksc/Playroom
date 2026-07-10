@@ -1,5 +1,6 @@
 import type { GameKitScene } from "@gamekit/schema";
 import type { SaveState } from "../types.js";
+import { StatusDot, Separator } from "@/ui";
 
 type FooterProps = {
   scene?: GameKitScene;
@@ -16,26 +17,35 @@ export function Footer({
   status,
   saveState,
   isDirty,
-  statusClass
+  statusClass,
 }: FooterProps) {
+  const statusKind =
+    statusClass === "loading"
+      ? "loading"
+      : statusClass === "error"
+        ? "error"
+        : saveState === "saved"
+          ? "success"
+          : "idle";
+
   return (
-    <footer>
-      <span className="status-indicator">
-        <span className={`status-dot ${statusClass}`} />
+    <footer className="flex h-6 shrink-0 items-center gap-2 border-t border-border-default bg-bg-base px-3 text-xs tracking-[-0.01em] text-text-muted">
+      <span className="inline-flex items-center gap-1.5 text-text-secondary">
+        <StatusDot status={statusKind} />
         {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : status}
       </span>
       {scene && (
         <>
-          <span style={{ color: "var(--border-default)" }}>|</span>
+          <Separator orientation="vertical" className="h-3" />
           <span>{scene.entities.length} entities</span>
-          <span style={{ color: "var(--border-default)" }}>|</span>
+          <Separator orientation="vertical" className="h-3" />
           <span>{assetCount} assets</span>
         </>
       )}
       {isDirty && (
         <>
-          <span style={{ color: "var(--border-default)" }}>|</span>
-          <span style={{ color: "var(--warning)" }}>Unsaved changes</span>
+          <Separator orientation="vertical" className="h-3" />
+          <span className="text-warning">Unsaved changes</span>
         </>
       )}
     </footer>

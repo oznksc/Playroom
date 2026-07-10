@@ -86,11 +86,17 @@ first if you intend to use the desktop shell.
   regenerates `gamekit/generated/assets.ts` after every import/remove
   (mobile: `require()`, web: `new URL(...).href`). Only image kinds
   (`.png .jpg .jpeg .webp .svg`) are supported in MVP 0.1.
-- Editor styling tokens live in `apps/editor/src/styles/_variables.scss`
-  (Cyber Cyan `#00f0ff`, Engine Violet `#8b5cf6`, dark base `#06090e`).
-  Component partials are imported via `styles.scss` — keep new SCSS in
-  that folder and import it from the partial, not from individual
-  components.
+- Editor design system: tokens + Tailwind theme in
+  `apps/editor/src/styles/globals.css` (Cyber Cyan `#00f0ff`, Engine
+  Violet `#8b5cf6`, dark base `#06090e` — see `brief.md`). Typography:
+  **Plus Jakarta Sans** (UI) + **JetBrains Mono** (data), loaded in
+  `apps/editor/index.html` — not Google Sans (proprietary). Prefer type
+  roles `.type-label` / `.type-ui` / `.type-mono` or Tailwind
+  `text-2xs`…`text-md` over ad-hoc `text-[Npx]`. Shared primitives live
+  in `apps/editor/src/ui/` (Button, Field, Panel, Dialog, etc.). Feature
+  panels compose those primitives; do not invent one-off button/input
+  chrome. Layout shell helpers are in `apps/editor/src/styles/editor.css`.
+  Prefer `@/` imports for editor source. Avoid new SCSS.
 
 ## Where to look
 

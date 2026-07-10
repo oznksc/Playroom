@@ -2,6 +2,7 @@ import type { GameKitAsset } from "@gamekit/schema";
 import { ImagePlus, Trash2, Search, Upload, FileImage } from "lucide-react";
 import { useRef, useState } from "react";
 import { getApiUrl } from "../lib/api.js";
+import { Button, Input, EmptyState, IconButton, Badge, cn } from "@/ui";
 
 type AssetsPanelProps = {
   assets: GameKitAsset[];
@@ -16,7 +17,7 @@ export function AssetsPanel({
   selectedAssetId,
   onSelectAsset,
   onDeleteAsset,
-  onImport
+  onImport,
 }: AssetsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,85 +27,107 @@ export function AssetsPanel({
   );
 
   return (
-    <div className="assets-panel">
-      <div className="assets-toolbar">
-        <div className="assets-search-wrapper">
-          <Search size={13} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search assets..."
+    <div className="flex h-full min-h-0 flex-col bg-bg-surface">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border-default p-2">
+        <div className="search-field min-w-0 flex-1">
+          <Search size={12} />
+          <Input
+            type="search"
+            placeholder="Search assets…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => fileInputRef.current?.click()}
-          title="Import raw assets (PNG, JPG, SVG)"
-        >
-          <Upload size={13} />
-          <span>Import Asset</span>
-        </button>
+        <Button size="md" variant="solid" onClick={() => fileInputRef.current?.click()}>
+          <Upload size={13} /> Import
+        </Button>
         <input
           ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
-            if (file) {
-              onImport(file);
-            }
+            if (file) onImport(file);
             event.currentTarget.value = "";
           }}
-          style={{ display: "none" }}
         />
       </div>
 
-      <div className="assets-grid-container">
+      <div className="min-h-0 flex-1 overflow-auto p-2">
         {filteredAssets.length === 0 ? (
-          <div className="assets-empty">
-            <ImagePlus size={32} />
-            <p>{searchQuery ? "No assets match search query" : "Drag & drop files or click 'Import Asset' to load assets"}</p>
-          </div>
+          <EmptyState
+            icon={<ImagePlus size={18} />}
+            title={searchQuery ? "No matches" : "No assets"}
+            description={
+              searchQuery
+                ? "No assets match this search."
+                : "Import PNG, JPG, WebP, or SVG assets."
+            }
+          />
         ) : (
-          <div className="assets-grid">
-            {filteredAssets.map((asset) => (
-              <div
-                key={asset.id}
-                className={`asset-card ${asset.id === selectedAssetId ? "active" : ""}`}
-                onClick={() => onSelectAsset(asset.id)}
-              >
-                <div className="asset-preview-box">
-                  <img src={getApiUrl(`/gamekit/assets/${asset.file}`)} alt="" onError={(e) => {
-                    // Fallback to placeholder icon if image fails
-                    e.currentTarget.style.display = "none";
-                    const fallback = e.currentTarget.parentElement?.querySelector(".asset-fallback-icon");
-                    if (fallback) (fallback as HTMLElement).style.display = "flex";
-                  }} />
-                  <div className="asset-fallback-icon" style={{ display: "none" }}>
-                    <FileImage size={24} />
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
+            {filteredAssets.map((asset) => {
+              const active = asset.id === selectedAssetId;
+              return (
+                <div
+                  key={asset.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectAsset(asset.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectAsset(asset.id);
+                    }
+                  }}
+                  className={cn(
+                    "group cursor-pointer overflow-hidden rounded-md border bg-bg-base transition-colors",
+                    active
+                      ? "border-accent shadow-[0_0_0_1px_var(--accent-muted)]"
+                      : "border-border-default hover:border-border-strong"
+                  )}
+                >
+                  <div className="relative flex aspect-square items-center justify-center bg-bg-elevated">
+                    <img
+                      src={getApiUrl(`/gamekit/assets/${asset.file}`)}
+                      alt=""
+                      className="max-h-full max-w-full object-contain p-1"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.parentElement?.querySelector(
+                          ".asset-fallback-icon"
+                        );
+                        if (fallback) (fallback as HTMLElement).style.display = "flex";
+                      }}
+                    />
+                    <div className="asset-fallback-icon absolute inset-0 hidden items-center justify-center text-text-muted">
+                      <FileImage size={22} />
+                    </div>
+                    <Badge variant="muted" className="absolute left-1 top-1">
+                      IMAGE
+                    </Badge>
                   </div>
-                  <span className="asset-badge">IMAGE</span>
+                  <div className="flex items-center gap-1 border-t border-border-default px-1.5 py-1">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-text-secondary">
+                      {asset.id}
+                    </span>
+                    <IconButton
+                      size="sm"
+                      variant="danger"
+                      className="opacity-0 group-hover:opacity-100"
+                      title="Delete asset"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete asset "${asset.id}"?`)) onDeleteAsset(asset.id);
+                      }}
+                    >
+                      <Trash2 size={11} />
+                    </IconButton>
+                  </div>
                 </div>
-                <div className="asset-card-details">
-                  <span className="asset-card-name" title={asset.id}>{asset.id}</span>
-                  <button
-                    type="button"
-                    className="asset-card-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(`Are you sure you want to delete asset "${asset.id}"?`)) {
-                        onDeleteAsset(asset.id);
-                      }
-                    }}
-                    title="Delete asset from project"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

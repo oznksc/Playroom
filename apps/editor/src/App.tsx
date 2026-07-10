@@ -1265,47 +1265,55 @@ export function App() {
 
   if (isTauri && !projectPath) {
     return (
-      <div className="tauri-dashboard">
-        <div className="tauri-dashboard-card">
-          <div className="glow-effect"></div>
-          <div className="logo-section">
-            <img src={logoUrl} alt="Playroom" className="dashboard-logo" />
-            <h1>Playroom</h1>
-            <p className="subtitle">Local 2D scene editor for Expo projects</p>
-          </div>
-          
-          <div className="action-section">
-            <button type="button" className="btn-dashboard-primary" onClick={handleOpenProject}>
-              <FolderOpen size={18} />
-              <span>Open Project Folder</span>
-            </button>
-            <p className="dashboard-hint">
-              After opening a project, use <strong>New from template</strong> in the top bar to apply a genre skill.
-            </p>
+      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-bg-base text-text-primary">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-80"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 40%, rgba(0,240,255,0.08) 0%, transparent 55%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.06) 0%, transparent 45%)",
+          }}
+        />
+        <div className="relative z-10 w-[min(440px,calc(100vw-32px))] rounded-lg border border-border-default bg-bg-surface/95 p-8 shadow-lg backdrop-blur-md">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <img src={logoUrl} alt="Playroom" className="mb-3 size-14 object-contain" />
+            <h1 className="type-display m-0 tracking-[0.12em]">PLAYROOM</h1>
+            <p className="type-body mt-1.5">Local 2D scene editor for Expo projects</p>
           </div>
 
+          <button
+            type="button"
+            onClick={handleOpenProject}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/15 px-4 py-3 text-md font-semibold tracking-[-0.015em] text-accent transition-colors hover:bg-accent/25"
+          >
+            <FolderOpen size={16} />
+            Open Project Folder
+          </button>
+          <p className="type-body mt-3 text-center">
+            After opening a project, use <span className="text-accent">New from template</span> in the top bar to apply a genre skill.
+          </p>
+
           {recentProjects.length > 0 && (
-            <div className="recent-projects-section">
-              <h3>Recent Projects</h3>
-              <div className="recent-list">
+            <div className="mt-6 border-t border-border-default pt-4">
+              <h3 className="type-label m-0 mb-2">Recent Projects</h3>
+              <div className="flex max-h-40 flex-col gap-1 overflow-auto">
                 {recentProjects.map((p) => (
-                  <button 
-                    key={p} 
-                    type="button" 
-                    className="recent-item" 
+                  <button
+                    key={p}
+                    type="button"
+                    className="list-row cursor-pointer"
                     onClick={() => loadProjectFolder(p)}
                   >
-                    <FolderOpen size={13} />
-                    <span className="recent-path" title={p}>{p}</span>
+                    <FolderOpen size={13} className="shrink-0 text-accent" />
+                    <span className="type-mono min-w-0 flex-1 truncate" title={p}>
+                      {p}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="dashboard-footer">
-            <span>Powered by Tauri v2 & Rust</span>
-          </div>
+          <div className="type-micro mt-6 text-center text-text-muted">Powered by Tauri v2 & Rust</div>
         </div>
       </div>
     );
@@ -1348,22 +1356,34 @@ export function App() {
 
       <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
         <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
-          <div className="tab-bar">
-            <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
-            <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
-            <button type="button" className={activeTab === "prefabs" ? "active" : ""} onClick={() => setActiveTab("prefabs")}>Prefabs</button>
-            <button type="button" className={activeTab === "agent" ? "active" : ""} onClick={() => setActiveTab("agent")}>Agent</button>
-            {MVP_SHOW_LEVELS && (
-              <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
-            )}
-            {MVP_SHOW_GUI_TOOLS && (
-              <>
-                <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
-                <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
-              </>
-            )}
+          <div className="flex shrink-0 flex-wrap items-stretch border-b border-border-default bg-bg-base">
+            {(
+              [
+                ["entities", "Hierarchy"],
+                ["scenes", "Scenes"],
+                ["prefabs", "Prefabs"],
+                ["agent", "Agent"],
+                ...(MVP_SHOW_LEVELS ? [["levels", "Levels"] as const] : []),
+                ...(MVP_SHOW_GUI_TOOLS
+                  ? ([["guis", "GUIs"], ["components", "Comps"]] as const)
+                  : []),
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id as SidebarTab)}
+                className={
+                  activeTab === id
+                    ? "relative h-8 px-2.5 text-2xs font-semibold uppercase tracking-[0.1em] text-accent after:absolute after:inset-x-2 after:top-0 after:h-0.5 after:rounded-b after:bg-accent after:content-['']"
+                    : "h-8 px-2.5 text-2xs font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-text-secondary"
+                }
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div className="sidebar-content">
+          <div className="sidebar-content min-h-0 flex-1 overflow-hidden">
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -1644,35 +1664,30 @@ export function App() {
 
       {scene && (
         <section className={`bottom-drawer-panel${bottomDrawerCollapsed ? " collapsed" : ""}`}>
-          <div className="drawer-tabs-bar">
+          <div className="flex h-8 shrink-0 items-end gap-1 border-b border-border-default bg-bg-base px-3">
+            {(
+              [
+                ["assets", "Content Browser"],
+                ...(MVP_SHOW_TIMELINE ? [["timeline", "Sequencer Timeline"] as const] : []),
+                ...(MVP_SHOW_CONSOLE ? [["console", "Developer Console"] as const] : []),
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveBottomTab(id as BottomTab)}
+                className={
+                  activeBottomTab === id
+                    ? "flex h-7 items-center rounded-t border border-b-0 border-border-default bg-bg-surface px-3 text-xs font-semibold tracking-[-0.01em] text-accent shadow-[inset_0_2px_0_var(--accent)]"
+                    : "flex h-7 items-center rounded-t px-3 text-xs font-semibold tracking-[-0.01em] text-text-muted hover:text-text-secondary"
+                }
+              >
+                {label}
+              </button>
+            ))}
             <button
               type="button"
-              className={activeBottomTab === "assets" ? "drawer-tab active" : "drawer-tab"}
-              onClick={() => setActiveBottomTab("assets")}
-            >
-              Content Browser
-            </button>
-            {MVP_SHOW_TIMELINE && (
-              <button
-                type="button"
-                className={activeBottomTab === "timeline" ? "drawer-tab active" : "drawer-tab"}
-                onClick={() => setActiveBottomTab("timeline")}
-              >
-                Sequencer Timeline
-              </button>
-            )}
-            {MVP_SHOW_CONSOLE && (
-              <button
-                type="button"
-                className={activeBottomTab === "console" ? "drawer-tab active" : "drawer-tab"}
-                onClick={() => setActiveBottomTab("console")}
-              >
-                Developer Console
-              </button>
-            )}
-            <button
-              type="button"
-              className="drawer-collapse-btn"
+              className="ml-auto mb-0.5 flex size-7 items-center justify-center rounded-sm text-text-muted hover:bg-bg-hover hover:text-text-primary"
               onClick={() => setBottomDrawerCollapsed((v) => !v)}
               title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
             >

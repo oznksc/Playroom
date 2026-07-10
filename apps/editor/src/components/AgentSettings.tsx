@@ -1,6 +1,18 @@
 import { useState } from "react";
-import { X, Key, Check, Plus, Trash2 } from "lucide-react";
+import { Key, Check, Plus, Trash2 } from "lucide-react";
 import { useAgentKeys, type AgentKeyEntry } from "../hooks/useAgentKeys.js";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+  Button,
+  IconButton,
+  Input,
+  Badge,
+} from "@/ui";
 
 type AgentSettingsProps = {
   open: boolean;
@@ -26,10 +38,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
 
   const currentProvider = PROVIDERS.find((p) => p.id === editing);
   const needsKey = currentProvider?.requiresKey ?? true;
-  // Desktop Tauri stores secrets in OS keychain — no app passphrase required.
   const needsPassphrase = needsKey && !osKeychain;
-
-  if (!open) return null;
 
   function getKeyStatus(providerId: string): AgentKeyEntry | undefined {
     return keys.find((k) => k.provider === providerId);
@@ -42,7 +51,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
     const pass = needsPassphrase ? passphrase : "local";
     const key = needsKey ? apiKey : "local";
     await addKey(editing, key, pass, model || undefined, baseUrl || undefined);
-    
+
     localStorage.setItem("gamekit:agent:activeProvider", editing);
     if (model) {
       localStorage.setItem("gamekit:agent:activeModel", model);
@@ -58,141 +67,161 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
   }
 
   return (
-    <div className="agent-settings-overlay" onClick={onClose}>
-      <div className="agent-settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="agent-settings-header">
-          <Key size={16} />
-          <span>AI Providers</span>
-          <button type="button" className="agent-settings-close" onClick={onClose}>
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="agent-settings-body">
-          <table className="agent-settings-table">
-            <thead>
-              <tr>
-                <th>Provider</th>
-                <th>Model</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PROVIDERS.map((p) => {
-                const entry = getKeyStatus(p.id);
-                return (
-                  <tr key={p.id}>
-                    <td>{p.label}</td>
-                    <td className="agent-settings-model">{entry?.model ?? p.defaultModel}</td>
-                    <td>
-                      {entry ? (
-                        <span className="agent-settings-status connected">
-                          {entry.storage === "keychain" ? "keychain" : "connected"}
-                        </span>
-                      ) : (
-                        <span className="agent-settings-status">—</span>
-                      )}
-                    </td>
-                    <td>
-                      {entry ? (
-                        <button
-                          type="button"
-                          className="agent-settings-action-btn remove"
-                          onClick={() => void removeKey(p.id)}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="agent-settings-action-btn add"
-                          onClick={() => { setEditing(p.id); setModel(p.defaultModel); }}
-                        >
-                          <Plus size={12} /> Add
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="w-[min(560px,calc(100vw-32px))]">
+        <DialogHeader>
+          <Key size={14} className="text-accent" />
+          <DialogTitle className="text-[12px]">AI Providers</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3">
+          <div className="overflow-hidden rounded-md border border-border-default">
+            <table className="w-full border-collapse text-left text-[11px]">
+              <thead className="bg-bg-base text-[9px] uppercase tracking-wide text-text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Provider</th>
+                  <th className="px-3 py-2 font-semibold">Model</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                  <th className="px-3 py-2 font-semibold">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PROVIDERS.map((p) => {
+                  const entry = getKeyStatus(p.id);
+                  return (
+                    <tr key={p.id} className="border-t border-border-default">
+                      <td className="px-3 py-2 text-text-primary">{p.label}</td>
+                      <td className="px-3 py-2 font-mono text-[10px] text-text-muted">
+                        {entry?.model ?? p.defaultModel}
+                      </td>
+                      <td className="px-3 py-2">
+                        {entry ? (
+                          <Badge variant="green">
+                            {entry.storage === "keychain" ? "keychain" : "connected"}
+                          </Badge>
+                        ) : (
+                          <span className="text-text-muted">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {entry ? (
+                          <IconButton
+                            size="sm"
+                            variant="danger"
+                            onClick={() => void removeKey(p.id)}
+                            title="Remove"
+                          >
+                            <Trash2 size={12} />
+                          </IconButton>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setEditing(p.id);
+                              setModel(p.defaultModel);
+                            }}
+                          >
+                            <Plus size={12} /> Add
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {editing && (
-            <div className="agent-settings-add-form">
-              <h4>Connect {currentProvider?.label}</h4>
+            <div className="space-y-2 rounded-md border border-border-default bg-bg-base p-3">
+              <h4 className="m-0 text-[11px] font-semibold text-text-primary">
+                Connect {currentProvider?.label}
+              </h4>
               {needsKey && (
-                <div className="agent-settings-field">
-                  <label>API Key</label>
-                  <input
+                <label className="block space-y-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                    API Key
+                  </span>
+                  <Input
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="sk-..."
                   />
-                </div>
+                </label>
               )}
-              <div className="agent-settings-field">
-                <label>Model</label>
-                <input
+              <label className="block space-y-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                  Model
+                </span>
+                <Input
                   type="text"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   placeholder={currentProvider?.defaultModel}
                 />
-              </div>
+              </label>
               {(!needsKey || editing === "openrouter" || editing === "openai") && (
-                <div className="agent-settings-field">
-                  <label>Base URL {needsKey && "(optional)"}</label>
-                  <input
+                <label className="block space-y-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                    Base URL {needsKey && "(optional)"}
+                  </span>
+                  <Input
                     type="text"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder={editing === "openrouter" ? "https://openrouter.ai/api/v1" : editing === "openai" ? "https://api.openai.com/v1" : "http://127.0.0.1:1234"}
+                    placeholder={
+                      editing === "openrouter"
+                        ? "https://openrouter.ai/api/v1"
+                        : editing === "openai"
+                          ? "https://api.openai.com/v1"
+                          : "http://127.0.0.1:1234"
+                    }
                   />
-                </div>
+                </label>
               )}
               {needsPassphrase && (
-                <div className="agent-settings-field">
-                  <label>Passphrase (to encrypt key locally)</label>
-                  <input
+                <label className="block space-y-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                    Passphrase
+                  </span>
+                  <Input
                     type="password"
                     value={passphrase}
                     onChange={(e) => setPassphrase(e.target.value)}
                     placeholder="Enter passphrase"
                   />
-                </div>
+                </label>
               )}
               {needsKey && (
-                <div className="agent-settings-field-hint">
+                <p className="m-0 text-[10px] leading-relaxed text-text-muted">
                   {osKeychain
-                    ? "Key is stored in the OS keychain (macOS Keychain / Windows Credential Manager). It never leaves your machine."
+                    ? "Key is stored in the OS keychain. It never leaves your machine."
                     : "Key is encrypted and stored in this browser only. It never leaves your machine."}
-                </div>
+                </p>
               )}
-              <div className="agent-settings-form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setEditing(null)}>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="ghost" size="md" onClick={() => setEditing(null)}>
                   Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-connect"
-                  onClick={handleSave}
-                  disabled={needsKey ? (!apiKey || (needsPassphrase && !passphrase)) : false}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => void handleSave()}
+                  disabled={needsKey ? !apiKey || (needsPassphrase && !passphrase) : false}
                 >
                   <Check size={12} /> Connect
-                </button>
+                </Button>
               </div>
             </div>
           )}
-        </div>
-
-        <div className="agent-settings-footer">
-          <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn-save" onClick={onClose}>Save</button>
-        </div>
-      </div>
-    </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" size="md" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

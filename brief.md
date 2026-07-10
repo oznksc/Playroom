@@ -27,7 +27,7 @@ The real object is the **canvas** — a viewport showing the scene with entities
 - **Secondary accent**: Engine Violet `#8b5cf6` — component sections, text node badges
 - **Tertiary accents**: Gold `#ffb300` (selection highlight), Green `#10b981` (play/success), Red `#ef4444` (stop/error)
 - **Neutral tint**: Blues (not pure gray) — `#94a3b8` secondary, `#64748b` muted
-- **Typography**: Inter / system-ui, monospace for IDs and numeric fields. Compact sizes (9–13px).
+- **Typography**: Plus Jakarta Sans (Google Sans–like open alternative; Google Sans itself is not free to use). JetBrains Mono for IDs and numeric fields. Compact scale: 9 / 10 / 11 / 12 / 13px. Labels uppercase + wide tracking; body slightly tight tracking (-0.01em).
 - **Radii**: 3px / 6px / 10px scale
 - **Borders**: Thin, low-contrast (`rgba(255,255,255,0.06)` default), cyan-tinted subtle
 - **Glow effects**: Cyan, green, red glows for active states — used sparingly

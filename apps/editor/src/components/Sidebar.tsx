@@ -12,11 +12,22 @@ import {
   Scissors,
   ClipboardPaste,
   CopyPlus,
-  FileQuestion
+  FileQuestion,
 } from "lucide-react";
 import { useState } from "react";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
-import { findComponent } from "../lib/components.js";
+import {
+  Panel,
+  PanelHeader,
+  PanelTitle,
+  PanelBody,
+  IconButton,
+  Button,
+  Input,
+  EmptyState,
+  Badge,
+  cn,
+} from "@/ui";
 
 type SidebarProps = {
   entities: GameKitEntity[];
@@ -41,13 +52,14 @@ export function Sidebar({
   onPasteEntity,
   onDuplicateEntity,
   onAddEntity,
-  onAddTemplate
+  onAddTemplate,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredEntities = entities.filter((entity) =>
-    entity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    entity.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEntities = entities.filter(
+    (entity) =>
+      entity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entity.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   function getEntityIcon(entity: GameKitEntity) {
@@ -56,11 +68,11 @@ export function Sidebar({
     const hasSprite = entity.components.some((c) => c.type === "Sprite");
     const hasCollider = entity.components.some((c) => c.type === "AabbCollider");
 
-    if (hasPlayer) return <Gamepad2 size={12} className="icon-player" />;
-    if (hasCamera) return <Video size={12} className="icon-camera" />;
-    if (hasSprite) return <Image size={12} className="icon-sprite" />;
-    if (hasCollider) return <Box size={12} className="icon-collider" />;
-    return <Layers size={12} className="icon-empty" />;
+    if (hasPlayer) return <Gamepad2 size={12} className="text-accent-green" />;
+    if (hasCamera) return <Video size={12} className="text-accent-purple" />;
+    if (hasSprite) return <Image size={12} className="text-accent" />;
+    if (hasCollider) return <Box size={12} className="text-selection" />;
+    return <Layers size={12} className="text-text-muted" />;
   }
 
   function getEntityContextMenuItems(entityId: string): ContextMenuItem[] {
@@ -70,21 +82,21 @@ export function Sidebar({
         label: "Copy",
         icon: <Copy size={14} />,
         shortcut: "⌘C",
-        onClick: () => onCopyEntity?.(entityId)
+        onClick: () => onCopyEntity?.(entityId),
       },
       {
         id: "cut",
         label: "Cut",
         icon: <Scissors size={14} />,
         shortcut: "⌘X",
-        onClick: () => onCutEntity?.(entityId)
+        onClick: () => onCutEntity?.(entityId),
       },
       {
         id: "paste",
         label: "Paste",
         icon: <ClipboardPaste size={14} />,
         shortcut: "⌘V",
-        onClick: () => onPasteEntity?.()
+        onClick: () => onPasteEntity?.(),
       },
       { id: "sep1", label: "", separator: true },
       {
@@ -92,7 +104,7 @@ export function Sidebar({
         label: "Duplicate",
         icon: <CopyPlus size={14} />,
         shortcut: "⌘D",
-        onClick: () => onDuplicateEntity?.(entityId)
+        onClick: () => onDuplicateEntity?.(entityId),
       },
     ];
 
@@ -105,7 +117,7 @@ export function Sidebar({
           icon: <Trash2 size={14} />,
           shortcut: "⌫",
           danger: true,
-          onClick: () => onDeleteEntity(entityId)
+          onClick: () => onDeleteEntity(entityId),
         }
       );
     }
@@ -114,103 +126,86 @@ export function Sidebar({
   }
 
   return (
-    <aside className="hierarchy-panel">
-      {/* Search Input */}
-      <div className="hierarchy-search-bar">
-        <Search size={12} className="search-icon" />
-        <input
-          type="text"
-          placeholder="Filter scene hierarchy..."
+    <Panel>
+      <div className="search-field border-b border-border-default p-2">
+        <Search size={12} />
+        <Input
+          type="search"
+          placeholder="Filter hierarchy…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-[26px]"
         />
       </div>
 
-      {/* Quick Add Entity Templates */}
-      <div className="hierarchy-quick-tools">
-        <span className="tool-title">Quick Spawner</span>
-        <div className="tool-buttons">
-          <button
-            type="button"
-            className="btn-spawner"
-            onClick={() => onAddTemplate?.("empty")}
-            title="Add Empty Entity"
-          >
-            <Layers size={11} />
-            <span>Empty</span>
-          </button>
-          <button
-            type="button"
-            className="btn-spawner"
-            onClick={() => onAddTemplate?.("sprite")}
-            title="Add Sprite Object"
-          >
-            <Image size={11} />
-            <span>Sprite</span>
-          </button>
-          <button
-            type="button"
-            className="btn-spawner"
-            onClick={() => onAddTemplate?.("player")}
-            title="Add Interactive Player"
-          >
-            <Gamepad2 size={11} />
-            <span>Player</span>
-          </button>
+      <div className="border-b border-border-default px-2 py-2">
+        <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-text-muted">
+          Quick spawner
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("empty")}>
+            <Layers size={11} /> Empty
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("sprite")}>
+            <Image size={11} /> Sprite
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("player")}>
+            <Gamepad2 size={11} /> Player
+          </Button>
         </div>
       </div>
 
-      {/* Hierarchy Title Header */}
-      <div className="hierarchy-header">
-        <span className="section-label">Scene Graph ({filteredEntities.length})</span>
-        <button
-          type="button"
-          className="icon-button"
-          onClick={onAddEntity}
-          title="Create standard entity"
-        >
+      <PanelHeader className="h-8">
+        <PanelTitle accent="cyan">Scene graph ({filteredEntities.length})</PanelTitle>
+        <IconButton size="sm" onClick={onAddEntity} title="Create entity">
           <Plus size={12} />
-        </button>
-      </div>
+        </IconButton>
+      </PanelHeader>
 
-      {/* Selected stats */}
       {selectedEntityIds.size > 1 && (
-        <div className="hierarchy-selection-badge">
+        <div className="border-b border-border-default bg-accent-muted px-2 py-1 text-[10px] text-accent">
           {selectedEntityIds.size} nodes selected
         </div>
       )}
 
-      {/* Entity Tree List */}
-      <div className="hierarchy-tree-list">
+      <PanelBody className="space-y-0.5 p-1.5">
         {filteredEntities.length === 0 ? (
-          <div className="hierarchy-empty">
-            <FileQuestion size={20} style={{ opacity: 0.2 }} />
-            <p>{searchQuery ? "No matching elements found" : "Scene is empty"}</p>
-          </div>
+          <EmptyState
+            icon={<FileQuestion size={16} />}
+            title={searchQuery ? "No matches" : "Scene is empty"}
+            description={searchQuery ? "Try a different filter." : "Spawn an entity to begin."}
+          />
         ) : (
           filteredEntities.map((entity) => {
             const isSelected = selectedEntityIds.has(entity.id);
             return (
               <ContextMenu key={entity.id} items={getEntityContextMenuItems(entity.id)}>
                 <div
-                  className={`hierarchy-tree-item ${isSelected ? "selected" : ""}`}
+                  role="button"
+                  tabIndex={0}
+                  data-selected={isSelected}
+                  className={cn("list-row cursor-pointer")}
                   onClick={(e) => onSelectEntity(entity.id, e.shiftKey)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectEntity(entity.id, e.shiftKey);
+                    }
+                  }}
                 >
-                  <span className="item-prefix-icon">
-                    {getEntityIcon(entity)}
-                  </span>
-                  <span className="item-name" title={entity.name}>
+                  <span className="shrink-0">{getEntityIcon(entity)}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12px] text-text-primary">
                     {entity.name || "Unnamed Entity"}
                   </span>
-                  <span className="item-id-badge" title={entity.id}>
-                    {entity.id.slice(0, 5)}...
-                  </span>
+                  <Badge variant="mono" className="row-meta !ml-0">
+                    {entity.id.slice(0, 5)}…
+                  </Badge>
                 </div>
               </ContextMenu>
             );
           })
         )}
-      </div>
-    </aside>
+      </PanelBody>
+    </Panel>
   );
 }

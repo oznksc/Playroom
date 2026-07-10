@@ -1,6 +1,15 @@
 import { Boxes, Plus, Trash2, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { getApiUrl } from "../lib/api.js";
+import {
+  Panel,
+  PanelHeader,
+  PanelTitle,
+  PanelBody,
+  IconButton,
+  EmptyState,
+  cn,
+} from "@/ui";
 
 export type PrefabSummary = {
   file: string;
@@ -55,10 +64,7 @@ export function PrefabPanel({
       const res = await fetch(getApiUrl("/api/prefabs"), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sceneFile,
-          entityId: selectedEntityId,
-        }),
+        body: JSON.stringify({ sceneFile, entityId: selectedEntityId }),
       });
       const body = (await res.json()) as { ok?: boolean; error?: string; file?: string };
       if (!res.ok) throw new Error(body.error ?? "Create failed");
@@ -100,9 +106,10 @@ export function PrefabPanel({
     if (!confirm(`Delete prefab "${prefab.name}"?`)) return;
     setBusy(true);
     try {
-      const res = await fetch(getApiUrl(`/api/prefabs?id=${encodeURIComponent(prefab.file)}`), {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        getApiUrl(`/api/prefabs?id=${encodeURIComponent(prefab.file)}`),
+        { method: "DELETE" }
+      );
       const body = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) throw new Error(body.error ?? "Delete failed");
       onStatus?.(`Removed ${prefab.file}`);
@@ -115,67 +122,68 @@ export function PrefabPanel({
   }
 
   return (
-    <div className="prefab-panel">
-      <div className="prefab-panel-header">
-        <h3>Prefabs</h3>
-        <button
-          type="button"
-          className="icon-button"
+    <Panel>
+      <PanelHeader>
+        <PanelTitle accent="purple">Prefabs</PanelTitle>
+        <IconButton
+          size="sm"
           title={selectedEntityId ? "Create prefab from selection" : "Select an entity first"}
           onClick={() => void createFromSelection()}
           disabled={busy || !selectedEntityId}
         >
           <Plus size={13} />
-        </button>
-      </div>
-
-      <div className="prefab-hint">
+        </IconButton>
+      </PanelHeader>
+      <p className="m-0 border-b border-border-default px-2.5 py-1.5 text-[10px] leading-relaxed text-text-muted">
         Select an entity → + to save as prefab. Click a prefab to spawn into the active scene.
-      </div>
-
-      <div className="prefab-list-scroll">
+      </p>
+      <PanelBody className="space-y-0.5 p-1.5">
         {loading ? (
-          <div className="hierarchy-empty">
-            <p>Loading…</p>
-          </div>
+          <p className="py-6 text-center text-[11px] text-text-muted">Loading…</p>
         ) : prefabs.length === 0 ? (
-          <div className="hierarchy-empty">
-            <Boxes size={20} style={{ opacity: 0.2 }} />
-            <p>No prefabs yet</p>
-          </div>
+          <EmptyState
+            icon={<Boxes size={16} />}
+            title="No prefabs yet"
+            description="Save a selection as a reusable prefab."
+          />
         ) : (
           prefabs.map((prefab) => (
-            <div key={prefab.file} className="prefab-item">
+            <div key={prefab.file} className="flex items-stretch gap-0.5">
               <button
                 type="button"
-                className="prefab-item-main"
-                onClick={() => void instantiate(prefab)}
                 disabled={busy}
+                onClick={() => void instantiate(prefab)}
                 title="Instantiate into scene"
+                className={cn(
+                  "list-row min-h-[40px] flex-1 cursor-pointer disabled:opacity-50"
+                )}
               >
-                <Boxes size={12} className="prefab-icon" />
-                <span className="prefab-meta">
-                  <span className="prefab-name">{prefab.name}</span>
-                  <span className="prefab-types">
+                <Boxes size={12} className="shrink-0 text-accent-purple" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12px] text-text-primary">
+                    {prefab.name}
+                  </span>
+                  <span className="block truncate text-[10px] text-text-muted">
                     {prefab.componentTypes.filter((t) => t !== "Transform").slice(0, 4).join(" · ") ||
                       "empty"}
                   </span>
                 </span>
-                <Download size={12} className="prefab-spawn-icon" />
+                <Download size={12} className="shrink-0 text-text-muted" />
               </button>
-              <button
-                type="button"
-                className="prefab-item-delete"
-                onClick={() => void remove(prefab)}
+              <IconButton
+                size="sm"
+                variant="danger"
+                className="self-center"
                 disabled={busy}
                 title="Delete prefab"
+                onClick={() => void remove(prefab)}
               >
                 <Trash2 size={11} />
-              </button>
+              </IconButton>
             </div>
           ))
         )}
-      </div>
-    </div>
+      </PanelBody>
+    </Panel>
   );
 }

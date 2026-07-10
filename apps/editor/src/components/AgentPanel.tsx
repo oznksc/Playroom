@@ -6,6 +6,17 @@ import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
 import { getApiUrl } from "../lib/api.js";
+import {
+  IconButton,
+  Button,
+  Select,
+  Textarea,
+  EmptyState,
+  CheckboxField,
+  Panel,
+  PanelHeader,
+  PanelTitle,
+} from "@/ui";
 
 const PROVIDER_LABELS: Record<string, string> = {
   anthropic: "Anthropic Claude",
@@ -95,25 +106,26 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
   }
 
   return (
-    <div className="agent-panel">
-      {/* Header */}
-      <div className="agent-header">
-        <div className="agent-header-left">
-          <Sparkles size={14} className="agent-header-icon" />
-          <span className="agent-header-title">Agent</span>
-          <select
-            className="agent-provider-select"
+    <Panel className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-surface">
+      <PanelHeader className="h-auto min-h-[38px] flex-wrap gap-2 py-1.5">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          <PanelTitle accent="purple" className="mr-1">
+            <Sparkles size={12} className="text-accent-purple" /> Agent
+          </PanelTitle>
+          <Select
+            className="h-[24px] w-auto min-w-[110px] max-w-[140px] text-[10px]"
             value={resolvedProvider}
             onChange={(e) => {
               const newProvider = e.target.value;
               setActiveProvider(newProvider);
               localStorage.setItem("gamekit:agent:activeProvider", newProvider);
-              const entry = keys.find(k => k.provider === newProvider);
-              const defaultModel = newProvider === "openrouter"
-                ? "meta-llama/llama-3.3-70b-instruct"
-                : newProvider === "lmstudio"
-                ? "local-model"
-                : "claude-sonnet-4-5";
+              const entry = keys.find((k) => k.provider === newProvider);
+              const defaultModel =
+                newProvider === "openrouter"
+                  ? "meta-llama/llama-3.3-70b-instruct"
+                  : newProvider === "lmstudio"
+                    ? "local-model"
+                    : "claude-sonnet-4-5";
               const newModel = entry?.model || defaultModel;
               setActiveModel(newModel);
               localStorage.setItem("gamekit:agent:activeModel", newModel);
@@ -124,13 +136,11 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
                 {PROVIDER_LABELS[k.provider] || k.provider}
               </option>
             ))}
-            {keys.length === 0 && (
-              <option value="anthropic">Anthropic Claude</option>
-            )}
-          </select>
+            {keys.length === 0 && <option value="anthropic">Anthropic Claude</option>}
+          </Select>
           {modelsList.length > 0 ? (
-            <select
-              className="agent-model-select"
+            <Select
+              className="h-[24px] w-auto min-w-[100px] max-w-[160px] text-[10px]"
               value={resolvedModel}
               onChange={(e) => {
                 const newModel = e.target.value;
@@ -143,135 +153,156 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
                   {m}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
-            <span className="agent-header-model">{resolvedModel}</span>
+            <span className="max-w-[120px] truncate font-mono text-[10px] text-text-muted">
+              {resolvedModel}
+            </span>
           )}
-          <select
-            className="agent-mode-select"
+          <Select
+            className="h-[24px] w-auto max-w-[130px] text-[10px]"
             value={approvalMode}
+            title="Tool approval mode"
             onChange={(e) => {
               const newMode = e.target.value as ApprovalMode;
               setApprovalMode(newMode);
               localStorage.setItem("gamekit:agent:approvalMode", newMode);
             }}
-            title="Tool approval mode"
           >
             <option value="destructive-only">Destructive Only</option>
             <option value="always">Always Approve</option>
             <option value="plan">Plan + Approve</option>
             <option value="off">Off (Auto Approve)</option>
-          </select>
-          <label className="agent-plan-toggle" title="Ask for a plan before tools">
-            <input
-              type="checkbox"
-              checked={planMode}
-              onChange={(e) => {
-                setPlanMode(e.target.checked);
-                localStorage.setItem("gamekit:agent:planMode", e.target.checked ? "1" : "0");
-              }}
-            />
-            Plan first
-          </label>
+          </Select>
+          <CheckboxField
+            label="Plan first"
+            checked={planMode}
+            className="text-[10px]"
+            onChange={(checked) => {
+              setPlanMode(checked);
+              localStorage.setItem("gamekit:agent:planMode", checked ? "1" : "0");
+            }}
+          />
         </div>
-        <div className="agent-header-right">
+        <div className="flex shrink-0 items-center gap-0.5">
           {sessionSnapshotId && (
-            <button
-              type="button"
-              className="agent-header-btn agent-restore-btn"
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={isStreaming}
               title={`Restore session snapshot ${sessionSnapshotId}`}
               onClick={() => restoreSessionSnapshot()}
-              disabled={isStreaming}
             >
               Undo session
-            </button>
+            </Button>
           )}
-          <button type="button" className="agent-header-btn" title="Settings" onClick={onSettings}>
+          <IconButton size="sm" title="Settings" onClick={onSettings}>
             <Settings size={13} />
-          </button>
-          <button type="button" className="agent-header-btn" title="Clear" onClick={clear}>
+          </IconButton>
+          <IconButton size="sm" title="Clear" onClick={clear}>
             <X size={13} />
-          </button>
+          </IconButton>
         </div>
-      </div>
+      </PanelHeader>
+
       {isPlaying && (
-        <div className="agent-play-banner">Simulation running — agent edits apply after stop/refresh.</div>
+        <div className="border-b border-warning/30 bg-warning/10 px-2.5 py-1 text-[10px] text-warning">
+          Simulation running — agent edits apply after stop/refresh.
+        </div>
       )}
 
-      {/* Body: Chat + Tool Trace */}
-      <div className="agent-body">
-        {/* Chat column */}
-        <div className="agent-chat">
-          <div className="agent-chat-messages">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-auto p-2">
             {messages.length === 0 ? (
-              <div className="agent-chat-empty">
-                <Sparkles size={32} style={{ opacity: 0.15 }} />
-                <p>Ask the agent to build your scene.</p>
-                <p className="agent-chat-hint">&quot;Create a platformer level with 3 platforms&quot;</p>
-              </div>
+              <EmptyState
+                icon={<Sparkles size={16} />}
+                title="Ask the agent to build your scene"
+                description={'"Create a platformer level with 3 platforms"'}
+              />
             ) : (
               messages.map((msg) => <AgentMessage key={msg.id} message={msg} />)
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Approval modal inline */}
           {pendingApproval && (
-            <div className="agent-approval">
-              <div className="agent-approval-info">
-                <span className="agent-approval-label">Approval required</span>
-                <span className="agent-approval-tool">{pendingApproval.tool}</span>
-                <pre className="agent-approval-args">{JSON.stringify(pendingApproval.args, null, 2)}</pre>
+            <div className="border-t border-border-default bg-bg-elevated p-2">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                Approval required
               </div>
-              <div className="agent-approval-actions">
-                <button type="button" className="btn-deny" onClick={() => approveTool(pendingApproval.requestId, "deny")}>
+              <div className="mb-1 font-mono text-[11px] text-accent">{pendingApproval.tool}</div>
+              <pre className="mb-2 max-h-24 overflow-auto rounded border border-border-default bg-bg-base p-1.5 font-mono text-[10px] text-text-secondary">
+                {JSON.stringify(pendingApproval.args, null, 2)}
+              </pre>
+              <div className="flex justify-end gap-1.5">
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => approveTool(pendingApproval.requestId, "deny")}
+                >
                   Deny
-                </button>
-                <button type="button" className="btn-allow" onClick={() => approveTool(pendingApproval.requestId, "allow")}>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="play"
+                  onClick={() => approveTool(pendingApproval.requestId, "allow")}
+                >
                   Allow
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
           {!isStreaming && messages.some((m) => m.role === "agent") && (
-            <div className="agent-quick-actions">
-              <button type="button" className="agent-quick-btn" onClick={() => sendMessage("/execute")}>
+            <div className="flex gap-1 border-t border-border-default px-2 py-1.5">
+              <Button size="sm" variant="secondary" onClick={() => sendMessage("/execute")}>
                 Execute plan
-              </button>
-              <button type="button" className="agent-quick-btn" onClick={() => sendMessage("/screenshot Review this scene")}>
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => sendMessage("/screenshot Review this scene")}
+              >
                 Screenshot
-              </button>
+              </Button>
             </div>
           )}
 
-          {/* Input */}
-          <form className="agent-input-bar" onSubmit={handleSubmit}>
-            <textarea
+          <form
+            className="flex items-end gap-1.5 border-t border-border-default bg-bg-base p-2"
+            onSubmit={handleSubmit}
+          >
+            <Textarea
               ref={inputRef}
-              className="agent-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={planMode ? "Describe goal (plan first)..." : "Describe what to build..."}
+              placeholder={planMode ? "Describe goal (plan first)…" : "Describe what to build…"}
               rows={1}
               disabled={isStreaming || !!pendingApproval}
+              className="min-h-[32px] max-h-24 resize-none py-1.5"
             />
             {isStreaming ? (
-              <button type="button" className="agent-send-btn agent-stop-btn" onClick={abort} title="Stop">
+              <IconButton size="lg" variant="danger" onClick={abort} title="Stop">
                 <Square size={14} />
-              </button>
+              </IconButton>
             ) : (
-              <button type="submit" className="agent-send-btn" disabled={!input.trim() || !!pendingApproval} title="Send">
+              <IconButton
+                size="lg"
+                variant="accent"
+                type="submit"
+                disabled={!input.trim() || !!pendingApproval}
+                title="Send"
+              >
                 <Send size={14} />
-              </button>
+              </IconButton>
             )}
           </form>
         </div>
 
-        {/* Tool Trace column */}
         <AgentToolTrace toolCalls={toolCalls} />
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -25,6 +25,7 @@ import { useImageCache } from "../hooks/useImageCache.js";
 import { drawScene, hitEntity, hitGuiNode, hitComponentInstance } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
+import { IconButton, cn } from "@/ui";
 
 type SceneCanvasProps = {
   scene?: GameKitScene;
@@ -293,82 +294,59 @@ export function SceneCanvas({
       }
     : {};
 
+  const tools = [
+    { id: "select" as const, icon: <MousePointer size={14} />, title: "Selection Tool (Q)" },
+    { id: "translate" as const, icon: <Move size={14} />, title: "Translate Gizmo (W)" },
+    { id: "rotate" as const, icon: <RefreshCcw size={14} />, title: "Rotate Tool (E)" },
+    { id: "scale" as const, icon: <Maximize size={14} />, title: "Scale Gizmo (R)" },
+    { id: "paint" as const, icon: <Paintbrush size={14} />, title: "Tile paint (B)" },
+    { id: "erase" as const, icon: <Eraser size={14} />, title: "Tile erase (X)" },
+  ];
+
   return (
-    <section className={`canvasPanel ${isPlaying ? "live-simulating" : ""}`}>
+    <section
+      className={cn(
+        "canvas-panel relative grid min-h-0 place-items-center overflow-hidden bg-bg-base",
+        isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"
+      )}
+    >
       {isPlaying && (
-        <div className="play-mode-banner" role="status">
-          <span className="play-mode-dot" />
-          PLAY MODE — Arrow keys / WASD / Space · On-screen pad below
+        <div
+          className="absolute left-1/2 top-2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-md border border-accent-green/40 bg-bg-surface/95 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-accent-green shadow-md"
+          role="status"
+        >
+          <span className="size-1.5 animate-pulse rounded-full bg-accent-green shadow-glow-green" />
+          Play mode — Arrow keys / WASD / Space · On-screen pad below
         </div>
       )}
 
-      {/* Floating HUD - Left Side: Transform Tools & Snap settings */}
-      <div className="canvas-hud-toolbar hud-left">
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={activeTool === "select" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("select")}
-            title="Selection Tool (Q)"
-          >
-            <MousePointer size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "translate" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("translate")}
-            title="Translate Gizmo (W)"
-          >
-            <Move size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "rotate" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("rotate")}
-            title="Rotate Tool (E)"
-          >
-            <RefreshCcw size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "scale" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("scale")}
-            title="Scale Gizmo (R)"
-          >
-            <Maximize size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "paint" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("paint")}
-            title="Tile paint (B)"
-          >
-            <Paintbrush size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "erase" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("erase")}
-            title="Tile erase (X)"
-          >
-            <Eraser size={14} />
-          </button>
+      <div className="absolute left-3 top-3 z-20 flex items-center gap-1 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
+        <div className="flex items-center gap-0.5">
+          {tools.map((tool) => (
+            <IconButton
+              key={tool.id}
+              size="md"
+              variant={activeTool === tool.id ? "active" : "ghost"}
+              onClick={() => onActiveToolChange(tool.id)}
+              title={tool.title}
+            >
+              {tool.icon}
+            </IconButton>
+          ))}
         </div>
-
-        <div className="hud-divider" />
-
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={snap ? "hud-btn active" : "hud-btn"}
+        <div className="hud-divider mx-1 h-4 w-px bg-border-default" />
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            size="md"
+            variant={snap ? "active" : "ghost"}
             onClick={() => onSnapToggle(!snap)}
             title="Toggle Snap to Grid"
           >
             <Magnet size={14} />
-          </button>
+          </IconButton>
           {snap && (
             <select
-              className="hud-select"
+              className="h-6 rounded-sm border border-border-default bg-bg-base px-1.5 text-[10px] font-semibold text-text-secondary outline-none focus:border-accent"
               value={snapSize}
               onChange={(e) => onSnapSizeChange(Number(e.target.value))}
               title="Grid Snapping Dimension"
@@ -382,47 +360,43 @@ export function SceneCanvas({
         </div>
       </div>
 
-      {/* Floating HUD - Right Side: Grid toggles, Colliders, reset */}
-      <div className="canvas-hud-toolbar hud-right">
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={showGrid ? "hud-btn active" : "hud-btn"}
-            onClick={() => onToggleGrid(!showGrid)}
-            title="Toggle Visual Grid"
-          >
-            <Grid size={14} />
-          </button>
-          <button
-            type="button"
-            className={showColliders ? "hud-btn active" : "hud-btn"}
-            onClick={() => onToggleColliders(!showColliders)}
-            title="Toggle Collider Geometry"
-          >
-            {showColliders ? <Eye size={14} /> : <EyeOff size={14} />}
-          </button>
-        </div>
-
-        <div className="hud-divider" />
-
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className="hud-btn"
-            onClick={() => { onZoomChange(1); setPan({ x: 0, y: 0 }); }}
-            title="Center Canvas camera"
-          >
-            <Focus size={14} />
-          </button>
-        </div>
+      <div className="absolute right-3 top-3 z-20 flex items-center gap-0.5 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
+        <IconButton
+          size="md"
+          variant={showGrid ? "active" : "ghost"}
+          onClick={() => onToggleGrid(!showGrid)}
+          title="Toggle Visual Grid"
+        >
+          <Grid size={14} />
+        </IconButton>
+        <IconButton
+          size="md"
+          variant={showColliders ? "active" : "ghost"}
+          onClick={() => onToggleColliders(!showColliders)}
+          title="Toggle Collider Geometry"
+        >
+          {showColliders ? <Eye size={14} /> : <EyeOff size={14} />}
+        </IconButton>
+        <div className="mx-1 h-4 w-px bg-border-default" />
+        <IconButton
+          size="md"
+          onClick={() => {
+            onZoomChange(1);
+            setPan({ x: 0, y: 0 });
+          }}
+          title="Center Canvas camera"
+        >
+          <Focus size={14} />
+        </IconButton>
       </div>
 
       <ContextMenu items={getCanvasContextMenuItems()}>
-        <div className="canvas-viewport">
+        <div className="canvas-viewport max-h-[calc(100vh-120px)] max-w-full overflow-auto rounded-lg border border-border-strong bg-[#090c12] shadow-lg">
           <div style={containerStyle}>
             <canvas
               ref={canvasRef}
               tabIndex={0}
+              className="block cursor-crosshair [image-rendering:pixelated]"
               onPointerDown={(event) => {
                 if (!scene) return;
 
@@ -600,42 +574,48 @@ export function SceneCanvas({
         </div>
       </ContextMenu>
 
-      {/* Floating Status Badge / Play indicators overlay */}
       {isPlaying && (
-        <div className="canvas-playing-overlay">
-          <div className="playing-pulse" />
-          <span>SIMULATION MODE ACTIVE</span>
+        <div className="pointer-events-none absolute left-3 top-14 z-20 flex items-center gap-2 rounded-md border border-accent-green/30 bg-bg-surface/90 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent-green">
+          <span className="size-1.5 animate-pulse rounded-full bg-accent-green" />
+          Simulation active
         </div>
       )}
 
       {isPlaying && onVirtualInput && (
-        <div className="virtual-controls" aria-label="Virtual game controls">
-          <div className="virtual-dpad">
-            <button
-              type="button"
-              className="virtual-btn"
-              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("left", true); }}
-              onPointerUp={() => onVirtualInput("left", false)}
-              onPointerLeave={() => onVirtualInput("left", false)}
-              onPointerCancel={() => onVirtualInput("left", false)}
-            >
-              ◀
-            </button>
-            <button
-              type="button"
-              className="virtual-btn"
-              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("right", true); }}
-              onPointerUp={() => onVirtualInput("right", false)}
-              onPointerLeave={() => onVirtualInput("right", false)}
-              onPointerCancel={() => onVirtualInput("right", false)}
-            >
-              ▶
-            </button>
+        <div
+          className="absolute bottom-14 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3"
+          aria-label="Virtual game controls"
+        >
+          <div className="flex gap-1">
+            {(
+              [
+                ["left", "◀"],
+                ["right", "▶"],
+              ] as const
+            ).map(([action, label]) => (
+              <button
+                key={action}
+                type="button"
+                className="flex size-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 text-sm text-text-primary shadow-md active:border-accent active:bg-accent-muted"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onVirtualInput(action, true);
+                }}
+                onPointerUp={() => onVirtualInput(action, false)}
+                onPointerLeave={() => onVirtualInput(action, false)}
+                onPointerCancel={() => onVirtualInput(action, false)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <button
             type="button"
-            className="virtual-btn virtual-jump"
-            onPointerDown={(e) => { e.preventDefault(); onVirtualInput("jump", true); }}
+            className="flex h-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 px-4 text-[11px] font-semibold text-text-primary shadow-md active:border-accent-green active:bg-accent-green/15"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onVirtualInput("jump", true);
+            }}
             onPointerUp={() => onVirtualInput("jump", false)}
             onPointerLeave={() => onVirtualInput("jump", false)}
             onPointerCancel={() => onVirtualInput("jump", false)}
@@ -645,15 +625,24 @@ export function SceneCanvas({
         </div>
       )}
 
-      {/* Canvas Foot Controls */}
-      <div className="canvas-controls">
-        <button type="button" onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))} title="Zoom out">
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
+        <IconButton
+          size="sm"
+          onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))}
+          title="Zoom out"
+        >
           <ZoomOut size={13} />
-        </button>
-        <span className="zoom-text">{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))} title="Zoom in">
+        </IconButton>
+        <span className="min-w-[44px] text-center font-mono text-[10px] text-text-secondary">
+          {Math.round(zoom * 100)}%
+        </span>
+        <IconButton
+          size="sm"
+          onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))}
+          title="Zoom in"
+        >
           <ZoomIn size={13} />
-        </button>
+        </IconButton>
       </div>
     </section>
   );

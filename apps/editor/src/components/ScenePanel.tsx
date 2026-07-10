@@ -1,4 +1,14 @@
 import { Plus, Trash2, FileCode } from "lucide-react";
+import {
+  Panel,
+  PanelHeader,
+  PanelTitle,
+  PanelBody,
+  IconButton,
+  EmptyState,
+  Badge,
+  cn,
+} from "@/ui";
 
 type ScenePanelProps = {
   scenes: string[];
@@ -13,65 +23,67 @@ export function ScenePanel({
   currentSceneId,
   onSelectScene,
   onCreateScene,
-  onDeleteScene
+  onDeleteScene,
 }: ScenePanelProps) {
   function handleCreate() {
     const name = prompt("Enter scene configuration filename (e.g. gameplay):");
-    if (name) {
-      onCreateScene(name);
-    }
+    if (name) onCreateScene(name);
   }
 
   return (
-    <div className="scene-panel">
-      <div className="scene-panel-header">
-        <h3>Scenes</h3>
-        <button
-          type="button"
-          className="icon-button"
-          onClick={handleCreate}
-          title="Create new scene configuration"
-        >
+    <Panel>
+      <PanelHeader>
+        <PanelTitle accent="cyan">Scenes</PanelTitle>
+        <IconButton size="sm" onClick={handleCreate} title="Create scene">
           <Plus size={13} />
-        </button>
-      </div>
-
-      <div className="scene-list-scroll">
+        </IconButton>
+      </PanelHeader>
+      <PanelBody className="space-y-0.5 p-1.5">
         {scenes.length === 0 ? (
-          <div className="hierarchy-empty">
-            <FileCode size={20} style={{ opacity: 0.2 }} />
-            <p>No scene configs found</p>
-          </div>
+          <EmptyState
+            icon={<FileCode size={16} />}
+            title="No scenes"
+            description="Create a scene configuration to start editing."
+          />
         ) : (
-          scenes.map((sceneId) => (
-            <div
-              key={sceneId}
-              className={`scene-item ${sceneId === currentSceneId ? "selected" : ""}`}
-              onClick={() => onSelectScene(sceneId)}
-            >
-              <span className="scene-name">
-                {sceneId.replace(".scene.json", "")}
-                {sceneId === currentSceneId ? (
-                  <span className="scene-active-badge">active</span>
-                ) : null}
-              </span>
-              <button
-                type="button"
-                className="scene-item-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`Are you sure you want to delete scene "${sceneId}"?`)) {
-                    onDeleteScene(sceneId);
+          scenes.map((sceneId) => {
+            const active = sceneId === currentSceneId;
+            return (
+              <div
+                key={sceneId}
+                role="button"
+                tabIndex={0}
+                data-selected={active}
+                className={cn("list-row cursor-pointer")}
+                onClick={() => onSelectScene(sceneId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectScene(sceneId);
                   }
                 }}
-                title="Delete scene config"
               >
-                <Trash2 size={11} />
-              </button>
-            </div>
-          ))
+                <FileCode size={12} className="shrink-0 text-accent" />
+                <span className="min-w-0 flex-1 truncate text-[12px] text-text-primary">
+                  {sceneId.replace(".scene.json", "")}
+                </span>
+                {active && <Badge variant="accent">active</Badge>}
+                <IconButton
+                  size="sm"
+                  variant="danger"
+                  title="Delete scene"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete scene "${sceneId}"?`)) onDeleteScene(sceneId);
+                  }}
+                >
+                  <Trash2 size={11} />
+                </IconButton>
+              </div>
+            );
+          })
         )}
-      </div>
-    </div>
+      </PanelBody>
+    </Panel>
   );
 }
