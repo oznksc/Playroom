@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   Layers,
   SlidersHorizontal,
@@ -8,6 +9,12 @@ import {
   Sparkles,
   Save,
   Check,
+  RefreshCw,
+  Upload,
+  Plus,
+  LayoutTemplate,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -20,6 +27,7 @@ type AppTabBarProps = {
   isPaused: boolean;
   saveState: SaveState;
   playFps?: number;
+  projectPath?: string | null;
   onHierarchy: () => void;
   onInspector: () => void;
   onContent: () => void;
@@ -27,11 +35,16 @@ type AppTabBarProps = {
   onPlayToggle: () => void;
   onStop: () => void;
   onSave: () => void;
+  onRefresh: () => void;
+  onImport: (file: File) => void;
+  onAddEntity: () => void;
+  onOpenWizard?: () => void;
+  onSettings: () => void;
+  onCloseProject?: () => void;
 };
 
 /**
- * Apple-style floating tab bar: destinations + center play control.
- * Primary chrome for canvas-first editor (no top header).
+ * Single chrome surface: every editor action lives here (Apple-style dock).
  */
 export function AppTabBar({
   active,
@@ -39,6 +52,7 @@ export function AppTabBar({
   isPaused,
   saveState,
   playFps = 0,
+  projectPath,
   onHierarchy,
   onInspector,
   onContent,
@@ -46,82 +60,149 @@ export function AppTabBar({
   onPlayToggle,
   onStop,
   onSave,
+  onRefresh,
+  onImport,
+  onAddEntity,
+  onOpenWizard,
+  onSettings,
+  onCloseProject,
 }: AppTabBarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const playingLive = isPlaying && !isPaused;
 
   return (
     <nav className="app-tabbar" aria-label="Editor">
-      <TabItem
-        label="Hierarchy"
-        active={active === "hierarchy"}
-        onClick={onHierarchy}
-        icon={<Layers size={20} strokeWidth={1.75} />}
-      />
-      <TabItem
-        label="Inspector"
-        active={active === "inspector"}
-        onClick={onInspector}
-        icon={<SlidersHorizontal size={20} strokeWidth={1.75} />}
-      />
+      <div className="app-tabbar-scroll">
+        <TabItem
+          label="Hierarchy"
+          active={active === "hierarchy"}
+          onClick={onHierarchy}
+          icon={<Layers size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Inspector"
+          active={active === "inspector"}
+          onClick={onInspector}
+          icon={<SlidersHorizontal size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Content"
+          active={active === "content"}
+          onClick={onContent}
+          icon={<Folder size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Agent"
+          active={active === "agent"}
+          onClick={onAgent}
+          icon={<Sparkles size={18} strokeWidth={1.75} />}
+        />
 
-      <div className="app-tabbar-center">
-        <button
-          type="button"
-          className={cn("app-tabbar-play", playingLive && "live", isPaused && "paused")}
-          title={playingLive ? "Pause" : isPlaying ? "Resume" : "Play"}
-          aria-label={playingLive ? "Pause" : "Play"}
-          onClick={onPlayToggle}
-        >
-          {playingLive ? (
-            <Pause size={22} fill="currentColor" strokeWidth={0} />
-          ) : (
-            <Play size={22} fill="currentColor" strokeWidth={0} className="translate-x-px" />
-          )}
-        </button>
-        {isPlaying && (
+        <span className="app-tabbar-sep" aria-hidden />
+
+        <TabItem
+          label="Refresh"
+          active={false}
+          onClick={onRefresh}
+          icon={<RefreshCw size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Import"
+          active={false}
+          onClick={() => fileInputRef.current?.click()}
+          icon={<Upload size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Add"
+          active={false}
+          onClick={onAddEntity}
+          icon={<Plus size={18} strokeWidth={1.75} />}
+        />
+        {onOpenWizard && (
+          <TabItem
+            label="Template"
+            active={false}
+            onClick={onOpenWizard}
+            icon={<LayoutTemplate size={18} strokeWidth={1.75} />}
+          />
+        )}
+
+        <span className="app-tabbar-sep" aria-hidden />
+
+        <div className="app-tabbar-center">
           <button
             type="button"
-            className="app-tabbar-stop"
-            title="Stop"
-            aria-label="Stop simulation"
-            onClick={onStop}
+            className={cn("app-tabbar-play", playingLive && "live", isPaused && "paused")}
+            title={playingLive ? "Pause" : isPlaying ? "Resume" : "Play"}
+            aria-label={playingLive ? "Pause" : "Play"}
+            onClick={onPlayToggle}
           >
-            <Square size={11} fill="currentColor" strokeWidth={0} />
+            {playingLive ? (
+              <Pause size={22} fill="currentColor" strokeWidth={0} />
+            ) : (
+              <Play size={22} fill="currentColor" strokeWidth={0} className="translate-x-px" />
+            )}
           </button>
-        )}
-        {playingLive && playFps > 0 && (
-          <span className="app-tabbar-fps" aria-hidden>
-            {playFps}
-          </span>
+          {isPlaying && (
+            <button
+              type="button"
+              className="app-tabbar-stop"
+              title="Stop"
+              aria-label="Stop simulation"
+              onClick={onStop}
+            >
+              <Square size={11} fill="currentColor" strokeWidth={0} />
+            </button>
+          )}
+          {playingLive && playFps > 0 && (
+            <span className="app-tabbar-fps" aria-hidden>
+              {playFps}
+            </span>
+          )}
+        </div>
+
+        <span className="app-tabbar-sep" aria-hidden />
+
+        <TabItem
+          label="Save"
+          active={saveState === "saved"}
+          onClick={onSave}
+          icon={
+            saveState === "saved" ? (
+              <Check size={18} strokeWidth={2} />
+            ) : (
+              <Save size={18} strokeWidth={1.75} />
+            )
+          }
+          tone={saveState === "error" ? "error" : saveState === "saved" ? "success" : undefined}
+        />
+        <TabItem
+          label="Settings"
+          active={false}
+          onClick={onSettings}
+          icon={<Settings size={18} strokeWidth={1.75} />}
+        />
+        {projectPath && onCloseProject && (
+          <TabItem
+            label="Close"
+            active={false}
+            onClick={onCloseProject}
+            icon={<LogOut size={18} strokeWidth={1.75} />}
+          />
         )}
       </div>
 
-      <TabItem
-        label="Content"
-        active={active === "content"}
-        onClick={onContent}
-        icon={<Folder size={20} strokeWidth={1.75} />}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+          if (file) onImport(file);
+          event.currentTarget.value = "";
+        }}
       />
-      <TabItem
-        label="Agent"
-        active={active === "agent"}
-        onClick={onAgent}
-        icon={<Sparkles size={20} strokeWidth={1.75} />}
-      />
-
-      <button
-        type="button"
-        className={cn(
-          "app-tabbar-save",
-          saveState === "saved" && "saved",
-          saveState === "error" && "error"
-        )}
-        title="Save"
-        aria-label="Save"
-        onClick={onSave}
-      >
-        {saveState === "saved" ? <Check size={16} strokeWidth={2} /> : <Save size={16} strokeWidth={1.75} />}
-      </button>
     </nav>
   );
 }
@@ -131,17 +212,26 @@ function TabItem({
   icon,
   active,
   onClick,
+  tone,
 }: {
   label: string;
   icon: React.ReactNode;
   active: boolean;
   onClick: () => void;
+  tone?: "success" | "error";
 }) {
   return (
     <button
       type="button"
-      className={cn("app-tabbar-item", active && "active")}
+      className={cn(
+        "app-tabbar-item",
+        active && "active",
+        tone === "success" && "tone-success",
+        tone === "error" && "tone-error"
+      )}
       onClick={onClick}
+      title={label}
+      aria-label={label}
       aria-current={active ? "page" : undefined}
     >
       <span className="app-tabbar-icon">{icon}</span>

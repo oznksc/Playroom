@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
-import { TopActions } from "./components/TopActions.js";
 import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -1473,27 +1472,10 @@ export function App() {
         )}
       </div>
 
-      {/* Top-left: logo + settings only */}
-      <BrandCorner
-        isDirty={isDirty}
-        onSettings={() => setAgentSettingsOpen(true)}
-      />
+      {/* Top-left: logo only — every action is on the tab bar */}
+      <BrandCorner isDirty={isDirty} />
 
-      {/* Top-right: secondary actions (refresh / import / add / template / status) */}
-      <TopActions
-        status={status}
-        saveState={saveState}
-        lastSaved={lastSaved}
-        formatLastSaved={formatLastSaved}
-        projectPath={isTauri ? projectPath : null}
-        onRefresh={refresh}
-        onImport={importAsset}
-        onAddEntity={addEntity}
-        onOpenWizard={() => setWizardOpen(true)}
-        onCloseProject={isTauri ? handleCloseProject : undefined}
-      />
-
-      {/* Apple-style tab bar — primary navigation + play/save */}
+      {/* Single action surface: all editor actions */}
       <AppTabBar
         active={
           !bottomDrawerCollapsed
@@ -1510,6 +1492,7 @@ export function App() {
         isPaused={isPaused}
         saveState={saveState}
         playFps={playFps}
+        projectPath={isTauri ? projectPath : null}
         onHierarchy={() => {
           if (sidebarOpen && activeTab === "entities") {
             setSidebarOpen(false);
@@ -1543,6 +1526,12 @@ export function App() {
         onPlayToggle={handlePlayToggle}
         onStop={handleStop}
         onSave={saveScene}
+        onRefresh={refresh}
+        onImport={importAsset}
+        onAddEntity={addEntity}
+        onOpenWizard={() => setWizardOpen(true)}
+        onSettings={() => setAgentSettingsOpen(true)}
+        onCloseProject={isTauri ? handleCloseProject : undefined}
       />
 
       {/* Left floating sheet */}
