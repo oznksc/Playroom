@@ -28,20 +28,11 @@ export function useAgent(
   const [pendingApproval, setPendingApproval] = useState<ApprovalRequest | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (isStreaming) return;
-
-    // Handle slash commands locally
-    if (text.startsWith("/")) {
-      handleSlashCommand(text, sceneId, setMessages);
-      return;
-    }
-
+  const sendChatMessage = useCallback(async (prompt: string, screenshot?: string) => {
     abortRef.current = new AbortController();
     setIsStreaming(true);
 
-    // Add user message
-    const userMsg: AgentMessage = { id: nanoid(), role: "user", content: text, ts: Date.now() };
+    const userMsg: AgentMessage = { id: nanoid(), role: "user", content: prompt, ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
 
     try {
@@ -50,7 +41,8 @@ export function useAgent(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sceneId,
-          message: text,
+          message: prompt,
+          screenshot,
           model,
           provider,
           approvalMode,
@@ -77,7 +69,6 @@ export function useAgent(
           case "token": {
             const d = data as { text: string };
             agentContent += d.text;
-            // Update or create agent message
             setMessages((prev) => {
               const last = prev[prev.length - 1];
               if (last?.role === "agent" && last.id === currentToolId) {
@@ -161,7 +152,33 @@ export function useAgent(
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [sceneId, model, provider, approvalMode, isStreaming]);
+  }, [sceneId, model, provider, approvalMode]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (isStreaming) return;
+
+    if (text.startsWith("/screenshot")) {
+      const prompt = text.slice(11).trim() || "Analyze this scene visual layout.";
+      const canvas = document.querySelector("canvas");
+      if (canvas) {
+        const dataUrl = canvas.toDataURL("image/png");
+        await sendChatMessage(prompt, dataUrl);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { id: nanoid(), role: "system", content: "Error: No active canvas found to take screenshot.", ts: Date.now() },
+        ]);
+      }
+      return;
+    }
+
+    if (text.startsWith("/")) {
+      handleSlashCommand(text, sceneId, setMessages);
+      return;
+    }
+
+    await sendChatMessage(text);
+  }, [isStreaming, sendChatMessage, sceneId]);
 
   const abort = useCallback(() => {
     abortRef.current?.abort();
@@ -215,6 +232,7 @@ function handleSlashCommand(
 }
 
 const SLASH_HELP_TEXT = `Available commands:
+/screenshot [prompt]  — Capture canvas & send to vision model
 /spawn <type> [x] [y]  — Create entity (player, enemy, collectible, platform)
 /apply <skill>         — Apply game template skill
 /validate              — Validate current scene

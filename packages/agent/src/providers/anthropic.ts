@@ -108,6 +108,31 @@ function buildRequestBody(input: StreamInput): Record<string, unknown> {
           ],
         };
       }
+      if (m.role === "user") {
+        if (m.screenshot) {
+          const parts = m.screenshot.split(",");
+          const base64Data = parts[1] || m.screenshot;
+          const mediaType = parts[0]?.split(";")[0]?.split(":")[1] || "image/png";
+          return {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: mediaType,
+                  data: base64Data,
+                },
+              },
+              {
+                type: "text",
+                text: m.content,
+              },
+            ],
+          };
+        }
+        return { role: "user", content: m.content };
+      }
       return { role: m.role, content: m.content };
     }),
   };

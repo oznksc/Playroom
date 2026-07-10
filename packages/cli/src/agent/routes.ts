@@ -131,6 +131,7 @@ export async function handleAgentRoute(
     const body = JSON.parse((await readBody(request)).toString("utf8")) as {
       sceneId: string;
       message: string;
+      screenshot?: string;
       model: string;
       provider: string;
       approvalMode: ApprovalMode;
@@ -221,6 +222,7 @@ export async function handleAgentRoute(
       const stream = runAgent(
         {
           message: body.message,
+          screenshot: body.screenshot,
           model: body.model ?? defaultModel,
           apiKey: storedKey?.apiKey ?? "local",
           baseUrl: storedKey?.baseUrl ?? defaultBaseUrl,

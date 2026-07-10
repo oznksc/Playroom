@@ -13,8 +13,8 @@ import { SceneSettings } from "./components/SceneSettings.js";
 import { TimelinePanel } from "./components/TimelinePanel.js";
 import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
-// AgentPanel and AgentSettings — hidden for MVP, preserved for future use
 import { GuiPanel } from "./components/GuiPanel.js";
+import { AgentPanel } from "./components/AgentPanel.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
 import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
@@ -48,7 +48,7 @@ const MVP_SHOW_LEVELS = false;
 const MVP_SHOW_TIMELINE = false;
 const MVP_SHOW_CONSOLE = false;
 
-type SidebarTab = "entities" | "scenes" | "levels" | "guis" | "components";
+type SidebarTab = "entities" | "scenes" | "agent" | "levels" | "guis" | "components";
 type BottomTab = "assets" | "timeline" | "console";
 
 export function App() {
@@ -1253,6 +1253,7 @@ export function App() {
           <div className="tab-bar">
             <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
             <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
+            <button type="button" className={activeTab === "agent" ? "active" : ""} onClick={() => setActiveTab("agent")}>Agent</button>
             {MVP_SHOW_LEVELS && (
               <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
             )}
@@ -1304,6 +1305,12 @@ export function App() {
               onSelectScene={setCurrentSceneFile}
               onCreateScene={handleCreateScene}
               onDeleteScene={handleDeleteScene}
+            />
+          )}
+          {activeTab === "agent" && (
+            <AgentPanel
+              sceneId={currentSceneFile}
+              isPlaying={isPlaying}
             />
           )}
           {MVP_SHOW_LEVELS && activeTab === "levels" && (

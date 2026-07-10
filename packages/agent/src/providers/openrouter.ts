@@ -101,6 +101,26 @@ function buildOpenAiBody(input: StreamInput): Record<string, unknown> {
         content: m.content,
       };
     }
+    if (m.role === "user") {
+      if (m.screenshot) {
+        return {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: m.screenshot,
+              },
+            },
+            {
+              type: "text",
+              text: m.content,
+            },
+          ],
+        };
+      }
+      return { role: "user", content: m.content };
+    }
     return { role: m.role, content: m.content };
   });
 
