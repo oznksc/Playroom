@@ -27,7 +27,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
   const { keys } = useAgentKeys();
   const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
   const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
-  const [approvalMode] = useState<ApprovalMode>("destructive-only");
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
 
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
   const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
@@ -143,7 +143,19 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
           ) : (
             <span className="agent-header-model">{resolvedModel}</span>
           )}
-          <span className="agent-header-mode">{approvalMode}</span>
+          <select
+            className="agent-mode-select"
+            value={approvalMode}
+            onChange={(e) => {
+              const newMode = e.target.value as ApprovalMode;
+              setApprovalMode(newMode);
+              localStorage.setItem("gamekit:agent:approvalMode", newMode);
+            }}
+          >
+            <option value="destructive-only">Destructive Only</option>
+            <option value="always">Always Approve</option>
+            <option value="off">Off (Auto Approve)</option>
+          </select>
         </div>
         <div className="agent-header-right">
           <button type="button" className="agent-header-btn" title="Info">

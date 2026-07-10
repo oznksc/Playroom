@@ -30,7 +30,9 @@
   color: var(--text);
 }
 
-.agent-provider-select {
+.agent-provider-select,
+.agent-model-select,
+.agent-mode-select {
   font-size: 10px;
   color: var(--text-dim);
   background: rgba(255, 255, 255, 0.06);
