@@ -4,7 +4,7 @@ import type { McpClient } from "../mcp/client.js";
 import { listTools, toModelTools } from "../mcp/tools.js";
 import { callTool } from "../mcp/executor.js";
 import { MessageHistory } from "./history.js";
-import { ApprovalGate, type ApprovalMode } from "./approval.js";
+import { globalApprovalGate, type ApprovalGate, type ApprovalMode } from "./approval.js";
 import { buildSystemPrompt, type PromptContext } from "../system/prompt.js";
 import type { SseEvent } from "./streaming.js";
 
@@ -15,16 +15,28 @@ export type AgentInput = {
   apiKey: string;
   baseUrl?: string;
   approvalMode: ApprovalMode;
+  /** When true, first reply must be a plan with no tool calls. */
+  planMode?: boolean;
   sceneContext: PromptContext;
   signal: AbortSignal;
+  /** Optional undo snapshot id created before the run. */
+  sessionSnapshotId?: string;
 };
 
 export type AgentDeps = {
   provider: ProviderAdapter;
   mcpClient: McpClient;
+  /** Defaults to process-wide globalApprovalGate so /api/agent/approve works. */
+  approvalGate?: ApprovalGate;
 };
 
 const MAX_TURNS = 25;
+
+const PLAN_MODE_INSTRUCTION = `PLAN MODE is ON.
+1. First reply with a numbered plan of the exact tool steps you will take.
+2. Do NOT call any tools in that first reply.
+3. After the user confirms (or sends "execute"), run the plan with tools.
+4. Prefer snapshot_undo_point before bulk destructive edits when possible.`;
 
 export async function* runAgent(
   input: AgentInput,
@@ -32,10 +44,16 @@ export async function* runAgent(
 ): AsyncGenerator<SseEvent> {
   const { provider, mcpClient } = deps;
   const history = new MessageHistory();
-  const approvalGate = new ApprovalGate();
+  const approvalGate = deps.approvalGate ?? globalApprovalGate;
 
   // Build system prompt
-  const system = buildSystemPrompt(input.sceneContext);
+  let system = buildSystemPrompt(input.sceneContext);
+  if (input.planMode || input.approvalMode === "plan") {
+    system += `\n\n## Plan Mode\n${PLAN_MODE_INSTRUCTION}`;
+  }
+  if (input.sessionSnapshotId) {
+    system += `\n\n## Session Safety\nAn undo snapshot was created before this run: \`${input.sessionSnapshotId}\`. You can call restore_snapshot with this id if the user wants to roll back.`;
+  }
   history.append({ role: "system", content: system });
   history.append({ role: "user", content: input.message, screenshot: input.screenshot });
 

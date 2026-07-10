@@ -23,6 +23,7 @@ export type SseEventType =
   | "tool_start"
   | "tool_result"
   | "approval_request"
+  | "session_snapshot"
   | "done"
   | "error";
 

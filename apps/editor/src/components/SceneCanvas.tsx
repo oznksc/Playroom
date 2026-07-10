@@ -40,6 +40,7 @@ type SceneCanvasProps = {
   showColliders: boolean;
   snapSize: number;
   isPlaying: boolean;
+  onVirtualInput?: (action: "left" | "right" | "jump", pressed: boolean) => void;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
@@ -78,6 +79,7 @@ export function SceneCanvas({
   showColliders,
   snapSize,
   isPlaying,
+  onVirtualInput,
   onZoomChange,
   onSnapToggle,
   onSnapSizeChange,
@@ -286,6 +288,13 @@ export function SceneCanvas({
 
   return (
     <section className={`canvasPanel ${isPlaying ? "live-simulating" : ""}`}>
+      {isPlaying && (
+        <div className="play-mode-banner" role="status">
+          <span className="play-mode-dot" />
+          PLAY MODE — Arrow keys / WASD / Space · On-screen pad below
+        </div>
+      )}
+
       {/* Floating HUD - Left Side: Transform Tools & Snap settings */}
       <div className="canvas-hud-toolbar hud-left">
         <div className="hud-button-group">
@@ -513,6 +522,43 @@ export function SceneCanvas({
         <div className="canvas-playing-overlay">
           <div className="playing-pulse" />
           <span>SIMULATION MODE ACTIVE</span>
+        </div>
+      )}
+
+      {isPlaying && onVirtualInput && (
+        <div className="virtual-controls" aria-label="Virtual game controls">
+          <div className="virtual-dpad">
+            <button
+              type="button"
+              className="virtual-btn"
+              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("left", true); }}
+              onPointerUp={() => onVirtualInput("left", false)}
+              onPointerLeave={() => onVirtualInput("left", false)}
+              onPointerCancel={() => onVirtualInput("left", false)}
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              className="virtual-btn"
+              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("right", true); }}
+              onPointerUp={() => onVirtualInput("right", false)}
+              onPointerLeave={() => onVirtualInput("right", false)}
+              onPointerCancel={() => onVirtualInput("right", false)}
+            >
+              ▶
+            </button>
+          </div>
+          <button
+            type="button"
+            className="virtual-btn virtual-jump"
+            onPointerDown={(e) => { e.preventDefault(); onVirtualInput("jump", true); }}
+            onPointerUp={() => onVirtualInput("jump", false)}
+            onPointerLeave={() => onVirtualInput("jump", false)}
+            onPointerCancel={() => onVirtualInput("jump", false)}
+          >
+            ▲ Jump
+          </button>
         </div>
       )}
 

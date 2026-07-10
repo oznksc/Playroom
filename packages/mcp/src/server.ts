@@ -17,6 +17,7 @@ import { registerSearchTools } from "./tools/search.js";
 import { registerTilemapTools } from "./tools/tilemap.js";
 import { registerPersistenceTools } from "./tools/persistence.js";
 import { registerBehaviorTools } from "./tools/behavior.js";
+import { registerSimulateTools } from "./tools/simulate.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -47,6 +48,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerTilemapTools(server, fileIO);
   registerPersistenceTools(server, fileIO);
   registerBehaviorTools(server, fileIO);
+  registerSimulateTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 

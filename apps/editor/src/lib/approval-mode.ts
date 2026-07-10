@@ -1,1 +1,1 @@
-export type ApprovalMode = "destructive-only" | "always" | "off";
+export type ApprovalMode = "destructive-only" | "always" | "off" | "plan";

@@ -15,6 +15,8 @@ import {
   OllamaAdapter,
   GoogleAdapter,
   runAgent,
+  globalApprovalGate,
+  callTool,
   type ApprovalMode,
   type PromptContext,
 } from "@gamekit/agent";
@@ -135,6 +137,7 @@ export async function handleAgentRoute(
       model: string;
       provider: string;
       approvalMode: ApprovalMode;
+      planMode?: boolean;
     };
 
     if (!body?.sceneId || !body?.message) {
@@ -204,11 +207,24 @@ export async function handleAgentRoute(
       return true;
     }
 
+    // Session undo snapshot before agent mutates the scene
+    let sessionSnapshotId: string | undefined;
+    try {
+      const snap = await callTool(mcpClient, "snapshot_undo_point", { scenePath: body.sceneId });
+      sessionSnapshotId = extractSnapshotId(snap.content);
+    } catch {
+      // Snapshot is best-effort; agent can still run without it.
+    }
+
     const abortController = new AbortController();
     const chatId = `${body.sceneId}:${Date.now()}`;
     activeChats.set(chatId, abortController);
 
     beginSse(response);
+
+    if (sessionSnapshotId) {
+      writeSse(response, "session_snapshot", { snapshotId: sessionSnapshotId, sceneId: body.sceneId });
+    }
 
     const defaultModel = provider.id === "lmstudio"
       ? "local-model"
@@ -227,10 +243,12 @@ export async function handleAgentRoute(
           apiKey: storedKey?.apiKey ?? "local",
           baseUrl: storedKey?.baseUrl ?? defaultBaseUrl,
           approvalMode: body.approvalMode ?? "destructive-only",
+          planMode: body.planMode === true || body.approvalMode === "plan",
+          sessionSnapshotId,
           sceneContext,
           signal: abortController.signal,
         },
-        { provider, mcpClient },
+        { provider, mcpClient, approvalGate: globalApprovalGate },
       );
 
       for await (const event of stream) {
@@ -303,9 +321,20 @@ export async function handleAgentRoute(
 
   // POST /api/agent/approve
   if (pathname === "/api/agent/approve" && method === "POST") {
-    // Approval is handled via in-memory gate in the agent loop
-    // This endpoint is a placeholder for the editor to POST to
-    sendJson(response, 200, { ok: true });
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
+      requestId?: string;
+      decision?: "allow" | "deny";
+    };
+    if (!body?.requestId || (body.decision !== "allow" && body.decision !== "deny")) {
+      sendJson(response, 400, { error: "Missing requestId or decision (allow|deny)" });
+      return true;
+    }
+    const resolved = globalApprovalGate.resolveApproval(body.requestId, body.decision);
+    if (!resolved) {
+      sendJson(response, 404, { error: `No pending approval for requestId: ${body.requestId}` });
+      return true;
+    }
+    sendJson(response, 200, { ok: true, requestId: body.requestId, decision: body.decision });
     return true;
   }
 
@@ -315,14 +344,15 @@ export async function handleAgentRoute(
       controller.abort();
       activeChats.delete(id);
     }
+    globalApprovalGate.rejectAll();
     sendJson(response, 200, { ok: true });
     return true;
   }
 
   // GET /api/agent/history/:sceneId
   if (pathname.startsWith("/api/agent/history/") && method === "GET") {
-    const sceneId = pathname.slice("/api/agent/history/".length);
-    const historyPath = join(getGameKitRoot(root), "agent", `${sceneId}.json`);
+    const sceneId = decodeURIComponent(pathname.slice("/api/agent/history/".length));
+    const historyPath = join(getGameKitRoot(root), "agent", sanitizeHistoryId(sceneId));
     try {
       const data = await readFile(historyPath, "utf8");
       sendJson(response, 200, JSON.parse(data));
@@ -332,10 +362,37 @@ export async function handleAgentRoute(
     return true;
   }
 
+  // PUT /api/agent/history/:sceneId
+  if (pathname.startsWith("/api/agent/history/") && method === "PUT") {
+    const sceneId = decodeURIComponent(pathname.slice("/api/agent/history/".length));
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
+      messages?: unknown[];
+      toolCalls?: unknown[];
+    };
+    const agentDir = join(getGameKitRoot(root), "agent");
+    await mkdir(agentDir, { recursive: true });
+    const historyPath = join(agentDir, sanitizeHistoryId(sceneId));
+    await writeFile(
+      historyPath,
+      JSON.stringify(
+        {
+          sceneId,
+          updatedAt: Date.now(),
+          messages: Array.isArray(body.messages) ? body.messages : [],
+          toolCalls: Array.isArray(body.toolCalls) ? body.toolCalls : [],
+        },
+        null,
+        2,
+      ),
+    );
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
   // DELETE /api/agent/history/:sceneId
   if (pathname.startsWith("/api/agent/history/") && method === "DELETE") {
-    const sceneId = pathname.slice("/api/agent/history/".length);
-    const historyPath = join(getGameKitRoot(root), "agent", `${sceneId}.json`);
+    const sceneId = decodeURIComponent(pathname.slice("/api/agent/history/".length));
+    const historyPath = join(getGameKitRoot(root), "agent", sanitizeHistoryId(sceneId));
     try {
       await unlink(historyPath);
       sendJson(response, 200, { ok: true });
@@ -346,6 +403,32 @@ export async function handleAgentRoute(
   }
 
   return false;
+}
+
+function sanitizeHistoryId(sceneId: string): string {
+  const base = sceneId.replace(/\.scene\.json$/i, "").replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return `${base || "main"}.json`;
+}
+
+function extractSnapshotId(content: unknown): string | undefined {
+  let text: string | undefined;
+  if (typeof content === "string") {
+    text = content;
+  } else if (Array.isArray(content)) {
+    text = (content as Array<{ text?: string }>)[0]?.text;
+  } else if (content && typeof content === "object" && "content" in content) {
+    const nested = (content as { content?: unknown }).content;
+    if (Array.isArray(nested)) {
+      text = (nested as Array<{ text?: string }>)[0]?.text;
+    }
+  }
+  if (!text) return undefined;
+  try {
+    const parsed = JSON.parse(text) as { snapshotId?: string };
+    return parsed.snapshotId;
+  } catch {
+    return undefined;
+  }
 }
 
 function summarizeScene(scene: Record<string, unknown>): string {

@@ -25,6 +25,14 @@ interface SkillTemplate {
   gravity?: { x: number; y: number };
   entities: SkillEntity[];
   requiredAssets?: SkillAsset[];
+  inputMap?: {
+    bindings: Array<{
+      action: string;
+      keys: string[];
+      touchControl?: "left" | "right" | "jump";
+      gamepad?: string;
+    }>;
+  };
 }
 
 interface SkillEntity {
@@ -49,6 +57,9 @@ function buildSceneFromSkill(skill: SkillTemplate, sceneName?: string): GameKitS
   }
   if (skill.gravity) {
     scene.gravity = skill.gravity;
+  }
+  if (skill.inputMap) {
+    scene.inputMap = skill.inputMap;
   }
   scene.responsive.orientation = skill.orientation;
   scene.responsive.referenceWidth = scene.viewport.width;

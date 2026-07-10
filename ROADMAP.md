@@ -5,11 +5,12 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.3): 10 bileşen tipi (+`Tilemap`), raycast (AABB/Circle/Polygon),
-> MCP'ta `raycast` + `query_overlaps` + `add_tilemap` + `paint_tile` tools,
-> sadece image asset, editörde play-in-editor aktif (mock floor ile),
-> 18 MCP test + 7 runtime test, `@gamekit/agent` paketi dolu,
-> Agent UI panel built ama MVP'de gizli.
+> Şu anki durum (v0.1.5): 10+ bileşen tipi (+`Tilemap`, `Text`, `AudioSource`),
+> `inputMap` on scenes + runtime resolution, `simulate_runtime_step` MCP tool,
+> Expo template = landscape platformer demo (RigidBody, coins, pads, assets),
+> persistence paths fixed (`gamekit/state.json`), agent history load/save (PUT/GET),
+> agent approval + session undo + plan mode, play-in-editor + virtual pad,
+> 87 tests green.
 
 ---
 
@@ -555,10 +556,10 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | **1** | **Fizik & Çarpışma Temeli** | **`RigidBody` + `CircleCollider` + `PolygonCollider` + layer/mask + velocity-verlet + MCP physics test** ✅ v0.1.1 |
 | **2a** | **Raycast + query_overlaps** | **Raycast sistemi (AABB/Circle/Polygon) + MCP `raycast`/`query_overlaps` tools** ✅ v0.1.2 |
 | **2b** | **Tilemap + paint tool** | **Tilemap bileşeni + `add_tilemap`/`paint_tile` MCP tools + editor/runtime rendering** ✅ v0.1.3 |
-| 3 | Play-in-editor (gerçek runtime host) + Gizmos | Editörde Skia/Phaser runtime host + gizmo render |
-| 4 | Audio + Text + Save/Load | Asset tipi genişleme, persistent state |
-| 5 | State machine + Script + AI | Davranış sistemi |
-| 6 | Agent Sprint B (çoklu sağlayıcı + Tauri) | OpenAI/Google/Ollama + keychain |
-| 7 | Agent Sprint C (vizyon + plan-execute) | `/screenshot` + diff preview |
+| 3 | Play-in-editor + Gizmos + virtual pad | ✅ Physics play loop, collider/velocity gizmos, on-screen controls |
+| 4 | Audio + Text (minimum) | ✅ Text/AudioSource schema+editor; HTMLAudio controller; import audio |
+| 5 | Agent unhide + approval + snapshots + plan mode | ✅ v0.1.4 |
+| 6 | Agent Sprint B (çoklu sağlayıcı + Tauri) | OpenAI/Google/Ollama + keychain polish |
+| 7 | Agent Sprint C deep (vision model wiring) | `/screenshot` already; deeper vision adapters |
 | 8 | Çapraz platform test + perf budget | Skia/Phaser parity, 1000 entity budget |
 | 9 | İçerik & dokümantasyon | Sample skill'ler + docs sitesi |

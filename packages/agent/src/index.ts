@@ -28,7 +28,7 @@ export type { AgentInput, AgentDeps } from "./loop/agent.js";
 export { runAgent } from "./loop/agent.js";
 
 export { MessageHistory } from "./loop/history.js";
-export { ApprovalGate } from "./loop/approval.js";
+export { ApprovalGate, globalApprovalGate } from "./loop/approval.js";
 export type { ApprovalMode } from "./loop/approval.js";
 
 export { buildSystemPrompt } from "./system/prompt.js";

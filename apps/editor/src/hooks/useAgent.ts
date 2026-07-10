@@ -1,19 +1,41 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { nanoid } from "../lib/nanoid.js";
 import { getApiUrl } from "../lib/api.js";
 import { parseSseStream } from "../lib/agent-stream.js";
 import type { AgentMessage, AgentToolCall, ApprovalRequest } from "../lib/agent-schemas.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
 
+const READ_ONLY_TOOLS = new Set([
+  "list_skills",
+  "list_assets",
+  "list_scenes",
+  "list_entities",
+  "list_components",
+  "validate_scene",
+  "validate_project",
+  "explain_scene",
+  "find_unused_assets",
+  "suggest_components",
+  "raycast",
+  "query_overlaps",
+  "diff_scene_versions",
+  "snapshot_undo_point",
+  "search_project",
+  "get_project",
+  "get_scene",
+]);
+
 export type UseAgentReturn = {
   messages: AgentMessage[];
   toolCalls: AgentToolCall[];
   isStreaming: boolean;
   pendingApproval: ApprovalRequest | null;
+  sessionSnapshotId: string | null;
   sendMessage: (text: string) => Promise<void>;
   abort: () => void;
   approveTool: (requestId: string, decision: "allow" | "deny") => Promise<void>;
   clear: () => void;
+  restoreSessionSnapshot: () => Promise<void>;
 };
 
 export function useAgent(
@@ -21,12 +43,60 @@ export function useAgent(
   model: string,
   provider: string,
   approvalMode: ApprovalMode,
+  onSceneMutated?: () => void,
+  planMode = false,
 ): UseAgentReturn {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [toolCalls, setToolCalls] = useState<AgentToolCall[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<ApprovalRequest | null>(null);
+  const [sessionSnapshotId, setSessionSnapshotId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const onSceneMutatedRef = useRef(onSceneMutated);
+  onSceneMutatedRef.current = onSceneMutated;
+  const messagesRef = useRef(messages);
+  const toolCallsRef = useRef(toolCalls);
+  messagesRef.current = messages;
+  toolCallsRef.current = toolCalls;
+  const historyLoadedRef = useRef<string | null>(null);
+
+  // Load conversation history for the active scene once
+  useEffect(() => {
+    if (!sceneId || historyLoadedRef.current === sceneId) return;
+    historyLoadedRef.current = sceneId;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/agent/history/${encodeURIComponent(sceneId)}`));
+        if (!res.ok || cancelled) return;
+        const data = await res.json() as { messages?: AgentMessage[]; toolCalls?: AgentToolCall[] };
+        if (cancelled) return;
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages(data.messages);
+        }
+        if (Array.isArray(data.toolCalls) && data.toolCalls.length > 0) {
+          setToolCalls(data.toolCalls);
+        }
+      } catch {
+        // no history yet
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sceneId]);
+
+  const persistHistory = useCallback(async (nextMessages: AgentMessage[], nextTools: AgentToolCall[]) => {
+    try {
+      await fetch(getApiUrl(`/api/agent/history/${encodeURIComponent(sceneId)}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: nextMessages, toolCalls: nextTools }),
+      });
+    } catch {
+      // best-effort
+    }
+  }, [sceneId]);
 
   const sendChatMessage = useCallback(async (prompt: string, screenshot?: string) => {
     abortRef.current = new AbortController();
@@ -46,6 +116,7 @@ export function useAgent(
           model,
           provider,
           approvalMode,
+          planMode: planMode || approvalMode === "plan",
         }),
         signal: abortRef.current.signal,
       });
@@ -63,6 +134,7 @@ export function useAgent(
       const reader = res.body!.getReader();
       let agentContent = "";
       let currentToolId = "";
+      let sceneDirty = false;
 
       for await (const { event, data } of parseSseStream(reader)) {
         switch (event) {
@@ -100,18 +172,51 @@ export function useAgent(
               const updated = [...prev];
               for (let i = updated.length - 1; i >= 0; i--) {
                 if (updated[i].tool === d.tool && updated[i].status === "running") {
-                  updated[i] = { ...updated[i], result: d.result, status: d.ok ? "ok" : "error", ms: d.ms };
+                  updated[i] = {
+                    ...updated[i],
+                    result: d.result,
+                    status: d.ok ? "ok" : "error",
+                    ms: d.ms,
+                  };
                   break;
                 }
               }
               return updated;
             });
+            if (d.ok && !READ_ONLY_TOOLS.has(d.tool)) {
+              sceneDirty = true;
+            }
             break;
           }
 
           case "approval_request": {
             const d = data as { requestId: string; tool: string; args: unknown };
             setPendingApproval({ requestId: d.requestId, tool: d.tool, args: d.args });
+            setToolCalls((prev) => [
+              ...prev,
+              {
+                id: nanoid(),
+                tool: d.tool,
+                args: d.args,
+                status: "needs-approval",
+                ts: Date.now(),
+              },
+            ]);
+            break;
+          }
+
+          case "session_snapshot": {
+            const d = data as { snapshotId: string };
+            setSessionSnapshotId(d.snapshotId);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: nanoid(),
+                role: "system",
+                content: `Session undo point: ${d.snapshotId}`,
+                ts: Date.now(),
+              },
+            ]);
             break;
           }
 
@@ -136,6 +241,11 @@ export function useAgent(
           }
         }
       }
+
+      if (sceneDirty) {
+        onSceneMutatedRef.current?.();
+      }
+      await persistHistory(messagesRef.current, toolCallsRef.current);
     } catch (e) {
       if (abortRef.current?.signal.aborted) {
         setMessages((prev) => [
@@ -145,14 +255,20 @@ export function useAgent(
       } else {
         setMessages((prev) => [
           ...prev,
-          { id: nanoid(), role: "system", content: `Network error: ${e instanceof Error ? e.message : e}`, ts: Date.now() },
+          {
+            id: nanoid(),
+            role: "system",
+            content: `Network error: ${e instanceof Error ? e.message : e}`,
+            ts: Date.now(),
+          },
         ]);
       }
     } finally {
       setIsStreaming(false);
       abortRef.current = null;
+      void persistHistory(messagesRef.current, toolCallsRef.current);
     }
-  }, [sceneId, model, provider, approvalMode]);
+  }, [sceneId, model, provider, approvalMode, planMode, persistHistory]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (isStreaming) return;
@@ -172,20 +288,48 @@ export function useAgent(
       return;
     }
 
+    if (text === "/plan" || text.startsWith("/plan ")) {
+      const rest = text === "/plan" ? "Propose a numbered plan for improving this scene, then wait." : text.slice(6).trim();
+      await sendChatMessage(
+        `[PLAN MODE] Propose a numbered plan only. Do not call tools yet.\n\nUser request: ${rest || "Improve the current scene."}`,
+      );
+      return;
+    }
+
+    if (text === "/execute" || text === "/execute plan") {
+      await sendChatMessage("Execute the plan you just proposed. Use tools now.");
+      return;
+    }
+
     if (text.startsWith("/")) {
-      handleSlashCommand(text, sceneId, setMessages);
+      handleSlashCommand(text, setMessages);
       return;
     }
 
     await sendChatMessage(text);
-  }, [isStreaming, sendChatMessage, sceneId]);
+  }, [isStreaming, sendChatMessage]);
 
   const abort = useCallback(() => {
     abortRef.current?.abort();
+    fetch(getApiUrl("/api/agent/abort"), { method: "POST" }).catch(() => {});
   }, []);
 
   const approveTool = useCallback(async (requestId: string, decision: "allow" | "deny") => {
     setPendingApproval(null);
+    setToolCalls((prev) => {
+      const updated = [...prev];
+      for (let i = updated.length - 1; i >= 0; i--) {
+        if (updated[i].status === "needs-approval") {
+          updated[i] = {
+            ...updated[i],
+            status: decision === "allow" ? "running" : "error",
+            result: decision === "deny" ? { denied: true } : updated[i].result,
+          };
+          break;
+        }
+      }
+      return updated;
+    });
     try {
       await fetch(getApiUrl("/api/agent/approve"), {
         method: "POST",
@@ -200,14 +344,43 @@ export function useAgent(
   const clear = useCallback(() => {
     setMessages([]);
     setToolCalls([]);
-  }, []);
+    setSessionSnapshotId(null);
+    void persistHistory([], []);
+    fetch(getApiUrl(`/api/agent/history/${encodeURIComponent(sceneId)}`), { method: "DELETE" }).catch(() => {});
+  }, [persistHistory, sceneId]);
 
-  return { messages, toolCalls, isStreaming, pendingApproval, sendMessage, abort, approveTool, clear };
+  const restoreSessionSnapshot = useCallback(async () => {
+    if (!sessionSnapshotId) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: nanoid(),
+        role: "user",
+        content: `Restore session snapshot ${sessionSnapshotId}`,
+        ts: Date.now(),
+      },
+    ]);
+    await sendChatMessage(
+      `Call restore_snapshot with snapshotId "${sessionSnapshotId}" to roll back the scene to the start of this agent session. Then confirm what was restored.`,
+    );
+  }, [sessionSnapshotId, sendChatMessage]);
+
+  return {
+    messages,
+    toolCalls,
+    isStreaming,
+    pendingApproval,
+    sessionSnapshotId,
+    sendMessage,
+    abort,
+    approveTool,
+    clear,
+    restoreSessionSnapshot,
+  };
 }
 
 function handleSlashCommand(
   text: string,
-  sceneId: string,
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>,
 ): void {
   const parts = text.split(" ");
@@ -226,16 +399,19 @@ function handleSlashCommand(
     default:
       setMessages((prev) => [
         ...prev,
-        { id: nanoid(), role: "system", content: `Unknown command: ${cmd}. Type /help for available commands.`, ts: Date.now() },
+        {
+          id: nanoid(),
+          role: "system",
+          content: `Unknown command: ${cmd}. Type /help for available commands.`,
+          ts: Date.now(),
+        },
       ]);
   }
 }
 
 const SLASH_HELP_TEXT = `Available commands:
 /screenshot [prompt]  — Capture canvas & send to vision model
-/spawn <type> [x] [y]  — Create entity (player, enemy, collectible, platform)
-/apply <skill>         — Apply game template skill
-/validate              — Validate current scene
-/gravity <y>           — Set gravity
+/plan [request]        — Ask for a plan only (no tools)
+/execute               — Execute the last proposed plan
 /clear                 — Clear conversation
 /help                  — Show this help`;
