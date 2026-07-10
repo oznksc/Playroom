@@ -1,10 +1,9 @@
-# Playroom → Gerçek Oyun Motoru Yol Haritası
+# Playroom — Production 2D Game Engine Roadmap
 
-Bu doküman, Playroom'un MVP 0.1 seviyesinden üretime hazır bir 2D oyun motoruna
-geçişi için gereken işleri izler. Her bölüm: görev → uygulama noktaları → ilgili
-**MCP araçları** (yeni eklenenler dahil) → ilgili **Skill şablonları** (yeni
-eklenenler dahil). Şema sözleşmesi motor; runtime + editör + MCP üçlüsü birlikte
-evrilir.
+Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
+2D game engine. Each section: task → implementation points → related **MCP
+tools** (new included) → related **Skill templates** (new included).
+Schema is the contract; runtime + editor + MCP evolve together.
 
 > Şu anki durum (v0.1.2): 9 bileşen tipi, raycast (AABB/Circle/Polygon),
 > MCP'ta `raycast` + `query_overlaps` tools, sadece image asset,
@@ -14,7 +13,7 @@ evrilir.
 
 ---
 
-## 0. Hızlı Kazanımlar (ilk 1-2 sprint)
+## 0. Quick Wins (first 1-2 sprints)
 
 1. [x] `RigidBody` + velocity-based hareket → statik `position` yerine dinamik his
    (angular velocity + fixed timestep eklendi, v0.1.1)
@@ -27,9 +26,9 @@ evrilir.
 
 ---
 
-## 1. Fizik & Çarpışma (en kritik eksik)
+## 1. Physics & Collision (most critical gap)
 
-### Görevler
+### Tasks
 - [x] `CircleCollider` ve `PolygonCollider` ekle (şema + editör inspector + MCP)
 - [~] `PolygonCollider` runtime collision — SAT algılaması hazır, `applyPolygonCollisions` stub
 - [x] `RigidBody` bileşeni: velocity, angularVelocity, mass, drag, isKinematic, gravityScale
@@ -57,9 +56,9 @@ evrilir.
 
 ---
 
-## 2. Bileşen Kütüphanesi (şema + runtime + editör + MCP senkron)
+## 2. Component Library (schema + runtime + editor + MCP sync)
 
-### Görevler
+### Tasks
 - [ ] `Tilemap` + `TiledSet` (`.tsx`/`.json` import) — editörde tile paint tool
 - [ ] `Text` bileşeni (font assetId, size, color, align)
 - [ ] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
@@ -93,9 +92,9 @@ evrilir.
 
 ---
 
-## 3. Input & Cihaz
+## 3. Input & Devices
 
-### Görevler
+### Tasks
 - [ ] Virtual joystick / d-pad bileşeni (mobile için zorunlu)
 - [ ] Input action map (`"jump"`, `"fire"`) → key/touch/gamepad binding
 - [ ] Gamepad API desteği (web), Playroom vibration (mobile)
@@ -114,9 +113,9 @@ evrilir.
 
 ---
 
-## 4. Sahne Yönetimi & Veri Akışı
+## 4. Scene Management & Data Flow
 
-### Görevler
+### Tasks
 - [ ] Scene transition (fade, slide, custom) + `SceneManager` API
 - [ ] Persistent state (sahneler arası değişken taşıma) — `GameStore` / save slot
 - [ ] Save/load: `localStorage` (web), `AsyncStorage` (Expo), JSON serialize
@@ -140,9 +139,9 @@ evrilir.
 
 ---
 
-## 5. Editör (Play-in-Editor Olmadan Motor Değil)
+## 5. Editor (Not an Engine Without Play-in-Editor)
 
-### Görevler
+### Tasks
 - [~] **Play-in-editor**: requestAnimationFrame loop + mock floor ile çalışıyor, ama Skia/Phaser runtime host değil
 - [ ] Gizmos: collider yeşil çizgi, trigger mavi, rigid body velocity oku
 - [ ] Tile paint mode + tile palette panel
@@ -169,9 +168,9 @@ evrilir.
 
 ---
 
-## 6. CLI & Geliştirici Deneyimi
+## 6. CLI & Developer Experience
 
-### Görevler
+### Tasks
 - [ ] `gamekit dev` watch-mode (scene değişti → simulator reload)
 - [ ] `gamekit build` prod build (asset minify, JSON gzip, asset hash)
 - [ ] `gamekit doctor` (env, bağımlılık, eksik asset uyarısı)
@@ -193,9 +192,9 @@ evrilir.
 
 ---
 
-## 7. Test, Kalite, Gözlemlenebilirlik
+## 7. Testing, Quality, Observability
 
-### Görevler
+### Tasks
 - [ ] MCP araçları için 0 test — `packages/mcp/test/*.test.ts` oluştur
 - [ ] Editör için hiç test yok — Vitest + React Testing Library ekle (`SceneCanvas`, `Inspector`)
 - [ ] Runtime integration testleri: collider çarpışma, kamera follow, animasyon frame advance
@@ -217,9 +216,9 @@ evrilir.
 
 ---
 
-## 8. Çapraz Platform Eşitliği
+## 8. Cross-Platform Parity
 
-### Görevler
+### Tasks
 - [ ] Şu an Phaser (`runtime-web`) ile Skia (`runtime`) davranışları senkron değil — referans test sahneleri
 - [ ] iOS/Android Permissions (camera, mic, storage) için runtime API
 - [ ] Web Worker / SharedArrayBuffer — fizik heavy sahnelerde UI donmasın
@@ -236,9 +235,9 @@ evrilir.
 
 ---
 
-## 9. İçerik & Kullanıcı Deneyimi
+## 9. Content & User Experience
 
-### Görevler
+### Tasks
 - [ ] Yeni proje wizard (genre seç → şablon → asset paketi)
 - [ ] Sample projeler: platformer, top-down shooter, puzzle (skill şablonları var ama çalışan örnek eksik)
 - [ ] Dokümantasyon sitesi (VitePress / Docusaurus) — API ref + tutorial
@@ -256,14 +255,14 @@ evrilir.
 
 ---
 
-## 10. MCP / AI Entegrasyonu
+## 10. MCP / AI Integration
 
 ### Mevcut Durum
 - 34 tool, `tools/{assets,entities,gui,gui-components,project,scenes,skills}.ts` altında
 - Zod şemaları `schemas/{component,gui,gui-components,project,scene,skill}.ts`
 - Prompts + resources mevcut
 
-### Görevler
+### Tasks
 - [ ] Her tool'un zod şeması ile davranışı eşleşiyor mu doğrula
 - [ ] Tool response'larına `version`/`warnings` ekle (breaking change işareti)
 - [ ] Streaming output (uzun import/listeleme için)
@@ -301,7 +300,7 @@ evrilir.
 
 ---
 
-## 11. Yeni Skill Şablonları (önerilen set)
+## 11. New Skill Templates (recommended set)
 
 `packages/mcp/skills/` altında yayınlanacak yeni manifest'ler. Her biri mevcut
 `platformer.json` formatını takip eder; ek olarak `tutorial`, `platforms`,
@@ -331,7 +330,7 @@ evrilir.
 
 ---
 
-## 12. Çapraz Kesim (cross-cutting)
+## 12. Cross-Cutting
 
 - [ ] `useUndo` hook'unun hangi mutation'ları kaydettiğini test et, eksikleri tamamla
 - [ ] `assets.ts` generate her zaman idempotent mi doğrula
@@ -342,7 +341,7 @@ evrilir.
 
 ---
 
-## 13. AI Game Agent (Editör İçi BYOK) — ÖNCELİKLİ
+## 13. AI Game Agent (Editor BYOK) — HIGH PRIORITY
 
 Motorun birincil amacı: React Native ile tüm platformlara çıktı veren ve
 **editör içinden, kullanıcının kendi API anahtarıyla (BYOK) çalışan AI agent
@@ -350,7 +349,7 @@ ile oyun geliştirilebilen** bir 2D motor. Aşağıdaki tasarım bu hedefe yöne
 
 ### Kararlaştırılan Tasarım Kararları
 
-| Konu | Karar |
+| Topic | Decision |
 | --- | --- |
 | Varsayılan onay modu | `destructive-only` (`add_*` otomatik, `remove_*`/`delete_*`/`overwrite` modal açar) |
 | BYOK depolama | Web: `localStorage` (proje bazlı), Tauri: OS Keychain (`tauri-plugin-stronghold`) |
@@ -390,9 +389,10 @@ ile oyun geliştirilebilen** bir 2D motor. Aşağıdaki tasarım bu hedefe yöne
 └──────────────────────────────────────────────────────┘
 ```
 
-**Anahtar ilke:** Agent, MCP tool listesini **kopyalamaz**. CLI, editör oturumu
-başına `@gamekit/mcp` sürecini spawn eder ve aynı tool yüzeyini kullanır.
-Editör içi agent ile harici Claude/Cursor birebir aynı tool'larla çalışır.
+**Key principle:** The agent does **not duplicate** the MCP tool list. The CLI
+spawns one `@gamekit/mcp` process per editor session and uses the same tool
+surface. An in-editor agent and an external Claude/Cursor use exactly the same
+tools.
 
 ### Yeni Paket: `@gamekit/agent`
 
@@ -484,7 +484,7 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 7. Her adım SSE ile editöre `tool_start` / `tool_result` olarak yayınlanır
 8. Destructive tool → `approval_request` → editör onaylar → devam
 
-### Görevler (Sprint bazlı)
+### Tasks (Sprint bazlı)
 
 #### Sprint A — Çekirdek (öncelikli) ✅ v0.1.0
 - [x] `packages/agent` paket iskeleti + tsconfig + workspace kaydı
@@ -549,7 +549,7 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 
 ## Sprint Önerisi (güncellenmiş)
 
-| Sprint | Odak | Çıktı |
+| Sprint | Focus | Output |
 | --- | --- | --- |
 | **0** | **AI Game Agent — Sprint A** | **Agent paketi + Anthropic/LMStudio/OpenRouter + ReAct loop + CLI API + editör UI (gizli)** ✅ v0.1.0 |
 | **1** | **Fizik & Çarpışma Temeli** | **`RigidBody` + `CircleCollider` + `PolygonCollider` + layer/mask + velocity-verlet + MCP physics test** ✅ v0.1.1 |

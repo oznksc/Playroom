@@ -61,6 +61,10 @@ Tauri dev (`apps/editor/src-tauri`): the Tauri lib expects
 `packages/cli/dist/index.js` to exist before launching. Always `pnpm build`
 first if you intend to use the desktop shell.
 
+## Language
+
+- **All output must be in English.** Code, comments, commit messages, PRs, documentation, roadmap, and agent prompts — everything English. No Turkish or other languages in any artifact.
+
 ## Conventions
 
 - TypeScript strict, `module: NodeNext` for packages, `Bundler` for the
