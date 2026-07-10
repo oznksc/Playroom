@@ -120,6 +120,54 @@ export const AudioListenerInputSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
+export const TweenInputSchema = z.object({
+  type: z.literal("Tween"),
+  property: z.enum(["position.x", "position.y", "rotation", "scale.x", "scale.y"]),
+  startValue: z.number(),
+  endValue: z.number(),
+  duration: z.number().positive(),
+  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]).default("linear"),
+  loop: z.boolean().default(false),
+  pingPong: z.boolean().default(false),
+  elapsed: z.number().optional(),
+  active: z.boolean().optional().default(true),
+});
+
+export const FollowPathInputSchema = z.object({
+  type: z.literal("FollowPath"),
+  points: z.array(Vector2Schema),
+  speed: z.number().nonnegative(),
+  loop: z.boolean().default(true),
+  currentPointIndex: z.number().int().optional(),
+  targetPointIndex: z.number().int().optional(),
+});
+
+export const StateMachineStateSchema = z.object({
+  name: z.string().min(1),
+  on: z.record(z.string()).optional(),
+});
+
+export const StateMachineInputSchema = z.object({
+  type: z.literal("StateMachine"),
+  initialState: z.string().min(1),
+  currentState: z.string().optional(),
+  states: z.array(StateMachineStateSchema),
+});
+
+export const ScriptActionSchema = z.object({
+  type: z.string().min(1),
+}).catchall(z.unknown());
+
+export const ScriptHandlerSchema = z.object({
+  event: z.string().min(1),
+  actions: z.array(ScriptActionSchema),
+});
+
+export const ScriptInputSchema = z.object({
+  type: z.literal("Script"),
+  handlers: z.array(ScriptHandlerSchema),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -134,6 +182,10 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   TextInputSchema,
   AudioSourceInputSchema,
   AudioListenerInputSchema,
+  TweenInputSchema,
+  FollowPathInputSchema,
+  StateMachineInputSchema,
+  ScriptInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -150,4 +202,8 @@ export const ComponentTypeSchema = z.enum([
   "Text",
   "AudioSource",
   "AudioListener",
+  "Tween",
+  "FollowPath",
+  "StateMachine",
+  "Script",
 ]);

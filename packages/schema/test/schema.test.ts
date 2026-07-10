@@ -306,4 +306,56 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     expect(result.value.assets[1].kind).toBe("audio");
     expect(result.value.assets[2].kind).toBe("font");
   });
+
+  it("validates scenes with Tweens, FollowPaths, StateMachines, and Scripts", () => {
+    const scene = createEmptyScene("BehaviorTest");
+    const entity = createEntity("Robot", { x: 0, y: 0 });
+
+    entity.components.push({
+      type: "Tween",
+      property: "position.x",
+      startValue: 0,
+      endValue: 100,
+      duration: 2.0,
+      easing: "easeInOut",
+      loop: true,
+      pingPong: true
+    });
+
+    entity.components.push({
+      type: "FollowPath",
+      points: [{ x: 0, y: 0 }, { x: 50, y: 50 }],
+      speed: 10,
+      loop: false
+    });
+
+    entity.components.push({
+      type: "StateMachine",
+      initialState: "idle",
+      states: [
+        { name: "idle", on: { "collisionEnter": "walking" } },
+        { name: "walking", on: { "triggerEnter": "idle" } }
+      ]
+    });
+
+    entity.components.push({
+      type: "Script",
+      handlers: [
+        {
+          event: "start",
+          actions: [
+            { type: "playSound", assetId: "sound-1" },
+            { type: "setVariable", key: "started", value: true }
+          ]
+        }
+      ]
+    });
+
+    scene.entities.push(entity);
+    const result = validateScene(scene);
+    expect(result.ok).toBe(true);
+
+    const parsed = parseScene(JSON.parse(sceneToJson(scene)));
+    expect(parsed.entities[0].components).toHaveLength(5); // transform + 4 behaviors
+  });
 });

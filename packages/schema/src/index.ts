@@ -146,6 +146,55 @@ export type AudioListenerComponent = {
   enabled: boolean;
 };
 
+export type TweenComponent = {
+  type: "Tween";
+  property: "position.x" | "position.y" | "rotation" | "scale.x" | "scale.y";
+  startValue: number;
+  endValue: number;
+  duration: number;
+  easing: "linear" | "easeIn" | "easeOut" | "easeInOut";
+  loop: boolean;
+  pingPong: boolean;
+  elapsed?: number;
+  active?: boolean;
+};
+
+export type FollowPathComponent = {
+  type: "FollowPath";
+  points: Vector2[];
+  speed: number;
+  loop: boolean;
+  currentPointIndex?: number;
+  targetPointIndex?: number;
+};
+
+export type StateMachineState = {
+  name: string;
+  on?: Record<string, string>;
+};
+
+export type StateMachineComponent = {
+  type: "StateMachine";
+  initialState: string;
+  currentState?: string;
+  states: StateMachineState[];
+};
+
+export type ScriptAction = {
+  type: string;
+  [key: string]: unknown;
+};
+
+export type ScriptHandler = {
+  event: string;
+  actions: ScriptAction[];
+};
+
+export type ScriptComponent = {
+  type: "Script";
+  handlers: ScriptHandler[];
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -159,7 +208,11 @@ export type GameKitComponent =
   | TilemapComponent
   | TextComponent
   | AudioSourceComponent
-  | AudioListenerComponent;
+  | AudioListenerComponent
+  | TweenComponent
+  | FollowPathComponent
+  | StateMachineComponent
+  | ScriptComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -622,6 +675,121 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
         components.push({
           type: "AudioListener",
           enabled: expectBoolean(component.enabled, `${path}.enabled`, errors)
+        });
+        return;
+      case "Tween":
+        const prop = component.property;
+        const targetProp = (prop === "position.x" || prop === "position.y" || prop === "rotation" || prop === "scale.x" || prop === "scale.y") ? prop : "position.x";
+        if (prop !== targetProp) {
+          errors.push(`${path}.property must be "position.x", "position.y", "rotation", "scale.x", or "scale.y"`);
+        }
+        const ease = component.easing;
+        const targetEase = (ease === "linear" || ease === "easeIn" || ease === "easeOut" || ease === "easeInOut") ? ease : "linear";
+        if (ease !== targetEase) {
+          errors.push(`${path}.easing must be "linear", "easeIn", "easeOut", or "easeInOut"`);
+        }
+        components.push({
+          type: "Tween",
+          property: targetProp,
+          startValue: expectNumber(component.startValue, `${path}.startValue`, errors),
+          endValue: expectNumber(component.endValue, `${path}.endValue`, errors),
+          duration: expectNumber(component.duration, `${path}.duration`, errors),
+          easing: targetEase,
+          loop: expectBoolean(component.loop, `${path}.loop`, errors),
+          pingPong: expectBoolean(component.pingPong, `${path}.pingPong`, errors),
+          ...(component.elapsed !== undefined ? { elapsed: expectNumber(component.elapsed, `${path}.elapsed`, errors) } : {}),
+          ...(component.active !== undefined ? { active: expectBoolean(component.active, `${path}.active`, errors) } : {})
+        });
+        return;
+      case "FollowPath":
+        components.push({
+          type: "FollowPath",
+          points: (Array.isArray(component.points) ? component.points : []).map((p, i) => validateVector(p, `${path}.points[${i}]`, errors)),
+          speed: expectNumber(component.speed, `${path}.speed`, errors),
+          loop: expectBoolean(component.loop, `${path}.loop`, errors),
+          ...(component.currentPointIndex !== undefined ? { currentPointIndex: expectNumber(component.currentPointIndex, `${path}.currentPointIndex`, errors) } : {}),
+          ...(component.targetPointIndex !== undefined ? { targetPointIndex: expectNumber(component.targetPointIndex, `${path}.targetPointIndex`, errors) } : {})
+        });
+        if (!Array.isArray(component.points)) {
+          errors.push(`${path}.points must be an array`);
+        }
+        return;
+      case "StateMachine":
+        const states: StateMachineState[] = [];
+        if (Array.isArray(component.states)) {
+          component.states.forEach((s: unknown, i: number) => {
+            const spath = `${path}.states[${i}]`;
+            if (!isRecord(s)) {
+              errors.push(`${spath} must be an object`);
+              return;
+            }
+            const stateName = expectString(s.name, `${spath}.name`, errors);
+            const onRecord: Record<string, string> = {};
+            if (s.on !== undefined) {
+              if (isRecord(s.on)) {
+                for (const k of Object.keys(s.on)) {
+                  onRecord[k] = expectString(s.on[k], `${spath}.on.${k}`, errors);
+                }
+              } else {
+                errors.push(`${spath}.on must be an object`);
+              }
+            }
+            states.push({
+              name: stateName,
+              ...(s.on !== undefined ? { on: onRecord } : {})
+            });
+          });
+        } else {
+          errors.push(`${path}.states must be an array`);
+        }
+        components.push({
+          type: "StateMachine",
+          initialState: expectString(component.initialState, `${path}.initialState`, errors),
+          ...(component.currentState !== undefined ? { currentState: expectString(component.currentState, `${path}.currentState`, errors) } : {}),
+          states
+        });
+        return;
+      case "Script":
+        const handlers: ScriptHandler[] = [];
+        if (Array.isArray(component.handlers)) {
+          component.handlers.forEach((h: unknown, i: number) => {
+            const hpath = `${path}.handlers[${i}]`;
+            if (!isRecord(h)) {
+              errors.push(`${hpath} must be an object`);
+              return;
+            }
+            const eventName = expectString(h.event, `${hpath}.event`, errors);
+            const actions: ScriptAction[] = [];
+            if (Array.isArray(h.actions)) {
+              h.actions.forEach((a: unknown, j: number) => {
+                const apath = `${hpath}.actions[${j}]`;
+                if (!isRecord(a)) {
+                  errors.push(`${apath} must be an object`);
+                  return;
+                }
+                const aType = expectString(a.type, `${apath}.type`, errors);
+                const action: ScriptAction = { type: aType };
+                for (const key of Object.keys(a)) {
+                  if (key !== "type") {
+                    action[key] = a[key];
+                  }
+                }
+                actions.push(action);
+              });
+            } else {
+              errors.push(`${hpath}.actions must be an array`);
+            }
+            handlers.push({
+              event: eventName,
+              actions
+            });
+          });
+        } else {
+          errors.push(`${path}.handlers must be an array`);
+        }
+        components.push({
+          type: "Script",
+          handlers
         });
         return;
       default:
