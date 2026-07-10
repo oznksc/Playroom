@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import {
-  saveEncryptedKey,
-  getEncryptedKey,
-  deleteEncryptedKey,
   listEncryptedProviders,
-  encryptApiKey,
-  decryptApiKey,
+  getEncryptedKey,
+  getKeyMeta,
+  storeApiKey,
+  removeApiKey,
+  loadApiKey,
+  usesOsKeychain,
 } from "../lib/agent-keys.js";
 import { getApiUrl } from "../lib/api.js";
 
@@ -14,21 +15,29 @@ export type AgentKeyEntry = {
   model?: string;
   baseUrl?: string;
   connected: boolean;
+  storage: "local" | "keychain";
 };
 
+function buildEntries(): AgentKeyEntry[] {
+  return listEncryptedProviders().map((p) => {
+    const meta = getKeyMeta(p);
+    const legacy = getEncryptedKey(p);
+    return {
+      provider: p,
+      model: meta?.model ?? legacy?.model,
+      baseUrl: meta?.baseUrl ?? legacy?.baseUrl,
+      connected: true,
+      storage: meta?.storage ?? "local",
+    };
+  });
+}
+
 export function useAgentKeys() {
-  const [keys, setKeys] = useState<AgentKeyEntry[]>(() =>
-    listEncryptedProviders().map((p) => {
-      const entry = getEncryptedKey(p);
-      return { provider: p, model: entry?.model, baseUrl: entry?.baseUrl, connected: true };
-    }),
-  );
+  const [keys, setKeys] = useState<AgentKeyEntry[]>(() => buildEntries());
+  const osKeychain = usesOsKeychain();
 
   const refreshKeys = useCallback(() => {
-    setKeys(listEncryptedProviders().map((p) => {
-      const entry = getEncryptedKey(p);
-      return { provider: p, model: entry?.model, baseUrl: entry?.baseUrl, connected: true };
-    }));
+    setKeys(buildEntries());
   }, []);
 
   useEffect(() => {
@@ -41,33 +50,69 @@ export function useAgentKeys() {
     };
   }, [refreshKeys]);
 
-  const addKey = useCallback(async (provider: string, apiKey: string, passphrase: string, model?: string, baseUrl?: string) => {
-    const encrypted = await encryptApiKey(apiKey, passphrase);
-    saveEncryptedKey(provider, encrypted, model, baseUrl);
+  // On Tauri startup, re-sync keychain secrets to the local editor CLI key store
+  useEffect(() => {
+    if (!osKeychain) return;
+    let cancelled = false;
+    (async () => {
+      for (const entry of buildEntries()) {
+        if (entry.storage !== "keychain") continue;
+        try {
+          const apiKey = await loadApiKey(entry.provider);
+          if (!apiKey || cancelled) continue;
+          await fetch(getApiUrl("/api/agent/keys"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: entry.provider,
+              apiKey,
+              model: entry.model,
+              baseUrl: entry.baseUrl,
+            }),
+          });
+        } catch {
+          // server may not be up yet
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [osKeychain]);
 
-    try {
-      await fetch(getApiUrl("/api/agent/keys"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey, model, baseUrl }),
-      });
-    } catch (e) {
-      console.error("Failed to sync key to backend:", e);
-    }
+  const addKey = useCallback(
+    async (
+      provider: string,
+      apiKey: string,
+      passphrase: string,
+      model?: string,
+      baseUrl?: string,
+    ) => {
+      await storeApiKey(provider, apiKey, passphrase, model, baseUrl);
 
-    window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
-  }, []);
+      try {
+        await fetch(getApiUrl("/api/agent/keys"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider, apiKey, model, baseUrl }),
+        });
+      } catch (e) {
+        console.error("Failed to sync key to backend:", e);
+      }
 
-  const removeKey = useCallback((provider: string) => {
-    deleteEncryptedKey(provider);
+      window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
+    },
+    [],
+  );
+
+  const removeKey = useCallback(async (provider: string) => {
+    await removeApiKey(provider);
     window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
   }, []);
 
   const getKey = useCallback(async (provider: string, passphrase: string): Promise<string | null> => {
-    const entry = getEncryptedKey(provider);
-    if (!entry) return null;
-    return decryptApiKey(entry.encryptedApiKey, passphrase);
+    return loadApiKey(provider, passphrase);
   }, []);
 
-  return { keys, addKey, removeKey, getKey };
+  return { keys, addKey, removeKey, getKey, osKeychain };
 }

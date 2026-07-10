@@ -17,7 +17,7 @@ const PROVIDERS = [
 ];
 
 export function AgentSettings({ open, onClose }: AgentSettingsProps) {
-  const { keys, addKey, removeKey } = useAgentKeys();
+  const { keys, addKey, removeKey, osKeychain } = useAgentKeys();
   const [editing, setEditing] = useState<string | null>(null);
   const [passphrase, setPassphrase] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -26,6 +26,8 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
 
   const currentProvider = PROVIDERS.find((p) => p.id === editing);
   const needsKey = currentProvider?.requiresKey ?? true;
+  // Desktop Tauri stores secrets in OS keychain — no app passphrase required.
+  const needsPassphrase = needsKey && !osKeychain;
 
   if (!open) return null;
 
@@ -35,8 +37,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
 
   async function handleSave() {
     if (!editing) return;
-    if (needsKey && (!apiKey || !passphrase)) return;
-    const pass = needsKey ? passphrase : "local";
+    if (needsKey && !apiKey) return;
+    if (needsPassphrase && !passphrase) return;
+    const pass = needsPassphrase ? passphrase : "local";
     const key = needsKey ? apiKey : "local";
     await addKey(editing, key, pass, model || undefined, baseUrl || undefined);
     
@@ -84,7 +87,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     <td className="agent-settings-model">{entry?.model ?? p.defaultModel}</td>
                     <td>
                       {entry ? (
-                        <span className="agent-settings-status connected">connected</span>
+                        <span className="agent-settings-status connected">
+                          {entry.storage === "keychain" ? "keychain" : "connected"}
+                        </span>
                       ) : (
                         <span className="agent-settings-status">—</span>
                       )}
@@ -94,7 +99,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                         <button
                           type="button"
                           className="agent-settings-action-btn remove"
-                          onClick={() => removeKey(p.id)}
+                          onClick={() => void removeKey(p.id)}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -148,7 +153,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   />
                 </div>
               )}
-              {needsKey && (
+              {needsPassphrase && (
                 <div className="agent-settings-field">
                   <label>Passphrase (to encrypt key locally)</label>
                   <input
@@ -161,7 +166,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
               )}
               {needsKey && (
                 <div className="agent-settings-field-hint">
-                  Key is encrypted and stored in this browser only. It never leaves your machine.
+                  {osKeychain
+                    ? "Key is stored in the OS keychain (macOS Keychain / Windows Credential Manager). It never leaves your machine."
+                    : "Key is encrypted and stored in this browser only. It never leaves your machine."}
                 </div>
               )}
               <div className="agent-settings-form-actions">
@@ -172,7 +179,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   type="button"
                   className="btn-connect"
                   onClick={handleSave}
-                  disabled={needsKey ? (!apiKey || !passphrase) : false}
+                  disabled={needsKey ? (!apiKey || (needsPassphrase && !passphrase)) : false}
                 >
                   <Check size={12} /> Connect
                 </button>

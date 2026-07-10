@@ -1,4 +1,4 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
@@ -17,6 +17,7 @@ import { GuiPanel } from "./components/GuiPanel.js";
 import { AgentPanel } from "./components/AgentPanel.js";
 import { AgentSettings } from "./components/AgentSettings.js";
 import { PrefabPanel } from "./components/PrefabPanel.js";
+import { ProjectWizard } from "./components/ProjectWizard.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
 import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
@@ -112,13 +113,15 @@ export function App() {
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
     []
   );
-  const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale">("translate");
+  const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale" | "paint" | "erase">("translate");
+  const [paintTileId, setPaintTileId] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
@@ -1225,6 +1228,9 @@ export function App() {
               <FolderOpen size={18} />
               <span>Open Project Folder</span>
             </button>
+            <p className="dashboard-hint">
+              After opening a project, use <strong>New from template</strong> in the top bar to apply a genre skill.
+            </p>
           </div>
 
           {recentProjects.length > 0 && (
@@ -1279,6 +1285,7 @@ export function App() {
             setSidebarOpen(true);
             setActiveTab("agent");
           }}
+          onOpenWizard={() => setWizardOpen(true)}
           formatLastSaved={formatLastSaved}
           projectPath={isTauri ? projectPath : null}
           onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
@@ -1432,6 +1439,7 @@ export function App() {
           showColliders={showColliders}
           snapSize={snapSize}
           isPlaying={isPlaying}
+          paintTileId={paintTileId}
           onVirtualInput={(action, pressed) => {
             const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
             if (pressed) pressedKeysRef.current.add(key);
@@ -1443,6 +1451,18 @@ export function App() {
           onActiveToolChange={setActiveTool}
           onToggleGrid={setShowGrid}
           onToggleColliders={setShowColliders}
+          onPaintTile={(entityId, gridX, gridY, tileId) => {
+            updateScene((draft) => {
+              const entity = draft.entities.find((e) => e.id === entityId);
+              if (!entity) return;
+              const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
+              if (!tm) return;
+              const idx = gridY * tm.gridWidth + gridX;
+              if (idx < 0 || idx >= tm.tiles.length) return;
+              if (tm.tiles[idx] === tileId) return;
+              tm.tiles[idx] = tileId;
+            });
+          }}
           onSelect={(id, shift) => {
             setSelectedGuiNodeId(null);
             setSelectedComponentInstanceId(null);
@@ -1504,6 +1524,31 @@ export function App() {
           onDuplicateEntity={(id) => duplicateEntity(id)}
           onDeleteEntity={(id) => deleteEntity(id)}
         />
+
+        {(activeTool === "paint" || activeTool === "erase") && (
+          <div className="tile-palette" role="toolbar" aria-label="Tile palette">
+            <span className="tile-palette-label">
+              {activeTool === "erase" ? "Erase" : "Brush"} · tile
+            </span>
+            <div className="tile-palette-swatches">
+              {Array.from({ length: 16 }, (_, i) => i).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`tile-swatch${paintTileId === id && activeTool === "paint" ? " active" : ""}${id === 0 ? " empty" : ""}`}
+                  onClick={() => {
+                    setPaintTileId(id);
+                    if (id === 0) setActiveTool("erase");
+                    else setActiveTool("paint");
+                  }}
+                  title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
+                >
+                  {id === 0 ? "·" : id}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div
           className={`panel-backdrop${sidebarOpen || inspectorOpen ? " visible" : ""}`}
@@ -1617,6 +1662,18 @@ export function App() {
       />
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
+      <ProjectWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onApplied={(sceneFile) => {
+          setCurrentSceneFile(sceneFile);
+          refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+        }}
+        onStatus={(message) => {
+          setStatus(message);
+          addConsoleLog("system", message);
+        }}
+      />
     </main>
   );
 }
