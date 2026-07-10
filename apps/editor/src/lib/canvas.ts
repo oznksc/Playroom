@@ -4,6 +4,10 @@ import type {
   PolygonColliderComponent,
   RigidBodyComponent,
   TextComponent,
+  FollowPathComponent,
+  CameraFollowComponent,
+  AudioSourceComponent,
+  TweenComponent,
   GameKitAsset,
   GameKitEntity,
   GameKitScene,
@@ -173,16 +177,167 @@ export function drawScene(
           "#00f0ff"
         );
       }
+
+      // Collider fill overlays (semi-transparent)
+      if (aabb) {
+        const fillColor = aabb.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
+        context.fillStyle = fillColor;
+        context.fillRect(
+          transform.position.x + aabb.offset.x,
+          transform.position.y + aabb.offset.y,
+          aabb.size.x,
+          aabb.size.y
+        );
+      }
+      if (circle) {
+        const fillColor = circle.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
+        context.fillStyle = fillColor;
+        context.beginPath();
+        context.arc(
+          transform.position.x + circle.offset.x,
+          transform.position.y + circle.offset.y,
+          circle.radius,
+          0,
+          Math.PI * 2
+        );
+        context.fill();
+      }
+      if (polygon && polygon.points.length >= 3) {
+        const fillColor = polygon.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
+        context.fillStyle = fillColor;
+        context.beginPath();
+        const pox = transform.position.x + polygon.offset.x;
+        const poy = transform.position.y + polygon.offset.y;
+        context.moveTo(pox + polygon.points[0].x, poy + polygon.points[0].y);
+        for (let i = 1; i < polygon.points.length; i++) {
+          context.lineTo(pox + polygon.points[i].x, poy + polygon.points[i].y);
+        }
+        context.closePath();
+        context.fill();
+      }
+
+      // FollowPath waypoint gizmo — connected line + dots
+      const followPath = findComponent<FollowPathComponent>(entity, "FollowPath");
+      if (followPath && followPath.points.length > 0) {
+        const isSelected = selectedEntityIds.has(entity.id);
+        context.strokeStyle = isSelected ? "#ffb300" : "#f59e0b";
+        context.lineWidth = 1.5;
+        context.setLineDash([3, 3]);
+        context.beginPath();
+        context.moveTo(
+          transform.position.x + followPath.points[0].x,
+          transform.position.y + followPath.points[0].y
+        );
+        for (let i = 1; i < followPath.points.length; i++) {
+          context.lineTo(
+            transform.position.x + followPath.points[i].x,
+            transform.position.y + followPath.points[i].y
+          );
+        }
+        if (followPath.loop && followPath.points.length > 1) {
+          context.lineTo(
+            transform.position.x + followPath.points[0].x,
+            transform.position.y + followPath.points[0].y
+          );
+        }
+        context.stroke();
+        context.setLineDash([]);
+
+        // Waypoint dots
+        context.fillStyle = "#f59e0b";
+        for (let i = 0; i < followPath.points.length; i++) {
+          context.beginPath();
+          context.arc(
+            transform.position.x + followPath.points[i].x,
+            transform.position.y + followPath.points[i].y,
+            3, 0, Math.PI * 2
+          );
+          context.fill();
+        }
+      }
+
+      // CameraFollow viewport frame gizmo
+      const camFollow = findComponent<CameraFollowComponent>(entity, "CameraFollow");
+      if (camFollow) {
+        const vw = scene.viewport.width;
+        const vh = scene.viewport.height;
+        context.strokeStyle = "rgba(139,92,246,0.5)";
+        context.lineWidth = 1;
+        context.setLineDash([6, 4]);
+        context.strokeRect(
+          transform.position.x - vw / 2,
+          transform.position.y - vh / 2,
+          vw,
+          vh
+        );
+        context.setLineDash([]);
+      }
+
+      // AudioSource range indicator
+      const audioSrc = findComponent<AudioSourceComponent>(entity, "AudioSource");
+      if (audioSrc) {
+        context.strokeStyle = "rgba(236,72,153,0.4)";
+        context.lineWidth = 1;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        context.arc(transform.position.x, transform.position.y, 48, 0, Math.PI * 2);
+        context.stroke();
+        context.setLineDash([]);
+        // Speaker icon indicator
+        context.fillStyle = "rgba(236,72,153,0.6)";
+        context.font = "10px sans-serif";
+        context.textAlign = "center";
+        context.fillText("♪", transform.position.x, transform.position.y - 52);
+      }
+
+      // Tween direction indicator
+      const tweenComp = findComponent<TweenComponent>(entity, "Tween");
+      if (tweenComp) {
+        const delta = tweenComp.endValue - tweenComp.startValue;
+        let tx = 0, ty = 0;
+        if (tweenComp.property === "position.x") { tx = delta * 0.15; }
+        else if (tweenComp.property === "position.y") { ty = delta * 0.15; }
+        else if (tweenComp.property === "rotation") { tx = 20; ty = 0; }
+        else if (tweenComp.property === "scale.x") { tx = delta * 10; }
+        else if (tweenComp.property === "scale.y") { ty = delta * 10; }
+
+        if (tx !== 0 || ty !== 0) {
+          drawArrow(
+            context,
+            transform.position.x,
+            transform.position.y,
+            transform.position.x + tx,
+            transform.position.y + ty,
+            "#a78bfa"
+          );
+        }
+      }
     }
   }
 
+  // Selected entity origin crosshairs
   for (const id of selectedEntityIds) {
     const entity = scene.entities.find((e) => e.id === id);
     const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
     if (transform) {
+      const cx = transform.position.x;
+      const cy = transform.position.y;
+      const armLen = 10;
+
+      // Draw crosshair
+      context.strokeStyle = "rgba(255,179,0,0.7)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(cx - armLen, cy);
+      context.lineTo(cx + armLen, cy);
+      context.moveTo(cx, cy - armLen);
+      context.lineTo(cx, cy + armLen);
+      context.stroke();
+
+      // Center dot
       context.fillStyle = "#ffb300";
       context.beginPath();
-      context.arc(transform.position.x, transform.position.y, 4, 0, Math.PI * 2);
+      context.arc(cx, cy, 3, 0, Math.PI * 2);
       context.fill();
     }
   }
