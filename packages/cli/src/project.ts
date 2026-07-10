@@ -5,13 +5,21 @@ import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import {
   type GameKitAsset,
+  type GameKitComponent,
+  type GameKitPrefab,
   type GameKitProject,
   type GameKitScene,
+  type TransformComponent,
   createEmptyScene,
+  createEntity,
+  createId,
+  createPrefab,
   createProject,
+  prefabToJson,
   projectToJson,
   sceneToJson,
   slugify,
+  validatePrefab,
   validateProject,
   validateScene
 } from "@gamekit/schema";
@@ -256,6 +264,151 @@ export async function getProjectSnapshot(root: string): Promise<{
 
 export function getGameKitRoot(root: string): string {
   return join(root, "gamekit");
+}
+
+function getPrefabsRoot(root: string): string {
+  return join(getGameKitRoot(root), "prefabs");
+}
+
+export type PrefabSummary = {
+  file: string;
+  id: string;
+  name: string;
+  componentTypes: string[];
+  sourceEntityName?: string;
+};
+
+export async function listPrefabs(root: string): Promise<PrefabSummary[]> {
+  const dir = getPrefabsRoot(root);
+  try {
+    const files = (await readdir(dir)).filter((f) => f.endsWith(".prefab.json")).sort();
+    const out: PrefabSummary[] = [];
+    for (const file of files) {
+      try {
+        const prefab = await readPrefab(root, file);
+        out.push({
+          file,
+          id: prefab.id,
+          name: prefab.name,
+          componentTypes: prefab.components.map((c) => c.type),
+          sourceEntityName: prefab.sourceEntityName,
+        });
+      } catch {
+        out.push({ file, id: file, name: file, componentTypes: [] });
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export async function readPrefab(root: string, file: string): Promise<GameKitPrefab> {
+  const path = join(getPrefabsRoot(root), basename(file));
+  const raw = JSON.parse(await readFile(path, "utf8")) as unknown;
+  const result = validatePrefab(raw);
+  if (!result.ok) {
+    throw new Error(`Invalid prefab ${file}:\n${result.errors.map((e) => `- ${e}`).join("\n")}`);
+  }
+  return result.value;
+}
+
+export async function createPrefabFromEntity(
+  root: string,
+  sceneFile: string,
+  entityId: string,
+  name?: string,
+): Promise<{ file: string; prefab: GameKitPrefab }> {
+  const scene = await readScene(root, sceneFile);
+  const entity = scene.entities.find((e) => e.id === entityId);
+  if (!entity) throw new Error(`Entity not found: ${entityId}`);
+
+  const prefabName = name?.trim() || entity.name;
+  const prefab = createPrefab(prefabName, entity.components, entity.name);
+  const file = `${slugify(prefabName) || prefab.id}.prefab.json`;
+  await mkdir(getPrefabsRoot(root), { recursive: true });
+  await writeFile(join(getPrefabsRoot(root), file), prefabToJson(prefab));
+  return { file, prefab };
+}
+
+export async function instantiatePrefab(
+  root: string,
+  sceneFile: string,
+  prefabId: string,
+  options: { x?: number; y?: number; name?: string } = {},
+): Promise<{ entityId: string; name: string }> {
+  const file = prefabId.endsWith(".prefab.json")
+    ? prefabId
+    : `${slugify(prefabId)}.prefab.json`;
+
+  let prefab: GameKitPrefab;
+  try {
+    prefab = await readPrefab(root, file);
+  } catch {
+    const all = await listPrefabs(root);
+    const match = all.find((p) => p.id === prefabId || p.name === prefabId || p.file === file);
+    if (!match) throw new Error(`Prefab not found: ${prefabId}`);
+    prefab = await readPrefab(root, match.file);
+  }
+
+  const scene = await readScene(root, sceneFile);
+  const instanceName = options.name?.trim() || prefab.name;
+  const entity = createEntity(instanceName, {
+    x: options.x ?? 0,
+    y: options.y ?? 0,
+  });
+  entity.id = createId(instanceName);
+
+  const components = structuredClone(prefab.components) as GameKitComponent[];
+  const hasTransform = components.some((c) => c.type === "Transform");
+  if (!hasTransform) {
+    entity.components = [
+      {
+        type: "Transform",
+        position: { x: options.x ?? 0, y: options.y ?? 0 },
+        rotation: 0,
+        scale: { x: 1, y: 1 },
+      },
+      ...components,
+    ];
+  } else {
+    entity.components = components.map((c) => {
+      if (c.type !== "Transform") return c;
+      const t = c as TransformComponent;
+      if (options.x !== undefined || options.y !== undefined) {
+        return {
+          ...t,
+          position: {
+            x: options.x ?? t.position.x,
+            y: options.y ?? t.position.y,
+          },
+        };
+      }
+      return t;
+    });
+  }
+
+  scene.entities.push(entity);
+  await writeScene(root, scene, sceneFile);
+  return { entityId: entity.id, name: entity.name };
+}
+
+export async function removePrefab(root: string, prefabId: string): Promise<string> {
+  const file = prefabId.endsWith(".prefab.json")
+    ? prefabId
+    : `${slugify(prefabId)}.prefab.json`;
+  const path = join(getPrefabsRoot(root), basename(file));
+  try {
+    await unlink(path);
+    return basename(file);
+  } catch {
+    // try by id match
+    const all = await listPrefabs(root);
+    const match = all.find((p) => p.id === prefabId || p.name === prefabId);
+    if (!match) throw new Error(`Prefab not found: ${prefabId}`);
+    await unlink(join(getPrefabsRoot(root), match.file));
+    return match.file;
+  }
 }
 
 export async function exportProject(root: string, outputDir: string, platform: "mobile" | "web" = "mobile"): Promise<string> {

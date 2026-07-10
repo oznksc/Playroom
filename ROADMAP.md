@@ -5,11 +5,10 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.6): prefabs (`create_prefab`/`instantiate_prefab`),
-> `batch_apply_edit`, `load_scene` + `define_scene_transition` + `get_active_scene`,
-> project.activeScene/transitions schema, vision prompt enrichment for /screenshot,
-> topdown skill refreshed (RigidBody, bounds, gem trigger, inputMap),
-> 96 tests green.
+> Şu anki durum (v0.1.7): editor Prefabs tab + REST `/api/prefabs`,
+> puzzle skill refreshed + new physics-puzzle skill,
+> scene active badge, CLI prefab helpers with tests,
+> builds on v0.1.6 prefab/batch/scene MCP tools.
 
 ---
 
