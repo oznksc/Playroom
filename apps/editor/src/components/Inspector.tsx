@@ -8,7 +8,15 @@ import type {
   PlayerControllerComponent,
   RigidBodyComponent,
   SpriteComponent,
-  TransformComponent
+  TransformComponent,
+  TilemapComponent,
+  TextComponent,
+  AudioSourceComponent,
+  AudioListenerComponent,
+  TweenComponent,
+  FollowPathComponent,
+  StateMachineComponent,
+  ScriptComponent
 } from "@gamekit/schema";
 import {
   Box,
@@ -119,7 +127,15 @@ export function Inspector({
     CircleCollider: true,
     Player: false,
     RigidBody: true,
-    Camera: false
+    Camera: false,
+    Tilemap: false,
+    Text: false,
+    AudioSource: true,
+    AudioListener: true,
+    Tween: true,
+    FollowPath: true,
+    StateMachine: true,
+    Script: true
   });
 
   const [selectedCompToAdd, setSelectedCompToAdd] = useState("");
@@ -131,6 +147,14 @@ export function Inspector({
   const player = entity ? findComponent<PlayerControllerComponent>(entity, "PlayerController") : undefined;
   const rigidBody = entity ? findComponent<RigidBodyComponent>(entity, "RigidBody") : undefined;
   const camera = entity ? findComponent<CameraFollowComponent>(entity, "CameraFollow") : undefined;
+  const tilemap = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
+  const textComp = entity ? findComponent<TextComponent>(entity, "Text") : undefined;
+  const audioSource = entity ? findComponent<AudioSourceComponent>(entity, "AudioSource") : undefined;
+  const audioListener = entity ? findComponent<AudioListenerComponent>(entity, "AudioListener") : undefined;
+  const tween = entity ? findComponent<TweenComponent>(entity, "Tween") : undefined;
+  const followPath = entity ? findComponent<FollowPathComponent>(entity, "FollowPath") : undefined;
+  const stateMachine = entity ? findComponent<StateMachineComponent>(entity, "StateMachine") : undefined;
+  const script = entity ? findComponent<ScriptComponent>(entity, "Script") : undefined;
 
   function toggleCollapse(comp: string) {
     setCollapsed((prev) => ({ ...prev, [comp]: !prev[comp] }));
@@ -189,6 +213,71 @@ export function Inspector({
           targetId: draft.id,
           smoothing: 0.18
         });
+      } else if (val === "Tilemap") {
+        const tilesetId = assets.find((a) => a.kind === "image")?.id ?? "";
+        draft.components.push({
+          type: "Tilemap",
+          tilesetId,
+          tileWidth: 32,
+          tileHeight: 32,
+          columns: 8,
+          gridWidth: 10,
+          gridHeight: 10,
+          tiles: new Array(100).fill(0)
+        });
+      } else if (val === "Text") {
+        const fontAssetId = assets.find((a) => a.kind === "font")?.id ?? "default";
+        draft.components.push({
+          type: "Text",
+          text: "Hello World",
+          fontAssetId,
+          size: 24,
+          color: "#ffffff",
+          align: "left"
+        });
+      } else if (val === "AudioSource") {
+        const assetId = assets.find((a) => a.kind === "audio")?.id ?? "";
+        draft.components.push({
+          type: "AudioSource",
+          assetId,
+          volume: 1.0,
+          loop: false,
+          playOnStart: true
+        });
+      } else if (val === "AudioListener") {
+        draft.components.push({
+          type: "AudioListener",
+          enabled: true
+        });
+      } else if (val === "Tween") {
+        draft.components.push({
+          type: "Tween",
+          property: "position.x",
+          startValue: 0,
+          endValue: 100,
+          duration: 1.0,
+          easing: "linear",
+          loop: true,
+          pingPong: true
+        });
+      } else if (val === "FollowPath") {
+        draft.components.push({
+          type: "FollowPath",
+          points: [],
+          speed: 100,
+          loop: true
+        });
+      } else if (val === "StateMachine") {
+        draft.components.push({
+          type: "StateMachine",
+          initialState: "idle",
+          states: [{ name: "idle" }]
+        });
+      } else if (val === "Script") {
+        draft.components.push({
+          type: "Script",
+          handlers: []
+        });
       }
     });
 
@@ -209,11 +298,19 @@ export function Inspector({
   const missingComponents = [];
   if (entity) {
     if (!sprite) missingComponents.push({ val: "Sprite", label: "Sprite Renderer" });
+    if (!tilemap) missingComponents.push({ val: "Tilemap", label: "Tilemap Renderer" });
+    if (!textComp) missingComponents.push({ val: "Text", label: "Text Label" });
     if (!collider) missingComponents.push({ val: "AabbCollider", label: "Box Collider 2D" });
     if (MVP_SHOW_ADVANCED_PHYSICS && !circleCollider) missingComponents.push({ val: "CircleCollider", label: "Circle Collider 2D" });
     if (!player) missingComponents.push({ val: "PlayerController", label: "Player Controller" });
     if (MVP_SHOW_ADVANCED_PHYSICS && !rigidBody) missingComponents.push({ val: "RigidBody", label: "RigidBody 2D" });
     if (!camera) missingComponents.push({ val: "CameraFollow", label: "Camera Follow" });
+    if (!audioSource) missingComponents.push({ val: "AudioSource", label: "Audio Source" });
+    if (!audioListener) missingComponents.push({ val: "AudioListener", label: "Audio Listener" });
+    if (!tween) missingComponents.push({ val: "Tween", label: "Tween Animation" });
+    if (!followPath) missingComponents.push({ val: "FollowPath", label: "Path Follower" });
+    if (!stateMachine) missingComponents.push({ val: "StateMachine", label: "FSM State Machine" });
+    if (!script) missingComponents.push({ val: "Script", label: "Behavior Script" });
   }
 
   return (
