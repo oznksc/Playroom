@@ -11,6 +11,9 @@ import {
   AnthropicAdapter,
   LmStudioAdapter,
   OpenRouterAdapter,
+  OpenAIAdapter,
+  OllamaAdapter,
+  GoogleAdapter,
   runAgent,
   type ApprovalMode,
   type PromptContext,
@@ -61,26 +64,26 @@ export async function handleAgentRoute(
         {
           id: "openai",
           label: "OpenAI",
-          defaultBaseUrl: "https://api.openai.com",
+          defaultBaseUrl: "https://api.openai.com/v1",
           requiresApiKey: true,
           defaultModel: "gpt-4o",
-          supported: false,
+          supported: true,
         },
         {
           id: "google",
           label: "Google AI",
-          defaultBaseUrl: "https://generativelanguage.googleapis.com",
+          defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
           requiresApiKey: true,
           defaultModel: "gemini-2.0-flash",
-          supported: false,
+          supported: true,
         },
         {
           id: "ollama",
           label: "Ollama (local)",
-          defaultBaseUrl: "http://127.0.0.1:11434",
+          defaultBaseUrl: "http://localhost:11434",
           requiresApiKey: false,
           defaultModel: "llama3.1:8b",
-          supported: false,
+          supported: true,
         },
         {
           id: "lmstudio",
@@ -107,6 +110,12 @@ export async function handleAgentRoute(
       ? "meta-llama/llama-3.3-70b-instruct"
       : body.provider === "lmstudio"
       ? "local-model"
+      : body.provider === "openai"
+      ? "gpt-4o"
+      : body.provider === "google"
+      ? "gemini-2.0-flash"
+      : body.provider === "ollama"
+      ? "llama3.1:8b"
       : "claude-sonnet-4-5";
 
     sendJson(response, 200, {
@@ -137,6 +146,12 @@ export async function handleAgentRoute(
       provider = new LmStudioAdapter();
     } else if (body.provider === "openrouter") {
       provider = new OpenRouterAdapter();
+    } else if (body.provider === "openai") {
+      provider = new OpenAIAdapter();
+    } else if (body.provider === "google") {
+      provider = new GoogleAdapter();
+    } else if (body.provider === "ollama") {
+      provider = new OllamaAdapter();
     } else {
       provider = new AnthropicAdapter();
     }
