@@ -49,7 +49,7 @@ import { playerInputFromPressedKeys } from "@gamekit/runtime/input-map";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
-const MVP_SHOW_LEVELS = false;
+const MVP_SHOW_LEVELS = true;
 const MVP_SHOW_TIMELINE = false;
 const MVP_SHOW_CONSOLE = false;
 
@@ -115,8 +115,11 @@ export function App() {
   );
   const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale" | "paint" | "erase">("translate");
   const [paintTileId, setPaintTileId] = useState(1);
+  const [playFps, setPlayFps] = useState(0);
+  const [playFrameMs, setPlayFrameMs] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
+  const sceneMtimeRef = useRef<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
@@ -429,6 +432,42 @@ export function App() {
     };
   }, [undo, redo, push, snap, snapSize, isPlaying, isPaused]);
 
+  // Hot-reload scene when file changes on disk (agent / external edits)
+  useEffect(() => {
+    if (isPlaying || isDirty) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/scene/meta?file=${encodeURIComponent(currentSceneFile)}`));
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { mtimeMs?: number };
+        if (typeof data.mtimeMs !== "number") return;
+        if (sceneMtimeRef.current === null) {
+          sceneMtimeRef.current = data.mtimeMs;
+          return;
+        }
+        if (data.mtimeMs > sceneMtimeRef.current + 1) {
+          sceneMtimeRef.current = data.mtimeMs;
+          addConsoleLog("system", `Hot-reload: ${currentSceneFile} changed on disk`);
+          await refresh();
+        }
+      } catch {
+        // ignore
+      }
+    };
+    const id = window.setInterval(() => void poll(), 1500);
+    void poll();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [currentSceneFile, isPlaying, isDirty, addConsoleLog]);
+
+  // Reset mtime baseline when scene file changes via UI
+  useEffect(() => {
+    sceneMtimeRef.current = null;
+  }, [currentSceneFile]);
+
   // Real-time physics engine loop for playmode
   useEffect(() => {
     if (!isPlaying || isPaused) return;
@@ -438,10 +477,20 @@ export function App() {
     let accumulator = 0;
     const fixedDt = 1 / 60;
     const maxSteps = 10;
+    let fpsFrames = 0;
+    let fpsWindowStart = performance.now();
 
     const tick = (timestamp: number) => {
       const frameDt = Math.min((timestamp - lastTime) / 1000, 0.25);
       lastTime = timestamp;
+      setPlayFrameMs(Math.round(frameDt * 1000 * 10) / 10);
+      fpsFrames += 1;
+      if (timestamp - fpsWindowStart >= 500) {
+        const fps = Math.round((fpsFrames * 1000) / (timestamp - fpsWindowStart));
+        setPlayFps(fps);
+        fpsFrames = 0;
+        fpsWindowStart = timestamp;
+      }
 
       accumulator += frameDt;
 
@@ -1063,6 +1112,8 @@ export function App() {
 
       setIsPlaying(true);
       setIsPaused(false);
+      setPlayFps(0);
+      setPlayFrameMs(0);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
       addConsoleLog("physics", "Real-time physics engine loop initialized.");
       if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
@@ -1270,6 +1321,9 @@ export function App() {
           lastSaved={lastSaved}
           isPlaying={isPlaying}
           isPaused={isPaused}
+          playFps={playFps}
+          playFrameMs={playFrameMs}
+          entityCount={scene?.entities.length ?? 0}
           sidebarOpen={sidebarOpen}
           inspectorOpen={inspectorOpen}
           onPlayToggle={handlePlayToggle}

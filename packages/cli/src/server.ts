@@ -18,7 +18,9 @@ import {
   removePrefab,
   listSkills,
   applySkill,
+  getSceneMtime,
 } from "./project.js";
+import { runDoctor } from "./doctor.js";
 import { validateScene } from "@gamekit/schema";
 import { handleAgentRoute } from "./agent/routes.js";
 
@@ -88,6 +90,22 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
   if (url.pathname === "/api/scene" && request.method === "GET") {
     sendJson(response, 200, await readScene(options.root, url.searchParams.get("file") ?? "main.scene.json"));
+    return;
+  }
+
+  if (url.pathname === "/api/scene/meta" && request.method === "GET") {
+    const file = url.searchParams.get("file") ?? "main.scene.json";
+    try {
+      const mtimeMs = await getSceneMtime(options.root, file);
+      sendJson(response, 200, { file, mtimeMs });
+    } catch (error) {
+      sendJson(response, 404, { error: error instanceof Error ? error.message : "Scene not found" });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/doctor" && request.method === "GET") {
+    sendJson(response, 200, await runDoctor(options.root));
     return;
   }
 

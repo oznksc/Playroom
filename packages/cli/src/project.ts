@@ -86,6 +86,12 @@ export async function readScene(root: string, file = "main.scene.json"): Promise
   return result.value;
 }
 
+export async function getSceneMtime(root: string, file = "main.scene.json"): Promise<number> {
+  const scenePath = join(getGameKitRoot(root), "scenes", sanitizeSceneFile(file));
+  const st = await stat(scenePath);
+  return st.mtimeMs;
+}
+
 export async function writeScene(root: string, scene: GameKitScene, file = "main.scene.json"): Promise<void> {
   const result = validateScene(scene);
   if (!result.ok) {
