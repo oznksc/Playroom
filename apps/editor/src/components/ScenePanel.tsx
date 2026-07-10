@@ -51,6 +51,9 @@ export function ScenePanel({
             >
               <span className="scene-name">
                 {sceneId.replace(".scene.json", "")}
+                {sceneId === currentSceneId ? (
+                  <span className="scene-active-badge">active</span>
+                ) : null}
               </span>
               <button
                 type="button"

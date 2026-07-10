@@ -11,7 +11,11 @@ import {
   removeAsset,
   writeScene,
   writeProject,
-  readProject
+  readProject,
+  listPrefabs,
+  createPrefabFromEntity,
+  instantiatePrefab,
+  removePrefab,
 } from "./project.js";
 import { validateScene } from "@gamekit/schema";
 import { handleAgentRoute } from "./agent/routes.js";
@@ -52,7 +56,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
       "access-control-allow-origin": "*",
-      "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+      "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
       "access-control-allow-headers": "content-type",
       "access-control-max-age": "86400"
     });
@@ -137,6 +141,83 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
   if (url.pathname.startsWith("/gamekit/assets/") && request.method === "GET") {
     await serveProjectAsset(options.root, url.pathname, response);
+    return;
+  }
+
+  // Prefabs
+  if (url.pathname === "/api/prefabs" && request.method === "GET") {
+    sendJson(response, 200, { prefabs: await listPrefabs(options.root) });
+    return;
+  }
+
+  if (url.pathname === "/api/prefabs" && request.method === "POST") {
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
+      action?: string;
+      sceneFile?: string;
+      entityId?: string;
+      name?: string;
+      prefabId?: string;
+      x?: number;
+      y?: number;
+    };
+
+    if (body.action === "instantiate") {
+      if (!body.sceneFile || !body.prefabId) {
+        sendJson(response, 400, { error: "Missing sceneFile or prefabId" });
+        return;
+      }
+      try {
+        const result = await instantiatePrefab(options.root, body.sceneFile, body.prefabId, {
+          x: body.x,
+          y: body.y,
+          name: body.name,
+        });
+        sendJson(response, 200, { ok: true, ...result });
+      } catch (error) {
+        sendJson(response, 400, { error: error instanceof Error ? error.message : "Instantiate failed" });
+      }
+      return;
+    }
+
+    // default: create from entity
+    if (!body.sceneFile || !body.entityId) {
+      sendJson(response, 400, { error: "Missing sceneFile or entityId" });
+      return;
+    }
+    try {
+      const result = await createPrefabFromEntity(
+        options.root,
+        body.sceneFile,
+        body.entityId,
+        body.name,
+      );
+      sendJson(response, 200, {
+        ok: true,
+        file: result.file,
+        prefab: {
+          id: result.prefab.id,
+          name: result.prefab.name,
+          componentTypes: result.prefab.components.map((c) => c.type),
+        },
+      });
+    } catch (error) {
+      sendJson(response, 400, { error: error instanceof Error ? error.message : "Create prefab failed" });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/prefabs" && request.method === "DELETE") {
+    const prefabId = url.searchParams.get("id");
+    if (!prefabId) {
+      sendJson(response, 400, { error: "Missing id query parameter" });
+      return;
+    }
+    try {
+      const removed = await removePrefab(options.root, prefabId);
+      sendJson(response, 200, { ok: true, removed });
+    } catch (error) {
+      sendJson(response, 404, { error: error instanceof Error ? error.message : "Prefab not found" });
+    }
     return;
   }
 

@@ -1,11 +1,11 @@
 {
   "name": "Puzzle",
-  "description": "Grid-based puzzle game. Player pushes objects to designated targets. Uses simple physics with zero gravity for grid-aligned movement.",
+  "description": "Sokoban-style grid puzzle. Player pushes crates onto target pads. Zero gravity, inputMap for arrow/WASD movement.",
   "orientation": "portrait",
   "viewport": {
     "width": 390,
     "height": 390,
-    "background": "#2d2d44"
+    "background": "#1a1a2e"
   },
   "gravity": { "x": 0, "y": 0 },
   "entities": [
@@ -21,19 +21,32 @@
         {
           "type": "Sprite",
           "assetId": "player",
-          "width": 64,
-          "height": 64,
+          "width": 56,
+          "height": 56,
           "anchor": { "x": 0.5, "y": 0.5 }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
-          "size": { "x": 64, "y": 64 },
-          "isStatic": false
+          "offset": { "x": -28, "y": -28 },
+          "size": { "x": 56, "y": 56 },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": { "x": 0, "y": 0 },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 0.4,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
         },
         {
           "type": "PlayerController",
-          "speed": 200,
+          "speed": 180,
           "jumpVelocity": 0,
           "gravity": 0
         }
@@ -51,15 +64,28 @@
         {
           "type": "Sprite",
           "assetId": "crate",
-          "width": 64,
-          "height": 64,
+          "width": 56,
+          "height": 56,
           "anchor": { "x": 0.5, "y": 0.5 }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
-          "size": { "x": 64, "y": 64 },
-          "isStatic": false
+          "offset": { "x": -28, "y": -28 },
+          "size": { "x": 56, "y": 56 },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": { "x": 0, "y": 0 },
+          "angularVelocity": 0,
+          "mass": 2,
+          "drag": 0.5,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
         }
       ]
     },
@@ -75,15 +101,28 @@
         {
           "type": "Sprite",
           "assetId": "crate",
-          "width": 64,
-          "height": 64,
+          "width": 56,
+          "height": 56,
           "anchor": { "x": 0.5, "y": 0.5 }
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
-          "size": { "x": 64, "y": 64 },
-          "isStatic": false
+          "offset": { "x": -28, "y": -28 },
+          "size": { "x": 56, "y": 56 },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": { "x": 0, "y": 0 },
+          "angularVelocity": 0,
+          "mass": 2,
+          "drag": 0.5,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
         }
       ]
     },
@@ -98,9 +137,12 @@
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
+          "offset": { "x": -195, "y": -16 },
           "size": { "x": 390, "y": 32 },
-          "isStatic": true
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
         }
       ]
     },
@@ -115,9 +157,12 @@
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
+          "offset": { "x": -195, "y": -16 },
           "size": { "x": 390, "y": 32 },
-          "isStatic": true
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
         }
       ]
     },
@@ -132,9 +177,12 @@
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
+          "offset": { "x": -16, "y": -195 },
           "size": { "x": 32, "y": 390 },
-          "isStatic": true
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
         }
       ]
     },
@@ -149,9 +197,12 @@
         },
         {
           "type": "AabbCollider",
-          "offset": { "x": 0, "y": 0 },
+          "offset": { "x": -16, "y": -195 },
           "size": { "x": 32, "y": 390 },
-          "isStatic": true
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
         }
       ]
     },
@@ -167,9 +218,18 @@
         {
           "type": "Sprite",
           "assetId": "target",
-          "width": 64,
-          "height": 64,
+          "width": 48,
+          "height": 48,
           "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": -24, "y": -24 },
+          "size": { "x": 48, "y": 48 },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
         }
       ]
     },
@@ -185,13 +245,48 @@
         {
           "type": "Sprite",
           "assetId": "target",
-          "width": 64,
-          "height": 64,
+          "width": 48,
+          "height": 48,
           "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": -24, "y": -24 },
+          "size": { "x": 48, "y": 48 },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "name": "Hud",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 16, "y": 20 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Text",
+          "text": "Push crates onto targets",
+          "fontAssetId": "",
+          "size": 14,
+          "color": "#a78bfa",
+          "align": "left"
         }
       ]
     }
   ],
+  "inputMap": {
+    "bindings": [
+      { "action": "move_left", "keys": ["ArrowLeft", "a", "A"], "touchControl": "left" },
+      { "action": "move_right", "keys": ["ArrowRight", "d", "D"], "touchControl": "right" },
+      { "action": "jump", "keys": ["ArrowUp", "w", "W"], "touchControl": "jump" }
+    ]
+  },
   "requiredAssets": [
     { "id": "player", "file": "player.svg", "sourceFile": "player.svg" },
     { "id": "crate", "file": "crate.svg", "sourceFile": "crate.svg" },
