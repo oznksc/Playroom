@@ -5,6 +5,7 @@ const DESTRUCTIVE_TOOLS = new Set([
   "delete_scene",
   "remove_entity",
   "remove_component",
+  "remove_prefab",
   "write_project",
   "restore_snapshot",
   "apply_skill",

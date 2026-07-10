@@ -25,6 +25,9 @@ const COMPONENT_CHEATSHEET = `
 - Tilemap: tilesetId, tileWidth/Height, columns, grid, tiles[]
 Safety tools: snapshot_undo_point, restore_snapshot, diff_scene_versions, validate_scene, explain_scene
 Simulation: simulate_runtime_step — headless N-frame physics to verify player/platform setups
+Prefabs: create_prefab, instantiate_prefab, list_prefabs, remove_prefab
+Bulk: batch_apply_edit — atomic multi-entity edits
+Scenes: load_scene, get_active_scene, define_scene_transition
 `.trim();
 
 export function buildSystemPrompt(ctx: PromptContext): string {

@@ -42,7 +42,8 @@ import type { CollisionEvent, TriggerState, CollisionState, CollisionSolid, Trig
 import { updateAnimation } from "@gamekit/runtime/animate";
 import { playTimeline } from "@gamekit/runtime/timeline";
 import type { TimelineState } from "@gamekit/runtime/timeline";
-import { createAudioController, playerInputFromPressedKeys, type AudioController } from "@gamekit/runtime";
+import { createAudioController, type AudioController } from "@gamekit/runtime/audio";
+import { playerInputFromPressedKeys } from "@gamekit/runtime/input-map";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -203,17 +204,33 @@ export function App() {
   useEffect(() => () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); }, []);
 
   async function refresh() {
-    const [projectResponse, sceneResponse] = await Promise.all([
-      fetch(getApiUrl("/api/project")),
-      fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`))
-    ]);
-    const rawSnapshot = await projectResponse.json() as { project?: unknown; scenes: string[]; assets: GameKitAsset[]; levels?: GameKitLevel[]; guiComponents?: import("@gamekit/schema").GuiComponent[] };
+    const projectResponse = await fetch(getApiUrl("/api/project"));
+    const rawSnapshot = await projectResponse.json() as {
+      project?: { activeScene?: string };
+      scenes: string[];
+      assets: GameKitAsset[];
+      levels?: GameKitLevel[];
+      guiComponents?: import("@gamekit/schema").GuiComponent[];
+    };
     const nextSnapshot: ProjectSnapshot = {
       scenes: rawSnapshot.scenes ?? [],
       assets: rawSnapshot.assets ?? [],
       levels: rawSnapshot.levels ?? [],
       guiComponents: rawSnapshot.guiComponents ?? []
     };
+
+    // Honor agent/editor load_scene activations
+    const activeFromProject = rawSnapshot.project?.activeScene;
+    const sceneFile =
+      activeFromProject && nextSnapshot.scenes.includes(activeFromProject)
+        ? activeFromProject
+        : currentSceneFile;
+
+    if (sceneFile !== currentSceneFile) {
+      setCurrentSceneFile(sceneFile);
+    }
+
+    const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${sceneFile}`));
     const nextScene = await sceneResponse.json() as GameKitScene;
     setSnapshot(nextSnapshot);
     reset(nextScene);

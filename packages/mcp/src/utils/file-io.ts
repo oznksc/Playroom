@@ -1,12 +1,15 @@
-import { readFile, writeFile, readdir, unlink } from "node:fs/promises";
+import { readFile, writeFile, readdir, unlink, mkdir } from "node:fs/promises";
 import { join, basename } from "node:path";
 import {
   type GameKitProject,
   type GameKitScene,
+  type GameKitPrefab,
   validateScene,
   validateProject,
+  validatePrefab,
   sceneToJson,
   projectToJson,
+  prefabToJson,
 } from "@gamekit/schema";
 
 export class FileIO {
@@ -18,6 +21,10 @@ export class FileIO {
 
   private get scenesDir(): string {
     return join(this.gamekitDir, "scenes");
+  }
+
+  private get prefabsDir(): string {
+    return join(this.gamekitDir, "prefabs");
   }
 
   get assetsDir(): string {
@@ -73,5 +80,41 @@ export class FileIO {
       return scenePath;
     }
     return basename(scenePath);
+  }
+
+  async ensurePrefabsDir(): Promise<string> {
+    await mkdir(this.prefabsDir, { recursive: true });
+    return this.prefabsDir;
+  }
+
+  async listPrefabs(): Promise<string[]> {
+    try {
+      const files = await readdir(this.prefabsDir);
+      return files.filter((f) => f.endsWith(".prefab.json"));
+    } catch {
+      return [];
+    }
+  }
+
+  async readPrefab(filename: string): Promise<GameKitPrefab> {
+    const path = join(this.prefabsDir, basename(filename));
+    const content = await readFile(path, "utf-8");
+    const parsed = JSON.parse(content);
+    const result = validatePrefab(parsed);
+    if (!result.ok) {
+      throw new Error(`Invalid prefab ${filename}:\n${result.errors.join("\n")}`);
+    }
+    return result.value;
+  }
+
+  async writePrefab(filename: string, prefab: GameKitPrefab): Promise<void> {
+    await this.ensurePrefabsDir();
+    const path = join(this.prefabsDir, basename(filename));
+    await writeFile(path, prefabToJson(prefab));
+  }
+
+  async deletePrefab(filename: string): Promise<void> {
+    const path = join(this.prefabsDir, basename(filename));
+    await unlink(path);
   }
 }

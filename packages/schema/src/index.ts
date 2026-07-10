@@ -349,6 +349,32 @@ export type GameKitProject = {
   levels: GameKitLevel[];
   assets: GameKitAsset[];
   guiComponents: GuiComponent[];
+  /** Optional named scene transitions used by load_scene / SceneManager. */
+  transitions?: SceneTransitionDef[];
+  /** Last scene the editor/agent activated (filename). */
+  activeScene?: string;
+};
+
+export type SceneTransitionType = "none" | "fade" | "slide";
+
+export type SceneTransitionDef = {
+  id: string;
+  name: string;
+  fromSceneId?: string;
+  toSceneId: string;
+  type: SceneTransitionType;
+  duration: number;
+};
+
+/** Reusable entity template stored under gamekit/prefabs/. */
+export type GameKitPrefab = {
+  schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
+  id: string;
+  name: string;
+  /** Source entity name when created from a scene entity. */
+  sourceEntityName?: string;
+  components: GameKitComponent[];
+  createdAt?: string;
 };
 
 export type ValidationResult<T> =
@@ -532,10 +558,52 @@ export function validateProject(input: unknown): ValidationResult<GameKitProject
     scenes: validateStringArray(input.scenes, "scenes", errors),
     levels: validateLevels(input.levels, errors),
     assets: validateAssets(input.assets, errors),
-    guiComponents: validateGuiComponents(input.guiComponents, errors)
+    guiComponents: validateGuiComponents(input.guiComponents, errors),
+    ...(input.transitions !== undefined
+      ? { transitions: validateTransitions(input.transitions, errors) }
+      : {}),
+    ...(input.activeScene !== undefined
+      ? { activeScene: expectString(input.activeScene, "activeScene", errors) }
+      : {}),
   };
 
   return errors.length === 0 ? { ok: true, value: project } : { ok: false, errors };
+}
+
+function validateTransitions(input: unknown, errors: string[]): SceneTransitionDef[] {
+  if (!Array.isArray(input)) {
+    errors.push("transitions must be an array");
+    return [];
+  }
+  return input.map((item, index) => {
+    const path = `transitions[${index}]`;
+    if (!isRecord(item)) {
+      errors.push(`${path} must be an object`);
+      return {
+        id: "",
+        name: "",
+        toSceneId: "",
+        type: "none" as const,
+        duration: 0,
+      };
+    }
+    const typeRaw = item.type;
+    const type: SceneTransitionType =
+      typeRaw === "fade" || typeRaw === "slide" || typeRaw === "none" ? typeRaw : "none";
+    if (item.type !== undefined && type !== item.type) {
+      errors.push(`${path}.type must be "none", "fade", or "slide"`);
+    }
+    return {
+      id: expectString(item.id, `${path}.id`, errors),
+      name: expectString(item.name, `${path}.name`, errors),
+      toSceneId: expectString(item.toSceneId, `${path}.toSceneId`, errors),
+      type,
+      duration: expectNumber(item.duration, `${path}.duration`, errors),
+      ...(item.fromSceneId !== undefined
+        ? { fromSceneId: expectString(item.fromSceneId, `${path}.fromSceneId`, errors) }
+        : {}),
+    };
+  });
 }
 
 export function sceneToJson(scene: GameKitScene): string {
@@ -557,6 +625,53 @@ export function slugify(value: string): string {
 export function createId(value: string): string {
   const suffix = Math.random().toString(36).slice(2, 8);
   return `${slugify(value) || "entity"}-${suffix}`;
+}
+
+export function createPrefab(
+  name: string,
+  components: GameKitComponent[],
+  sourceEntityName?: string,
+): GameKitPrefab {
+  return {
+    schemaVersion: GAMEKIT_SCHEMA_VERSION,
+    id: slugify(name) || createId("prefab"),
+    name,
+    sourceEntityName,
+    components: structuredClone(components),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function prefabToJson(prefab: GameKitPrefab): string {
+  return `${JSON.stringify(prefab, null, 2)}\n`;
+}
+
+export function parsePrefab(input: unknown): GameKitPrefab {
+  const result = validatePrefab(input);
+  if (!result.ok) {
+    throw new Error(`Invalid Playroom prefab:\n${result.errors.map((e) => `- ${e}`).join("\n")}`);
+  }
+  return result.value;
+}
+
+export function validatePrefab(input: unknown): ValidationResult<GameKitPrefab> {
+  const errors: string[] = [];
+  if (!isRecord(input)) {
+    return { ok: false, errors: ["prefab must be an object"] };
+  }
+  const prefab: GameKitPrefab = {
+    schemaVersion: expectSchemaVersion(input.schemaVersion, "schemaVersion", errors),
+    id: expectString(input.id, "id", errors),
+    name: expectString(input.name, "name", errors),
+    components: validateComponents(input.components, "prefab", errors),
+    ...(input.sourceEntityName !== undefined
+      ? { sourceEntityName: expectString(input.sourceEntityName, "sourceEntityName", errors) }
+      : {}),
+    ...(input.createdAt !== undefined
+      ? { createdAt: expectString(input.createdAt, "createdAt", errors) }
+      : {}),
+  };
+  return errors.length === 0 ? { ok: true, value: prefab } : { ok: false, errors };
 }
 
 function validateViewport(input: unknown, errors: string[]): GameKitScene["viewport"] {
@@ -715,10 +830,14 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
         });
         return;
       case "Text":
+        // Empty fontAssetId means "use platform default / system font".
+        if (typeof component.fontAssetId !== "string") {
+          errors.push(`${path}.fontAssetId must be a string (empty string = system font)`);
+        }
         components.push({
           type: "Text",
           text: expectString(component.text, `${path}.text`, errors),
-          fontAssetId: expectString(component.fontAssetId, `${path}.fontAssetId`, errors),
+          fontAssetId: typeof component.fontAssetId === "string" ? component.fontAssetId : "",
           size: expectNumber(component.size, `${path}.size`, errors),
           color: expectString(component.color, `${path}.color`, errors),
           align: (component.align === "center" || component.align === "right") ? component.align : "left"

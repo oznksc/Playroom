@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyScene, createEntity, createLevel, createProject, parseScene, sceneToJson, validateProject, validateScene } from "../src/index.js";
+import {
+  createEmptyScene,
+  createEntity,
+  createLevel,
+  createPrefab,
+  createProject,
+  parseScene,
+  sceneToJson,
+  validatePrefab,
+  validateProject,
+  validateScene,
+} from "../src/index.js";
 
 describe("scene schema", () => {
   it("creates a valid empty scene with reserved timeline and gui fields", () => {
@@ -239,6 +250,41 @@ describe("polygon collider round-trip", () => {
   });
 });
 
+describe("prefabs and project transitions", () => {
+  it("creates and validates a prefab from entity components", () => {
+    const entity = createEntity("Coin", { x: 1, y: 2 });
+    entity.components.push({
+      type: "Sprite",
+      assetId: "target",
+      width: 16,
+      height: 16,
+      anchor: { x: 0.5, y: 0.5 },
+    });
+    const prefab = createPrefab("Coin", entity.components, entity.name);
+    const result = validatePrefab(prefab);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.name).toBe("Coin");
+      expect(result.value.components.some((c) => c.type === "Sprite")).toBe(true);
+    }
+  });
+
+  it("validates optional project transitions and activeScene", () => {
+    const project = createProject("WithTransitions");
+    project.activeScene = "main.scene.json";
+    project.transitions = [
+      {
+        id: "to-boss",
+        name: "To Boss",
+        toSceneId: "boss",
+        type: "fade",
+        duration: 0.5,
+      },
+    ];
+    expect(validateProject(project).ok).toBe(true);
+  });
+});
+
 describe("sprint 4 extensions: audio, text, and font", () => {
   it("validates scenes containing Text, AudioSource, and AudioListener components", () => {
     const scene = createEmptyScene("AudioTextTest");
@@ -285,6 +331,26 @@ describe("sprint 4 extensions: audio, text, and font", () => {
 
     const listenerComp = loadedEntity.components.find((c) => c.type === "AudioListener") as any;
     expect(listenerComp.enabled).toBe(true);
+  });
+
+  it("allows empty fontAssetId for system font Text labels", () => {
+    const scene = createEmptyScene("SystemFont");
+    const label = createEntity("Score", { x: 0, y: 0 });
+    label.components.push({
+      type: "Text",
+      text: "Coins: 0",
+      fontAssetId: "",
+      size: 16,
+      color: "#00f0ff",
+      align: "left",
+    });
+    scene.entities.push(label);
+    const result = validateScene(scene);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const text = result.value.entities[0].components.find((c) => c.type === "Text") as { fontAssetId: string };
+      expect(text.fontAssetId).toBe("");
+    }
   });
 
   it("validates assets with audio and font kinds", () => {
