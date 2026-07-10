@@ -18,7 +18,7 @@ The real object is the **canvas** — a viewport showing the scene with entities
 
 ## Composition Pattern
 
-**Operate.** The dominant layout is a 3-column workspace: sidebar (260px) | canvas (flex) | inspector (300px), with a topbar and bottom drawer. The canvas is the hero. Panels are dense tools, not showcases.
+**Operate.** Canvas-first: the viewport is full-bleed. Hierarchy, inspector, and content browser are floating sheets / bottom sheet overlays — they never permanently shrink the canvas. Top bar and activity rail float over the stage.
 
 ## Visual Foundation
 
@@ -39,7 +39,7 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 
 ## Design Principles
 
-1. **Canvas-first.** The viewport is always the largest surface. UI chrome stays thin.
+1. **Canvas-first.** The viewport is full-bleed. Tool chrome floats; never a fixed 3-column squeeze.
 2. **Density over decoration.** Every pixel earns its place. No empty hero spaces inside panels.
 3. **Color as signal.** Accents indicate state (active, selected, playing, error), not decoration.
 4. **Consistent compactness.** Inspector fields, badges, and controls are uniformly small (22px height inputs, 10px labels). Scale stays tight.

@@ -132,9 +132,9 @@ export function App() {
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
   const sceneMtimeRef = useRef<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
-  const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
-  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
@@ -1258,6 +1258,18 @@ export function App() {
   }
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
+
+  // Canvas-first: open inspector sheet when something is selected
+  useEffect(() => {
+    if (
+      selectedEntityIds.size > 0 ||
+      selectedGuiNodeId ||
+      selectedComponentInstanceId
+    ) {
+      setInspectorOpen(true);
+    }
+  }, [selectedEntityIds, selectedGuiNodeId, selectedComponentInstanceId]);
+
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
 
   function formatLastSaved(): string {
@@ -1332,173 +1344,11 @@ export function App() {
   }
 
   return (
-    <main className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}`}>
-        <Topbar
-          sceneName={scene?.name ?? currentSceneFile}
-          isDirty={isDirty}
-          saveState={saveState}
-          status={status}
-          lastSaved={lastSaved}
-          isPlaying={isPlaying}
-          isPaused={isPaused}
-          playFps={playFps}
-          playFrameMs={playFrameMs}
-          entityCount={scene?.entities.length ?? 0}
-          sidebarOpen={sidebarOpen}
-          inspectorOpen={inspectorOpen}
-          onPlayToggle={handlePlayToggle}
-          onPauseToggle={handlePlayToggle}
-          onStop={handleStop}
-          onRefresh={refresh}
-          onImport={importAsset}
-          onSave={saveScene}
-          onAddEntity={addEntity}
-          onToggleSidebar={() => setSidebarOpen((v) => !v)}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
-          onOpenAgent={() => {
-            setSidebarOpen(true);
-            setActiveTab("agent");
-          }}
-          onOpenWizard={() => setWizardOpen(true)}
-          formatLastSaved={formatLastSaved}
-          projectPath={isTauri ? projectPath : null}
-          onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
-
-        />
-
-      <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
-        <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
-          <SidebarRail
-            active={activeTab}
-            onChange={setActiveTab}
-            items={[
-              { id: "entities", label: "Hierarchy" },
-              { id: "scenes", label: "Scenes" },
-              { id: "prefabs", label: "Prefabs" },
-              { id: "agent", label: "Agent" },
-              ...(MVP_SHOW_LEVELS ? [{ id: "levels" as const, label: "Levels" }] : []),
-              ...(MVP_SHOW_GUI_TOOLS
-                ? [
-                    { id: "guis" as const, label: "GUI" },
-                    { id: "components" as const, label: "Comps" },
-                  ]
-                : []),
-            ]}
-          />
-          <div className="sidebar-content">
-          {activeTab === "entities" && (
-            <Sidebar
-              entities={scene?.entities ?? []}
-              selectedEntityIds={selectedEntityIds}
-              onSelectEntity={(id, shift) => {
-                setSelectedEntityIds((prev) => {
-                  const next = new Set(shift ? prev : undefined);
-                  if (next.has(id)) next.delete(id);
-                  else next.add(id);
-                  return next;
-                });
-              }}
-              onDeleteEntity={(id) => deleteEntity(id)}
-              onCopyEntity={(id) => {
-                const entity = scene?.entities.find((e) => e.id === id);
-                if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
-              }}
-              onCutEntity={(id) => {
-                const entity = scene?.entities.find((e) => e.id === id);
-                if (entity) {
-                  clipboardRef.current = structuredClone(entity) as GameKitEntity;
-                  deleteEntity(id);
-                }
-              }}
-              onPasteEntity={() => {
-                const entity = clipboardRef.current;
-                if (entity) pasteEntity(entity);
-              }}
-              onDuplicateEntity={(id) => duplicateEntity(id)}
-              onAddEntity={addEntity}
-              onAddTemplate={addTemplateEntity}
-            />
-          )}
-          {activeTab === "scenes" && (
-            <ScenePanel
-              scenes={snapshot.scenes}
-              currentSceneId={currentSceneFile}
-              onSelectScene={setCurrentSceneFile}
-              onCreateScene={handleCreateScene}
-              onDeleteScene={handleDeleteScene}
-            />
-          )}
-          {activeTab === "prefabs" && (
-            <PrefabPanel
-              sceneFile={currentSceneFile}
-              selectedEntityId={selectedEntityId}
-              onInstantiated={() => {
-                refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-              }}
-              onStatus={(message) => {
-                setStatus(message);
-                addConsoleLog("system", message);
-              }}
-            />
-          )}
-          {activeTab === "agent" && (
-            <AgentPanel
-              sceneId={currentSceneFile}
-              isPlaying={isPlaying}
-              onSettings={() => setAgentSettingsOpen(true)}
-              onSceneMutated={() => {
-                if (!isPlaying) {
-                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-                }
-              }}
-            />
-          )}
-          {MVP_SHOW_LEVELS && activeTab === "levels" && (
-            <LevelPanel
-              levels={snapshot.levels}
-              scenes={snapshot.scenes}
-              currentLevelId={snapshot.levels.find((l) => l.sceneIds.includes(currentSceneFile))?.id ?? null}
-              onSelectLevel={(levelId) => {
-                const level = snapshot.levels.find((l) => l.id === levelId);
-                if (level && level.sceneIds.length > 0) setCurrentSceneFile(level.sceneIds[0]);
-              }}
-              onCreateLevel={handleCreateLevel}
-              onDeleteLevel={handleDeleteLevel}
-              onToggleUnlock={handleToggleUnlockLevel}
-              onReorderLevels={handleReorderLevels}
-              onAssignScene={handleAssignSceneToLevel}
-              onRemoveScene={handleRemoveSceneFromLevel}
-            />
-          )}
-          {MVP_SHOW_GUI_TOOLS && activeTab === "guis" && (
-            <GuiPanel
-              nodes={scene?.gui?.nodes ?? []}
-              selectedGuiNodeId={selectedGuiNodeId}
-              onSelectNode={(id) => {
-                setSelectedGuiNodeId(id);
-                setSelectedEntityIds(new Set());
-                setSelectedComponentInstanceId(null);
-              }}
-              onAddNode={addGuiNode}
-              onDeleteNode={deleteGuiNode}
-            />
-          )}
-          {MVP_SHOW_GUI_TOOLS && activeTab === "components" && (
-            <GuiComponentPanel
-              components={snapshot.guiComponents}
-              editingComponentId={editingComponentId}
-              onAddComponent={addGuiComponent}
-              onDeleteComponent={deleteGuiComponent}
-              onStartEdit={setEditingComponentId}
-              onStopEdit={() => setEditingComponentId(null)}
-              onAddNodeToComponent={addNodeToEditingComponent}
-              onDeleteNodeFromComponent={deleteNodeFromEditingComponent}
-              onPlaceInstance={addGuiComponentInstance}
-            />
-          )}
-          </div>
-        </div>
-
+    <main
+      className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}${!bottomDrawerCollapsed ? " has-bottom-sheet" : ""}`}
+    >
+      {/* Full-bleed canvas — primary focus */}
+      <div className="canvas-stage">
         <SceneCanvas
           scene={scene}
           assets={snapshot.assets}
@@ -1625,13 +1475,191 @@ export function App() {
             </div>
           </div>
         )}
+      </div>
 
-        <div
-          className={`panel-backdrop${sidebarOpen || inspectorOpen ? " visible" : ""}`}
-          onClick={() => { setSidebarOpen(false); setInspectorOpen(false); }}
+      {/* Floating left activity rail */}
+      <aside className="float-rail" aria-label="Workspace panels">
+        <SidebarRail
+          active={activeTab}
+          onChange={(id) => {
+            setActiveTab(id);
+            setSidebarOpen(true);
+            setBottomDrawerCollapsed(true);
+          }}
+          items={[
+            { id: "entities", label: "Hierarchy" },
+            { id: "scenes", label: "Scenes" },
+            { id: "prefabs", label: "Prefabs" },
+            { id: "agent", label: "Agent" },
+            ...(MVP_SHOW_LEVELS ? [{ id: "levels" as const, label: "Levels" }] : []),
+            ...(MVP_SHOW_GUI_TOOLS
+              ? [
+                  { id: "guis" as const, label: "GUI" },
+                  { id: "components" as const, label: "Comps" },
+                ]
+              : []),
+          ]}
         />
+      </aside>
 
-        <div className={`inspector-column${inspectorOpen ? " panel-open" : ""}`}>
+      {/* Floating top toolbar */}
+      <div className="float-topbar">
+        <Topbar
+          sceneName={scene?.name ?? currentSceneFile}
+          isDirty={isDirty}
+          saveState={saveState}
+          status={status}
+          lastSaved={lastSaved}
+          isPlaying={isPlaying}
+          isPaused={isPaused}
+          playFps={playFps}
+          playFrameMs={playFrameMs}
+          entityCount={scene?.entities.length ?? 0}
+          sidebarOpen={sidebarOpen}
+          inspectorOpen={inspectorOpen}
+          onPlayToggle={handlePlayToggle}
+          onPauseToggle={handlePlayToggle}
+          onStop={handleStop}
+          onRefresh={refresh}
+          onImport={importAsset}
+          onSave={saveScene}
+          onAddEntity={addEntity}
+          onToggleSidebar={() => {
+            setSidebarOpen((v) => !v);
+            if (!sidebarOpen) setBottomDrawerCollapsed(true);
+          }}
+          onToggleInspector={() => setInspectorOpen((v) => !v)}
+          onOpenAgent={() => {
+            setActiveTab("agent");
+            setSidebarOpen(true);
+            setBottomDrawerCollapsed(true);
+          }}
+          onOpenWizard={() => setWizardOpen(true)}
+          formatLastSaved={formatLastSaved}
+          projectPath={isTauri ? projectPath : null}
+          onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
+        />
+      </div>
+
+      {/* Left floating sheet */}
+      <div className={`float-sheet-left${sidebarOpen ? " open" : ""}`} role="dialog" aria-label="Workspace panel">
+        <div className="sidebar-content">
+          {activeTab === "entities" && (
+            <Sidebar
+              entities={scene?.entities ?? []}
+              selectedEntityIds={selectedEntityIds}
+              onSelectEntity={(id, shift) => {
+                setSelectedEntityIds((prev) => {
+                  const next = new Set(shift ? prev : undefined);
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  return next;
+                });
+              }}
+              onDeleteEntity={(id) => deleteEntity(id)}
+              onCopyEntity={(id) => {
+                const entity = scene?.entities.find((e) => e.id === id);
+                if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
+              }}
+              onCutEntity={(id) => {
+                const entity = scene?.entities.find((e) => e.id === id);
+                if (entity) {
+                  clipboardRef.current = structuredClone(entity) as GameKitEntity;
+                  deleteEntity(id);
+                }
+              }}
+              onPasteEntity={() => {
+                const entity = clipboardRef.current;
+                if (entity) pasteEntity(entity);
+              }}
+              onDuplicateEntity={(id) => duplicateEntity(id)}
+              onAddEntity={addEntity}
+              onAddTemplate={addTemplateEntity}
+            />
+          )}
+          {activeTab === "scenes" && (
+            <ScenePanel
+              scenes={snapshot.scenes}
+              currentSceneId={currentSceneFile}
+              onSelectScene={setCurrentSceneFile}
+              onCreateScene={handleCreateScene}
+              onDeleteScene={handleDeleteScene}
+            />
+          )}
+          {activeTab === "prefabs" && (
+            <PrefabPanel
+              sceneFile={currentSceneFile}
+              selectedEntityId={selectedEntityId}
+              onInstantiated={() => {
+                refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+              }}
+              onStatus={(message) => {
+                setStatus(message);
+                addConsoleLog("system", message);
+              }}
+            />
+          )}
+          {activeTab === "agent" && (
+            <AgentPanel
+              sceneId={currentSceneFile}
+              isPlaying={isPlaying}
+              onSettings={() => setAgentSettingsOpen(true)}
+              onSceneMutated={() => {
+                if (!isPlaying) {
+                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+                }
+              }}
+            />
+          )}
+          {MVP_SHOW_LEVELS && activeTab === "levels" && (
+            <LevelPanel
+              levels={snapshot.levels}
+              scenes={snapshot.scenes}
+              currentLevelId={snapshot.levels.find((l) => l.sceneIds.includes(currentSceneFile))?.id ?? null}
+              onSelectLevel={(levelId) => {
+                const level = snapshot.levels.find((l) => l.id === levelId);
+                if (level && level.sceneIds.length > 0) setCurrentSceneFile(level.sceneIds[0]);
+              }}
+              onCreateLevel={handleCreateLevel}
+              onDeleteLevel={handleDeleteLevel}
+              onToggleUnlock={handleToggleUnlockLevel}
+              onReorderLevels={handleReorderLevels}
+              onAssignScene={handleAssignSceneToLevel}
+              onRemoveScene={handleRemoveSceneFromLevel}
+            />
+          )}
+          {MVP_SHOW_GUI_TOOLS && activeTab === "guis" && (
+            <GuiPanel
+              nodes={scene?.gui?.nodes ?? []}
+              selectedGuiNodeId={selectedGuiNodeId}
+              onSelectNode={(id) => {
+                setSelectedGuiNodeId(id);
+                setSelectedEntityIds(new Set());
+                setSelectedComponentInstanceId(null);
+              }}
+              onAddNode={addGuiNode}
+              onDeleteNode={deleteGuiNode}
+            />
+          )}
+          {MVP_SHOW_GUI_TOOLS && activeTab === "components" && (
+            <GuiComponentPanel
+              components={snapshot.guiComponents}
+              editingComponentId={editingComponentId}
+              onAddComponent={addGuiComponent}
+              onDeleteComponent={deleteGuiComponent}
+              onStartEdit={setEditingComponentId}
+              onStopEdit={() => setEditingComponentId(null)}
+              onAddNodeToComponent={addNodeToEditingComponent}
+              onDeleteNodeFromComponent={deleteNodeFromEditingComponent}
+              onPlaceInstance={addGuiComponentInstance}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Right floating inspector sheet */}
+      <div className={`float-sheet-right${inspectorOpen ? " open" : ""}`} role="dialog" aria-label="Inspector">
+        <div className="inspector-column" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {scene && <SceneSettings scene={scene} onChange={updateScene} />}
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector
@@ -1662,10 +1690,11 @@ export function App() {
             />
           )}
         </div>
-      </section>
+      </div>
 
+      {/* Bottom sheet */}
       {scene && (
-        <section className={`bottom-drawer-panel${bottomDrawerCollapsed ? " collapsed" : ""}`}>
+        <section className={`bottom-sheet${bottomDrawerCollapsed ? " collapsed" : ""}`}>
           <div className="drawer-tabs-bar">
             {(
               [
@@ -1681,8 +1710,12 @@ export function App() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveBottomTab(id as BottomTab)}
-                className={activeBottomTab === id ? "drawer-tab active" : "drawer-tab"}
+                onClick={() => {
+                  setActiveBottomTab(id as BottomTab);
+                  setBottomDrawerCollapsed(false);
+                  setSidebarOpen(false);
+                }}
+                className={activeBottomTab === id && !bottomDrawerCollapsed ? "drawer-tab active" : "drawer-tab"}
               >
                 {icon}
                 {label}
@@ -1692,7 +1725,7 @@ export function App() {
               type="button"
               className="drawer-collapse-btn"
               onClick={() => setBottomDrawerCollapsed((v) => !v)}
-              title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
+              title={bottomDrawerCollapsed ? "Expand content browser" : "Collapse"}
             >
               {bottomDrawerCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
@@ -1708,10 +1741,7 @@ export function App() {
               />
             )}
             {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
-              <TimelinePanel
-                scene={scene}
-                onChange={updateScene}
-              />
+              <TimelinePanel scene={scene} onChange={updateScene} />
             )}
             {MVP_SHOW_CONSOLE && activeBottomTab === "console" && (
               <ConsolePanel
@@ -1724,14 +1754,17 @@ export function App() {
         </section>
       )}
 
-      <Footer
-        scene={scene}
-        assetCount={snapshot.assets.length}
-        status={status}
-        saveState={saveState}
-        isDirty={isDirty}
-        statusClass={statusClass}
-      />
+      {/* Floating status (hidden when bottom sheet expanded) */}
+      <div className="float-status">
+        <Footer
+          scene={scene}
+          assetCount={snapshot.assets.length}
+          status={status}
+          saveState={saveState}
+          isDirty={isDirty}
+          statusClass={statusClass}
+        />
+      </div>
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard

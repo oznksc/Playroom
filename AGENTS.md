@@ -92,11 +92,11 @@ first if you intend to use the desktop shell.
   **IBM Plex Sans** (UI) + **IBM Plex Mono** (data), loaded in
   `apps/editor/index.html`. Prefer type roles `.type-label` / `.type-ui` /
   `.type-mono` or Tailwind `text-2xs`…`text-md` over ad-hoc `text-[Npx]`.
-  Left workspace nav is a **vertical activity rail** (`SidebarRail`), not
-  a horizontal tab bar. Shared primitives live in `apps/editor/src/ui/`.
-  Feature panels compose those primitives; do not invent one-off chrome.
-  Layout helpers: `apps/editor/src/styles/editor.css`. Prefer `@/` imports.
-  Avoid new SCSS.
+  Editor chrome is **canvas-first floating**: full-bleed stage, floating
+  top bar, left activity rail (`SidebarRail`), left/right float sheets,
+  bottom sheet for content. Never force a fixed 3-column grid that
+  shrinks the canvas. Shared primitives: `apps/editor/src/ui/`. Layout:
+  `apps/editor/src/styles/editor.css`. Prefer `@/` imports. Avoid new SCSS.
 
 ## Where to look
 
