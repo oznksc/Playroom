@@ -113,6 +113,9 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       if (!transform) continue;
 
       const controller = controllersRef.current.get(entity.id);
+      if (controller && (input.left || input.right || input.jump)) rb.wake();
+      if (rb.state.sleeping) continue;
+
       if (controller) {
         controller.update(input, dt);
         rb.state.velocity.x = controller.state.velocity.x;
@@ -137,6 +140,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - aabbCollider.offset.x;
           transform.position.y = result.position.y - aabbCollider.offset.y;
           rb.state.velocity = result.velocity;
+          rb.updateSleep(dt, result.grounded);
           if (controller && result.grounded) {
             controller.setGrounded(true);
           }
@@ -149,6 +153,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - circleCollider.offset.x;
           transform.position.y = result.position.y - circleCollider.offset.y;
           rb.state.velocity = result.velocity;
+          rb.updateSleep(dt, result.grounded);
           if (controller && result.grounded) {
             controller.setGrounded(true);
           }
@@ -160,11 +165,13 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - polygonCollider.offset.x;
           transform.position.y = result.position.y - polygonCollider.offset.y;
           rb.state.velocity = result.velocity;
+          rb.updateSleep(dt, result.grounded);
           if (controller && result.grounded) controller.setGrounded(true);
         }
       } else {
         transform.position.x += rb.state.velocity.x * dt;
         transform.position.y += rb.state.velocity.y * dt;
+        rb.updateSleep(dt, false);
       }
     }
 
