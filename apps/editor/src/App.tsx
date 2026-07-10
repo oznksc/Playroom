@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
+import { TopActions } from "./components/TopActions.js";
 import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { Inspector } from "./components/Inspector.js";
-import { Footer } from "./components/Footer.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { LevelPanel } from "./components/LevelPanel.js";
 import { SceneSettings } from "./components/SceneSettings.js";
@@ -1267,7 +1267,6 @@ export function App() {
     }
   }, [selectedEntityIds, selectedGuiNodeId, selectedComponentInstanceId]);
 
-  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
 
   function formatLastSaved(): string {
     if (!lastSaved) return "";
@@ -1480,7 +1479,21 @@ export function App() {
         onSettings={() => setAgentSettingsOpen(true)}
       />
 
-      {/* Apple-style tab bar — primary actions */}
+      {/* Top-right: secondary actions (refresh / import / add / template / status) */}
+      <TopActions
+        status={status}
+        saveState={saveState}
+        lastSaved={lastSaved}
+        formatLastSaved={formatLastSaved}
+        projectPath={isTauri ? projectPath : null}
+        onRefresh={refresh}
+        onImport={importAsset}
+        onAddEntity={addEntity}
+        onOpenWizard={() => setWizardOpen(true)}
+        onCloseProject={isTauri ? handleCloseProject : undefined}
+      />
+
+      {/* Apple-style tab bar — primary navigation + play/save */}
       <AppTabBar
         active={
           !bottomDrawerCollapsed
@@ -1744,18 +1757,6 @@ export function App() {
           </div>
         </section>
       )}
-
-      {/* Floating status (hidden when bottom sheet expanded) */}
-      <div className="float-status">
-        <Footer
-          scene={scene}
-          assetCount={snapshot.assets.length}
-          status={status}
-          saveState={saveState}
-          isDirty={isDirty}
-          statusClass={statusClass}
-        />
-      </div>
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard
