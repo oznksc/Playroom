@@ -30,6 +30,8 @@ export {
   type Circle,
   type Polygon,
   type CollisionSolid,
+  type CollisionEvent,
+  type CollisionState,
   type RaycastHit,
   type TriggerEvent,
   type TriggerState,
@@ -47,6 +49,7 @@ export {
   intersectsPolygonPolygon,
   raycast,
   solidAabb,
+  updateCollisionEvents,
   updateTriggerEvents
 } from "./collision.js";
 export {

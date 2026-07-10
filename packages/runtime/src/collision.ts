@@ -21,7 +21,15 @@ export type Polygon = {
 
 export type CollisionSolid = (Aabb | Circle | Polygon) & {
   layer: number;
+  entityId?: string;
 };
+
+export type CollisionEvent = {
+  entityId: string;
+  otherEntityId: string;
+};
+
+export type CollisionState = Set<string>;
 
 export type TriggerEvent = {
   type: "enter" | "exit";
@@ -30,6 +38,22 @@ export type TriggerEvent = {
 };
 
 export type TriggerState = Set<string>;
+
+export function updateCollisionEvents(
+  contacts: CollisionEvent[],
+  previous: CollisionState = new Set(),
+): { active: CollisionState; events: CollisionEvent[] } {
+  const active: CollisionState = new Set();
+  const events: CollisionEvent[] = [];
+
+  for (const contact of contacts) {
+    const key = collisionPairKey(contact.entityId, contact.otherEntityId);
+    active.add(key);
+    if (!previous.has(key)) events.push(contact);
+  }
+
+  return { active, events };
+}
 
 export function intersectsAabb(a: Aabb, b: Aabb): boolean {
   return a.x < b.x + b.width &&
@@ -147,7 +171,7 @@ export function applyPolygonCollisions(
   velocity: Vector2,
   solids: CollisionSolid[],
   mask?: number
-): { position: Vector2; velocity: Vector2; grounded: boolean } {
+): { position: Vector2; velocity: Vector2; grounded: boolean; collisionEntityIds: string[] } {
   const next: Polygon = {
     x: polygon.x + velocity.x,
     y: polygon.y + velocity.y,
@@ -158,6 +182,7 @@ export function applyPolygonCollisions(
   };
   const nextVelocity = { ...velocity };
   let grounded = false;
+  const collisionEntityIds = new Set<string>();
 
   const effectiveSolids = mask !== undefined
     ? solids.filter((solid) => (mask & solid.layer) !== 0)
@@ -166,6 +191,7 @@ export function applyPolygonCollisions(
   for (const solid of effectiveSolids) {
     const collision = polygonSolidCollision(next, solid);
     if (!collision) continue;
+    if (solid.entityId) collisionEntityIds.add(solid.entityId);
 
     const correctionX = collision.normal.x * collision.depth;
     const correctionY = collision.normal.y * collision.depth;
@@ -184,7 +210,7 @@ export function applyPolygonCollisions(
     if (collision.normal.y < -0.5) grounded = true;
   }
 
-  return { position: { x: next.x, y: next.y }, velocity: nextVelocity, grounded };
+  return { position: { x: next.x, y: next.y }, velocity: nextVelocity, grounded, collisionEntityIds: [...collisionEntityIds] };
 }
 
 export function solidAabb(solid: CollisionSolid): Aabb {
@@ -276,6 +302,10 @@ function triggerPairKey(triggerEntityId: string, otherEntityId: string): string 
   return `${triggerEntityId}\0${otherEntityId}`;
 }
 
+function collisionPairKey(entityId: string, otherEntityId: string): string {
+  return [entityId, otherEntityId].sort().join("\0");
+}
+
 function circleVsSolid(circle: Circle, solid: CollisionSolid): boolean {
   if ("width" in solid) {
     return intersectsCircleAabb(circle, solid as Aabb);
@@ -337,10 +367,11 @@ export function applyCircleCollisions(
   velocity: Vector2,
   solids: CollisionSolid[],
   mask?: number
-): { position: Vector2; velocity: Vector2; grounded: boolean } {
+): { position: Vector2; velocity: Vector2; grounded: boolean; collisionEntityIds: string[] } {
   const next = { ...circle };
   const nextVelocity = { ...velocity };
   let grounded = false;
+  const collisionEntityIds = new Set<string>();
 
   const effectiveSolids = mask !== undefined
     ? solids.filter((s) => (mask & s.layer) !== 0)
@@ -349,6 +380,7 @@ export function applyCircleCollisions(
   next.x += velocity.x;
   for (const solid of effectiveSolids) {
     if (circleVsSolid(next, solid)) {
+      if (solid.entityId) collisionEntityIds.add(solid.entityId);
       if (velocity.x > 0) {
         next.x = solidAabb(solid).x - next.radius;
       } else if (velocity.x < 0) {
@@ -361,6 +393,7 @@ export function applyCircleCollisions(
   next.y += velocity.y;
   for (const solid of effectiveSolids) {
     if (circleVsSolid(next, solid)) {
+      if (solid.entityId) collisionEntityIds.add(solid.entityId);
       if (velocity.y > 0) {
         next.y = solidAabb(solid).y - next.radius;
         grounded = true;
@@ -375,6 +408,7 @@ export function applyCircleCollisions(
     position: { x: next.x, y: next.y },
     velocity: nextVelocity,
     grounded,
+    collisionEntityIds: [...collisionEntityIds],
   };
 }
 
@@ -383,10 +417,11 @@ export function applyAabbCollisions(
   velocity: Vector2,
   solids: CollisionSolid[],
   mask?: number
-): { position: Vector2; velocity: Vector2; grounded: boolean } {
+): { position: Vector2; velocity: Vector2; grounded: boolean; collisionEntityIds: string[] } {
   const next = { ...moving };
   const nextVelocity = { ...velocity };
   let grounded = false;
+  const collisionEntityIds = new Set<string>();
 
   const effectiveSolids = mask !== undefined
     ? solids.filter((s) => (mask & s.layer) !== 0)
@@ -396,6 +431,7 @@ export function applyAabbCollisions(
   for (const solid of effectiveSolids) {
     const solidBox = solidAabb(solid);
     if (intersectsAabb(next, solidBox)) {
+      if (solid.entityId) collisionEntityIds.add(solid.entityId);
       if (velocity.x > 0) {
         next.x = solidBox.x - next.width;
       } else if (velocity.x < 0) {
@@ -409,6 +445,7 @@ export function applyAabbCollisions(
   for (const solid of effectiveSolids) {
     const solidBox = solidAabb(solid);
     if (intersectsAabb(next, solidBox)) {
+      if (solid.entityId) collisionEntityIds.add(solid.entityId);
       if (velocity.y > 0) {
         next.y = solidBox.y - next.height;
         grounded = true;
@@ -422,7 +459,8 @@ export function applyAabbCollisions(
   return {
     position: { x: next.x, y: next.y },
     velocity: nextVelocity,
-    grounded
+    grounded,
+    collisionEntityIds: [...collisionEntityIds],
   };
 }
 
