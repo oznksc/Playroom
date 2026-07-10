@@ -87,6 +87,17 @@ export const PolygonColliderInputSchema = z.object({
   mask: z.number().int().optional(),
 });
 
+export const TilemapInputSchema = z.object({
+  type: z.literal("Tilemap"),
+  tilesetId: z.string().min(1),
+  tileWidth: z.number().positive(),
+  tileHeight: z.number().positive(),
+  columns: z.number().int().positive(),
+  gridWidth: z.number().int().positive(),
+  gridHeight: z.number().int().positive(),
+  tiles: z.array(z.number().int().min(0)).default([]),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -97,6 +108,7 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   RigidBodyInputSchema,
   CameraFollowInputSchema,
   AnimationInputSchema,
+  TilemapInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -109,4 +121,5 @@ export const ComponentTypeSchema = z.enum([
   "RigidBody",
   "CameraFollow",
   "Animation",
+  "Tilemap",
 ]);

@@ -5,10 +5,10 @@ Tracks all work required to evolve Playroom from MVP 0.1 into a production-ready
 tools** (new included) → related **Skill templates** (new included).
 Schema is the contract; runtime + editor + MCP evolve together.
 
-> Şu anki durum (v0.1.2): 9 bileşen tipi, raycast (AABB/Circle/Polygon),
-> MCP'ta `raycast` + `query_overlaps` tools, sadece image asset,
-> editörde play-in-editor aktif (mock floor ile), 18 MCP test + 7 runtime test,
-> `@gamekit/agent` paketi dolu (Anthropic + LM Studio + OpenRouter provider),
+> Şu anki durum (v0.1.3): 10 bileşen tipi (+`Tilemap`), raycast (AABB/Circle/Polygon),
+> MCP'ta `raycast` + `query_overlaps` + `add_tilemap` + `paint_tile` tools,
+> sadece image asset, editörde play-in-editor aktif (mock floor ile),
+> 18 MCP test + 7 runtime test, `@gamekit/agent` paketi dolu,
 > Agent UI panel built ama MVP'de gizli.
 
 ---
@@ -17,7 +17,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 
 1. [x] `RigidBody` + velocity-based hareket → statik `position` yerine dinamik his
    (angular velocity + fixed timestep eklendi, v0.1.1)
-2. [ ] `Tilemap` + paint tool → içerik üretimi 10x hızlanır
+2. [x] `Tilemap` + paint tool → içerik üretimi 10x hızlanır (schema + MCP tools + runtime + editor rendering)
 3. [x] Play-in-editor → geri bildirim döngüsü dakikadan saniyeye düşer
    (`MVP_SHOW_PLAY_CONTROLS=true`, mock floor ile, v0.1.1)
 4. [x] MCP test → 10 physics test eklendi (editör smoke testi hâlâ eksik)
@@ -59,7 +59,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 ## 2. Component Library (schema + runtime + editor + MCP sync)
 
 ### Tasks
-- [ ] `Tilemap` + `TiledSet` (`.tsx`/`.json` import) — editörde tile paint tool
+- [x] `Tilemap` (self-contained: tileset asset + grid + flat tile array) — editör render + runtime Skia render
 - [ ] `Text` bileşeni (font assetId, size, color, align)
 - [ ] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
 - [ ] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
@@ -71,8 +71,8 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [ ] `NineSlice` sprite (UI ölçeklenebilir kenar)
 
 ### MCP Araçları (yeni)
-- `add_tilemap` — `.tsx`/`.json` import eder, sahneye `Tilemap` + `TiledSet` ekler
-- `paint_tile` — tilemap üzerinde tile yazar/okur
+- [x] `add_tilemap` — entity'ye `Tilemap` bileşeni ekler (tilesetId, tileWidth/Height, columns, gridWidth/Height)
+- [x] `paint_tile` — tilemap üzerinde gridX/gridY pozisyonuna tileId yazar
 - `add_text` — `Text` bileşeni ekler (font, boyut, hizalama)
 - `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
 - `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
@@ -554,7 +554,7 @@ API anahtarları editörden üçüncü tarafa gönderilmez (opt-in telemetry dı
 | **0** | **AI Game Agent — Sprint A** | **Agent paketi + Anthropic/LMStudio/OpenRouter + ReAct loop + CLI API + editör UI (gizli)** ✅ v0.1.0 |
 | **1** | **Fizik & Çarpışma Temeli** | **`RigidBody` + `CircleCollider` + `PolygonCollider` + layer/mask + velocity-verlet + MCP physics test** ✅ v0.1.1 |
 | **2a** | **Raycast + query_overlaps** | **Raycast sistemi (AABB/Circle/Polygon) + MCP `raycast`/`query_overlaps` tools** ✅ v0.1.2 |
-| **2b** | **Hızlı Kazanımlar — Tilemap** | **Tilemap şeması + editör paint tool + MCP tools + Tiled import** ⬅️ **SIRADA** |
+| **2b** | **Tilemap + paint tool** | **Tilemap bileşeni + `add_tilemap`/`paint_tile` MCP tools + editor/runtime rendering** ✅ v0.1.3 |
 | 3 | Play-in-editor (gerçek runtime host) + Gizmos | Editörde Skia/Phaser runtime host + gizmo render |
 | 4 | Audio + Text + Save/Load | Asset tipi genişleme, persistent state |
 | 5 | State machine + Script + AI | Davranış sistemi |

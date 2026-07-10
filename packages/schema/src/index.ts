@@ -113,6 +113,17 @@ export type PolygonColliderComponent = {
   mask?: number;
 };
 
+export type TilemapComponent = {
+  type: "Tilemap";
+  tilesetId: string;
+  tileWidth: number;
+  tileHeight: number;
+  columns: number;
+  gridWidth: number;
+  gridHeight: number;
+  tiles: number[];
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -122,7 +133,8 @@ export type GameKitComponent =
   | PlayerControllerComponent
   | RigidBodyComponent
   | CameraFollowComponent
-  | AnimationComponent;
+  | AnimationComponent
+  | TilemapComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -546,6 +558,20 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           ...(component.isTrigger !== undefined ? { isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors) } : {}),
           ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
           ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
+        });
+        return;
+      case "Tilemap":
+        components.push({
+          type: "Tilemap",
+          tilesetId: expectString(component.tilesetId, `${path}.tilesetId`, errors),
+          tileWidth: expectNumber(component.tileWidth, `${path}.tileWidth`, errors),
+          tileHeight: expectNumber(component.tileHeight, `${path}.tileHeight`, errors),
+          columns: expectNumber(component.columns, `${path}.columns`, errors),
+          gridWidth: expectNumber(component.gridWidth, `${path}.gridWidth`, errors),
+          gridHeight: expectNumber(component.gridHeight, `${path}.gridHeight`, errors),
+          tiles: Array.isArray(component.tiles)
+            ? (component.tiles as unknown[]).map((t: unknown, i: number) => expectNumber(t, `${path}.tiles[${i}]`, errors))
+            : (errors.push(`${path}.tiles must be an array`), []),
         });
         return;
       default:

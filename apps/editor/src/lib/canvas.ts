@@ -6,6 +6,7 @@ import type {
   GameKitEntity,
   GameKitScene,
   SpriteComponent,
+  TilemapComponent,
   TransformComponent,
   GuiNode,
   GuiComponent,
@@ -60,6 +61,39 @@ export function drawScene(
       }
       if (rotation !== 0) {
         context.restore();
+      }
+    }
+
+    const tilemap = findComponent<TilemapComponent>(entity, "Tilemap");
+    if (tilemap) {
+      const tileImage = images.get(tilemap.tilesetId);
+      for (let i = 0; i < tilemap.tiles.length; i++) {
+        const tileId = tilemap.tiles[i];
+        if (tileId === 0) continue;
+        const gx = i % tilemap.gridWidth;
+        const gy = Math.floor(i / tilemap.gridWidth);
+        const x = transform.position.x + gx * tilemap.tileWidth;
+        const y = transform.position.y + gy * tilemap.tileHeight;
+
+        const srcTileIndex = tileId - 1;
+        const srcX = (srcTileIndex % tilemap.columns) * tilemap.tileWidth;
+        const srcY = Math.floor(srcTileIndex / tilemap.columns) * tilemap.tileHeight;
+
+        if (tileImage) {
+          context.drawImage(
+            tileImage,
+            srcX, srcY,
+            tilemap.tileWidth, tilemap.tileHeight,
+            x, y,
+            tilemap.tileWidth, tilemap.tileHeight
+          );
+        } else {
+          context.fillStyle = "#a78bfa";
+          context.fillRect(x, y, tilemap.tileWidth, tilemap.tileHeight);
+          context.strokeStyle = "rgba(255,255,255,0.15)";
+          context.lineWidth = 1;
+          context.strokeRect(x, y, tilemap.tileWidth, tilemap.tileHeight);
+        }
       }
     }
 
@@ -300,6 +334,7 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
   const sprite = findComponent<SpriteComponent>(entity, "Sprite");
   const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
   const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
+  const tilemap = findComponent<TilemapComponent>(entity, "Tilemap");
   if (!transform) {
     return false;
   }
@@ -348,6 +383,17 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
       point.x <= bx + sprite.width &&
       point.y >= by &&
       point.y <= by + sprite.height
+    );
+  }
+
+  if (tilemap) {
+    const tx = transform.position.x;
+    const ty = transform.position.y;
+    return (
+      point.x >= tx &&
+      point.x <= tx + tilemap.gridWidth * tilemap.tileWidth &&
+      point.y >= ty &&
+      point.y <= ty + tilemap.gridHeight * tilemap.tileHeight
     );
   }
 
