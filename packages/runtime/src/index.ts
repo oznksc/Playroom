@@ -31,6 +31,8 @@ export {
   type Polygon,
   type CollisionSolid,
   type RaycastHit,
+  type TriggerEvent,
+  type TriggerState,
   applyAabbCollisions,
   applyCircleCollisions,
   applyPolygonCollisions,
@@ -44,7 +46,8 @@ export {
   intersectsPolygonCircle,
   intersectsPolygonPolygon,
   raycast,
-  solidAabb
+  solidAabb,
+  updateTriggerEvents
 } from "./collision.js";
 export {
   type CameraState,
