@@ -18,7 +18,7 @@ export const ContextMenuContent = React.forwardRef<
       ref={ref}
       className={cn(
         "z-50 min-w-[160px] overflow-hidden rounded-md border border-border-default bg-bg-elevated p-1 shadow-md",
-        "text-base tracking-[-0.01em] text-text-primary",
+        "text-base text-text-primary",
         className
       )}
       {...props}

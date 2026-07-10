@@ -89,14 +89,14 @@ first if you intend to use the desktop shell.
 - Editor design system: tokens + Tailwind theme in
   `apps/editor/src/styles/globals.css` (Cyber Cyan `#00f0ff`, Engine
   Violet `#8b5cf6`, dark base `#06090e` — see `brief.md`). Typography:
-  **Plus Jakarta Sans** (UI) + **JetBrains Mono** (data), loaded in
-  `apps/editor/index.html` — not Google Sans (proprietary). Prefer type
-  roles `.type-label` / `.type-ui` / `.type-mono` or Tailwind
-  `text-2xs`…`text-md` over ad-hoc `text-[Npx]`. Shared primitives live
-  in `apps/editor/src/ui/` (Button, Field, Panel, Dialog, etc.). Feature
-  panels compose those primitives; do not invent one-off button/input
-  chrome. Layout shell helpers are in `apps/editor/src/styles/editor.css`.
-  Prefer `@/` imports for editor source. Avoid new SCSS.
+  **IBM Plex Sans** (UI) + **IBM Plex Mono** (data), loaded in
+  `apps/editor/index.html`. Prefer type roles `.type-label` / `.type-ui` /
+  `.type-mono` or Tailwind `text-2xs`…`text-md` over ad-hoc `text-[Npx]`.
+  Left workspace nav is a **vertical activity rail** (`SidebarRail`), not
+  a horizontal tab bar. Shared primitives live in `apps/editor/src/ui/`.
+  Feature panels compose those primitives; do not invent one-off chrome.
+  Layout helpers: `apps/editor/src/styles/editor.css`. Prefer `@/` imports.
+  Avoid new SCSS.
 
 ## Where to look
 

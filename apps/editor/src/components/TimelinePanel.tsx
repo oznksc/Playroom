@@ -21,7 +21,7 @@ export function TimelinePanel({ scene, onChange }: TimelinePanelProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg-surface">
-      <div className="flex h-9 shrink-0 flex-wrap items-center gap-3 border-b border-border-default bg-bg-base px-2.5">
+      <div className="flex h-9 shrink-0 flex-wrap items-center gap-3 bg-bg-base/50 px-2.5">
         <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
           Timeline
         </span>

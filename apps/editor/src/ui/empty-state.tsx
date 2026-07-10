@@ -29,7 +29,7 @@ export function EmptyState({
         </div>
       )}
       {title && (
-        <p className="m-0 text-sm font-medium tracking-[-0.01em] text-text-secondary">{title}</p>
+        <p className="m-0 text-sm font-medium text-text-secondary">{title}</p>
       )}
       {description && (
         <p className="m-0 max-w-[220px] text-xs leading-relaxed text-text-muted">

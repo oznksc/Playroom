@@ -127,43 +127,43 @@ export function Sidebar({
 
   return (
     <Panel>
-      <div className="search-field border-b border-border-default p-2">
+      <PanelHeader className="h-9">
+        <PanelTitle accent="cyan">Hierarchy</PanelTitle>
+        <div className="flex items-center gap-0.5">
+          <IconButton size="sm" onClick={onAddEntity} title="Create entity">
+            <Plus size={12} />
+          </IconButton>
+        </div>
+      </PanelHeader>
+
+      <div className="search-field px-2 py-1.5">
         <Search size={12} />
         <Input
           type="search"
-          placeholder="Filter hierarchy…"
+          placeholder="Filter…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-[26px]"
+          className="h-6 text-xs"
         />
       </div>
 
-      <div className="border-b border-border-default px-2 py-2">
-        <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-text-muted">
-          Quick spawner
-        </div>
-        <div className="flex flex-wrap gap-1">
-          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("empty")}>
-            <Layers size={11} /> Empty
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("sprite")}>
-            <Image size={11} /> Sprite
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => onAddTemplate?.("player")}>
-            <Gamepad2 size={11} /> Player
-          </Button>
-        </div>
+      <div className="flex flex-wrap gap-1 px-2 pb-1.5">
+        <Button size="sm" variant="ghost" onClick={() => onAddTemplate?.("empty")} title="Empty entity">
+          <Layers size={11} />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onAddTemplate?.("sprite")} title="Sprite">
+          <Image size={11} />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onAddTemplate?.("player")} title="Player">
+          <Gamepad2 size={11} />
+        </Button>
+        <span className="ml-auto self-center font-mono text-[10px] text-text-muted">
+          {filteredEntities.length}
+        </span>
       </div>
 
-      <PanelHeader className="h-8">
-        <PanelTitle accent="cyan">Scene graph ({filteredEntities.length})</PanelTitle>
-        <IconButton size="sm" onClick={onAddEntity} title="Create entity">
-          <Plus size={12} />
-        </IconButton>
-      </PanelHeader>
-
       {selectedEntityIds.size > 1 && (
-        <div className="border-b border-border-default bg-accent-muted px-2 py-1 text-[10px] text-accent">
+        <div className="bg-accent-muted px-2 py-1 text-[10px] text-accent">
           {selectedEntityIds.size} nodes selected
         </div>
       )}

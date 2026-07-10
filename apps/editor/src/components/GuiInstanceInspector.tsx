@@ -67,7 +67,7 @@ export function GuiInstanceInspector({
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-surface">
-      <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 border-b border-border-default bg-bg-base px-3">
+      <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 bg-bg-base/50 px-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[12px] font-bold text-text-primary">{component.name}</span>
           <span className="font-mono text-[9px] tracking-wide text-text-muted">

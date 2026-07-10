@@ -29,7 +29,7 @@ export function Footer({
           : "idle";
 
   return (
-    <footer className="flex h-6 shrink-0 items-center gap-2 border-t border-border-default bg-bg-base px-3 text-xs tracking-[-0.01em] text-text-muted">
+    <footer className="flex h-6 shrink-0 items-center gap-2 bg-bg-base px-3 text-xs text-text-muted">
       <span className="inline-flex items-center gap-1.5 text-text-secondary">
         <StatusDot status={statusKind} />
         {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : status}

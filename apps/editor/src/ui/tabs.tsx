@@ -38,7 +38,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "flex shrink-0 items-stretch gap-0 border-b border-border-default bg-bg-base",
+        "flex shrink-0 items-stretch gap-0 bg-bg-base",
         className
       )}
       {...props}

@@ -2,9 +2,9 @@
 
 /* ── Playroom design tokens (brief.md) ───────────────────────────── */
 /*
-  Typography: Google Sans is proprietary and not available for general use.
-  Plus Jakarta Sans is the open geometric product sans we use instead.
-  JetBrains Mono for IDs, coordinates, and numeric fields.
+  Typography for a dense game editor:
+  IBM Plex Sans / Mono — technical, high legibility at 9–13px.
+  (Avoid soft geometric SaaS faces; they read amateur in tool chrome.)
 */
 
 @theme {
@@ -39,8 +39,8 @@
   --radius-md: 6px;
   --radius-lg: 10px;
 
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Compact dense-editor type scale (rem @ 13px root) */
   --text-2xs: 0.6923rem; /* ~9px */
@@ -87,8 +87,8 @@
 :root {
   color-scheme: dark;
 
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   --bg-base: #06090e;
   --bg-surface: #0b0f17;
@@ -163,8 +163,8 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
-  letter-spacing: -0.01em;
-  font-feature-settings: "ss01" on, "cv01" on, "kern" on;
+  letter-spacing: 0;
+  font-feature-settings: "kern" on, "liga" on;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -222,7 +222,7 @@ pre {
   font-size: var(--type-label-size);
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: var(--type-label-tracking);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
 }

@@ -27,7 +27,7 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "flex h-[38px] shrink-0 items-center justify-between gap-2 border-b border-border-default bg-bg-base px-2.5",
+        "flex h-[38px] shrink-0 items-center justify-between gap-2 bg-bg-base/40 px-2.5",
         className
       )}
       {...props}

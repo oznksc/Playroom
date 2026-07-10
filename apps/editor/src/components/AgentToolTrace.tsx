@@ -9,8 +9,8 @@ type AgentToolTraceProps = {
 
 export function AgentToolTrace({ toolCalls }: AgentToolTraceProps) {
   return (
-    <div className="flex max-h-[40%] min-h-[80px] flex-col border-t border-border-default bg-bg-base">
-      <div className="flex h-7 shrink-0 items-center justify-between border-b border-border-default px-2.5">
+    <div className="flex max-h-[40%] min-h-[80px] flex-col bg-bg-base">
+      <div className="flex h-7 shrink-0 items-center justify-between px-2.5">
         <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-text-muted">
           Tool Calls
         </span>
@@ -65,7 +65,7 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
         </span>
       </button>
       {expanded && (
-        <div className="space-y-2 border-t border-border-default bg-bg-base p-2">
+        <div className="space-y-2 bg-bg-base p-2">
           <div>
             <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
               Args

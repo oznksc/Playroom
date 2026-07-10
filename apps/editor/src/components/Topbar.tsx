@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import logoUrl from "../../../../logo.png";
-import { Button, IconButton, Separator, StatusDot, cn } from "@/ui";
+import { Button, IconButton, StatusDot, cn } from "@/ui";
 
 const MVP_SHOW_PLAY_CONTROLS = true;
 
@@ -89,19 +89,19 @@ export function Topbar({
           : "idle";
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border-default bg-bg-surface px-3">
+    <header className="flex h-12 shrink-0 items-center gap-3 bg-bg-surface px-3">
       <div className="flex min-w-0 items-center gap-2">
         <img src={logoUrl} alt="Playroom" className="size-7 object-contain" />
         <div className="hidden min-w-0 sm:block">
-          <div className="text-base font-semibold leading-none tracking-[-0.02em] text-text-primary">
+          <div className="text-[13px] font-semibold leading-none text-text-primary">
             Playroom
           </div>
-          <div className="mt-0.5 text-2xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-            MVP Editor
+          <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-text-muted">
+            Editor
           </div>
         </div>
         <ChevronRight size={12} className="shrink-0 text-text-muted" />
-        <span className="truncate text-base font-medium tracking-[-0.01em] text-text-secondary">
+        <span className="truncate font-mono text-[12px] font-medium text-text-secondary">
           {sceneName}
         </span>
         {isDirty && <StatusDot status="dirty" title="Unsaved changes" />}
@@ -136,7 +136,7 @@ export function Topbar({
             <Square size={12} />
           </IconButton>
           {isPlaying && (
-            <div className="ml-1 flex items-center gap-2 border-l border-border-default pl-2 pr-1 font-mono text-xs tracking-normal text-text-muted">
+            <div className="ml-1 flex items-center gap-2 pl-2 pr-1 font-mono text-xs tracking-normal text-text-muted">
               <Cpu size={11} className="text-accent" />
               <span>
                 FPS <strong className="text-accent-green">{playFps || "—"}</strong>
@@ -162,7 +162,6 @@ export function Topbar({
         >
           <PanelLeft size={14} />
         </IconButton>
-        <Separator orientation="vertical" className="mx-1 h-4" />
         <IconButton size="md" onClick={onRefresh} title="Refresh">
           <RefreshCw size={14} />
         </IconButton>
@@ -181,12 +180,9 @@ export function Topbar({
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </IconButton>
         {onOpenWizard && (
-          <>
-            <Separator orientation="vertical" className="mx-1 h-4" />
-            <IconButton size="md" onClick={onOpenWizard} title="New scene from template">
-              <LayoutTemplate size={14} />
-            </IconButton>
-          </>
+          <IconButton size="md" onClick={onOpenWizard} title="New scene from template">
+            <LayoutTemplate size={14} />
+          </IconButton>
         )}
         {onOpenAgent && (
           <IconButton size="md" onClick={onOpenAgent} title="Open AI Agent">
@@ -214,7 +210,7 @@ export function Topbar({
         />
       </div>
 
-      <div className="hidden items-center gap-1.5 border-l border-border-default pl-3 lg:flex">
+      <div className="hidden items-center gap-1.5 pl-3 lg:flex">
         <StatusDot status={statusKind} />
         <span className="max-w-[140px] truncate text-sm tracking-[-0.01em] text-text-secondary">
           {saveState === "saving" ? "Syncing..." : saveState === "saved" ? "Saved" : status}

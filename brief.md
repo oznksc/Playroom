@@ -27,7 +27,8 @@ The real object is the **canvas** — a viewport showing the scene with entities
 - **Secondary accent**: Engine Violet `#8b5cf6` — component sections, text node badges
 - **Tertiary accents**: Gold `#ffb300` (selection highlight), Green `#10b981` (play/success), Red `#ef4444` (stop/error)
 - **Neutral tint**: Blues (not pure gray) — `#94a3b8` secondary, `#64748b` muted
-- **Typography**: Plus Jakarta Sans (Google Sans–like open alternative; Google Sans itself is not free to use). JetBrains Mono for IDs and numeric fields. Compact scale: 9 / 10 / 11 / 12 / 13px. Labels uppercase + wide tracking; body slightly tight tracking (-0.01em).
+- **Typography**: IBM Plex Sans (UI) + IBM Plex Mono (data) — technical tool faces, not soft SaaS geometrics. Compact scale 9–13px. Labels medium weight, modest tracking; avoid ultra-wide uppercase chrome.
+- **Sidebar nav**: Vertical icon rail (activity bar), not a horizontal tab strip.
 - **Radii**: 3px / 6px / 10px scale
 - **Borders**: Thin, low-contrast (`rgba(255,255,255,0.06)` default), cyan-tinted subtle
 - **Glow effects**: Cyan, green, red glows for active states — used sparingly
@@ -68,5 +69,6 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 - **Accordions**: Left colored border, 38px header, collapsible body
 - **Buttons**: Icon buttons (20–24px), text buttons with 10px font, ghost style default
 - **Panels**: Full-height flex column, header bar (38px), scroll area below
-- **Tabs**: 8px font uppercase labels, active state with top accent line
+- **Sidebar activity rail**: 44px wide, icon + micro label, active = cyan left bar + muted fill
+- **Bottom drawer tabs**: title case, optional icon, bottom accent underline (not rounded pills)
 - **Status**: Dots (6px) for state, badges for types, monospace for IDs

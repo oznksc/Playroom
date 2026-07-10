@@ -1,9 +1,21 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Gamepad2,
+  FolderOpen,
+  PanelLeft,
+  PanelRight,
+  X,
+  Folder,
+  Clock3,
+  Terminal,
+} from "lucide-react";
 import { Topbar } from "./components/Topbar.js";
 import { Sidebar } from "./components/Sidebar.js";
+import { SidebarRail, type SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { Inspector } from "./components/Inspector.js";
 import { Footer } from "./components/Footer.js";
@@ -53,7 +65,7 @@ const MVP_SHOW_LEVELS = true;
 const MVP_SHOW_TIMELINE = false;
 const MVP_SHOW_CONSOLE = false;
 
-type SidebarTab = "entities" | "scenes" | "prefabs" | "agent" | "levels" | "guis" | "components";
+type SidebarTab = SidebarTabId;
 type BottomTab = "assets" | "timeline" | "console";
 
 export function App() {
@@ -1356,34 +1368,24 @@ export function App() {
 
       <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
         <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
-          <div className="flex shrink-0 flex-wrap items-stretch border-b border-border-default bg-bg-base">
-            {(
-              [
-                ["entities", "Hierarchy"],
-                ["scenes", "Scenes"],
-                ["prefabs", "Prefabs"],
-                ["agent", "Agent"],
-                ...(MVP_SHOW_LEVELS ? [["levels", "Levels"] as const] : []),
-                ...(MVP_SHOW_GUI_TOOLS
-                  ? ([["guis", "GUIs"], ["components", "Comps"]] as const)
-                  : []),
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveTab(id as SidebarTab)}
-                className={
-                  activeTab === id
-                    ? "relative h-8 px-2.5 text-2xs font-semibold uppercase tracking-[0.1em] text-accent after:absolute after:inset-x-2 after:top-0 after:h-0.5 after:rounded-b after:bg-accent after:content-['']"
-                    : "h-8 px-2.5 text-2xs font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-text-secondary"
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="sidebar-content min-h-0 flex-1 overflow-hidden">
+          <SidebarRail
+            active={activeTab}
+            onChange={setActiveTab}
+            items={[
+              { id: "entities", label: "Hierarchy" },
+              { id: "scenes", label: "Scenes" },
+              { id: "prefabs", label: "Prefabs" },
+              { id: "agent", label: "Agent" },
+              ...(MVP_SHOW_LEVELS ? [{ id: "levels" as const, label: "Levels" }] : []),
+              ...(MVP_SHOW_GUI_TOOLS
+                ? [
+                    { id: "guis" as const, label: "GUI" },
+                    { id: "components" as const, label: "Comps" },
+                  ]
+                : []),
+            ]}
+          />
+          <div className="sidebar-content">
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -1664,30 +1666,31 @@ export function App() {
 
       {scene && (
         <section className={`bottom-drawer-panel${bottomDrawerCollapsed ? " collapsed" : ""}`}>
-          <div className="flex h-8 shrink-0 items-end gap-1 border-b border-border-default bg-bg-base px-3">
+          <div className="drawer-tabs-bar">
             {(
               [
-                ["assets", "Content Browser"],
-                ...(MVP_SHOW_TIMELINE ? [["timeline", "Sequencer Timeline"] as const] : []),
-                ...(MVP_SHOW_CONSOLE ? [["console", "Developer Console"] as const] : []),
+                ["assets", "Content", <Folder key="i" size={12} strokeWidth={1.75} />] as const,
+                ...(MVP_SHOW_TIMELINE
+                  ? ([["timeline", "Timeline", <Clock3 key="i" size={12} strokeWidth={1.75} />]] as const)
+                  : []),
+                ...(MVP_SHOW_CONSOLE
+                  ? ([["console", "Console", <Terminal key="i" size={12} strokeWidth={1.75} />]] as const)
+                  : []),
               ] as const
-            ).map(([id, label]) => (
+            ).map(([id, label, icon]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setActiveBottomTab(id as BottomTab)}
-                className={
-                  activeBottomTab === id
-                    ? "flex h-7 items-center rounded-t border border-b-0 border-border-default bg-bg-surface px-3 text-xs font-semibold tracking-[-0.01em] text-accent shadow-[inset_0_2px_0_var(--accent)]"
-                    : "flex h-7 items-center rounded-t px-3 text-xs font-semibold tracking-[-0.01em] text-text-muted hover:text-text-secondary"
-                }
+                className={activeBottomTab === id ? "drawer-tab active" : "drawer-tab"}
               >
+                {icon}
                 {label}
               </button>
             ))}
             <button
               type="button"
-              className="ml-auto mb-0.5 flex size-7 items-center justify-center rounded-sm text-text-muted hover:bg-bg-hover hover:text-text-primary"
+              className="drawer-collapse-btn"
               onClick={() => setBottomDrawerCollapsed((v) => !v)}
               title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
             >

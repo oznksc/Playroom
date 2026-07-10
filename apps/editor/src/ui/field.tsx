@@ -87,7 +87,7 @@ export function CheckboxField({
   return (
     <label
       className={cn(
-        "flex cursor-pointer select-none items-center gap-2 text-sm tracking-[-0.01em] text-text-secondary",
+        "flex cursor-pointer select-none items-center gap-2 text-sm text-text-secondary",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}

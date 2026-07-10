@@ -391,7 +391,7 @@ export function SceneCanvas({
       </div>
 
       <ContextMenu items={getCanvasContextMenuItems()}>
-        <div className="canvas-viewport max-h-[calc(100vh-120px)] max-w-full overflow-auto rounded-lg border border-border-strong bg-[#090c12] shadow-lg">
+        <div className="canvas-viewport max-h-[calc(100vh-120px)] max-w-full overflow-auto rounded-lg bg-[#090c12]">
           <div style={containerStyle}>
             <canvas
               ref={canvasRef}

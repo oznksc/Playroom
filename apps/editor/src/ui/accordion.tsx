@@ -45,18 +45,18 @@ export function AccordionSection({
   return (
     <div
       className={cn(
-        "mb-1.5 overflow-hidden rounded-md border border-border-default border-l-2 bg-bg-elevated/40",
+        "mb-1.5 overflow-hidden rounded-md border-l-2 bg-bg-elevated/35",
         accentBorder[accent],
         className
       )}
     >
-      <div className="flex h-[34px] items-center gap-0.5 border-b border-border-default/60 bg-bg-base/60 px-1">
+      <div className="flex h-[34px] items-center gap-0.5 bg-bg-base/50 px-1">
         <button
           type="button"
           onClick={staticHeader ? undefined : onToggle}
           disabled={staticHeader}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 rounded-sm px-1.5 py-1 text-left text-sm font-medium tracking-[-0.01em] text-text-primary",
+            "flex min-w-0 flex-1 items-center gap-1.5 rounded-sm px-1.5 py-1 text-left text-sm font-medium text-text-primary",
             !staticHeader && "hover:bg-bg-hover",
             staticHeader && "cursor-default disabled:opacity-100"
           )}

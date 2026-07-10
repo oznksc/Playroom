@@ -134,7 +134,7 @@ export function PrefabPanel({
           <Plus size={13} />
         </IconButton>
       </PanelHeader>
-      <p className="m-0 border-b border-border-default px-2.5 py-1.5 text-[10px] leading-relaxed text-text-muted">
+      <p className="m-0 px-2.5 py-1.5 text-[10px] leading-relaxed text-text-muted">
         Select an entity → + to save as prefab. Click a prefab to spawn into the active scene.
       </p>
       <PanelBody className="space-y-0.5 p-1.5">

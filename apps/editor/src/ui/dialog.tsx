@@ -67,7 +67,7 @@ export function DialogHeader({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 border-b border-border-default px-4 py-3 pr-10 text-base font-semibold tracking-[-0.01em] text-text-primary",
+        "flex items-center gap-2 px-4 py-3 pr-10 text-base font-semibold text-text-primary",
         className
       )}
       {...props}
@@ -79,7 +79,7 @@ export function DialogBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-4 py-3 text-base leading-relaxed tracking-[-0.01em] text-text-secondary", className)} {...props} />;
+  return <div className={cn("px-4 py-3 text-base leading-relaxed text-text-secondary", className)} {...props} />;
 }
 
 export function DialogFooter({
@@ -89,7 +89,7 @@ export function DialogFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-2 border-t border-border-default px-4 py-3",
+        "flex items-center justify-end gap-2 px-4 py-3",
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ export const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-base leading-relaxed tracking-[-0.01em] text-text-secondary", className)}
+    className={cn("text-base leading-relaxed text-text-secondary", className)}
     {...props}
   />
 ));

@@ -28,7 +28,7 @@ export function AssetsPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg-surface">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border-default p-2">
+      <div className="flex shrink-0 items-center gap-2 p-2">
         <div className="search-field min-w-0 flex-1">
           <Search size={12} />
           <Input
@@ -108,7 +108,7 @@ export function AssetsPanel({
                       IMAGE
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-1 border-t border-border-default px-1.5 py-1">
+                  <div className="flex items-center gap-1 px-1.5 py-1">
                     <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-text-secondary">
                       {asset.id}
                     </span>

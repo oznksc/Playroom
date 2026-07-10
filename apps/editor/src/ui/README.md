@@ -8,7 +8,7 @@ Dense dark IDE chrome for the game editor. Visual rules: repo-root `brief.md`.
 - **Radix UI** for dialog, menus, tooltip, checkbox, scroll area
 - **CVA** + `clsx` + `tailwind-merge` for variants (`cn`)
 - **lucide-react** icons
-- **Fonts**: Plus Jakarta Sans (UI) + JetBrains Mono (data) via Google Fonts in `index.html`. Google Sans is proprietary — do not embed it.
+- **Fonts**: IBM Plex Sans (UI) + IBM Plex Mono (data) via Google Fonts in `index.html`. Chosen for dense tool chrome; avoid soft SaaS geometric faces.
 
 ## Type scale
 

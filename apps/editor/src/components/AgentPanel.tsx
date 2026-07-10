@@ -206,7 +206,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
       </PanelHeader>
 
       {isPlaying && (
-        <div className="border-b border-warning/30 bg-warning/10 px-2.5 py-1 text-[10px] text-warning">
+        <div className="bg-warning/10 px-2.5 py-1 text-[10px] text-warning">
           Simulation running — agent edits apply after stop/refresh.
         </div>
       )}
@@ -227,7 +227,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
           </div>
 
           {pendingApproval && (
-            <div className="border-t border-border-default bg-bg-elevated p-2">
+            <div className="bg-bg-elevated p-2">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
                 Approval required
               </div>
@@ -255,7 +255,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
           )}
 
           {!isStreaming && messages.some((m) => m.role === "agent") && (
-            <div className="flex gap-1 border-t border-border-default px-2 py-1.5">
+            <div className="flex gap-1 px-2 py-1.5">
               <Button size="sm" variant="secondary" onClick={() => sendMessage("/execute")}>
                 Execute plan
               </Button>
@@ -270,7 +270,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
           )}
 
           <form
-            className="flex items-end gap-1.5 border-t border-border-default bg-bg-base p-2"
+            className="flex items-end gap-1.5 bg-bg-base p-2"
             onSubmit={handleSubmit}
           >
             <Textarea

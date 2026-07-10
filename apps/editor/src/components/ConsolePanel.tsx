@@ -54,7 +54,7 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg-surface">
-      <div className="flex h-8 shrink-0 items-center justify-between border-b border-border-default bg-bg-base px-2.5">
+      <div className="flex h-8 shrink-0 items-center justify-between bg-bg-base/50 px-2.5">
         <div className="flex items-center gap-2 text-[11px] text-text-secondary">
           <Terminal size={13} className="opacity-60" />
           <span className="font-semibold">Debugger Terminal</span>
@@ -90,7 +90,7 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
           <div ref={consoleBottomRef} />
         </div>
 
-        <aside className="hidden w-40 shrink-0 border-l border-border-default bg-bg-base p-2 text-[10px] md:block">
+        <aside className="hidden w-40 shrink-0 bg-bg-base p-2 text-[10px] md:block">
           <div className="mb-2 font-semibold uppercase tracking-wide text-text-muted">
             Slash commands
           </div>
@@ -106,7 +106,7 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
 
       <form
         onSubmit={handleSubmit}
-        className="flex shrink-0 items-center gap-2 border-t border-border-default bg-bg-base px-2 py-1.5"
+        className="flex shrink-0 items-center gap-2 bg-bg-base/50 px-2 py-1.5"
       >
         <span className="font-mono text-accent">&gt;</span>
         <Input
