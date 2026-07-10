@@ -164,6 +164,7 @@ export class SceneManager {
   switchLevel(levelId: string): boolean {
     const level = this.state.levels.find((l) => l.id === levelId);
     if (!level) return false;
+    if (!level.unlocked) return false;
 
     const firstSceneId = level.sceneIds[0] ?? null;
     if (!firstSceneId || !this.state.scenes[firstSceneId]) return false;
@@ -250,6 +251,25 @@ export class SceneManager {
     return true;
   }
 
+  /** Unlock the next level after the given one (by order). Returns unlocked id or null. */
+  completeLevel(levelId: string): string | null {
+    const sorted = [...this.state.levels].sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex((l) => l.id === levelId);
+    if (index === -1) return null;
+    const next = sorted[index + 1];
+    if (!next) return null;
+    this.unlockLevel(next.id);
+    return next.id;
+  }
+
+  isLevelUnlocked(levelId: string): boolean {
+    return this.state.levels.find((l) => l.id === levelId)?.unlocked === true;
+  }
+
+  listUnlockedLevels(): GameKitLevel[] {
+    return this.state.levels.filter((l) => l.unlocked);
+  }
+
   subscribe(listener: SceneManagerListener): () => void {
     this.listeners.add(listener);
     return () => {
@@ -267,7 +287,14 @@ export class SceneManager {
 
   async saveGame(slotName: string): Promise<void> {
     const key = `playroom_save_${slotName}`;
-    const value = JSON.stringify(this.persistentState);
+    const payload: GameSavePayload = {
+      version: 1,
+      persistentState: this.persistentState,
+      levels: this.state.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
+      currentSceneId: this.state.currentSceneId,
+      currentLevelId: this.state.currentLevelId,
+    };
+    const value = JSON.stringify(payload);
     await this.storageProvider.setItem(key, value);
   }
 
@@ -276,7 +303,50 @@ export class SceneManager {
     try {
       const value = await this.storageProvider.getItem(key);
       if (value === null) return false;
-      this.persistentState = JSON.parse(value);
+      const parsed = JSON.parse(value) as GameSavePayload | Record<string, unknown>;
+
+      // Backward compatible: old saves were bare persistentState objects
+      if (!parsed || typeof parsed !== "object") return false;
+      if (!("version" in parsed)) {
+        this.persistentState = parsed as Record<string, unknown>;
+        this.notify();
+        return true;
+      }
+
+      const payload = parsed as GameSavePayload;
+      this.persistentState = payload.persistentState ?? {};
+
+      if (Array.isArray(payload.levels)) {
+        const unlockMap = new Map(payload.levels.map((l) => [l.id, l.unlocked]));
+        this.state = {
+          ...this.state,
+          levels: this.state.levels.map((l) => ({
+            ...l,
+            unlocked: unlockMap.has(l.id) ? !!unlockMap.get(l.id) : l.unlocked,
+          })),
+        };
+      }
+
+      if (payload.currentLevelId && this.isLevelUnlocked(payload.currentLevelId)) {
+        const level = this.state.levels.find((l) => l.id === payload.currentLevelId);
+        if (level) {
+          this.state = {
+            ...this.state,
+            currentLevelId: level.id,
+            currentLevelIndex: this.state.levels.indexOf(level),
+          };
+        }
+      }
+
+      if (payload.currentSceneId && this.state.scenes[payload.currentSceneId]) {
+        this.state = {
+          ...this.state,
+          currentSceneId: payload.currentSceneId,
+          isTransitioning: false,
+        };
+      }
+
+      this.notify();
       return true;
     } catch {
       return false;
@@ -287,6 +357,17 @@ export class SceneManager {
     this.persistentState = {};
   }
 
+  /** Snapshot for tests / agent tooling */
+  exportSaveSnapshot(): GameSavePayload {
+    return {
+      version: 1,
+      persistentState: { ...this.persistentState },
+      levels: this.state.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
+      currentSceneId: this.state.currentSceneId,
+      currentLevelId: this.state.currentLevelId,
+    };
+  }
+
   private notify(): void {
     const snapshot = this.getState();
     for (const listener of this.listeners) {
@@ -294,3 +375,11 @@ export class SceneManager {
     }
   }
 }
+
+export type GameSavePayload = {
+  version: 1;
+  persistentState: Record<string, unknown>;
+  levels: Array<{ id: string; unlocked: boolean }>;
+  currentSceneId: string | null;
+  currentLevelId: string | null;
+};

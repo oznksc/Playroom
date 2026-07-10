@@ -168,6 +168,23 @@ export const ScriptInputSchema = z.object({
   handlers: z.array(ScriptHandlerSchema),
 });
 
+export const ParticleSystemInputSchema = z.object({
+  type: z.literal("ParticleSystem"),
+  maxParticles: z.number().int().positive().default(32),
+  emissionRate: z.number().nonnegative().default(12),
+  lifetime: z.number().positive().default(0.8),
+  speed: z.number().nonnegative().default(60),
+  gravityScale: z.number().default(0.4),
+  colorStart: z.string().default("#00f0ff"),
+  colorEnd: z.string().default("#8b5cf6"),
+  sizeStart: z.number().positive().default(4),
+  sizeEnd: z.number().nonnegative().default(0),
+  shape: z.enum(["point", "box"]).default("point"),
+  width: z.number().nonnegative().default(0),
+  height: z.number().nonnegative().default(0),
+  active: z.boolean().default(true),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -186,6 +203,7 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   FollowPathInputSchema,
   StateMachineInputSchema,
   ScriptInputSchema,
+  ParticleSystemInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -206,4 +224,5 @@ export const ComponentTypeSchema = z.enum([
   "FollowPath",
   "StateMachine",
   "Script",
+  "ParticleSystem",
 ]);
