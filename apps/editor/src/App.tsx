@@ -1,4 +1,4 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
@@ -23,6 +23,24 @@ import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
 import { getApiUrl } from "./lib/api.js";
 import logoUrl from "../../../logo.png";
+
+// GameKit Runtime physics & logic imports
+import { createPlayerController } from "@gamekit/runtime/player";
+import { createRigidBody } from "@gamekit/runtime/rigid-body";
+import {
+  applyAabbCollisions,
+  applyCircleCollisions,
+  applyPolygonCollisions,
+  getEntityAabb,
+  getEntityCircle,
+  getEntityPolygon,
+  updateCollisionEvents,
+  updateTriggerEvents
+} from "@gamekit/runtime/collision";
+import type { CollisionEvent, TriggerState, CollisionState, CollisionSolid, TriggerEvent } from "@gamekit/runtime/collision";
+import { updateAnimation } from "@gamekit/runtime/animate";
+import { playTimeline } from "@gamekit/runtime/timeline";
+import type { TimelineState } from "@gamekit/runtime/timeline";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -103,8 +121,15 @@ export function App() {
   ]);
 
   const preSimulationSceneRef = useRef<GameKitScene | undefined>(undefined);
-  const velocitiesRef = useRef<Record<string, { x: number; y: number }>>({});
   const pressedKeysRef = useRef<Set<string>>(new Set());
+
+  // GameKit physics loop refs
+  const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
+  const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
+  const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
+  const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: false });
+  const triggerStateRef = useRef<TriggerState>(new Set());
+  const collisionStateRef = useRef<CollisionState>(new Set());
 
   const addConsoleLog = useCallback((type: ConsoleLog["type"], message: string) => {
     setLogs((prev) => [...prev, { type, message, timestamp: new Date() }]);
@@ -385,79 +410,240 @@ export function App() {
 
     let frameId: number;
     let lastTime = performance.now();
+    let accumulator = 0;
+    const fixedDt = 1 / 60;
+    const maxSteps = 10;
 
-    const loop = (time: number) => {
-      const delta = Math.min((time - lastTime) / 1000, 0.1); // cap lag
-      lastTime = time;
+    const tick = (timestamp: number) => {
+      const frameDt = Math.min((timestamp - lastTime) / 1000, 0.25);
+      lastTime = timestamp;
 
-      let modified = false;
+      accumulator += frameDt;
 
-      setScene((currentScene) => {
-        if (!currentScene) return currentScene;
+      let steps = 0;
+      if (!sceneRef.current) {
+        frameId = requestAnimationFrame(tick);
+        return;
+      }
+      let workingScene: GameKitScene = sceneRef.current;
 
-        const nextEntities = currentScene.entities.map((ent) => {
-          const player = findComponent<PlayerControllerComponent>(ent, "PlayerController");
-          const transform = findComponent<TransformComponent>(ent, "Transform");
+      const input = {
+        left: pressedKeysRef.current.has("ArrowLeft") || pressedKeysRef.current.has("a") || pressedKeysRef.current.has("A"),
+        right: pressedKeysRef.current.has("ArrowRight") || pressedKeysRef.current.has("d") || pressedKeysRef.current.has("D"),
+        jump: pressedKeysRef.current.has("ArrowUp") || pressedKeysRef.current.has(" ") || pressedKeysRef.current.has("w") || pressedKeysRef.current.has("W")
+      };
 
-          if (transform && player) {
-            const currentVelocity = velocitiesRef.current[ent.id] || { x: 0, y: 0 };
-            
-            // Gravity effect
-            currentVelocity.y += player.gravity * delta;
+      let changed = false;
 
-            // X directional key mapping
-            let hInput = 0;
-            if (pressedKeysRef.current.has("ArrowLeft")) hInput = -1;
-            if (pressedKeysRef.current.has("ArrowRight")) hInput = 1;
-            currentVelocity.x = hInput * player.speed;
+      while (accumulator >= fixedDt && steps < maxSteps) {
+        const dt = fixedDt;
+        const solids: CollisionSolid[] = [];
+        const collisionContacts: CollisionEvent[] = [];
 
-            // Jump mapping
-            const isGrounded = transform.position.y >= 300; // Mock floor boundary
-            if ((pressedKeysRef.current.has("ArrowUp") || pressedKeysRef.current.has(" ")) && isGrounded) {
-              currentVelocity.y = -player.jumpVelocity;
-              addConsoleLog("physics", `Rigid body impulse: jumpVelocity = ${player.jumpVelocity}`);
-            }
-
-            // Target positioning
-            const newPos = {
-              x: transform.position.x + currentVelocity.x * delta,
-              y: Math.min(transform.position.y + currentVelocity.y * delta, 300)
-            };
-
-            if (newPos.y === 300 && transform.position.y < 300) {
-              addConsoleLog("physics", `Grounded object ${ent.name} hit floor collision limit.`);
-            }
-
-            if (newPos.y === 300) {
-              currentVelocity.y = 0;
-            }
-
-            velocitiesRef.current[ent.id] = currentVelocity;
-            modified = true;
-
-            return {
-              ...ent,
-              components: ent.components.map((c) =>
-                c.type === "Transform" ? { ...c, position: newPos } : c
-              )
-            };
+        // 1. Gather all static non-trigger colliders
+        for (const entity of workingScene.entities) {
+          const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+          if (aabbCollider && aabbCollider.isStatic && !aabbCollider.isTrigger) {
+            const aabb = getEntityAabb(entity);
+            if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1, entityId: entity.id });
           }
+          const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+          if (circleCollider && circleCollider.isStatic && !circleCollider.isTrigger) {
+            const circle = getEntityCircle(entity);
+            if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1, entityId: entity.id });
+          }
+          const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+          if (polygonCollider && polygonCollider.isStatic && !polygonCollider.isTrigger) {
+            const polygon = getEntityPolygon(entity);
+            if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
+          }
+        }
+
+        // 2. Map and update entities
+        const nextEntities: GameKitEntity[] = workingScene.entities.map((entity) => {
+          const ent = structuredClone(entity);
+          const transform = ent.components.find((c): c is TransformComponent => c.type === "Transform");
+          if (!transform) return ent;
+
+          const rb = rigidBodyRefs.current.get(ent.id);
+          const controller = controllersRef.current.get(ent.id);
+
+          if (rb) {
+            if (controller && (input.left || input.right || input.jump)) rb.wake();
+            if (rb.state.sleeping) return ent;
+
+            if (controller) {
+              controller.update(input, dt);
+              rb.state.velocity.x = controller.state.velocity.x;
+              rb.state.velocity.y = controller.state.velocity.y;
+              controller.state.velocity = rb.state.velocity;
+              controller.setGrounded(false);
+            }
+
+            rb.integrateForces(dt, workingScene.gravity || { x: 0, y: 9.8 * 60 });
+
+            transform.rotation = (transform.rotation ?? 0) + rb.state.angularVelocity * dt;
+
+            const aabbCollider = ent.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+            const circleCollider = ent.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+            const polygonCollider = ent.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+
+            if (aabbCollider) {
+              const movingAabb = getEntityAabb(ent);
+              if (movingAabb) {
+                const mask = aabbCollider.mask;
+                const result = applyAabbCollisions(movingAabb, rb.state.velocity, solids, mask);
+                transform.position.x = result.position.x - aabbCollider.offset.x;
+                transform.position.y = result.position.y - aabbCollider.offset.y;
+                rb.state.velocity = result.velocity;
+                rb.updateSleep(dt, result.grounded);
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                if (controller && result.grounded) {
+                  controller.setGrounded(true);
+                }
+              }
+            } else if (circleCollider) {
+              const circle = getEntityCircle(ent);
+              if (circle) {
+                const mask = circleCollider.mask;
+                const result = applyCircleCollisions(circle, rb.state.velocity, solids, mask);
+                transform.position.x = result.position.x - circleCollider.offset.x;
+                transform.position.y = result.position.y - circleCollider.offset.y;
+                rb.state.velocity = result.velocity;
+                rb.updateSleep(dt, result.grounded);
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                if (controller && result.grounded) {
+                  controller.setGrounded(true);
+                }
+              }
+            } else if (polygonCollider) {
+              const polygon = getEntityPolygon(ent);
+              if (polygon) {
+                const result = applyPolygonCollisions(polygon, rb.state.velocity, solids, polygonCollider.mask);
+                transform.position.x = result.position.x - polygonCollider.offset.x;
+                transform.position.y = result.position.y - polygonCollider.offset.y;
+                rb.state.velocity = result.velocity;
+                rb.updateSleep(dt, result.grounded);
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                if (controller && result.grounded) {
+                  controller.setGrounded(true);
+                }
+              }
+            } else {
+              transform.position.x += rb.state.velocity.x * dt;
+              transform.position.y += rb.state.velocity.y * dt;
+              rb.updateSleep(dt, false);
+            }
+
+            // Sync RigidBody state back to component
+            const rbComp = ent.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+            if (rbComp) {
+              rbComp.velocity = { ...rb.state.velocity };
+              rbComp.angularVelocity = rb.state.angularVelocity;
+            }
+          } else if (controller) {
+            controller.update(input, dt);
+
+            const collider = ent.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+            const circleCollider = ent.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+            const polygonCollider = ent.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+
+            if (collider) {
+              const movingAabb = getEntityAabb(ent);
+              if (movingAabb) {
+                const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids, collider.mask);
+                transform.position.x = result.position.x - collider.offset.x;
+                transform.position.y = result.position.y - collider.offset.y;
+                controller.state.velocity = result.velocity;
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                controller.setGrounded(result.grounded);
+              }
+            } else if (circleCollider) {
+              const circle = getEntityCircle(ent);
+              if (circle) {
+                const result = applyCircleCollisions(circle, controller.state.velocity, solids, circleCollider.mask);
+                transform.position.x = result.position.x - circleCollider.offset.x;
+                transform.position.y = result.position.y - circleCollider.offset.y;
+                controller.state.velocity = result.velocity;
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                controller.setGrounded(result.grounded);
+              }
+            } else if (polygonCollider) {
+              const polygon = getEntityPolygon(ent);
+              if (polygon) {
+                const result = applyPolygonCollisions(polygon, controller.state.velocity, solids, polygonCollider.mask);
+                transform.position.x = result.position.x - polygonCollider.offset.x;
+                transform.position.y = result.position.y - polygonCollider.offset.y;
+                controller.state.velocity = result.velocity;
+                for (const otherEntityId of result.collisionEntityIds) {
+                  collisionContacts.push({ entityId: ent.id, otherEntityId });
+                }
+                controller.setGrounded(result.grounded);
+              }
+            } else {
+              transform.position.x += controller.state.velocity.x * dt;
+              transform.position.y += controller.state.velocity.y * dt;
+            }
+          }
+
+          // Update animations
+          const anim = ent.components.find((c): c is AnimationComponent => c.type === "Animation");
+          if (anim) {
+            let state = animationStatesRef.current.get(ent.id);
+            if (!state) {
+              state = { currentFrame: anim.currentFrame ?? 0, elapsed: 0 };
+              animationStatesRef.current.set(ent.id, state);
+            }
+            anim.currentFrame = updateAnimation(anim, state, dt);
+          }
+
           return ent;
         });
 
-        if (modified) {
-          return {
-            ...currentScene,
-            entities: nextEntities
-          };
+        // Trigger enter/exit
+        const triggerUpdate = updateTriggerEvents(nextEntities, triggerStateRef.current);
+        triggerStateRef.current = triggerUpdate.active;
+        for (const event of triggerUpdate.events) {
+          addConsoleLog("physics", `Trigger ${event.type}: ${event.triggerEntityId} with ${event.otherEntityId}`);
         }
-        return currentScene;
-      });
 
-      frameId = requestAnimationFrame(loop);
+        // Collision enter/exit
+        const collisionUpdate = updateCollisionEvents(collisionContacts, collisionStateRef.current);
+        collisionStateRef.current = collisionUpdate.active;
+        for (const event of collisionUpdate.events) {
+          addConsoleLog("physics", `Collision contact: ${event.entityId} with ${event.otherEntityId}`);
+        }
+
+        workingScene = { ...workingScene, entities: nextEntities };
+        playTimeline(workingScene, timelineRef.current, dt);
+
+        accumulator -= fixedDt;
+        steps++;
+        changed = true;
+      }
+
+      if (steps >= maxSteps) {
+        accumulator = 0;
+      }
+
+      if (changed && workingScene) {
+        setScene(workingScene);
+      }
+
+      frameId = requestAnimationFrame(tick);
     };
 
-    frameId = requestAnimationFrame(loop);
+    frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
   }, [isPlaying, isPaused, setScene, addConsoleLog]);
 
@@ -822,11 +1008,32 @@ export function App() {
   function handlePlayToggle() {
     if (!isPlaying) {
       preSimulationSceneRef.current = structuredClone(scene) as GameKitScene;
+
+      // Initialize all simulation states
+      controllersRef.current.clear();
+      rigidBodyRefs.current.clear();
+      animationStatesRef.current.clear();
+      timelineRef.current = { elapsed: 0, playing: scene?.timeline?.playing ?? true };
+      triggerStateRef.current.clear();
+      collisionStateRef.current.clear();
+
+      if (scene) {
+        for (const entity of scene.entities) {
+          const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
+          if (pc) {
+            controllersRef.current.set(entity.id, createPlayerController(pc));
+          }
+          const rb = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+          if (rb) {
+            rigidBodyRefs.current.set(entity.id, createRigidBody(rb));
+          }
+        }
+      }
+
       setIsPlaying(true);
       setIsPaused(false);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
-      addConsoleLog("physics", "Gravity loop initialized. Static colliders resolved.");
-      addConsoleLog("script", "Keyboard arrow movement active. Test jumping using Space or ArrowUp!");
+      addConsoleLog("physics", "Real-time physics engine loop initialized.");
     } else {
       setIsPaused((p) => {
         const next = !p;
@@ -842,7 +1049,11 @@ export function App() {
       setIsPaused(false);
       reset(preSimulationSceneRef.current);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandbox execution stopped. Viewport reverted.");
-      velocitiesRef.current = {};
+      controllersRef.current.clear();
+      rigidBodyRefs.current.clear();
+      animationStatesRef.current.clear();
+      triggerStateRef.current.clear();
+      collisionStateRef.current.clear();
     }
   }
 
