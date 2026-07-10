@@ -5,6 +5,7 @@ import { AgentToolTrace } from "./AgentToolTrace.js";
 import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
+import { getApiUrl } from "../lib/api.js";
 
 const PROVIDER_LABELS: Record<string, string> = {
   anthropic: "Anthropic Claude",
@@ -34,6 +35,31 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [modelsList, setModelsList] = useState<string[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchModels() {
+      try {
+        const res = await fetch(getApiUrl(`/api/agent/models/${resolvedProvider}`));
+        if (!res.ok) return;
+        const data = await res.json() as { models?: string[] };
+        if (active && data.models) {
+          setModelsList(data.models);
+          if (data.models.length > 0 && !data.models.includes(resolvedModel)) {
+            setActiveModel(data.models[0]);
+            localStorage.setItem("gamekit:agent:activeModel", data.models[0]);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    fetchModels();
+    return () => {
+      active = false;
+    };
+  }, [resolvedProvider, resolvedModel]);
 
   const {
     messages,
@@ -98,7 +124,25 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
               <option value="anthropic">Anthropic Claude</option>
             )}
           </select>
-          <span className="agent-header-model">{resolvedModel}</span>
+          {modelsList.length > 0 ? (
+            <select
+              className="agent-model-select"
+              value={resolvedModel}
+              onChange={(e) => {
+                const newModel = e.target.value;
+                setActiveModel(newModel);
+                localStorage.setItem("gamekit:agent:activeModel", newModel);
+              }}
+            >
+              {modelsList.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="agent-header-model">{resolvedModel}</span>
+          )}
           <span className="agent-header-mode">{approvalMode}</span>
         </div>
         <div className="agent-header-right">

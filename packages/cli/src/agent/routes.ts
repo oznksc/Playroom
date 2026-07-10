@@ -249,6 +249,58 @@ export async function handleAgentRoute(
     return true;
   }
 
+  // GET /api/agent/models/:provider
+  if (pathname.startsWith("/api/agent/models/") && method === "GET") {
+    const providerId = pathname.slice("/api/agent/models/".length);
+    let providerAdapter;
+    if (providerId === "lmstudio") {
+      providerAdapter = new LmStudioAdapter();
+    } else if (providerId === "openrouter") {
+      providerAdapter = new OpenRouterAdapter();
+    } else if (providerId === "openai") {
+      providerAdapter = new OpenAIAdapter();
+    } else if (providerId === "google") {
+      providerAdapter = new GoogleAdapter();
+    } else if (providerId === "ollama") {
+      providerAdapter = new OllamaAdapter();
+    } else if (providerId === "anthropic") {
+      providerAdapter = new AnthropicAdapter();
+    }
+
+    if (!providerAdapter) {
+      sendJson(response, 400, { error: `Invalid provider: ${providerId}` });
+      return true;
+    }
+
+    const storedKey = keyStore.get(providerId);
+    const apiKey = storedKey?.apiKey ?? "";
+    const baseUrl = storedKey?.baseUrl;
+
+    if (providerAdapter.requiresApiKey && !apiKey) {
+      const defaults: Record<string, string[]> = {
+        anthropic: ["claude-sonnet-4-5", "claude-3-5-sonnet-latest", "claude-3-opus-latest"],
+        openai: ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
+        google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+        openrouter: ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet"],
+      };
+      sendJson(response, 200, { models: defaults[providerId] ?? [] });
+      return true;
+    }
+
+    try {
+      const abortController = new AbortController();
+      const models = await providerAdapter.listModels({
+        apiKey,
+        baseUrl,
+        signal: abortController.signal,
+      });
+      sendJson(response, 200, { models });
+    } catch (e) {
+      sendJson(response, 500, { error: e instanceof Error ? e.message : "Failed to fetch models" });
+    }
+    return true;
+  }
+
   // POST /api/agent/approve
   if (pathname === "/api/agent/approve" && method === "POST") {
     // Approval is handled via in-memory gate in the agent loop
