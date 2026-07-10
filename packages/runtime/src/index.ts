@@ -30,6 +30,7 @@ export {
   type Circle,
   type Polygon,
   type CollisionSolid,
+  type RaycastHit,
   applyAabbCollisions,
   applyCircleCollisions,
   getEntityAabb,
@@ -39,6 +40,7 @@ export {
   intersectsCircleAabb,
   intersectsCircleCircle,
   intersectsPolygonAabb,
+  raycast,
   solidAabb
 } from "./collision.js";
 export {

@@ -122,6 +122,9 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@gamekit/runtime':
+        specifier: workspace:*
+        version: link:../runtime
       '@gamekit/schema':
         specifier: workspace:*
         version: link:../schema

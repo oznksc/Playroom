@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
 import { CircleColliderInputSchema, RigidBodyInputSchema } from "../schemas/component.js";
 import type { AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, GameKitComponent } from "@gamekit/schema";
+import { raycast } from "@gamekit/runtime/collision";
 
 export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
@@ -246,6 +247,109 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
+      };
+    },
+  );
+
+  server.tool(
+    "raycast",
+    "Cast a ray from origin in direction and return the first entity hit",
+    {
+      scenePath: z.string().describe("Scene filename"),
+      originX: z.number().describe("Ray origin X"),
+      originY: z.number().describe("Ray origin Y"),
+      directionX: z.number().describe("Ray direction X (will be normalized)"),
+      directionY: z.number().describe("Ray direction Y (will be normalized)"),
+      maxDistance: z.number().positive().optional().describe("Maximum ray distance"),
+      mask: z.number().int().optional().describe("Collision mask filter"),
+    },
+    async ({ scenePath, originX, originY, directionX, directionY, maxDistance, mask }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+
+      const hit = raycast(
+        { x: originX, y: originY },
+        { x: directionX, y: directionY },
+        scene.entities,
+        { maxDistance, mask },
+      );
+
+      if (!hit) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ hit: null }) }],
+        };
+      }
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(hit, null, 2) }],
+      };
+    },
+  );
+
+  server.tool(
+    "query_overlaps",
+    "List all entities with colliders overlapping a given point or area",
+    {
+      scenePath: z.string().describe("Scene filename"),
+      pointX: z.number().describe("Query point X"),
+      pointY: z.number().describe("Query point Y"),
+      radius: z.number().min(0).default(0).describe("Query radius (0 = point query)"),
+      mask: z.number().int().optional().describe("Collision mask filter"),
+    },
+    async ({ scenePath, pointX, pointY, radius, mask }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+
+      const origin = { x: pointX, y: pointY };
+      const overlaps: { entityId: string; colliderType: string }[] = [];
+
+      for (const entity of scene.entities) {
+        const transform = entity.components.find((c: any) => c.type === "Transform") as any;
+        if (!transform) continue;
+
+        const aabbComp = entity.components.find((c: any): c is AabbColliderComponent => c.type === "AabbCollider");
+        const circleComp = entity.components.find((c: any): c is CircleColliderComponent => c.type === "CircleCollider");
+
+        if (mask !== undefined) {
+          const layer = aabbComp?.layer ?? circleComp?.layer ?? 1;
+          if ((mask & layer) === 0) continue;
+        }
+
+        if (aabbComp) {
+          const ex = transform.position.x + aabbComp.offset.x;
+          const ey = transform.position.y + aabbComp.offset.y;
+          const ew = aabbComp.size.x * transform.scale.x;
+          const eh = aabbComp.size.y * transform.scale.y;
+          if (radius > 0) {
+            const closestX = Math.max(ex, Math.min(origin.x, ex + ew));
+            const closestY = Math.max(ey, Math.min(origin.y, ey + eh));
+            const dx = origin.x - closestX;
+            const dy = origin.y - closestY;
+            if (dx * dx + dy * dy <= radius * radius) {
+              overlaps.push({ entityId: entity.id, colliderType: "AabbCollider" });
+            }
+          } else {
+            if (origin.x >= ex && origin.x <= ex + ew && origin.y >= ey && origin.y <= ey + eh) {
+              overlaps.push({ entityId: entity.id, colliderType: "AabbCollider" });
+            }
+          }
+        }
+
+        if (circleComp) {
+          const cx = transform.position.x + circleComp.offset.x;
+          const cy = transform.position.y + circleComp.offset.y;
+          const cr = circleComp.radius * Math.max(transform.scale.x, transform.scale.y);
+          const dx = origin.x - cx;
+          const dy = origin.y - cy;
+          const queryR = cr + radius;
+          if (dx * dx + dy * dy <= queryR * queryR) {
+            overlaps.push({ entityId: entity.id, colliderType: "CircleCollider" });
+          }
+        }
+      }
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(overlaps, null, 2) }],
       };
     },
   );
