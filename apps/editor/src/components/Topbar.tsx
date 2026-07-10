@@ -15,7 +15,7 @@ import {
   Sparkles,
   LayoutTemplate,
 } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 import logoUrl from "../../../../logo.png";
 
 const MVP_SHOW_PLAY_CONTROLS = true;
@@ -28,6 +28,9 @@ type TopbarProps = {
   lastSaved: Date | null;
   isPlaying: boolean;
   isPaused: boolean;
+  playFps?: number;
+  playFrameMs?: number;
+  entityCount?: number;
   sidebarOpen: boolean;
   inspectorOpen: boolean;
   onPlayToggle: () => void;
@@ -54,6 +57,9 @@ export function Topbar({
   lastSaved,
   isPlaying,
   isPaused,
+  playFps = 0,
+  playFrameMs = 0,
+  entityCount = 0,
   sidebarOpen,
   inspectorOpen,
   onPlayToggle,
@@ -73,20 +79,6 @@ export function Topbar({
 }: TopbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
-
-  // Simulated live telemetry stats
-  const [fps, setFps] = useState(60);
-  const [tickMs, setTickMs] = useState(16.6);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    const interval = setInterval(() => {
-      // Small randomized variations to feel alive
-      setFps(Math.round(59.2 + Math.random() * 1.5));
-      setTickMs(Math.round((16.2 + Math.random() * 0.8) * 10) / 10);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPlaying]);
 
   return (
     <header className="topbar">
@@ -145,9 +137,11 @@ export function Topbar({
           {isPlaying && (
             <div className="engine-telemetry">
               <Cpu size={12} className="telemetry-icon" />
-              <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{fps}</strong></span>
+              <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{playFps || "—"}</strong></span>
               <span className="telemetry-divider" />
-              <span className="telemetry-stat">Latency: <strong>{tickMs}ms</strong></span>
+              <span className="telemetry-stat">Frame: <strong>{playFrameMs || "—"}ms</strong></span>
+              <span className="telemetry-divider" />
+              <span className="telemetry-stat">Entities: <strong>{entityCount}</strong></span>
             </div>
           )}
         </div>

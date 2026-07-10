@@ -226,6 +226,28 @@ async function main(argv: string[]): Promise<void> {
       }
       return;
     }
+    case "doctor": {
+      const { runDoctor } = await import("./doctor.js");
+      const report = await runDoctor(cwd);
+      const icon = { error: "✖", warn: "⚠", info: "·" } as const;
+      console.log(`Playroom doctor — ${report.projectPath}`);
+      console.log(
+        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}`,
+      );
+      console.log("");
+      for (const issue of report.issues) {
+        const loc = issue.path ? ` (${issue.path})` : "";
+        console.log(`  ${icon[issue.level]} [${issue.level}] ${issue.code}: ${issue.message}${loc}`);
+      }
+      console.log("");
+      if (report.ok) {
+        console.log(`OK — ${report.summary.warnings} warning(s), ${report.summary.errors} error(s)`);
+      } else {
+        console.error(`FAILED — ${report.summary.errors} error(s), ${report.summary.warnings} warning(s)`);
+        process.exitCode = 1;
+      }
+      return;
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -253,8 +275,10 @@ Usage:
   gamekit generate [--platform web|mobile]
   gamekit mcp [project-path]
   gamekit skills list
+  gamekit skills apply <name>
   gamekit search <query>
   gamekit validate
+  gamekit doctor
 `);
 }
 

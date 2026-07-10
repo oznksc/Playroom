@@ -10,9 +10,17 @@ import type {
   CameraFollowComponent,
   AnimationComponent,
   RigidBodyComponent,
+  ParticleSystemComponent,
 } from "@gamekit/schema";
 import { createPlayerController, type PlayerControllerInput } from "@gamekit/runtime/player";
 import { playTimeline, type TimelineState } from "@gamekit/runtime/timeline";
+import {
+  createParticleEmitter,
+  updateParticleEmitter,
+  particleRenderColor,
+  particleRenderSize,
+  type ParticleEmitterState,
+} from "@gamekit/runtime";
 
 type Transformable = {
   setPosition(x: number, y: number): unknown;
@@ -48,6 +56,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private cameraFollowData: CameraFollowComponent | null = null;
   private timelineState: TimelineState = { elapsed: 0, playing: false };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private particleEmitters = new Map<string, ParticleEmitterState>();
+  private particleGraphics: Phaser.GameObjects.Graphics | null = null;
 
   constructor(sceneData: GameKitScene, assetUrls: Record<string, string>) {
     super("GameKitScene");
@@ -112,6 +122,14 @@ export class GameKitPhaserScene extends Phaser.Scene {
       elapsed: 0,
       playing: this.sceneData.timeline.playing,
     };
+
+    this.particleGraphics = this.add.graphics();
+    this.particleGraphics.setDepth(1000);
+    for (const entity of this.sceneData.entities) {
+      if (findComponent<ParticleSystemComponent>(entity, "ParticleSystem")) {
+        this.particleEmitters.set(entity.id, createParticleEmitter());
+      }
+    }
   }
 
   update(_time: number, delta: number): void {
@@ -154,6 +172,36 @@ export class GameKitPhaserScene extends Phaser.Scene {
       if (go.setPosition) go.setPosition(transform.position.x, transform.position.y);
       if (go.setRotation) go.setRotation(Phaser.Math.DegToRad(transform.rotation));
       if (go.setScale) go.setScale(transform.scale.x, transform.scale.y);
+    }
+
+    // Particle systems (web parity with Skia runtime)
+    if (this.particleGraphics) {
+      this.particleGraphics.clear();
+      for (const entity of this.sceneData.entities) {
+        const ps = findComponent<ParticleSystemComponent>(entity, "ParticleSystem");
+        const transform = findComponent<TransformComponent>(entity, "Transform");
+        if (!ps || !transform) continue;
+        let emitter = this.particleEmitters.get(entity.id);
+        if (!emitter) {
+          emitter = createParticleEmitter();
+          this.particleEmitters.set(entity.id, emitter);
+        }
+        const particles = updateParticleEmitter(
+          emitter,
+          ps,
+          transform.position,
+          this.sceneData.gravity?.y ?? 0,
+          dt,
+        );
+        for (const p of particles) {
+          const c = Phaser.Display.Color.ValueToColor(particleRenderColor(p));
+          this.particleGraphics.fillStyle(
+            c.color,
+            Math.max(0, 1 - p.age / Math.max(0.0001, p.lifetime)),
+          );
+          this.particleGraphics.fillCircle(p.x, p.y, Math.max(0.5, particleRenderSize(p) / 2));
+        }
+      }
     }
   }
 
