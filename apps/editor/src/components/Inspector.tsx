@@ -37,7 +37,7 @@ import { useState } from "react";
 import { findComponent } from "../lib/components.js";
 import { getApiUrl } from "../lib/api.js";
 
-const MVP_SHOW_ADVANCED_PHYSICS = false;
+const MVP_SHOW_ADVANCED_PHYSICS = true;
 
 type NumberFieldProps = {
   label: string;

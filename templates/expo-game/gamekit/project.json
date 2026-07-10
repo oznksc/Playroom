@@ -2,10 +2,17 @@
   "schemaVersion": 1,
   "name": "Expo Playroom Game",
   "scenes": [
-    "main.scene.json",
-    "yatay.scene.json"
+    "main.scene.json"
   ],
-  "levels": [],
+  "levels": [
+    {
+      "id": "level-1",
+      "name": "Platformer Demo",
+      "order": 1,
+      "sceneIds": ["main"],
+      "unlocked": true
+    }
+  ],
   "assets": [
     {
       "id": "block-yellow-alt",
@@ -16,52 +23,22 @@
       "id": "player",
       "file": "player.svg",
       "kind": "image"
+    },
+    {
+      "id": "ground",
+      "file": "ground.svg",
+      "kind": "image"
+    },
+    {
+      "id": "platform",
+      "file": "platform.svg",
+      "kind": "image"
+    },
+    {
+      "id": "target",
+      "file": "target.svg",
+      "kind": "image"
     }
   ],
-  "guiComponents": [
-    {
-      "id": "deneme",
-      "name": "deneme",
-      "nodes": [
-        {
-          "id": "text-2qsuqr",
-          "x": 10,
-          "y": 10,
-          "width": 200,
-          "height": 40,
-          "visible": true,
-          "interactive": false,
-          "type": "Text",
-          "text": "Text",
-          "fontSize": 16,
-          "color": "#ffffff"
-        },
-        {
-          "id": "button-ulhdqq",
-          "x": 10,
-          "y": 10,
-          "width": 200,
-          "height": 40,
-          "visible": true,
-          "interactive": false,
-          "type": "Button",
-          "text": "Button",
-          "fontSize": 14,
-          "color": "#ffffff",
-          "backgroundColor": "#333333"
-        },
-        {
-          "id": "image-lruxrg",
-          "x": 10,
-          "y": 10,
-          "width": 200,
-          "height": 40,
-          "visible": true,
-          "interactive": false,
-          "type": "Image",
-          "assetId": "block-yellow-alt"
-        }
-      ]
-    }
-  ]
+  "guiComponents": []
 }

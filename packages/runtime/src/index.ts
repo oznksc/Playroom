@@ -75,3 +75,19 @@ export { usePlayerInput } from "./input.js";
 export { updateTween } from "./tween.js";
 export { updateFollowPath } from "./path.js";
 export { executeActions, transitionFsm, evaluateScriptEvent, type ScriptContext } from "./script.js";
+export {
+  createAudioController,
+  collectAudioSources,
+  type AudioController,
+  type ResolvedAudioSource,
+} from "./audio.js";
+export {
+  resolveActionKeys,
+  playerInputFromPressedKeys,
+  type ResolvedActionKeys,
+} from "./input-map.js";
+export {
+  simulateSceneSteps,
+  type SimulateOptions,
+  type SimulateResult,
+} from "./simulate.js";

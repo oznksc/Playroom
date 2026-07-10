@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Square, Settings, X, Info } from "lucide-react";
+import { Sparkles, Send, Square, Settings, X } from "lucide-react";
 import { AgentMessage } from "./AgentMessage.js";
 import { AgentToolTrace } from "./AgentToolTrace.js";
 import { useAgent } from "../hooks/useAgent.js";
@@ -20,14 +20,16 @@ type AgentPanelProps = {
   sceneId: string;
   isPlaying: boolean;
   onSettings?: () => void;
+  onSceneMutated?: () => void;
 };
 
-export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) {
+export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: AgentPanelProps) {
   const [input, setInput] = useState("");
   const { keys } = useAgentKeys();
   const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
   const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
+  const [planMode, setPlanMode] = useState(() => localStorage.getItem("gamekit:agent:planMode") === "1");
 
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
   const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
@@ -66,11 +68,13 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
     toolCalls,
     isStreaming,
     pendingApproval,
+    sessionSnapshotId,
     sendMessage,
     abort,
     approveTool,
     clear,
-  } = useAgent(sceneId, resolvedModel, resolvedProvider, approvalMode);
+    restoreSessionSnapshot,
+  } = useAgent(sceneId, resolvedModel, resolvedProvider, approvalMode, onSceneMutated, planMode);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -151,16 +155,37 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
               setApprovalMode(newMode);
               localStorage.setItem("gamekit:agent:approvalMode", newMode);
             }}
+            title="Tool approval mode"
           >
             <option value="destructive-only">Destructive Only</option>
             <option value="always">Always Approve</option>
+            <option value="plan">Plan + Approve</option>
             <option value="off">Off (Auto Approve)</option>
           </select>
+          <label className="agent-plan-toggle" title="Ask for a plan before tools">
+            <input
+              type="checkbox"
+              checked={planMode}
+              onChange={(e) => {
+                setPlanMode(e.target.checked);
+                localStorage.setItem("gamekit:agent:planMode", e.target.checked ? "1" : "0");
+              }}
+            />
+            Plan first
+          </label>
         </div>
         <div className="agent-header-right">
-          <button type="button" className="agent-header-btn" title="Info">
-            <Info size={13} />
-          </button>
+          {sessionSnapshotId && (
+            <button
+              type="button"
+              className="agent-header-btn agent-restore-btn"
+              title={`Restore session snapshot ${sessionSnapshotId}`}
+              onClick={() => restoreSessionSnapshot()}
+              disabled={isStreaming}
+            >
+              Undo session
+            </button>
+          )}
           <button type="button" className="agent-header-btn" title="Settings" onClick={onSettings}>
             <Settings size={13} />
           </button>
@@ -169,6 +194,9 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
           </button>
         </div>
       </div>
+      {isPlaying && (
+        <div className="agent-play-banner">Simulation running — agent edits apply after stop/refresh.</div>
+      )}
 
       {/* Body: Chat + Tool Trace */}
       <div className="agent-body">
@@ -191,6 +219,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
           {pendingApproval && (
             <div className="agent-approval">
               <div className="agent-approval-info">
+                <span className="agent-approval-label">Approval required</span>
                 <span className="agent-approval-tool">{pendingApproval.tool}</span>
                 <pre className="agent-approval-args">{JSON.stringify(pendingApproval.args, null, 2)}</pre>
               </div>
@@ -205,6 +234,17 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
             </div>
           )}
 
+          {!isStreaming && messages.some((m) => m.role === "agent") && (
+            <div className="agent-quick-actions">
+              <button type="button" className="agent-quick-btn" onClick={() => sendMessage("/execute")}>
+                Execute plan
+              </button>
+              <button type="button" className="agent-quick-btn" onClick={() => sendMessage("/screenshot Review this scene")}>
+                Screenshot
+              </button>
+            </div>
+          )}
+
           {/* Input */}
           <form className="agent-input-bar" onSubmit={handleSubmit}>
             <textarea
@@ -213,16 +253,16 @@ export function AgentPanel({ sceneId, isPlaying, onSettings }: AgentPanelProps) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Describe what to build..."
+              placeholder={planMode ? "Describe goal (plan first)..." : "Describe what to build..."}
               rows={1}
-              disabled={isStreaming}
+              disabled={isStreaming || !!pendingApproval}
             />
             {isStreaming ? (
               <button type="button" className="agent-send-btn agent-stop-btn" onClick={abort} title="Stop">
                 <Square size={14} />
               </button>
             ) : (
-              <button type="submit" className="agent-send-btn" disabled={!input.trim()} title="Send">
+              <button type="submit" className="agent-send-btn" disabled={!input.trim() || !!pendingApproval} title="Send">
                 <Send size={14} />
               </button>
             )}

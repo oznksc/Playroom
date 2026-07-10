@@ -18,7 +18,10 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
       const snapshotId = `snap_${Date.now()}`;
       const snapshotsDir = join(fileIO.assetsDir, "..", "agent", "snapshots");
       await mkdir(snapshotsDir, { recursive: true });
-      await writeFile(join(snapshotsDir, `${snapshotId}.json`), JSON.stringify(scene, null, 2));
+      await writeFile(
+        join(snapshotsDir, `${snapshotId}.json`),
+        JSON.stringify({ scenePath: filename, scene }, null, 2),
+      );
 
       return {
         content: [{ type: "text", text: JSON.stringify({ snapshotId, scenePath: filename }) }],
@@ -38,13 +41,16 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
 
       try {
         const data = await readFile(snapshotPath, "utf8");
-        const scene = JSON.parse(data);
-
-        const filename = fileIO.resolveScenePath(scene.id ?? "main.scene.json");
-        await fileIO.writeScene(filename, scene);
+        const parsed = JSON.parse(data) as { scenePath?: string; scene?: unknown } & Record<string, unknown>;
+        // Support both new envelope { scenePath, scene } and legacy raw scene JSON
+        const scene = (parsed.scene ?? parsed) as { id?: string };
+        const filename = fileIO.resolveScenePath(
+          parsed.scenePath ?? (typeof scene.id === "string" ? scene.id : "main.scene.json"),
+        );
+        await fileIO.writeScene(filename, scene as Parameters<typeof fileIO.writeScene>[1]);
 
         return {
-          content: [{ type: "text", text: JSON.stringify({ success: true, restored: snapshotId }) }],
+          content: [{ type: "text", text: JSON.stringify({ success: true, restored: snapshotId, scenePath: filename }) }],
         };
       } catch {
         return {
@@ -67,7 +73,7 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
 
       let fromScene;
       try {
-        fromScene = JSON.parse(await readFile(join(snapshotsDir, `${from}.json`), "utf8"));
+        fromScene = unwrapSnapshot(JSON.parse(await readFile(join(snapshotsDir, `${from}.json`), "utf8")));
       } catch {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: `Snapshot not found: ${from}` }) }],
@@ -78,7 +84,7 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
       let toScene;
       if (to) {
         try {
-          toScene = JSON.parse(await readFile(join(snapshotsDir, `${to}.json`), "utf8"));
+          toScene = unwrapSnapshot(JSON.parse(await readFile(join(snapshotsDir, `${to}.json`), "utf8")));
         } catch {
           return {
             content: [{ type: "text", text: JSON.stringify({ error: `Snapshot not found: ${to}` }) }],
@@ -86,7 +92,7 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
           };
         }
       } else {
-        const filename = fileIO.resolveScenePath(fromScene.id ?? "main.scene.json");
+        const filename = fileIO.resolveScenePath((fromScene as { id?: string }).id ?? "main.scene.json");
         toScene = await fileIO.readScene(filename);
       }
 
@@ -96,6 +102,13 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
       };
     },
   );
+}
+
+function unwrapSnapshot(parsed: unknown): unknown {
+  if (parsed && typeof parsed === "object" && "scene" in (parsed as object)) {
+    return (parsed as { scene: unknown }).scene;
+  }
+  return parsed;
 }
 
 function computeDiff(a: unknown, b: unknown, path = ""): Array<{ op: string; path: string; value?: unknown }> {

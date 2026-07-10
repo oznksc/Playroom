@@ -20,6 +20,11 @@ const COMPONENT_CHEATSHEET = `
 - CameraFollow: targetId (entity ID), smoothing (0-1)
 - Animation: assetId, frameWidth, frameHeight, totalFrames, framesPerSecond, loop
 - RigidBody: velocity, angularVelocity, mass, drag, isKinematic, gravityScale, useGravity
+- Text: text, fontAssetId, size, color, align
+- AudioSource: assetId, volume, loop, playOnStart
+- Tilemap: tilesetId, tileWidth/Height, columns, grid, tiles[]
+Safety tools: snapshot_undo_point, restore_snapshot, diff_scene_versions, validate_scene, explain_scene
+Simulation: simulate_runtime_step — headless N-frame physics to verify player/platform setups
 `.trim();
 
 export function buildSystemPrompt(ctx: PromptContext): string {
@@ -36,8 +41,9 @@ Constraint: an entity can have at most one of each component type. Positions are
 
   sections.push(`## Approval
 Mode: ${ctx.approvalMode}
-${ctx.approvalMode === "destructive-only" ? "Mutating tools (add_*, write_*, import_*) run automatically. Destructive tools (remove_*, delete_*) require user confirmation — call them as normal, the system handles the prompt." : ""}
+${ctx.approvalMode === "destructive-only" ? "Mutating tools (add_*, write_*, import_*) run automatically. Destructive tools (remove_*, delete_*, apply_skill, restore_snapshot) require user confirmation — call them as normal, the system handles the prompt." : ""}
 ${ctx.approvalMode === "always" ? "Every tool call requires user confirmation. The system handles the prompt automatically." : ""}
+${ctx.approvalMode === "plan" ? "Plan mode: propose steps first when asked. Every tool call requires user confirmation." : ""}
 ${ctx.approvalMode === "off" ? "No approval required. Run all tools directly." : ""}`);
 
   sections.push(`## Current Scene

@@ -15,6 +15,7 @@ import type { AssetRegistry } from "./scene.js";
 import { updateTween } from "./tween.js";
 import { updateFollowPath } from "./path.js";
 import { evaluateScriptEvent, transitionFsm } from "./script.js";
+import { createAudioController, type AudioController } from "./audio.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -35,6 +36,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: scene.timeline.playing });
   const triggerStateRef = useRef<TriggerState>(new Set());
   const collisionStateRef = useRef<CollisionState>(new Set());
+  const audioRef = useRef<AudioController | null>(null);
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -47,6 +49,11 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     timelineRef.current = { elapsed: 0, playing: scene.timeline.playing };
     triggerStateRef.current.clear();
     collisionStateRef.current.clear();
+    audioRef.current?.dispose();
+    audioRef.current = createAudioController(entitiesRef.current, (assetId) => {
+      const entry = assets[assetId];
+      return typeof entry === "string" ? entry : undefined;
+    });
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
@@ -105,7 +112,12 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
         });
       }
     }
-  }, [scene.id, scene.viewport.width, scene.viewport.height]);
+
+    return () => {
+      audioRef.current?.dispose();
+      audioRef.current = null;
+    };
+  }, [scene, assets]);
 
   useGameLoop((dt) => {
     const entities = entitiesRef.current;

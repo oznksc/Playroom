@@ -12,6 +12,7 @@ import {
   Cpu,
   PanelLeft,
   PanelRight,
+  Sparkles,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import logoUrl from "../../../../logo.png";
@@ -37,6 +38,7 @@ type TopbarProps = {
   onAddEntity: () => void;
   onToggleSidebar: () => void;
   onToggleInspector: () => void;
+  onOpenAgent?: () => void;
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
@@ -61,6 +63,7 @@ export function Topbar({
   onAddEntity,
   onToggleSidebar,
   onToggleInspector,
+  onOpenAgent,
   formatLastSaved,
   projectPath,
   onCloseProject,
@@ -174,6 +177,14 @@ export function Topbar({
         </button>
         <div className="toolbar-divider" />
         <div className="toolbar-divider" />
+        {onOpenAgent && (
+          <>
+            <div className="toolbar-divider" />
+            <button type="button" className="toolbar-action-btn" title="Open AI Agent panel" onClick={onOpenAgent}>
+              <Sparkles size={14} />
+            </button>
+          </>
+        )}
         <button type="button" className={`panel-toggle-btn${inspectorOpen ? " active" : ""}`} onClick={onToggleInspector} title="Toggle inspector panel">
           <PanelRight size={14} />
         </button>

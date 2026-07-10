@@ -5,8 +5,10 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 export function registerPersistenceTools(server: McpServer, fileIO: FileIO): void {
-  const statePath = join(fileIO.assetsDir.replace(/\/assets$/, ""), "gamekit", "state.json");
-  const savesDir = join(fileIO.assetsDir.replace(/\/assets$/, ""), "gamekit", "saves");
+  // assetsDir is <project>/gamekit/assets → state lives in <project>/gamekit/
+  const gamekitDir = fileIO.assetsDir.replace(/[/\\]assets$/, "");
+  const statePath = join(gamekitDir, "state.json");
+  const savesDir = join(gamekitDir, "saves");
 
   async function readState(): Promise<Record<string, unknown>> {
     try {

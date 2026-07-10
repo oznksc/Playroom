@@ -40,6 +40,14 @@
     "./rigid-body": {
       "types": "./dist/rigid-body.d.ts",
       "import": "./dist/rigid-body.js"
+    },
+    "./simulate": {
+      "types": "./dist/simulate.d.ts",
+      "import": "./dist/simulate.js"
+    },
+    "./input-map": {
+      "types": "./dist/input-map.d.ts",
+      "import": "./dist/input-map.js"
     }
   },
   "scripts": {

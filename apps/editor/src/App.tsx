@@ -15,6 +15,7 @@ import { AssetsPanel } from "./components/AssetsPanel.js";
 import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
 import { GuiPanel } from "./components/GuiPanel.js";
 import { AgentPanel } from "./components/AgentPanel.js";
+import { AgentSettings } from "./components/AgentSettings.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
 import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
@@ -41,6 +42,7 @@ import type { CollisionEvent, TriggerState, CollisionState, CollisionSolid, Trig
 import { updateAnimation } from "@gamekit/runtime/animate";
 import { playTimeline } from "@gamekit/runtime/timeline";
 import type { TimelineState } from "@gamekit/runtime/timeline";
+import { createAudioController, playerInputFromPressedKeys, type AudioController } from "@gamekit/runtime";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -114,6 +116,7 @@ export function App() {
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
@@ -130,6 +133,7 @@ export function App() {
   const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: false });
   const triggerStateRef = useRef<TriggerState>(new Set());
   const collisionStateRef = useRef<CollisionState>(new Set());
+  const audioControllerRef = useRef<AudioController | null>(null);
 
   const addConsoleLog = useCallback((type: ConsoleLog["type"], message: string) => {
     setLogs((prev) => [...prev, { type, message, timestamp: new Date() }]);
@@ -427,11 +431,10 @@ export function App() {
       }
       let workingScene: GameKitScene = sceneRef.current;
 
-      const input = {
-        left: pressedKeysRef.current.has("ArrowLeft") || pressedKeysRef.current.has("a") || pressedKeysRef.current.has("A"),
-        right: pressedKeysRef.current.has("ArrowRight") || pressedKeysRef.current.has("d") || pressedKeysRef.current.has("D"),
-        jump: pressedKeysRef.current.has("ArrowUp") || pressedKeysRef.current.has(" ") || pressedKeysRef.current.has("w") || pressedKeysRef.current.has("W")
-      };
+      const input = playerInputFromPressedKeys(
+        pressedKeysRef.current,
+        sceneRef.current?.inputMap,
+      );
 
       let changed = false;
 
@@ -1030,10 +1033,20 @@ export function App() {
         }
       }
 
+      audioControllerRef.current?.dispose();
+      audioControllerRef.current = createAudioController(scene?.entities ?? [], (assetId) => {
+        const asset = snapshot.assets.find((a) => a.id === assetId);
+        if (!asset) return undefined;
+        return getApiUrl(`/gamekit/assets/${asset.file}`);
+      });
+
       setIsPlaying(true);
       setIsPaused(false);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
       addConsoleLog("physics", "Real-time physics engine loop initialized.");
+      if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
+        addConsoleLog("system", `Audio: ${audioControllerRef.current!.sources.length} source(s) armed.`);
+      }
     } else {
       setIsPaused((p) => {
         const next = !p;
@@ -1054,6 +1067,8 @@ export function App() {
       animationStatesRef.current.clear();
       triggerStateRef.current.clear();
       collisionStateRef.current.clear();
+      audioControllerRef.current?.dispose();
+      audioControllerRef.current = null;
     }
   }
 
@@ -1242,6 +1257,10 @@ export function App() {
           onAddEntity={addEntity}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           onToggleInspector={() => setInspectorOpen((v) => !v)}
+          onOpenAgent={() => {
+            setSidebarOpen(true);
+            setActiveTab("agent");
+          }}
           formatLastSaved={formatLastSaved}
           projectPath={isTauri ? projectPath : null}
           onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
@@ -1311,6 +1330,12 @@ export function App() {
             <AgentPanel
               sceneId={currentSceneFile}
               isPlaying={isPlaying}
+              onSettings={() => setAgentSettingsOpen(true)}
+              onSceneMutated={() => {
+                if (!isPlaying) {
+                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+                }
+              }}
             />
           )}
           {MVP_SHOW_LEVELS && activeTab === "levels" && (
@@ -1375,6 +1400,11 @@ export function App() {
           showColliders={showColliders}
           snapSize={snapSize}
           isPlaying={isPlaying}
+          onVirtualInput={(action, pressed) => {
+            const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
+            if (pressed) pressedKeysRef.current.add(key);
+            else pressedKeysRef.current.delete(key);
+          }}
           onZoomChange={setZoom}
           onSnapToggle={setSnap}
           onSnapSizeChange={setSnapSize}
@@ -1554,6 +1584,7 @@ export function App() {
         statusClass={statusClass}
       />
 
+      <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
     </main>
   );
 }

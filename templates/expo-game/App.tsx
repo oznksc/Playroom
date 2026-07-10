@@ -5,10 +5,11 @@ import { gamekitAssets } from "./gamekit/generated/assets";
 
 const loaded = loadScene(sceneJson, gamekitAssets);
 
+/** Expo starter: landscape platformer with virtual on-screen controls. */
 export default function App() {
   return (
     <SafeAreaProvider>
-      <GameKitGame scene={loaded.scene} assets={loaded.assets} />
+      <GameKitGame scene={loaded.scene} assets={loaded.assets} showControls />
     </SafeAreaProvider>
   );
 }

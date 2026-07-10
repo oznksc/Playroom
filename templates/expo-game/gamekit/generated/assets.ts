@@ -2,7 +2,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 export const gamekitAssets = {
   "block-yellow-alt": require("../assets/block-yellow-alt.png"),
-  "player": require("../assets/player.svg")
+  "player": require("../assets/player.svg"),
+  "ground": require("../assets/ground.svg"),
+  "platform": require("../assets/platform.svg"),
+  "target": require("../assets/target.svg")
 } as const;
 
 export type GameKitAssetId = keyof typeof gamekitAssets;

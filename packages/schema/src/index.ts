@@ -292,6 +292,26 @@ export type TimelineData = {
   playing: boolean;
 };
 
+/** Maps abstract actions to keyboard keys and optional on-screen touch controls. */
+export type InputActionBinding = {
+  action: "move_left" | "move_right" | "jump" | string;
+  keys: string[];
+  touchControl?: "left" | "right" | "jump";
+  gamepad?: string;
+};
+
+export type InputMapConfig = {
+  bindings: InputActionBinding[];
+};
+
+export const DEFAULT_INPUT_MAP: InputMapConfig = {
+  bindings: [
+    { action: "move_left", keys: ["ArrowLeft", "a", "A"], touchControl: "left" },
+    { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right" },
+    { action: "jump", keys: ["ArrowUp", " ", "w", "W"], touchControl: "jump" },
+  ],
+};
+
 export type GameKitScene = {
   schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
   id: string;
@@ -310,6 +330,8 @@ export type GameKitScene = {
     nodes: GuiNode[];
     componentInstances: GuiComponentInstance[];
   };
+  /** Optional keyboard/touch action map. Defaults applied at runtime when omitted. */
+  inputMap?: InputMapConfig;
 };
 
 export type GameKitAsset = {
@@ -357,7 +379,8 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
       }
     },
     timeline: { tracks: [], duration: 0, loop: false, playing: false },
-    gui: { nodes: [], componentInstances: [] }
+    gui: { nodes: [], componentInstances: [] },
+    inputMap: { bindings: [...DEFAULT_INPUT_MAP.bindings] },
   };
 }
 
@@ -451,10 +474,49 @@ export function validateScene(input: unknown): ValidationResult<GameKitScene> {
     entities: validateEntities(input.entities, errors),
     responsive: validateResponsive(input.responsive, input.viewport, errors),
     timeline: validateTimeline(input.timeline, errors),
-    gui: validateGui(input.gui, errors)
+    gui: validateGui(input.gui, errors),
+    ...(input.inputMap !== undefined
+      ? { inputMap: validateInputMap(input.inputMap, errors) }
+      : {}),
   };
 
   return errors.length === 0 ? { ok: true, value: scene } : { ok: false, errors };
+}
+
+function validateInputMap(input: unknown, errors: string[]): InputMapConfig {
+  if (!isRecord(input)) {
+    errors.push("inputMap must be an object");
+    return { bindings: [...DEFAULT_INPUT_MAP.bindings] };
+  }
+  if (!Array.isArray(input.bindings)) {
+    errors.push("inputMap.bindings must be an array");
+    return { bindings: [...DEFAULT_INPUT_MAP.bindings] };
+  }
+  const bindings: InputActionBinding[] = input.bindings.map((binding, index) => {
+    const path = `inputMap.bindings[${index}]`;
+    if (!isRecord(binding)) {
+      errors.push(`${path} must be an object`);
+      return { action: "unknown", keys: [] };
+    }
+    const keys = Array.isArray(binding.keys)
+      ? (binding.keys as unknown[]).map((k, i) => expectString(k, `${path}.keys[${i}]`, errors))
+      : (errors.push(`${path}.keys must be an array`), []);
+    const touch = binding.touchControl;
+    const touchControl =
+      touch === "left" || touch === "right" || touch === "jump" ? touch : undefined;
+    if (binding.touchControl !== undefined && !touchControl) {
+      errors.push(`${path}.touchControl must be "left", "right", or "jump"`);
+    }
+    return {
+      action: expectString(binding.action, `${path}.action`, errors),
+      keys,
+      ...(touchControl ? { touchControl } : {}),
+      ...(binding.gamepad !== undefined
+        ? { gamepad: expectString(binding.gamepad, `${path}.gamepad`, errors) }
+        : {}),
+    };
+  });
+  return { bindings };
 }
 
 export function validateProject(input: unknown): ValidationResult<GameKitProject> {

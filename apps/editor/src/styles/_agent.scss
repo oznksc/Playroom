@@ -211,6 +211,58 @@
 }
 
 /* Approval */
+.agent-plan-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  input {
+    accent-color: #00f0ff;
+    margin: 0;
+  }
+}
+
+.agent-restore-btn {
+  width: auto !important;
+  padding: 0 8px !important;
+  font-size: 10px;
+  color: #ffb300 !important;
+}
+
+.agent-play-banner {
+  padding: 4px 12px;
+  font-size: 10px;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.agent-quick-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 6px;
+}
+
+.agent-quick-btn {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(0, 240, 255, 0.35);
+    color: #00f0ff;
+  }
+}
+
 .agent-approval {
   margin: 8px 12px;
   padding: 10px;
@@ -221,6 +273,15 @@
 
 .agent-approval-info {
   margin-bottom: 8px;
+}
+
+.agent-approval-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
 }
 
 .agent-approval-tool {
