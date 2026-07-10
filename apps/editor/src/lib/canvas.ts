@@ -2,6 +2,7 @@ import type {
   AabbColliderComponent,
   CircleColliderComponent,
   PolygonColliderComponent,
+  RigidBodyComponent,
   GameKitAsset,
   GameKitEntity,
   GameKitScene,
@@ -101,7 +102,7 @@ export function drawScene(
       const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
       if (aabb) {
         const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : aabb.isStatic ? "#10b981" : "#00f0ff";
+        context.strokeStyle = isSelected ? "#ffb300" : aabb.isTrigger ? "#3b82f6" : "#10b981";
         context.lineWidth = isSelected ? 2 : 1;
         context.setLineDash(isSelected ? [] : [4, 4]);
         context.strokeRect(
@@ -116,7 +117,7 @@ export function drawScene(
       const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
       if (circle) {
         const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : circle.isStatic ? "#10b981" : "#00f0ff";
+        context.strokeStyle = isSelected ? "#ffb300" : circle.isTrigger ? "#3b82f6" : "#10b981";
         context.lineWidth = isSelected ? 2 : 1;
         context.setLineDash(isSelected ? [] : [4, 4]);
         context.beginPath();
@@ -134,7 +135,7 @@ export function drawScene(
       const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
       if (polygon && polygon.points.length >= 3) {
         const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : polygon.isStatic ? "#10b981" : "#00f0ff";
+        context.strokeStyle = isSelected ? "#ffb300" : polygon.isTrigger ? "#3b82f6" : "#10b981";
         context.lineWidth = isSelected ? 2 : 1;
         context.setLineDash(isSelected ? [] : [4, 4]);
         context.beginPath();
@@ -147,6 +148,18 @@ export function drawScene(
         context.closePath();
         context.stroke();
         context.setLineDash([]);
+      }
+
+      const rb = findComponent<RigidBodyComponent>(entity, "RigidBody");
+      if (rb && rb.velocity && (rb.velocity.x !== 0 || rb.velocity.y !== 0)) {
+        drawArrow(
+          context,
+          transform.position.x,
+          transform.position.y,
+          transform.position.x + rb.velocity.x * 0.15,
+          transform.position.y + rb.velocity.y * 0.15,
+          "#00f0ff"
+        );
       }
     }
   }
@@ -398,4 +411,34 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
   }
 
   return false;
+}
+
+function drawArrow(
+  context: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  color: string
+) {
+  const headlen = 8;
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const angle = Math.atan2(dy, dx);
+
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = 2;
+
+  context.beginPath();
+  context.moveTo(fromX, fromY);
+  context.lineTo(toX, toY);
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(toX, toY);
+  context.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+  context.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+  context.closePath();
+  context.fill();
 }
