@@ -7,7 +7,7 @@ import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, updateTriggerEvents, type CollisionSolid, type TriggerEvent, type TriggerState } from "./collision.js";
+import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, updateCollisionEvents, updateTriggerEvents, type CollisionEvent, type CollisionSolid, type CollisionState, type TriggerEvent, type TriggerState } from "./collision.js";
 import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
@@ -19,9 +19,10 @@ export type GameKitGameProps = {
   showControls?: boolean;
   onTriggerEnter?: (event: TriggerEvent) => void;
   onTriggerExit?: (event: TriggerEvent) => void;
+  onCollisionEnter?: (event: CollisionEvent) => void;
 };
 
-export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit }: GameKitGameProps) {
+export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter }: GameKitGameProps) {
   const entitiesRef = useRef(structuredClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
@@ -30,6 +31,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
   const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: scene.timeline.playing });
   const triggerStateRef = useRef<TriggerState>(new Set());
+  const collisionStateRef = useRef<CollisionState>(new Set());
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
 
@@ -41,6 +43,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     animationStatesRef.current.clear();
     timelineRef.current = { elapsed: 0, playing: scene.timeline.playing };
     triggerStateRef.current.clear();
+    collisionStateRef.current.clear();
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
@@ -87,21 +90,22 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     const input = inputRef.current;
 
     const solids: CollisionSolid[] = [];
+    const collisionContacts: CollisionEvent[] = [];
     for (const entity of entities) {
       const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
       if (aabbCollider && aabbCollider.isStatic && !aabbCollider.isTrigger) {
         const aabb = getEntityAabb(entity);
-        if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1 });
+        if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1, entityId: entity.id });
       }
       const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
       if (circleCollider && circleCollider.isStatic && !circleCollider.isTrigger) {
         const circle = getEntityCircle(entity);
-        if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1 });
+        if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1, entityId: entity.id });
       }
       const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
       if (polygonCollider && polygonCollider.isStatic && !polygonCollider.isTrigger) {
         const polygon = getEntityPolygon(entity);
-        if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1 });
+        if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
       }
     }
 
@@ -141,6 +145,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.y = result.position.y - aabbCollider.offset.y;
           rb.state.velocity = result.velocity;
           rb.updateSleep(dt, result.grounded);
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           if (controller && result.grounded) {
             controller.setGrounded(true);
           }
@@ -154,6 +159,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.y = result.position.y - circleCollider.offset.y;
           rb.state.velocity = result.velocity;
           rb.updateSleep(dt, result.grounded);
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           if (controller && result.grounded) {
             controller.setGrounded(true);
           }
@@ -166,6 +172,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.y = result.position.y - polygonCollider.offset.y;
           rb.state.velocity = result.velocity;
           rb.updateSleep(dt, result.grounded);
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           if (controller && result.grounded) controller.setGrounded(true);
         }
       } else {
@@ -198,6 +205,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - collider.offset.x;
           transform.position.y = result.position.y - collider.offset.y;
           controller.state.velocity = result.velocity;
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           controller.setGrounded(result.grounded);
         }
       } else if (circleCollider) {
@@ -207,6 +215,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - circleCollider.offset.x;
           transform.position.y = result.position.y - circleCollider.offset.y;
           controller.state.velocity = result.velocity;
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           controller.setGrounded(result.grounded);
         }
       } else if (polygonCollider) {
@@ -216,6 +225,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           transform.position.x = result.position.x - polygonCollider.offset.x;
           transform.position.y = result.position.y - polygonCollider.offset.y;
           controller.state.velocity = result.velocity;
+          for (const otherEntityId of result.collisionEntityIds) collisionContacts.push({ entityId: entity.id, otherEntityId });
           controller.setGrounded(result.grounded);
         }
       } else {
@@ -259,6 +269,9 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       if (event.type === "enter") onTriggerEnter?.(event);
       else onTriggerExit?.(event);
     }
+    const collisionUpdate = updateCollisionEvents(collisionContacts, collisionStateRef.current);
+    collisionStateRef.current = collisionUpdate.active;
+    for (const event of collisionUpdate.events) onCollisionEnter?.(event);
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);
 

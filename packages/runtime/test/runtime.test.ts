@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { createCameraFollow } from "../src/camera.js";
-import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateTriggerEvents } from "../src/collision.js";
+import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
 import { createRigidBody, RIGID_BODY_SLEEP_DELAY } from "../src/rigid-body.js";
 import { loadScene } from "../src/scene.js";
@@ -250,5 +250,35 @@ describe("rigid body sleeping", () => {
 
     expect(body.state.velocity).toEqual({ x: 0, y: 0 });
     expect(body.integratePosition({ x: 10, y: 20 }, 1)).toEqual({ x: 10, y: 20 });
+  });
+});
+
+describe("collision events", () => {
+  it("reports the static entity contacted during collision resolution", () => {
+    const result = applyAabbCollisions(
+      { x: 0, y: 0, width: 10, height: 10 },
+      { x: 0, y: 10 },
+      [{ x: 0, y: 15, width: 100, height: 10, layer: 1, entityId: "floor" }],
+    );
+
+    expect(result.collisionEntityIds).toEqual(["floor"]);
+  });
+
+  it("emits enter only on the first frame of a continuous contact", () => {
+    const contacts = [{ entityId: "player", otherEntityId: "floor" }];
+    const first = updateCollisionEvents(contacts);
+    const second = updateCollisionEvents(contacts, first.active);
+
+    expect(first.events).toEqual(contacts);
+    expect(second.events).toEqual([]);
+  });
+
+  it("emits enter again after contact ends and later resumes", () => {
+    const contacts = [{ entityId: "player", otherEntityId: "floor" }];
+    const first = updateCollisionEvents(contacts);
+    const separated = updateCollisionEvents([], first.active);
+    const resumed = updateCollisionEvents(contacts, separated.active);
+
+    expect(resumed.events).toEqual(contacts);
   });
 });

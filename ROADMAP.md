@@ -38,7 +38,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] Trigger enter/exit events (`onTriggerEnter`, `onTriggerExit`) with layer/mask filtering
 - [x] Raycast (mouse picking, AI, laser) — `intersectRayAabb`/`Circle`/`Polygon` + `raycast()` entry point
 - [x] Sleeping-body optimization — supported low-motion rigid bodies sleep after 0.5s and wake on force, impulse, or player input
-- [~] Collision callbacks — `onTriggerEnter`/`onTriggerExit` complete; `onCollisionEnter` pending
+- [x] Collision callbacks — `onTriggerEnter`/`onTriggerExit` and solid-contact `onCollisionEnter`
 
 ### MCP Araçları (yeni)
 - [x] `add_collider` — sahneye `AabbCollider` / `CircleCollider` / `PolygonCollider` ekler
