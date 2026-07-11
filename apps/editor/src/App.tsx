@@ -1,10 +1,46 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FolderOpen, Folder, Clock3, Terminal, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  FolderOpen,
+  Folder,
+  Clock3,
+  Terminal,
+  X,
+  Layers,
+  SlidersHorizontal,
+  Sparkles,
+  Save,
+  RefreshCw,
+  Plus,
+  LayoutTemplate,
+  Settings,
+  LogOut,
+  MousePointer,
+  Move,
+  RefreshCcw,
+  Maximize,
+  Paintbrush,
+  Eraser,
+  Magnet,
+  Grid3x3,
+  Eye,
+  EyeOff,
+  Focus,
+  ZoomIn,
+  ZoomOut,
+  Undo2,
+  Redo2,
+  Play,
+  Square,
+  Box,
+  FileText,
+  Command,
+} from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
 import { PlayControls } from "./components/PlayControls.js";
+import { CommandPalette, type CommandItem } from "./components/CommandPalette.js";
 import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -128,6 +164,9 @@ export function App() {
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const commandPaletteOpenRef = useRef(false);
+  commandPaletteOpenRef.current = commandPaletteOpen;
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
@@ -276,9 +315,30 @@ export function App() {
       .catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
   }, [currentSceneFile, projectPath]);
 
+  // ⌘K / ⌘Space — Spotlight-style command palette (capture so it wins over fields)
+  useEffect(() => {
+    function handleCommandPaletteHotkey(event: KeyboardEvent) {
+      const meta = event.metaKey || event.ctrlKey;
+      if (!meta || event.shiftKey || event.altKey) return;
+
+      const isK = event.key === "k" || event.key === "K";
+      const isSpace = event.code === "Space";
+      if (!isK && !isSpace) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setCommandPaletteOpen((open) => !open);
+    }
+
+    window.addEventListener("keydown", handleCommandPaletteHotkey, true);
+    return () => window.removeEventListener("keydown", handleCommandPaletteHotkey, true);
+  }, []);
+
   // Global Keyboard listener for editor tools & keyframes
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (commandPaletteOpenRef.current) return;
+
       const ctrl = event.metaKey || event.ctrlKey;
       const isInput = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement;
 
@@ -1333,6 +1393,339 @@ export function App() {
     );
   }
 
+  const openHierarchy = useCallback(() => {
+    setActiveTab("entities");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+  }, []);
+
+  const openContent = useCallback((tab: BottomTab = "assets") => {
+    setActiveBottomTab(tab);
+    setBottomDrawerCollapsed(false);
+    setSidebarOpen(false);
+  }, []);
+
+  const openAgent = useCallback(() => {
+    setActiveTab("agent");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const openScenes = useCallback(() => {
+    setActiveTab("scenes");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const centerView = useCallback(() => {
+    setZoom(1);
+    setViewResetKey((k) => k + 1);
+  }, []);
+
+  const commandItems = useMemo((): CommandItem[] => {
+    const ic = (node: ReactNode) => node;
+    const items: CommandItem[] = [
+      {
+        id: "nav-hierarchy",
+        label: "Open Hierarchy",
+        section: "Navigate",
+        keywords: ["entities", "panel", "sidebar"],
+        icon: ic(<Layers size={14} strokeWidth={1.75} />),
+        run: openHierarchy,
+      },
+      {
+        id: "nav-inspector",
+        label: "Open Inspector",
+        section: "Navigate",
+        keywords: ["properties", "panel"],
+        icon: ic(<SlidersHorizontal size={14} strokeWidth={1.75} />),
+        run: openInspector,
+      },
+      {
+        id: "nav-content",
+        label: "Open Content",
+        section: "Navigate",
+        keywords: ["assets", "drawer", "files"],
+        icon: ic(<Folder size={14} strokeWidth={1.75} />),
+        run: () => openContent("assets"),
+      },
+      {
+        id: "nav-agent",
+        label: "Open Agent",
+        section: "Navigate",
+        keywords: ["ai", "assistant"],
+        icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
+        run: openAgent,
+      },
+      {
+        id: "nav-scenes",
+        label: "Open Scenes",
+        section: "Navigate",
+        keywords: ["levels", "files"],
+        icon: ic(<FileText size={14} strokeWidth={1.75} />),
+        run: openScenes,
+      },
+      {
+        id: "tool-select",
+        label: "Select tool",
+        section: "Tools",
+        shortcut: "Q",
+        icon: ic(<MousePointer size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("select"),
+      },
+      {
+        id: "tool-move",
+        label: "Move tool",
+        section: "Tools",
+        shortcut: "W",
+        icon: ic(<Move size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("translate"),
+      },
+      {
+        id: "tool-rotate",
+        label: "Rotate tool",
+        section: "Tools",
+        shortcut: "E",
+        icon: ic(<RefreshCcw size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("rotate"),
+      },
+      {
+        id: "tool-scale",
+        label: "Scale tool",
+        section: "Tools",
+        shortcut: "R",
+        icon: ic(<Maximize size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("scale"),
+      },
+      {
+        id: "tool-paint",
+        label: "Paint tool",
+        section: "Tools",
+        keywords: ["tile", "brush"],
+        icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("paint"),
+      },
+      {
+        id: "tool-erase",
+        label: "Erase tool",
+        section: "Tools",
+        icon: ic(<Eraser size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("erase"),
+      },
+      {
+        id: "tool-snap",
+        label: snap ? "Disable snap" : "Enable snap",
+        section: "Tools",
+        keywords: ["grid", "magnet"],
+        icon: ic(<Magnet size={14} strokeWidth={1.75} />),
+        run: () => setSnap((v) => !v),
+      },
+      {
+        id: "view-grid",
+        label: showGrid ? "Hide grid" : "Show grid",
+        section: "View",
+        icon: ic(<Grid3x3 size={14} strokeWidth={1.75} />),
+        run: () => setShowGrid((v) => !v),
+      },
+      {
+        id: "view-colliders",
+        label: showColliders ? "Hide colliders" : "Show colliders",
+        section: "View",
+        icon: ic(
+          showColliders ? (
+            <EyeOff size={14} strokeWidth={1.75} />
+          ) : (
+            <Eye size={14} strokeWidth={1.75} />
+          )
+        ),
+        run: () => setShowColliders((v) => !v),
+      },
+      {
+        id: "view-center",
+        label: "Center view",
+        section: "View",
+        keywords: ["reset", "camera", "fit"],
+        icon: ic(<Focus size={14} strokeWidth={1.75} />),
+        run: centerView,
+      },
+      {
+        id: "view-zoom-in",
+        label: "Zoom in",
+        section: "View",
+        icon: ic(<ZoomIn size={14} strokeWidth={1.75} />),
+        run: () => setZoom((z) => Math.min(4, z + 0.1)),
+      },
+      {
+        id: "view-zoom-out",
+        label: "Zoom out",
+        section: "View",
+        icon: ic(<ZoomOut size={14} strokeWidth={1.75} />),
+        run: () => setZoom((z) => Math.max(0.25, z - 0.1)),
+      },
+      {
+        id: "view-zoom-100",
+        label: "Zoom to 100%",
+        section: "View",
+        icon: ic(<Focus size={14} strokeWidth={1.75} />),
+        run: () => setZoom(1),
+      },
+      {
+        id: "create-entity",
+        label: "Add entity",
+        section: "Create",
+        keywords: ["new", "object"],
+        icon: ic(<Plus size={14} strokeWidth={1.75} />),
+        run: addEntity,
+      },
+      {
+        id: "create-template",
+        label: "New from template…",
+        section: "Create",
+        keywords: ["wizard", "skill", "genre"],
+        icon: ic(<LayoutTemplate size={14} strokeWidth={1.75} />),
+        run: () => setWizardOpen(true),
+      },
+      {
+        id: "edit-undo",
+        label: "Undo",
+        section: "Edit",
+        shortcut: "⌘Z",
+        icon: ic(<Undo2 size={14} strokeWidth={1.75} />),
+        disabled: !canUndo,
+        run: () => undo(),
+      },
+      {
+        id: "edit-redo",
+        label: "Redo",
+        section: "Edit",
+        shortcut: "⇧⌘Z",
+        icon: ic(<Redo2 size={14} strokeWidth={1.75} />),
+        disabled: !canRedo,
+        run: () => redo(),
+      },
+      {
+        id: "project-save",
+        label: "Save scene",
+        section: "Project",
+        shortcut: "⌘S",
+        icon: ic(<Save size={14} strokeWidth={1.75} />),
+        run: () => saveScene(),
+      },
+      {
+        id: "project-refresh",
+        label: "Refresh project",
+        section: "Project",
+        icon: ic(<RefreshCw size={14} strokeWidth={1.75} />),
+        run: () => {
+          refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+        },
+      },
+      {
+        id: "project-settings",
+        label: "Agent settings",
+        section: "Project",
+        keywords: ["preferences", "config"],
+        icon: ic(<Settings size={14} strokeWidth={1.75} />),
+        run: () => setAgentSettingsOpen(true),
+      },
+      {
+        id: "sim-play",
+        label: isPlaying
+          ? isPaused
+            ? "Resume simulation"
+            : "Pause simulation"
+          : "Play simulation",
+        section: "Simulation",
+        keywords: ["run", "preview"],
+        icon: ic(<Play size={14} strokeWidth={1.75} />),
+        run: handlePlayToggle,
+      },
+      {
+        id: "sim-stop",
+        label: "Stop simulation",
+        section: "Simulation",
+        icon: ic(<Square size={14} strokeWidth={1.75} />),
+        disabled: !isPlaying,
+        run: handleStop,
+      },
+      {
+        id: "cmd-palette-hint",
+        label: "Command menu",
+        section: "Help",
+        shortcut: "⌘K",
+        keywords: ["spotlight", "search", "palette"],
+        icon: ic(<Command size={14} strokeWidth={1.75} />),
+        run: () => setCommandPaletteOpen(true),
+      },
+    ];
+
+    if (isTauri && projectPath) {
+      items.push({
+        id: "project-close",
+        label: "Close project",
+        section: "Project",
+        icon: ic(<LogOut size={14} strokeWidth={1.75} />),
+        run: handleCloseProject,
+      });
+    }
+
+    for (const sceneFile of snapshot.scenes) {
+      items.push({
+        id: `scene-${sceneFile}`,
+        label: `Open scene “${sceneFile.replace(/\.scene\.json$/, "")}”`,
+        section: "Scenes",
+        keywords: ["goto", "switch", sceneFile],
+        icon: ic(<FileText size={14} strokeWidth={1.75} />),
+        run: () => setCurrentSceneFile(sceneFile),
+      });
+    }
+
+    for (const entity of scene?.entities ?? []) {
+      items.push({
+        id: `entity-${entity.id}`,
+        label: entity.name || entity.id,
+        section: "Entities",
+        keywords: ["select", "goto", entity.id],
+        icon: ic(<Box size={14} strokeWidth={1.75} />),
+        run: () => {
+          setSelectedEntityIds(new Set([entity.id]));
+          setSelectedGuiNodeId(null);
+          setSelectedComponentInstanceId(null);
+          setInspectorOpen(true);
+          setSidebarOpen(true);
+          setActiveTab("entities");
+          setBottomDrawerCollapsed(true);
+        },
+      });
+    }
+
+    return items;
+  }, [
+    snap,
+    showGrid,
+    showColliders,
+    canUndo,
+    canRedo,
+    isPlaying,
+    isPaused,
+    isTauri,
+    projectPath,
+    snapshot.scenes,
+    scene?.entities,
+    openHierarchy,
+    openInspector,
+    openContent,
+    openAgent,
+    openScenes,
+    centerView,
+    undo,
+    redo,
+  ]);
+
   return (
     <main
       className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}${!bottomDrawerCollapsed ? " has-bottom-sheet" : ""}`}
@@ -1533,6 +1926,7 @@ export function App() {
         onOpenWizard={() => setWizardOpen(true)}
         onSettings={() => setAgentSettingsOpen(true)}
         onCloseProject={isTauri ? handleCloseProject : undefined}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         activeTool={activeTool}
         snap={snap}
         snapSize={snapSize}
@@ -1788,6 +2182,12 @@ export function App() {
           setStatus(message);
           addConsoleLog("system", message);
         }}
+      />
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        commands={commandItems}
       />
     </main>
   );

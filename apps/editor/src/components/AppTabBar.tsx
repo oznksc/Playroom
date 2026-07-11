@@ -28,6 +28,7 @@ import {
   ScanEye,
   MoreHorizontal,
   ChevronUp,
+  Command,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -56,6 +57,7 @@ type AppTabBarProps = {
   onOpenWizard?: () => void;
   onSettings: () => void;
   onCloseProject?: () => void;
+  onOpenCommandPalette?: () => void;
   onActiveToolChange: (tool: CanvasTool) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
@@ -125,6 +127,7 @@ export function AppTabBar({
   onOpenWizard,
   onSettings,
   onCloseProject,
+  onOpenCommandPalette,
   onActiveToolChange,
   onSnapToggle,
   onSnapSizeChange,
@@ -395,6 +398,16 @@ export function AppTabBar({
           layout="column"
           align="end"
         >
+          {onOpenCommandPalette && (
+            <TabItem
+              label="Command menu"
+              active={false}
+              compact
+              row
+              onClick={() => runAndClose(onOpenCommandPalette)}
+              icon={<Command size={16} strokeWidth={1.75} />}
+            />
+          )}
           <TabItem
             label="Settings"
             active={false}
