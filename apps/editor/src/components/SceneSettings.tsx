@@ -48,10 +48,10 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
   }
 
   return (
-    <div className="flex shrink-0 flex-col bg-bg-surface">
+    <div className="flex shrink-0 flex-col bg-transparent">
       <button
         type="button"
-        className="flex h-[34px] w-full cursor-pointer items-center gap-2 bg-bg-base/50 px-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-text-muted hover:bg-bg-hover"
+        className="flex h-[36px] w-full cursor-pointer items-center gap-2 px-2.5 text-left text-[11px] font-semibold tracking-[-0.01em] text-[rgba(245,245,247,0.75)] hover:bg-white/[0.05]"
         onClick={() => setIsMainCollapsed((p) => !p)}
         title="Toggle world settings"
       >

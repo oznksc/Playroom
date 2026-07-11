@@ -9,7 +9,7 @@ export function Panel({
   return (
     <div
       className={cn(
-        "flex h-full min-w-0 flex-col overflow-hidden bg-bg-surface",
+        "flex h-full min-w-0 flex-col overflow-hidden bg-transparent",
         className
       )}
       {...props}
@@ -27,7 +27,7 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "flex h-[38px] shrink-0 items-center justify-between gap-2 bg-bg-base/40 px-2.5",
+        "flex h-[40px] shrink-0 items-center justify-between gap-2 px-2.5",
         className
       )}
       {...props}
@@ -58,7 +58,7 @@ export function PanelTitle({
   return (
     <h3
       className={cn(
-        "relative m-0 flex items-center gap-1.5 pl-2 text-2xs font-bold uppercase tracking-[0.08em] text-text-muted",
+        "relative m-0 flex items-center gap-1.5 pl-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(245,245,247,0.88)]",
         "before:absolute before:left-0 before:top-1/2 before:h-2.5 before:w-0.5 before:-translate-y-1/2 before:rounded-full",
         accentBar[accent],
         className

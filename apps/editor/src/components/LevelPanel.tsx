@@ -97,10 +97,10 @@ export function LevelPanel({
                   }
                 }}
                 className={cn(
-                  "rounded-md border p-2 transition-colors",
+                  "rounded-[12px] border p-2 transition-colors",
                   active
-                    ? "border-accent/40 bg-accent-muted"
-                    : "border-border-default bg-bg-base hover:border-border-strong"
+                    ? "border-accent/40 bg-[rgba(0,240,255,0.1)]"
+                    : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]"
                 )}
               >
                 <div className="mb-1.5 flex items-center gap-1.5">
@@ -144,7 +144,7 @@ export function LevelPanel({
                   {level.sceneIds.map((sceneId) => (
                     <div
                       key={sceneId}
-                      className="flex items-center gap-1 rounded-sm bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary"
+                      className="flex items-center gap-1 rounded-[8px] bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-text-secondary"
                     >
                       <span className="min-w-0 flex-1 truncate">
                         {sceneId.replace(".scene.json", "")}

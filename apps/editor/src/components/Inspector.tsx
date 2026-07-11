@@ -288,11 +288,11 @@ export function Inspector({
   }
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-surface">
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
       {entity && transform ? (
         <>
           {/* Inspector Header: Entity name & actions */}
-          <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 bg-bg-base/50 px-3">
+          <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 px-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <input
                 type="text"
@@ -1612,7 +1612,7 @@ export function Inspector({
 
           {/* Component Adder Section */}
           {missingComponents.length > 0 && (
-            <div className="shrink-0 bg-bg-base/50 p-2">
+            <div className="shrink-0 p-2">
               <div className="flex items-center gap-2">
                 <Plus size={13} className="shrink-0 text-accent" />
                 <Select

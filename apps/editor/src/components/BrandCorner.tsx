@@ -6,7 +6,7 @@ type BrandCornerProps = {
   className?: string;
 };
 
-/** Logo only — all actions live in the bottom tab bar. */
+/** Logo at bottom-left, tab-bar level. All actions live in the tab bar. */
 export function BrandCorner({ isDirty, className }: BrandCornerProps) {
   return (
     <div className={cn("brand-corner", className)} title="Playroom">

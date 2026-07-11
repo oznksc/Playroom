@@ -1,7 +1,24 @@
 /* ── Canvas-first floating chrome ───────────────────────────────── */
 /* Canvas owns the viewport. Sidebars / inspector / content are overlays. */
+/*
+ * Shared “glass dock” language (tab bar + play pill):
+ * dark translucent fill, strong blur, hairline ring, soft depth shadow.
+ */
 
 .shell {
+  --glass-fill: rgba(22, 22, 24, 0.8);
+  --glass-fill-deep: rgba(16, 18, 22, 0.88);
+  --glass-blur: blur(22px) saturate(1.4);
+  --glass-ring: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --glass-inset: inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.48);
+  --glass-radius: 18px;
+  --glass-radius-sm: 14px;
+  --glass-fg: rgba(235, 235, 245, 0.55);
+  --glass-fg-hover: rgba(235, 235, 245, 0.9);
+  --glass-chip: rgba(255, 255, 255, 0.06);
+  --glass-chip-hover: rgba(255, 255, 255, 0.1);
+
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -9,6 +26,13 @@
   background: var(--bg-base);
   color: var(--text-primary);
   user-select: none;
+}
+
+.glass-surface {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
 }
 
 /* Full-bleed canvas stage — always the base layer */
@@ -53,22 +77,22 @@
   image-rendering: pixelated;
 }
 
-/* Top-left brand: logo + settings only */
+/* Bottom-left brand — same vertical band as the tab bar */
 .brand-corner {
   position: absolute;
-  top: 12px;
+  bottom: 12px;
   left: 12px;
   z-index: 45;
   display: flex;
   align-items: center;
-  padding: 6px;
-  border-radius: 14px;
-  background: rgba(11, 15, 23, 0.72);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.35),
-    0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  justify-content: center;
+  height: 56px;
+  padding: 0 10px;
+  border-radius: 22px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
   pointer-events: none;
 }
 
@@ -79,7 +103,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -115,13 +139,10 @@
   transform: translateX(-50%);
   padding: 4px 6px;
   border-radius: 999px;
-  background: rgba(22, 22, 24, 0.78);
-  backdrop-filter: blur(20px) saturate(1.35);
-  -webkit-backdrop-filter: blur(20px) saturate(1.35);
-  box-shadow:
-    0 6px 24px rgba(0, 0, 0, 0.4),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
 }
 
 .play-controls-btn {
@@ -225,21 +246,20 @@
 
 /* Apple-style floating tab bar — editor actions (play is top-center) */
 .app-tabbar {
+  /* Symmetric side clearance so the bottom-left brand pill never collides */
+  --brand-clearance: 68px;
   position: absolute;
   left: 50%;
   bottom: 12px;
   z-index: 45;
-  max-width: calc(100vw - 24px);
+  max-width: calc(100vw - 24px - (var(--brand-clearance) * 2));
   transform: translateX(-50%);
   padding: 6px 8px;
   border-radius: 22px;
-  background: rgba(22, 22, 24, 0.82);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.5),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
 }
 
 .app-tabbar-scroll {
@@ -361,84 +381,154 @@
   color: #f5f5f7;
 }
 
-/* Floating left sheet (hierarchy / scenes / agent…) */
-.float-sheet-left {
+/* Floating sheets — same glass language as tab bar / play pill */
+.float-sheet-left,
+.float-sheet-right {
   position: absolute;
-  top: 60px;
-  left: 12px;
+  top: 56px;
   bottom: 88px;
   z-index: 35;
   display: flex;
   flex-direction: column;
-  width: min(300px, calc(100vw - 80px));
-  border-radius: 12px;
-  background: rgba(11, 15, 23, 0.92);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: var(--glass-radius);
+  background: var(--glass-fill-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
   overflow: hidden;
-  transform: translateX(-12px);
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
     opacity 160ms ease;
 }
 
-.float-sheet-left.open {
-  transform: translateX(0);
+.float-sheet-left {
+  left: 12px;
+  width: min(300px, calc(100vw - 80px));
+  transform: translateX(-14px) scale(0.98);
+}
+
+.float-sheet-right {
+  right: 12px;
+  width: min(320px, calc(100vw - 80px));
+  transform: translateX(14px) scale(0.98);
+}
+
+.float-sheet-left.open,
+.float-sheet-right.open {
+  transform: translateX(0) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
 
 .float-sheet-left .sidebar-content,
-.float-sheet-left .panel {
-  height: 100%;
-  min-height: 0;
-  background: transparent;
-}
-
-/* Floating right inspector sheet */
-.float-sheet-right {
-  position: absolute;
-  top: 60px;
-  right: 12px;
-  bottom: 88px;
-  z-index: 35;
-  display: flex;
-  flex-direction: column;
-  width: min(320px, calc(100vw - 80px));
-  border-radius: 12px;
-  background: rgba(11, 15, 23, 0.92);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  transform: translateX(12px);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 160ms ease;
-}
-
-.float-sheet-right.open {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
+.float-sheet-left .panel,
 .float-sheet-right .inspector-column,
 .float-sheet-right > * {
   min-height: 0;
   flex: 1;
   height: 100%;
   overflow: hidden;
-  background: transparent;
+  background: transparent !important;
+}
+
+/*
+ * Nested panel shells must stay transparent so the parent glass blur
+ * reads through (tab bar / play pill language).
+ */
+.float-sheet-left .bg-bg-surface,
+.float-sheet-right .bg-bg-surface,
+.bottom-sheet .bg-bg-surface,
+.float-sheet-left .bg-bg-base,
+.float-sheet-right .bg-bg-base,
+.bottom-sheet .bg-bg-base,
+.float-sheet-left .bg-bg-base\/50,
+.float-sheet-right .bg-bg-base\/50,
+.bottom-sheet .bg-bg-base\/50,
+.float-sheet-left .bg-bg-base\/40,
+.float-sheet-right .bg-bg-base\/40,
+.bottom-sheet .bg-bg-base\/40,
+.float-sheet-left .bg-bg-elevated,
+.float-sheet-right .bg-bg-elevated,
+.bottom-sheet .bg-bg-elevated,
+.float-sheet-left .bg-bg-elevated\/35,
+.float-sheet-right .bg-bg-elevated\/35 {
+  background: transparent !important;
+}
+
+/* Soft glass chips for cards / tool traces inside sheets */
+.float-sheet-left .border-border-default,
+.float-sheet-right .border-border-default,
+.bottom-sheet .border-border-default {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.float-sheet-left .rounded-md.border,
+.float-sheet-right .rounded-md.border,
+.bottom-sheet .rounded-md.border {
+  border-radius: 12px !important;
+  background: var(--glass-chip) !important;
+}
+
+/* Sheet chrome — pill headers matching tab items */
+.float-sheet-left .panel > .flex.h-9,
+.float-sheet-left [class*="PanelHeader"],
+.float-sheet-right .bg-bg-base\/50 {
+  background: transparent !important;
+}
+
+.float-sheet-left .list-row,
+.float-sheet-right .list-row,
+.bottom-sheet .list-row {
+  border-radius: 10px;
+  color: var(--glass-fg);
+}
+
+.float-sheet-left .list-row:hover,
+.float-sheet-right .list-row:hover,
+.bottom-sheet .list-row:hover {
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
+}
+
+.float-sheet-left .list-row[data-selected="true"],
+.float-sheet-left .list-row.active,
+.float-sheet-right .list-row[data-selected="true"],
+.float-sheet-right .list-row.active,
+.bottom-sheet .list-row[data-selected="true"],
+.bottom-sheet .list-row.active {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Accordion cards inside glass sheets */
+.float-sheet-left .mb-1\.5.overflow-hidden,
+.float-sheet-right .mb-1\.5.overflow-hidden {
+  border-radius: 12px;
+  background: var(--glass-chip) !important;
+}
+
+.float-sheet-left input,
+.float-sheet-right input,
+.float-sheet-left select,
+.float-sheet-right select,
+.float-sheet-left textarea,
+.float-sheet-right textarea,
+.bottom-sheet input,
+.bottom-sheet select,
+.bottom-sheet textarea {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  color: rgba(245, 245, 247, 0.92) !important;
+}
+
+.float-sheet-left button:not(.list-row):not([class*="IconButton"]),
+.float-sheet-right button:not(.list-row):not([class*="IconButton"]),
+.bottom-sheet button:not(.list-row):not(.bottom-sheet-tab):not(.bottom-sheet-close) {
+  border-radius: 10px;
 }
 
 /* Dim only when a sheet is open (optional light scrim) */
@@ -455,7 +545,7 @@
 }
 
 /*
- * Content drawer — sits flush above the Apple tab bar.
+ * Content drawer — same glass dock language, sits above tab bar.
  * Closed: fully hidden. Open: slides up from tab bar.
  */
 .bottom-sheet {
@@ -468,14 +558,11 @@
   flex-direction: column;
   width: min(720px, calc(100vw - 24px));
   max-height: min(44vh, 400px);
-  border-radius: 16px 16px 18px 18px;
-  background: rgba(22, 22, 24, 0.92);
-  backdrop-filter: blur(24px) saturate(1.35);
-  -webkit-backdrop-filter: blur(24px) saturate(1.35);
-  box-shadow:
-    0 -12px 40px rgba(0, 0, 0, 0.5),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  border-radius: var(--glass-radius);
+  background: var(--glass-fill-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
   overflow: hidden;
   transform: translateX(-50%) translateY(16px) scale(0.98);
   opacity: 0;
@@ -491,38 +578,24 @@
   pointer-events: auto;
 }
 
-/* Visual link to tab bar — small gap, centered over dock */
-.bottom-sheet::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  width: 40px;
-  height: 4px;
-  transform: translateX(-50%);
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.12);
-  pointer-events: none;
-}
-
 .bottom-sheet-header {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  height: 44px;
+  height: 48px;
   padding: 0 8px 0 14px;
 }
 
 .bottom-sheet-handle {
   position: absolute;
-  top: 6px;
+  top: 8px;
   left: 50%;
   width: 36px;
   height: 4px;
   transform: translateX(-50%);
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
 }
 
@@ -533,15 +606,15 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  padding-top: 4px;
+  padding-top: 6px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--text-primary);
+  color: rgba(245, 245, 247, 0.95);
 }
 
 .bottom-sheet-title span {
-  color: var(--text-muted);
+  color: var(--glass-fg);
   font-weight: 500;
   font-size: 11px;
 }
@@ -552,32 +625,35 @@
   gap: 2px;
   flex: 1;
   min-width: 0;
-  padding-top: 4px;
+  padding-top: 6px;
 }
 
 .bottom-sheet-tab {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 28px;
+  height: 30px;
   padding: 0 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--glass-fg);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
 }
 
 .bottom-sheet-tab:hover {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--glass-fg-hover);
+  background: var(--glass-chip);
 }
 
 .bottom-sheet-tab.active {
   color: var(--accent);
-  background: var(--accent-muted);
+  background: rgba(0, 240, 255, 0.12);
 }
 
 .bottom-sheet-close {
@@ -586,23 +662,32 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin-top: 4px;
+  margin-top: 6px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--glass-fg);
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
 }
 
 .bottom-sheet-close:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--glass-fg-hover);
+  background: var(--glass-chip-hover);
 }
 
 .drawer-content-box {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  background: transparent;
+}
+
+.drawer-content-box > * {
+  background: transparent !important;
+  height: 100%;
 }
 
 .shell.has-bottom-sheet:not(.drawer-collapsed) .tile-palette {
@@ -611,7 +696,7 @@
 
 /* Top-right actions removed — everything is on .app-tabbar */
 
-/* Tile palette floats over canvas, above tab bar */
+/* Tile palette — glass dock, same language as tab bar / play pill */
 .tile-palette {
   position: absolute;
   left: 50%;
@@ -622,12 +707,11 @@
   gap: 8px;
   transform: translateX(-50%);
   padding: 6px 10px;
-  border-radius: 10px;
-  background: rgba(11, 15, 23, 0.9);
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: var(--glass-radius-sm);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
 }
 
 .shell.has-bottom-sheet .app-tabbar {
@@ -636,10 +720,9 @@
 
 .tile-palette-label {
   font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--glass-fg);
   white-space: nowrap;
 }
 
@@ -656,30 +739,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--glass-chip);
+  color: var(--glass-fg);
   font-family: var(--font-mono);
   font-size: 9px;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .tile-swatch:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  color: var(--text-primary);
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
 }
 
 .tile-swatch.active {
-  border-color: var(--accent);
+  background: rgba(0, 240, 255, 0.12);
   color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-muted);
+  box-shadow: 0 0 0 0.5px rgba(0, 240, 255, 0.35);
 }
 
 .tile-swatch.empty {
   color: var(--text-muted);
 }
 
-/* List rows used across floating panels */
+/* List rows used across floating panels (glass chip hover) */
 .list-row {
   display: flex;
   align-items: center;
@@ -688,9 +774,9 @@
   min-height: 30px;
   padding: 4px 8px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--glass-fg);
   font-size: var(--type-body-size, 12px);
   font-weight: 500;
   text-align: left;
@@ -700,14 +786,14 @@
 }
 
 .list-row:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
 }
 
 .list-row.active,
 .list-row[data-selected="true"] {
-  background: var(--accent-muted);
-  color: var(--text-primary);
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent);
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
@@ -756,8 +842,9 @@
 /* Mobile: sheets full-bleed edges */
 @media (max-width: 768px) {
   .brand-corner {
-    top: 8px;
+    bottom: 10px;
     left: 8px;
+    height: 52px;
   }
 
   .float-sheet-left,
@@ -775,8 +862,9 @@
   }
 
   .app-tabbar {
+    --brand-clearance: 60px;
     bottom: 10px;
-    max-width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px - (var(--brand-clearance) * 2));
     overflow-x: auto;
   }
 

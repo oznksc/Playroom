@@ -53,11 +53,11 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-bg-surface">
-      <div className="flex h-8 shrink-0 items-center justify-between bg-bg-base/50 px-2.5">
-        <div className="flex items-center gap-2 text-[11px] text-text-secondary">
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex h-10 shrink-0 items-center justify-between px-2.5">
+        <div className="flex items-center gap-2 text-[11px] text-[rgba(245,245,247,0.75)]">
           <Terminal size={13} className="opacity-60" />
-          <span className="font-semibold">Debugger Terminal</span>
+          <span className="font-semibold tracking-[-0.01em]">Debugger Terminal</span>
           <Badge variant="muted">{logs.length} logs</Badge>
         </div>
         <Button size="sm" variant="secondary" onClick={onClearLogs}>
@@ -90,8 +90,8 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
           <div ref={consoleBottomRef} />
         </div>
 
-        <aside className="hidden w-40 shrink-0 bg-bg-base p-2 text-[10px] md:block">
-          <div className="mb-2 font-semibold uppercase tracking-wide text-text-muted">
+        <aside className="hidden w-40 shrink-0 border-l border-white/[0.06] bg-black/15 p-2 text-[10px] md:block">
+          <div className="mb-2 font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.55)]">
             Slash commands
           </div>
           <ul className="m-0 list-none space-y-1.5 p-0 text-text-secondary">
@@ -106,7 +106,7 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
 
       <form
         onSubmit={handleSubmit}
-        className="flex shrink-0 items-center gap-2 bg-bg-base/50 px-2 py-1.5"
+        className="flex shrink-0 items-center gap-2 border-t border-white/[0.06] px-2 py-1.5"
       >
         <span className="font-mono text-accent">&gt;</span>
         <Input

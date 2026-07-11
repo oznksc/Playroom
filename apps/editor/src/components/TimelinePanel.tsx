@@ -20,9 +20,9 @@ export function TimelinePanel({ scene, onChange }: TimelinePanelProps) {
   const timeline = scene.timeline;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-bg-surface">
-      <div className="flex h-9 shrink-0 flex-wrap items-center gap-3 bg-bg-base/50 px-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex h-10 shrink-0 flex-wrap items-center gap-3 px-2.5">
+        <span className="text-[11px] font-semibold tracking-[-0.01em] text-[rgba(245,245,247,0.88)]">
           Timeline
         </span>
         <IconButton
@@ -68,7 +68,7 @@ export function TimelinePanel({ scene, onChange }: TimelinePanelProps) {
           <EmptyState title="No animation tracks" description="Add a track to animate entity properties." />
         )}
         {timeline.tracks.map((track, ti) => (
-          <div key={ti} className="rounded-md border border-border-default bg-bg-base p-2">
+          <div key={ti} className="rounded-[12px] border border-white/[0.08] bg-white/[0.05] p-2">
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               <Select
                 className="h-[24px] min-w-[120px] flex-1"

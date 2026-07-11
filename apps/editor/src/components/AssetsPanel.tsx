@@ -27,7 +27,7 @@ export function AssetsPanel({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-bg-surface">
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
       <div className="flex shrink-0 items-center gap-2 p-2">
         <div className="search-field min-w-0 flex-1">
           <Search size={12} />
@@ -82,13 +82,13 @@ export function AssetsPanel({
                     }
                   }}
                   className={cn(
-                    "group cursor-pointer overflow-hidden rounded-md border bg-bg-base transition-colors",
+                    "group cursor-pointer overflow-hidden rounded-[12px] border transition-colors",
                     active
-                      ? "border-accent shadow-[0_0_0_1px_var(--accent-muted)]"
-                      : "border-border-default hover:border-border-strong"
+                      ? "border-accent bg-white/[0.08] shadow-[0_0_0_0.5px_rgba(0,240,255,0.35)]"
+                      : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]"
                   )}
                 >
-                  <div className="relative flex aspect-square items-center justify-center bg-bg-elevated">
+                  <div className="relative flex aspect-square items-center justify-center bg-black/25">
                     <img
                       src={getApiUrl(`/gamekit/assets/${asset.file}`)}
                       alt=""

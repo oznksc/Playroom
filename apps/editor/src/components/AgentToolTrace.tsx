@@ -9,9 +9,9 @@ type AgentToolTraceProps = {
 
 export function AgentToolTrace({ toolCalls }: AgentToolTraceProps) {
   return (
-    <div className="flex max-h-[40%] min-h-[80px] flex-col bg-bg-base">
-      <div className="flex h-7 shrink-0 items-center justify-between px-2.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-text-muted">
+    <div className="flex max-h-[40%] min-h-[80px] flex-col border-t border-white/[0.06] bg-transparent">
+      <div className="flex h-8 shrink-0 items-center justify-between px-2.5">
+        <span className="text-[11px] font-semibold tracking-[-0.01em] text-[rgba(245,245,247,0.75)]">
           Tool Calls
         </span>
         <Badge variant="muted">{toolCalls.length}</Badge>
@@ -40,10 +40,10 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
           : "text-warning";
 
   return (
-    <div className="overflow-hidden rounded-md border border-border-default bg-bg-surface">
+    <div className="overflow-hidden rounded-[12px] border border-white/[0.08] bg-white/[0.05]">
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left hover:bg-bg-hover"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left hover:bg-white/[0.06]"
         onClick={() => setExpanded(!expanded)}
       >
         <span className={cn("shrink-0", statusColor)}>
@@ -54,7 +54,7 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
           {toolCall.status === "error" && <X size={12} />}
           {toolCall.status === "needs-approval" && <Clock size={12} />}
         </span>
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-primary">
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[rgba(245,245,247,0.92)]">
           {toolCall.tool}
         </span>
         {toolCall.ms !== undefined && (
@@ -65,12 +65,12 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
         </span>
       </button>
       {expanded && (
-        <div className="space-y-2 bg-bg-base p-2">
+        <div className="space-y-2 border-t border-white/[0.06] bg-black/20 p-2">
           <div>
             <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
               Args
             </div>
-            <pre className="max-h-28 overflow-auto rounded border border-border-default bg-bg-elevated p-1.5 font-mono text-[10px] text-text-secondary">
+            <pre className="max-h-28 overflow-auto rounded-[10px] border border-white/[0.06] bg-black/30 p-1.5 font-mono text-[10px] text-text-secondary">
               {JSON.stringify(toolCall.args, null, 2)}
             </pre>
           </div>
@@ -79,7 +79,7 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
               <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
                 Result
               </div>
-              <pre className="max-h-28 overflow-auto rounded border border-border-default bg-bg-elevated p-1.5 font-mono text-[10px] text-text-secondary">
+              <pre className="max-h-28 overflow-auto rounded-[10px] border border-white/[0.06] bg-black/30 p-1.5 font-mono text-[10px] text-text-secondary">
                 {JSON.stringify(toolCall.result, null, 2)}
               </pre>
             </div>

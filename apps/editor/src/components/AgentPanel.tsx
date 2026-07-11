@@ -106,7 +106,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
   }
 
   return (
-    <Panel className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-surface">
+    <Panel className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
       <PanelHeader className="h-auto min-h-[38px] flex-wrap gap-2 py-1.5">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <PanelTitle accent="purple" className="mr-1">
@@ -232,7 +232,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
                 Approval required
               </div>
               <div className="mb-1 font-mono text-[11px] text-accent">{pendingApproval.tool}</div>
-              <pre className="mb-2 max-h-24 overflow-auto rounded border border-border-default bg-bg-base p-1.5 font-mono text-[10px] text-text-secondary">
+              <pre className="mb-2 max-h-24 overflow-auto rounded-[10px] border border-white/[0.06] bg-black/30 p-1.5 font-mono text-[10px] text-text-secondary">
                 {JSON.stringify(pendingApproval.args, null, 2)}
               </pre>
               <div className="flex justify-end gap-1.5">
@@ -270,7 +270,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
           )}
 
           <form
-            className="flex items-end gap-1.5 bg-bg-base p-2"
+            className="flex items-end gap-1.5 border-t border-white/[0.06] p-2"
             onSubmit={handleSubmit}
           >
             <Textarea

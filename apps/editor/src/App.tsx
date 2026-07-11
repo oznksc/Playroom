@@ -1468,7 +1468,7 @@ export function App() {
         )}
       </div>
 
-      {/* Top-left: logo only — every action is on the tab bar */}
+      {/* Bottom-left logo, tab-bar level — every action is on the tab bar */}
       <BrandCorner isDirty={isDirty} />
 
       <PlayControls
