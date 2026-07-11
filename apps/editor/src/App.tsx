@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FolderOpen, Folder, Clock3, Terminal, X } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
+import { PlayControls } from "./components/PlayControls.js";
 import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
@@ -1470,7 +1471,17 @@ export function App() {
       {/* Top-left: logo only — every action is on the tab bar */}
       <BrandCorner isDirty={isDirty} />
 
-      {/* Single action surface: all editor actions */}
+      <PlayControls
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        playFps={playFps}
+        playFrameMs={playFrameMs}
+        entityCount={scene?.entities.length ?? 0}
+        onPlayToggle={handlePlayToggle}
+        onStop={handleStop}
+      />
+
+      {/* Bottom tab bar — navigation, tools, project */}
       <AppTabBar
         active={
           !bottomDrawerCollapsed
@@ -1483,10 +1494,7 @@ export function App() {
                   ? "inspector"
                   : null
         }
-        isPlaying={isPlaying}
-        isPaused={isPaused}
         saveState={saveState}
-        playFps={playFps}
         projectPath={isTauri ? projectPath : null}
         onHierarchy={() => {
           if (sidebarOpen && activeTab === "entities") {
@@ -1518,8 +1526,6 @@ export function App() {
             setBottomDrawerCollapsed(true);
           }
         }}
-        onPlayToggle={handlePlayToggle}
-        onStop={handleStop}
         onSave={saveScene}
         onRefresh={refresh}
         onImport={importAsset}

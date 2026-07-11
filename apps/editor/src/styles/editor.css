@@ -103,7 +103,127 @@
   color: var(--text-primary) !important;
 }
 
-/* Apple-style floating tab bar — ALL editor actions live here */
+/* Compact simulation transport — top center (mini tab-bar style) */
+.play-controls {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transform: translateX(-50%);
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(22, 22, 24, 0.78);
+  backdrop-filter: blur(20px) saturate(1.35);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+}
+
+.play-controls-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(235, 235, 245, 0.75);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+
+.play-controls-btn:hover:not(:disabled) {
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.play-controls-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.play-controls-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.play-controls-btn.play {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+.play-controls-btn.play.live {
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+  box-shadow: 0 0 0 0.5px rgba(52, 211, 153, 0.35);
+}
+
+.play-controls-btn.play.paused {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.play-controls-btn.stop:not(:disabled):hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.play-controls-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  padding: 0 8px 0 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.play-controls-cpu {
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.play-controls-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.play-controls-stat strong {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.play-controls-stat em {
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+.play-controls-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Apple-style floating tab bar — editor actions (play is top-center) */
 .app-tabbar {
   position: absolute;
   left: 50%;
@@ -201,85 +321,6 @@
   letter-spacing: -0.01em;
   line-height: 1.1;
   white-space: nowrap;
-}
-
-.app-tabbar-center {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  margin: 0 2px 2px;
-}
-
-.app-tabbar-play {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  margin-top: -14px;
-  border: none;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #2a2a2e 0%, #1c1c1e 100%);
-  color: #f5f5f7;
-  cursor: pointer;
-  box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.45),
-    0 0 0 0.5px rgba(255, 255, 255, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition:
-    transform 140ms ease,
-    box-shadow 140ms ease,
-    background 140ms ease,
-    color 140ms ease;
-}
-
-.app-tabbar-play:hover {
-  transform: scale(1.04);
-}
-
-.app-tabbar-play:active {
-  transform: scale(0.96);
-}
-
-.app-tabbar-play.live {
-  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
-  color: #04120c;
-  box-shadow:
-    0 6px 24px rgba(16, 185, 129, 0.45),
-    0 0 0 0.5px rgba(52, 211, 153, 0.5);
-}
-
-.app-tabbar-play.paused {
-  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
-  color: #1a1000;
-}
-
-.app-tabbar-stop {
-  position: absolute;
-  top: -6px;
-  right: -10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(40, 40, 44, 0.95);
-  color: #ef4444;
-  cursor: pointer;
-  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.1);
-}
-
-.app-tabbar-fps {
-  margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 500;
-  color: var(--accent-green);
-  letter-spacing: 0;
 }
 
 .app-tabbar-zoom {

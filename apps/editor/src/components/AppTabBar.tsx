@@ -2,9 +2,6 @@ import { useRef } from "react";
 import {
   Layers,
   SlidersHorizontal,
-  Play,
-  Pause,
-  Square,
   Folder,
   Sparkles,
   Save,
@@ -37,10 +34,7 @@ export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" |
 
 type AppTabBarProps = {
   active: TabBarDestination | null;
-  isPlaying: boolean;
-  isPaused: boolean;
   saveState: SaveState;
-  playFps?: number;
   projectPath?: string | null;
   activeTool: CanvasTool;
   snap: boolean;
@@ -52,8 +46,6 @@ type AppTabBarProps = {
   onInspector: () => void;
   onContent: () => void;
   onAgent: () => void;
-  onPlayToggle: () => void;
-  onStop: () => void;
   onSave: () => void;
   onRefresh: () => void;
   onImport: (file: File) => void;
@@ -78,10 +70,7 @@ const MAX_ZOOM = 4;
  */
 export function AppTabBar({
   active,
-  isPlaying,
-  isPaused,
   saveState,
-  playFps = 0,
   projectPath,
   activeTool,
   snap,
@@ -93,8 +82,6 @@ export function AppTabBar({
   onInspector,
   onContent,
   onAgent,
-  onPlayToggle,
-  onStop,
   onSave,
   onRefresh,
   onImport,
@@ -111,8 +98,6 @@ export function AppTabBar({
   onCenterView,
 }: AppTabBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const playingLive = isPlaying && !isPaused;
-
   return (
     <nav className="app-tabbar" aria-label="Editor">
       <div className="app-tabbar-scroll">
@@ -267,41 +252,6 @@ export function AppTabBar({
           onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))}
           icon={<ZoomIn size={18} strokeWidth={1.75} />}
         />
-
-        <span className="app-tabbar-sep" aria-hidden />
-
-        {/* Play */}
-        <div className="app-tabbar-center">
-          <button
-            type="button"
-            className={cn("app-tabbar-play", playingLive && "live", isPaused && "paused")}
-            title={playingLive ? "Pause" : isPlaying ? "Resume" : "Play"}
-            aria-label={playingLive ? "Pause" : "Play"}
-            onClick={onPlayToggle}
-          >
-            {playingLive ? (
-              <Pause size={22} fill="currentColor" strokeWidth={0} />
-            ) : (
-              <Play size={22} fill="currentColor" strokeWidth={0} className="translate-x-px" />
-            )}
-          </button>
-          {isPlaying && (
-            <button
-              type="button"
-              className="app-tabbar-stop"
-              title="Stop"
-              aria-label="Stop simulation"
-              onClick={onStop}
-            >
-              <Square size={11} fill="currentColor" strokeWidth={0} />
-            </button>
-          )}
-          {playingLive && playFps > 0 && (
-            <span className="app-tabbar-fps" aria-hidden>
-              {playFps}
-            </span>
-          )}
-        </div>
 
         <span className="app-tabbar-sep" aria-hidden />
 
