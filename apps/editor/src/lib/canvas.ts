@@ -21,6 +21,19 @@ import type {
 } from "@gamekit/schema";
 import { findComponent, colorForAsset } from "./components.js";
 
+export type DrawSceneOptions = {
+  /**
+   * When true, skip clearing/filling the design viewport rect.
+   * Caller is responsible for background (e.g. play mode with camera clip).
+   */
+  skipViewportChrome?: boolean;
+  /**
+   * Skip drawing Text-only entities (HUD). Used when those are drawn in
+   * screen space after the camera transform is restored.
+   */
+  skipScreenSpaceText?: boolean;
+};
+
 export function drawScene(
   context: CanvasRenderingContext2D,
   scene: GameKitScene,
@@ -32,12 +45,15 @@ export function drawScene(
   selectedGuiNodeId?: string | null,
   guiComponents?: GuiComponent[],
   selectedComponentInstanceId?: string | null,
-  showGuiOverlays = true
+  showGuiOverlays = true,
+  options: DrawSceneOptions = {},
 ) {
-  context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
-  context.fillStyle = scene.viewport.background;
-  context.fillRect(0, 0, scene.viewport.width, scene.viewport.height);
-  
+  if (!options.skipViewportChrome) {
+    context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
+    context.fillStyle = scene.viewport.background;
+    context.fillRect(0, 0, scene.viewport.width, scene.viewport.height);
+  }
+
   if (showGrid) {
     drawGrid(context, scene.viewport.width, scene.viewport.height);
   }
@@ -106,6 +122,14 @@ export function drawScene(
 
     const textComp = findComponent<TextComponent>(entity, "Text");
     if (textComp) {
+      // Text-only entities without sprites are treated as HUD when requested
+      const isHud =
+        options.skipScreenSpaceText &&
+        !sprite &&
+        !findComponent<TilemapComponent>(entity, "Tilemap");
+      if (isHud) {
+        continue;
+      }
       context.save();
       context.fillStyle = textComp.color;
       context.font = `${textComp.size}px sans-serif`;
@@ -521,10 +545,16 @@ export type SceneFrameOptions = {
   worldTop: number;
   worldRight: number;
   worldBottom: number;
+  /**
+   * Top-left of the locked game screen in world space.
+   * Defaults to (0,0). In play mode this tracks the camera pan for long levels.
+   */
+  originX?: number;
+  originY?: number;
 };
 
 /**
- * Locked game screen = scene.viewport at world (0,0) → (width, height).
+ * Locked game screen = scene.viewport at world (originX, originY) → size.
  * Draws dim outside + solid border + corner brackets + size label.
  * Call under the world transform.
  */
@@ -533,12 +563,15 @@ export function drawSceneFrame(
   width: number,
   height: number,
   zoom: number,
-  world?: SceneFrameOptions
+  world?: SceneFrameOptions,
+  labelOverride?: string,
 ) {
   const z = Math.max(0.0001, zoom);
   const hair = 1 / z;
   const border = 2 / z;
   const corner = Math.min(18 / z, Math.min(width, height) * 0.12);
+  const ox = world?.originX ?? 0;
+  const oy = world?.originY ?? 0;
 
   context.save();
   context.setLineDash([]);
@@ -549,7 +582,7 @@ export function drawSceneFrame(
     context.fillStyle = "rgba(0, 0, 0, 0.48)";
     context.beginPath();
     context.rect(L, T, R - L, B - T);
-    context.rect(0, 0, width, height);
+    context.rect(ox, oy, width, height);
     context.fill("evenodd");
   }
 
@@ -557,12 +590,12 @@ export function drawSceneFrame(
   context.strokeStyle = "rgba(0, 240, 255, 0.85)";
   context.lineWidth = border;
   context.lineJoin = "miter";
-  context.strokeRect(0, 0, width, height);
+  context.strokeRect(ox, oy, width, height);
 
   // Soft outer halo
   context.strokeStyle = "rgba(0, 240, 255, 0.18)";
   context.lineWidth = 8 / z;
-  context.strokeRect(-hair, -hair, width + 2 * hair, height + 2 * hair);
+  context.strokeRect(ox - hair, oy - hair, width + 2 * hair, height + 2 * hair);
 
   // Corner brackets (Figma-style crop marks)
   context.strokeStyle = "rgba(0, 240, 255, 1)";
@@ -575,13 +608,17 @@ export function drawSceneFrame(
     context.lineTo(x0 + dx * corner, y0);
     context.stroke();
   };
-  drawCorner(0, 0, 1, 1);
-  drawCorner(width, 0, -1, 1);
-  drawCorner(0, height, 1, -1);
-  drawCorner(width, height, -1, -1);
+  drawCorner(ox, oy, 1, 1);
+  drawCorner(ox + width, oy, -1, 1);
+  drawCorner(ox, oy + height, 1, -1);
+  drawCorner(ox + width, oy + height, -1, -1);
 
-  // Label: "Screen · W×H" above top-left
-  const label = `Screen  ${Math.round(width)}×${Math.round(height)}`;
+  // Label: "Screen · W×H" (or custom override e.g. Play)
+  const label =
+    labelOverride ??
+    (ox !== 0 || oy !== 0
+      ? `Play cam  ${Math.round(width)}×${Math.round(height)}`
+      : `Screen  ${Math.round(width)}×${Math.round(height)}`);
   const fontPx = 11 / z;
   context.font = `600 ${fontPx}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
   context.textAlign = "left";
@@ -591,8 +628,8 @@ export function drawSceneFrame(
   const textW = context.measureText(label).width;
   const boxH = fontPx + padY * 2;
   const boxW = textW + padX * 2;
-  const boxX = 0;
-  const boxY = -boxH - 4 / z;
+  const boxX = ox;
+  const boxY = oy - boxH - 4 / z;
 
   context.fillStyle = "rgba(0, 240, 255, 0.16)";
   context.strokeStyle = "rgba(0, 240, 255, 0.45)";
@@ -617,6 +654,26 @@ export function drawSceneFrame(
   context.fillText(label, boxX + padX, boxY + boxH - padY);
 
   context.restore();
+}
+
+/** Draw Text-only entities in fixed screen space (HUD, no camera offset). */
+export function drawScreenSpaceText(
+  context: CanvasRenderingContext2D,
+  scene: GameKitScene,
+) {
+  for (const entity of scene.entities) {
+    const transform = findComponent<TransformComponent>(entity, "Transform");
+    const textComp = findComponent<TextComponent>(entity, "Text");
+    const sprite = findComponent<SpriteComponent>(entity, "Sprite");
+    if (!transform || !textComp || sprite) continue;
+    context.save();
+    context.fillStyle = textComp.color;
+    context.font = `${textComp.size}px sans-serif`;
+    context.textAlign = textComp.align;
+    context.textBaseline = "top";
+    context.fillText(textComp.text, transform.position.x, transform.position.y);
+    context.restore();
+  }
 }
 
 function drawGuiNode(

@@ -1,5 +1,5 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
-import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, CameraFollowComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent, Vector2 } from "@gamekit/schema";
+import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance, resolveGameRules, resolveFallDeathY } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   FolderOpen,
@@ -83,6 +83,60 @@ import { playTimeline } from "@gamekit/runtime/timeline";
 import type { TimelineState } from "@gamekit/runtime/timeline";
 import { createAudioController, type AudioController } from "@gamekit/runtime/audio";
 import { playerInputFromPressedKeys } from "@gamekit/runtime/input-map";
+import { createCameraFollow } from "@gamekit/runtime/camera";
+
+/** Integrate velocity (units/sec) over dt for collision solvers that take frame displacement. */
+function displacementFromVelocity(velocity: Vector2, dt: number): Vector2 {
+  return { x: velocity.x * dt, y: velocity.y * dt };
+}
+
+function velocityFromDisplacement(displacement: Vector2, dt: number): Vector2 {
+  if (dt <= 0) return { x: 0, y: 0 };
+  return { x: displacement.x / dt, y: displacement.y / dt };
+}
+
+/** World bounds for camera clamp (long side-scrollers). */
+function computeSceneWorldBounds(scene: GameKitScene): { minX: number; minY: number; maxX: number; maxY: number } {
+  let minX = 0;
+  let minY = 0;
+  let maxX = scene.viewport.width;
+  let maxY = scene.viewport.height;
+  for (const entity of scene.entities) {
+    const t = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+    if (!t) continue;
+    const sprite = entity.components.find((c) => c.type === "Sprite") as { width?: number; height?: number } | undefined;
+    const halfW = (sprite?.width ?? 64) / 2;
+    const halfH = (sprite?.height ?? 64) / 2;
+    minX = Math.min(minX, t.position.x - halfW);
+    minY = Math.min(minY, t.position.y - halfH);
+    maxX = Math.max(maxX, t.position.x + halfW);
+    maxY = Math.max(maxY, t.position.y + halfH);
+  }
+  // Padding so the camera can show a little beyond content
+  return {
+    minX: minX - 32,
+    minY: Math.min(0, minY - 32),
+    maxX: maxX + 64,
+    maxY: maxY + 64,
+  };
+}
+
+function clampPlayCamera(
+  cam: Vector2,
+  scene: GameKitScene,
+  world: { minX: number; minY: number; maxX: number; maxY: number },
+): Vector2 {
+  const vw = scene.viewport.width;
+  const vh = scene.viewport.height;
+  const worldW = Math.max(vw, world.maxX - world.minX);
+  const worldH = Math.max(vh, world.maxY - world.minY);
+  const maxPanX = world.minX + Math.max(0, worldW - vw);
+  const maxPanY = world.minY + Math.max(0, worldH - vh);
+  return {
+    x: Math.min(maxPanX, Math.max(world.minX, cam.x)),
+    y: Math.min(maxPanY, Math.max(world.minY, cam.y)),
+  };
+}
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -155,6 +209,18 @@ export function App() {
   const [paintTileId, setPaintTileId] = useState(1);
   const [playFps, setPlayFps] = useState(0);
   const [playFrameMs, setPlayFrameMs] = useState(0);
+  /**
+   * Play-mode game camera (world top-left of the locked screen).
+   * Scrolls only inside the design viewport frame — never the editor workspace pan.
+   */
+  const [playViewPan, setPlayViewPan] = useState<{ x: number; y: number } | null>(null);
+  /** Play session end state (fall death / win). */
+  const [playOutcome, setPlayOutcome] = useState<null | {
+    kind: "gameOver" | "win";
+    message: string;
+    livesLeft?: number;
+  }>(null);
+  const [playLives, setPlayLives] = useState<number | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
   const sceneMtimeRef = useRef<number | null>(null);
@@ -183,6 +249,12 @@ export function App() {
   const triggerStateRef = useRef<TriggerState>(new Set());
   const collisionStateRef = useRef<CollisionState>(new Set());
   const audioControllerRef = useRef<AudioController | null>(null);
+  const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
+  const playViewPanRef = useRef<{ x: number; y: number } | null>(null);
+  const playSpawnRef = useRef<Vector2>({ x: 80, y: 300 });
+  const playLivesRef = useRef(3);
+  const playOutcomeRef = useRef<"none" | "gameOver" | "win">("none");
+  const fallCooldownRef = useRef(0);
 
   const addConsoleLog = useCallback((type: ConsoleLog["type"], message: string) => {
     setLogs((prev) => [...prev, { type, message, timestamp: new Date() }]);
@@ -609,6 +681,12 @@ export function App() {
         fpsWindowStart = timestamp;
       }
 
+      // Freeze simulation when the run has ended
+      if (playOutcomeRef.current !== "none") {
+        frameId = requestAnimationFrame(tick);
+        return;
+      }
+
       accumulator += frameDt;
 
       let steps = 0;
@@ -682,10 +760,11 @@ export function App() {
               const movingAabb = getEntityAabb(ent);
               if (movingAabb) {
                 const mask = aabbCollider.mask;
-                const result = applyAabbCollisions(movingAabb, rb.state.velocity, solids, mask);
+                const disp = displacementFromVelocity(rb.state.velocity, dt);
+                const result = applyAabbCollisions(movingAabb, disp, solids, mask);
                 transform.position.x = result.position.x - aabbCollider.offset.x;
                 transform.position.y = result.position.y - aabbCollider.offset.y;
-                rb.state.velocity = result.velocity;
+                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
                 rb.updateSleep(dt, result.grounded);
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
@@ -698,10 +777,11 @@ export function App() {
               const circle = getEntityCircle(ent);
               if (circle) {
                 const mask = circleCollider.mask;
-                const result = applyCircleCollisions(circle, rb.state.velocity, solids, mask);
+                const disp = displacementFromVelocity(rb.state.velocity, dt);
+                const result = applyCircleCollisions(circle, disp, solids, mask);
                 transform.position.x = result.position.x - circleCollider.offset.x;
                 transform.position.y = result.position.y - circleCollider.offset.y;
-                rb.state.velocity = result.velocity;
+                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
                 rb.updateSleep(dt, result.grounded);
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
@@ -713,10 +793,11 @@ export function App() {
             } else if (polygonCollider) {
               const polygon = getEntityPolygon(ent);
               if (polygon) {
-                const result = applyPolygonCollisions(polygon, rb.state.velocity, solids, polygonCollider.mask);
+                const disp = displacementFromVelocity(rb.state.velocity, dt);
+                const result = applyPolygonCollisions(polygon, disp, solids, polygonCollider.mask);
                 transform.position.x = result.position.x - polygonCollider.offset.x;
                 transform.position.y = result.position.y - polygonCollider.offset.y;
-                rb.state.velocity = result.velocity;
+                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
                 rb.updateSleep(dt, result.grounded);
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
@@ -747,10 +828,17 @@ export function App() {
             if (collider) {
               const movingAabb = getEntityAabb(ent);
               if (movingAabb) {
-                const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids, collider.mask);
+                const disp = displacementFromVelocity(controller.state.velocity, dt);
+                const result = applyAabbCollisions(movingAabb, disp, solids, collider.mask);
                 transform.position.x = result.position.x - collider.offset.x;
                 transform.position.y = result.position.y - collider.offset.y;
-                controller.state.velocity = result.velocity;
+                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
+                // Keep horizontal intent from controller next frame; restore speed magnitude when grounded air-control
+                if (input.left || input.right) {
+                  const dir = Number(input.right) - Number(input.left);
+                  const pc = ent.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
+                  if (pc) controller.state.velocity.x = dir * pc.speed;
+                }
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
                 }
@@ -759,10 +847,11 @@ export function App() {
             } else if (circleCollider) {
               const circle = getEntityCircle(ent);
               if (circle) {
-                const result = applyCircleCollisions(circle, controller.state.velocity, solids, circleCollider.mask);
+                const disp = displacementFromVelocity(controller.state.velocity, dt);
+                const result = applyCircleCollisions(circle, disp, solids, circleCollider.mask);
                 transform.position.x = result.position.x - circleCollider.offset.x;
                 transform.position.y = result.position.y - circleCollider.offset.y;
-                controller.state.velocity = result.velocity;
+                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
                 }
@@ -771,10 +860,11 @@ export function App() {
             } else if (polygonCollider) {
               const polygon = getEntityPolygon(ent);
               if (polygon) {
-                const result = applyPolygonCollisions(polygon, controller.state.velocity, solids, polygonCollider.mask);
+                const disp = displacementFromVelocity(controller.state.velocity, dt);
+                const result = applyPolygonCollisions(polygon, disp, solids, polygonCollider.mask);
                 transform.position.x = result.position.x - polygonCollider.offset.x;
                 transform.position.y = result.position.y - polygonCollider.offset.y;
-                controller.state.velocity = result.velocity;
+                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
                 for (const otherEntityId of result.collisionEntityIds) {
                   collisionContacts.push({ entityId: ent.id, otherEntityId });
                 }
@@ -817,6 +907,118 @@ export function App() {
         workingScene = { ...workingScene, entities: nextEntities };
         playTimeline(workingScene, timelineRef.current, dt);
 
+        // Side-scroller camera: follow CameraFollow target (or first player)
+        let followTargetId: string | undefined;
+        let followSmoothing = 0.2;
+        for (const entity of nextEntities) {
+          const cf = entity.components.find((c): c is CameraFollowComponent => c.type === "CameraFollow");
+          if (cf) {
+            followTargetId = cf.targetId || entity.id;
+            followSmoothing = cf.smoothing > 0 ? cf.smoothing : 0.2;
+            break;
+          }
+        }
+        if (!followTargetId) {
+          const playerEnt = nextEntities.find((e) =>
+            e.components.some((c) => c.type === "PlayerController"),
+          );
+          followTargetId = playerEnt?.id;
+        }
+        if (followTargetId) {
+          const target = nextEntities.find((e) => e.id === followTargetId);
+          const targetTransform = target?.components.find(
+            (c): c is TransformComponent => c.type === "Transform",
+          );
+          if (targetTransform) {
+            if (!cameraFollowRef.current) {
+              const initX = targetTransform.position.x - workingScene.viewport.width / 2;
+              const initY = targetTransform.position.y - workingScene.viewport.height / 2;
+              cameraFollowRef.current = createCameraFollow({
+                viewport: {
+                  x: workingScene.viewport.width,
+                  y: workingScene.viewport.height,
+                },
+                // Snappier in play so long levels don't leave the character off-screen
+                smoothing: Math.min(1, Math.max(0.18, followSmoothing)),
+                initial: {
+                  position: { x: initX, y: initY },
+                  zoom: 1,
+                },
+              });
+            }
+            const camState = cameraFollowRef.current.update(targetTransform.position);
+            const world = computeSceneWorldBounds(workingScene);
+            const clamped = clampPlayCamera(camState.position, workingScene, world);
+            cameraFollowRef.current.state.position = clamped;
+            playViewPanRef.current = clamped;
+          }
+        }
+
+        // Fall / void death from scene.gameRules
+        const rules = resolveGameRules(workingScene.gameRules);
+        if (rules.fallDeathEnabled && fallCooldownRef.current <= 0) {
+          const fallY = resolveFallDeathY(workingScene, rules);
+          for (const entity of nextEntities) {
+            const hasPlayer = entity.components.some((c) => c.type === "PlayerController");
+            if (!hasPlayer) continue;
+            const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+            // Y increases downward — fallen when below the fall line
+            if (!transform || transform.position.y < fallY) continue;
+
+            if (rules.onFall === "respawn") {
+              const unlimited = rules.lives <= 0;
+              if (!unlimited) {
+                playLivesRef.current = Math.max(0, playLivesRef.current - 1);
+                setPlayLives(playLivesRef.current);
+              }
+              if (!unlimited && playLivesRef.current <= 0) {
+                playOutcomeRef.current = "gameOver";
+                setPlayOutcome({
+                  kind: "gameOver",
+                  message: rules.gameOverMessage,
+                  livesLeft: 0,
+                });
+                setIsPaused(true);
+                addConsoleLog("system", `GAME OVER — fell into the void (y=${Math.round(transform.position.y)}).`);
+              } else {
+                const spawn = rules.spawnPoint ?? playSpawnRef.current;
+                transform.position.x = spawn.x;
+                transform.position.y = spawn.y;
+                const controller = controllersRef.current.get(entity.id);
+                if (controller) {
+                  controller.state.velocity = { x: 0, y: 0 };
+                  controller.setGrounded(false);
+                }
+                const rb = rigidBodyRefs.current.get(entity.id);
+                if (rb) {
+                  rb.state.velocity = { x: 0, y: 0 };
+                }
+                const rbComp = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+                if (rbComp) rbComp.velocity = { x: 0, y: 0 };
+                fallCooldownRef.current = 0.4;
+                addConsoleLog(
+                  "physics",
+                  `Fell into void — respawn at (${Math.round(spawn.x)}, ${Math.round(spawn.y)})` +
+                    (unlimited ? "" : ` · lives ${playLivesRef.current}`),
+                );
+              }
+            } else {
+              playOutcomeRef.current = "gameOver";
+              setPlayOutcome({
+                kind: "gameOver",
+                message: rules.gameOverMessage,
+                livesLeft: playLivesRef.current,
+              });
+              setIsPaused(true);
+              addConsoleLog("system", `GAME OVER — fell into the void (y=${Math.round(transform.position.y)}).`);
+            }
+            break;
+          }
+        }
+        if (fallCooldownRef.current > 0) {
+          fallCooldownRef.current = Math.max(0, fallCooldownRef.current - dt);
+        }
+
         accumulator -= fixedDt;
         steps++;
         changed = true;
@@ -828,6 +1030,9 @@ export function App() {
 
       if (changed && workingScene) {
         setScene(workingScene);
+        if (playViewPanRef.current) {
+          setPlayViewPan({ ...playViewPanRef.current });
+        }
       }
 
       frameId = requestAnimationFrame(tick);
@@ -1233,8 +1438,18 @@ export function App() {
       timelineRef.current = { elapsed: 0, playing: scene?.timeline?.playing ?? true };
       triggerStateRef.current.clear();
       collisionStateRef.current.clear();
+      cameraFollowRef.current = null;
+      playViewPanRef.current = null;
+      setPlayViewPan(null);
+      playOutcomeRef.current = "none";
+      setPlayOutcome(null);
+      fallCooldownRef.current = 0;
 
       if (scene) {
+        const rules = resolveGameRules(scene.gameRules);
+        playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
+        setPlayLives(rules.lives > 0 ? rules.lives : null);
+
         for (const entity of scene.entities) {
           const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
           if (pc) {
@@ -1244,6 +1459,51 @@ export function App() {
           if (rb) {
             rigidBodyRefs.current.set(entity.id, createRigidBody(rb));
           }
+        }
+
+        // Seed camera on the player / CameraFollow target so the first frame isn't stuck at origin
+        let followTargetId: string | undefined;
+        let followSmoothing = 0.2;
+        for (const entity of scene.entities) {
+          const cf = entity.components.find((c): c is CameraFollowComponent => c.type === "CameraFollow");
+          if (cf) {
+            followTargetId = cf.targetId || entity.id;
+            followSmoothing = cf.smoothing > 0 ? cf.smoothing : 0.2;
+            break;
+          }
+        }
+        const target =
+          scene.entities.find((e) => e.id === followTargetId) ??
+          scene.entities.find((e) => e.components.some((c) => c.type === "PlayerController"));
+        const t = target?.components.find((c): c is TransformComponent => c.type === "Transform");
+        if (t) {
+          playSpawnRef.current = rules.spawnPoint
+            ? { ...rules.spawnPoint }
+            : { x: t.position.x, y: t.position.y };
+          const init = {
+            x: t.position.x - scene.viewport.width / 2,
+            y: t.position.y - scene.viewport.height / 2,
+          };
+          const world = computeSceneWorldBounds(scene);
+          const clamped = clampPlayCamera(init, scene, world);
+          cameraFollowRef.current = createCameraFollow({
+            viewport: { x: scene.viewport.width, y: scene.viewport.height },
+            smoothing: Math.min(1, Math.max(0.18, followSmoothing)),
+            initial: { position: clamped, zoom: 1 },
+          });
+          playViewPanRef.current = clamped;
+          setPlayViewPan(clamped);
+        } else if (rules.spawnPoint) {
+          playSpawnRef.current = { ...rules.spawnPoint };
+        }
+
+        if (rules.fallDeathEnabled) {
+          const fallY = resolveFallDeathY(scene, rules);
+          addConsoleLog(
+            "system",
+            `Game rules: onFall=${rules.onFall}, fallY≈${Math.round(fallY)}` +
+              (rules.onFall === "respawn" ? `, lives=${rules.lives || "∞"}` : ""),
+          );
         }
       }
 
@@ -1260,6 +1520,7 @@ export function App() {
       setPlayFrameMs(0);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
       addConsoleLog("physics", "Real-time physics engine loop initialized.");
+      addConsoleLog("system", "Camera follows player inside the game screen only (canvas pan locked).");
       if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
         addConsoleLog("system", `Audio: ${audioControllerRef.current!.sources.length} source(s) armed.`);
       }
@@ -1283,9 +1544,42 @@ export function App() {
       animationStatesRef.current.clear();
       triggerStateRef.current.clear();
       collisionStateRef.current.clear();
+      cameraFollowRef.current = null;
+      playViewPanRef.current = null;
+      setPlayViewPan(null);
+      playOutcomeRef.current = "none";
+      setPlayOutcome(null);
+      setPlayLives(null);
+      fallCooldownRef.current = 0;
       audioControllerRef.current?.dispose();
       audioControllerRef.current = null;
     }
+  }
+
+  function handlePlayRestart() {
+    if (!preSimulationSceneRef.current) return;
+    const snapshot = structuredClone(preSimulationSceneRef.current);
+    setIsPlaying(false);
+    setIsPaused(false);
+    reset(snapshot);
+    controllersRef.current.clear();
+    rigidBodyRefs.current.clear();
+    animationStatesRef.current.clear();
+    triggerStateRef.current.clear();
+    collisionStateRef.current.clear();
+    cameraFollowRef.current = null;
+    playViewPanRef.current = null;
+    setPlayViewPan(null);
+    playOutcomeRef.current = "none";
+    setPlayOutcome(null);
+    fallCooldownRef.current = 0;
+    audioControllerRef.current?.dispose();
+    audioControllerRef.current = null;
+    // Fresh play after state settles
+    window.setTimeout(() => {
+      preSimulationSceneRef.current = structuredClone(snapshot);
+      handlePlayToggle();
+    }, 0);
   }
 
   // Terminal slash commands
@@ -1898,7 +2192,7 @@ export function App() {
       className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}${!bottomDrawerCollapsed ? " has-bottom-sheet" : ""}`}
     >
       {/* Full-bleed canvas — primary focus */}
-      <div className="canvas-stage">
+      <div className="canvas-stage relative">
         <SceneCanvas
           scene={scene}
           assets={snapshot.assets}
@@ -1915,6 +2209,7 @@ export function App() {
           showColliders={showColliders}
           snapSize={snapSize}
           isPlaying={isPlaying}
+          playViewPan={playViewPan}
           paintTileId={paintTileId}
           viewResetKey={viewResetKey}
           onVirtualInput={(action, pressed) => {
@@ -2002,6 +2297,47 @@ export function App() {
           onDeleteEntity={(id) => deleteEntity(id)}
           onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
         />
+
+        {isPlaying && playLives !== null && !playOutcome && (
+          <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-md border border-white/10 bg-black/55 px-2.5 py-1 font-mono text-[11px] text-accent backdrop-blur-sm">
+            Lives {playLives}
+          </div>
+        )}
+
+        {isPlaying && playOutcome && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]">
+            <div className="w-[min(360px,calc(100%-32px))] rounded-2xl border border-white/10 bg-[rgba(10,14,20,0.95)] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+              <p
+                className={`m-0 text-lg font-bold tracking-[0.06em] ${
+                  playOutcome.kind === "win" ? "text-accent" : "text-[#ff6b8a]"
+                }`}
+              >
+                {playOutcome.message}
+              </p>
+              <p className="mt-2 text-[12px] text-text-muted">
+                {playOutcome.kind === "gameOver"
+                  ? "You fell into the void. Adjust World → Game rules for respawn, lives, and fall line."
+                  : "Level complete."}
+              </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-accent/40 bg-accent/15 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/25"
+                  onClick={handlePlayRestart}
+                >
+                  Restart
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] font-semibold text-text-primary hover:bg-white/10"
+                  onClick={handleStop}
+                >
+                  Stop
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {(activeTool === "paint" || activeTool === "erase") && (
           <div className="tile-palette" role="toolbar" aria-label="Tile palette">

@@ -1,20 +1,56 @@
 {
   "schemaVersion": 1,
-  "name": "Playroom Game",
+  "name": "Coin Rush",
   "scenes": [
     "main.scene.json"
   ],
   "levels": [
     {
       "id": "level-1",
-      "name": "Level 1",
+      "name": "Coin Rush",
       "order": 1,
       "sceneIds": [
-        "main"
+        "coin-rush"
       ],
       "unlocked": true
     }
   ],
-  "assets": [],
+  "assets": [
+    {
+      "id": "player",
+      "file": "player.svg",
+      "kind": "image"
+    },
+    {
+      "id": "ground",
+      "file": "ground.svg",
+      "kind": "image"
+    },
+    {
+      "id": "platform",
+      "file": "platform.svg",
+      "kind": "image"
+    },
+    {
+      "id": "target",
+      "file": "target.svg",
+      "kind": "image"
+    },
+    {
+      "id": "crate",
+      "file": "crate.svg",
+      "kind": "image"
+    },
+    {
+      "id": "obstacle",
+      "file": "obstacle.svg",
+      "kind": "image"
+    },
+    {
+      "id": "goal",
+      "file": "goal.svg",
+      "kind": "image"
+    }
+  ],
   "guiComponents": []
 }

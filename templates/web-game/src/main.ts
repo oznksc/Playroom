@@ -6,4 +6,5 @@ createGameKitGame({
   scene: sceneJson as Parameters<typeof createGameKitGame>[0]["scene"],
   assets: gamekitAssets,
   container: document.getElementById("game")!,
+  pixelArt: false,
 });

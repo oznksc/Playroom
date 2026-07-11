@@ -6,6 +6,8 @@ import {
   createPrefab,
   createProject,
   parseScene,
+  resolveFallDeathY,
+  resolveGameRules,
   sceneToJson,
   validatePrefab,
   validateProject,
@@ -54,6 +56,61 @@ describe("scene schema", () => {
 
     expect(parseScene(legacyScene).timeline.tracks).toEqual([]);
     expect(parseScene(legacyScene).gui.nodes).toEqual([]);
+  });
+
+  it("includes default gameRules on empty scenes", () => {
+    const scene = createEmptyScene("Rules Level");
+    expect(scene.gameRules?.fallDeathEnabled).toBe(true);
+    expect(scene.gameRules?.onFall).toBe("gameOver");
+    expect(validateScene(scene).ok).toBe(true);
+  });
+
+  it("validates gameRules and rejects bad onFall", () => {
+    const ok = validateScene({
+      ...createEmptyScene("Ok"),
+      gameRules: {
+        fallDeathEnabled: true,
+        onFall: "respawn",
+        lives: 2,
+        fallMargin: 80,
+        spawnPoint: { x: 10, y: 20 },
+        gameOverMessage: "Ouch",
+      },
+    });
+    expect(ok.ok).toBe(true);
+
+    const bad = validateScene({
+      schemaVersion: 1,
+      id: "bad-rules",
+      name: "Bad",
+      viewport: { width: 100, height: 100, background: "#000" },
+      gravity: { x: 0, y: 1 },
+      assets: [],
+      entities: [],
+      timeline: { tracks: [], duration: 0, loop: false, playing: false },
+      gui: { nodes: [], componentInstances: [] },
+      gameRules: { onFall: "explode" },
+    });
+    expect(bad.ok).toBe(false);
+    expect(bad.ok ? [] : bad.errors.some((e) => e.includes("onFall"))).toBe(true);
+  });
+
+  it("resolves fall death Y from ground colliders + margin", () => {
+    const scene = createEmptyScene("Fall");
+    scene.viewport.height = 390;
+    const ground = createEntity("Ground", { x: 100, y: 360 });
+    ground.components.push({
+      type: "AabbCollider",
+      offset: { x: -100, y: -20 },
+      size: { x: 200, y: 40 },
+      isStatic: true,
+      isTrigger: false,
+    });
+    scene.entities.push(ground);
+    // bottom = 360 - 20 + 40 = 380; + margin 120 = 500
+    expect(resolveFallDeathY(scene, { fallMargin: 120 })).toBe(500);
+    expect(resolveFallDeathY(scene, { fallY: 999 })).toBe(999);
+    expect(resolveGameRules({ onFall: "respawn", lives: 1 }).onFall).toBe("respawn");
   });
 
   it("validates scene with responsive config", () => {

@@ -6,10 +6,21 @@
   ],
   "levels": [
     {
+      "id": "deneme",
+      "name": "deneme",
+      "order": 1,
+      "sceneIds": [
+        "axsxa.scene.json"
+      ],
+      "unlocked": false
+    },
+    {
       "id": "level-1",
       "name": "Platformer Demo",
-      "order": 1,
-      "sceneIds": ["main"],
+      "order": 2,
+      "sceneIds": [
+        "axsxa.scene.json"
+      ],
       "unlocked": true
     }
   ],

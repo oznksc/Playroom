@@ -52,6 +52,14 @@
     "./audio": {
       "types": "./dist/audio.d.ts",
       "import": "./dist/audio.js"
+    },
+    "./particles": {
+      "types": "./dist/particles.d.ts",
+      "import": "./dist/particles.js"
+    },
+    "./script": {
+      "types": "./dist/script.d.ts",
+      "import": "./dist/script.js"
     }
   },
   "scripts": {

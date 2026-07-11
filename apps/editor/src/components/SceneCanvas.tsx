@@ -14,6 +14,7 @@ import { useImageCache } from "../hooks/useImageCache.js";
 import {
   drawScene,
   drawSceneFrame,
+  drawScreenSpaceText,
   drawWorldGrid,
   hitEntity,
   hitGuiNode,
@@ -39,6 +40,12 @@ type SceneCanvasProps = {
   showColliders: boolean;
   snapSize: number;
   isPlaying: boolean;
+  /**
+   * Play-mode game camera (world top-left of the locked game screen).
+   * Only scrolls content *inside* the design viewport frame — never the
+   * editor canvas pan/workspace.
+   */
+  playViewPan?: { x: number; y: number } | null;
   /** Active paint brush tile id (1-based tileset index; 0 clears). */
   paintTileId?: number;
   /** Increment to re-center the scene in the viewport. */
@@ -85,6 +92,7 @@ export function SceneCanvas({
   showColliders,
   snapSize,
   isPlaying,
+  playViewPan = null,
   paintTileId = 1,
   viewResetKey = 0,
   onVirtualInput,
@@ -168,8 +176,9 @@ export function SceneCanvas({
   // Center when requested (tab bar “Center”)
   useEffect(() => {
     if (!viewResetKey) return;
+    if (isPlaying) return;
     centerSceneInView();
-  }, [viewResetKey, centerSceneInView]);
+  }, [viewResetKey, centerSceneInView, isPlaying]);
 
   // First layout: center the game viewport in the workspace
   useEffect(() => {
@@ -178,6 +187,16 @@ export function SceneCanvas({
     didInitialCenter.current = true;
     centerSceneInView();
   }, [scene, viewSize.w, viewSize.h, centerSceneInView]);
+
+  // Enter play: lock editor canvas on the design game screen (do not pan workspace)
+  const wasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (!wasPlayingRef.current && isPlaying) {
+      // Snap workspace so the fixed game frame is centered and fully visible
+      centerSceneInView();
+    }
+    wasPlayingRef.current = isPlaying;
+  }, [isPlaying, centerSceneInView]);
 
   // Re-center when switching scenes (file id change via viewport dims + name)
   const sceneKey = scene ? `${scene.id}:${scene.viewport.width}x${scene.viewport.height}` : "";
@@ -315,26 +334,77 @@ export function SceneCanvas({
     }
 
     if (scene) {
-      // Scene grid is redundant with world grid — skip internal grid
-      drawScene(
-        context,
-        scene,
-        assets,
-        images,
-        selectedEntityIds,
-        false,
-        showColliders,
-        selectedGuiNodeId,
-        guiComponents,
-        selectedComponentInstanceId,
-        showGuiTools
-      );
-      drawSceneFrame(context, scene.viewport.width, scene.viewport.height, zoom, {
-        worldLeft,
-        worldTop,
-        worldRight,
-        worldBottom,
-      });
+      const vw = scene.viewport.width;
+      const vh = scene.viewport.height;
+      // Game camera lives only inside the locked screen (0,0)–(vw,vh)
+      const camX = isPlaying && playViewPan ? playViewPan.x : 0;
+      const camY = isPlaying && playViewPan ? playViewPan.y : 0;
+
+      if (isPlaying) {
+        // Fixed game screen background
+        context.fillStyle = scene.viewport.background;
+        context.fillRect(0, 0, vw, vh);
+
+        // Clip + scroll world only inside the game screen — editor canvas pan stays put
+        context.save();
+        context.beginPath();
+        context.rect(0, 0, vw, vh);
+        context.clip();
+        context.translate(-camX, -camY);
+
+        drawScene(
+          context,
+          scene,
+          assets,
+          images,
+          selectedEntityIds,
+          false,
+          showColliders,
+          selectedGuiNodeId,
+          guiComponents,
+          selectedComponentInstanceId,
+          showGuiTools,
+          { skipViewportChrome: true, skipScreenSpaceText: true },
+        );
+        context.restore();
+
+        // HUD text stays fixed to the game screen (not world camera)
+        context.save();
+        context.beginPath();
+        context.rect(0, 0, vw, vh);
+        context.clip();
+        drawScreenSpaceText(context, scene);
+        context.restore();
+
+        drawSceneFrame(
+          context,
+          vw,
+          vh,
+          zoom,
+          { worldLeft, worldTop, worldRight, worldBottom },
+          `Play  ${Math.round(vw)}×${Math.round(vh)}`,
+        );
+      } else {
+        drawScene(
+          context,
+          scene,
+          assets,
+          images,
+          selectedEntityIds,
+          false,
+          showColliders,
+          selectedGuiNodeId,
+          guiComponents,
+          selectedComponentInstanceId,
+          showGuiTools,
+        );
+        drawSceneFrame(context, vw, vh, zoom, {
+          worldLeft,
+          worldTop,
+          worldRight,
+          worldBottom,
+        });
+      }
     }
   }, [
     scene,
@@ -353,6 +423,9 @@ export function SceneCanvas({
     pan.y,
     zoom,
     snapSize,
+    isPlaying,
+    playViewPan?.x,
+    playViewPan?.y,
   ]);
 
   function clientToWorld(clientX: number, clientY: number, el: HTMLElement) {
