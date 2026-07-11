@@ -196,8 +196,47 @@ export function App() {
     }, AUTO_SAVE_DELAY_MS);
   }, []);
 
+  type ExampleProject = {
+    id: string;
+    name: string;
+    description: string;
+    path: string;
+  };
+
+  const [exampleProjects, setExampleProjects] = useState<ExampleProject[]>([]);
+  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    import("@tauri-apps/api/core")
+      .then(({ invoke }) => invoke<ExampleProject[]>("list_example_projects"))
+      .then((list) => setExampleProjects(list ?? []))
+      .catch(() => setExampleProjects([]));
+  }, [isTauri]);
+
+  async function waitForEditorApi(timeoutMs = 10_000): Promise<void> {
+    const start = Date.now();
+    let lastError = "Editor API not reachable";
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const res = await fetch(getApiUrl("/api/project"), { cache: "no-store" });
+        if (res.ok) {
+          await res.json();
+          return;
+        }
+        lastError = `API returned ${res.status}`;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : "Connection failed";
+      }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    throw new Error(`${lastError}. Is the CLI built? Run \`pnpm build\` then retry.`);
+  }
+
   const handleOpenProject = async () => {
     try {
+      setProjectLoadError(null);
       setStatus("Opening dialog...");
       const { invoke } = await import("@tauri-apps/api/core");
       const selected = await invoke<string | null>("select_directory");
@@ -208,24 +247,40 @@ export function App() {
       }
     } catch (e) {
       console.error(e);
-      setStatus(e instanceof Error ? e.message : "Failed to open project");
+      const msg = e instanceof Error ? e.message : String(e);
+      setStatus(msg);
+      setProjectLoadError(msg);
     }
   };
 
   const loadProjectFolder = async (path: string) => {
+    setIsLoadingProject(true);
+    setProjectLoadError(null);
     try {
-      setStatus("Starting server...");
+      setStatus("Starting server…");
       const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("start_server", { projectPath: path });
-      setProjectPath(path);
-      addToRecentProjects(path);
-      setStatus("Initializing project files...");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const resolved = await invoke<string>("start_server", { projectPath: path });
+      setStatus("Waiting for editor API…");
+      await waitForEditorApi();
+      setStatus("Loading project…");
+      // Keep welcome screen until scene is loaded — avoids empty-shell crash/black frame
       await refresh();
-      addConsoleLog("system", `Loaded project directory: ${path}`);
+      setProjectPath(resolved);
+      addToRecentProjects(resolved);
+      addConsoleLog("system", `Loaded project: ${resolved}`);
     } catch (e) {
       console.error(e);
-      setStatus(e instanceof Error ? e.message : "Failed to start server");
+      const msg =
+        typeof e === "string"
+          ? e
+          : e instanceof Error
+            ? e.message
+            : "Failed to start server";
+      setStatus(msg);
+      setProjectLoadError(msg);
+      setProjectPath(null);
+    } finally {
+      setIsLoadingProject(false);
     }
   };
 
@@ -1337,62 +1392,6 @@ export function App() {
     addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
   }
 
-  if (isTauri && !projectPath) {
-    return (
-      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-bg-base text-text-primary">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-80"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 40%, rgba(0,240,255,0.08) 0%, transparent 55%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.06) 0%, transparent 45%)",
-          }}
-        />
-        <div className="relative z-10 w-[min(440px,calc(100vw-32px))] rounded-lg border border-border-default bg-bg-surface/95 p-8 shadow-lg backdrop-blur-md">
-          <div className="mb-6 flex flex-col items-center text-center">
-            <img src={logoUrl} alt="Playroom" className="mb-3 size-14 object-contain" />
-            <h1 className="type-display m-0 tracking-[0.12em]">PLAYROOM</h1>
-            <p className="type-body mt-1.5">Local 2D scene editor for Expo projects</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleOpenProject}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/15 px-4 py-3 text-md font-semibold tracking-[-0.015em] text-accent transition-colors hover:bg-accent/25"
-          >
-            <FolderOpen size={16} />
-            Open Project Folder
-          </button>
-          <p className="type-body mt-3 text-center">
-            After opening a project, use <span className="text-accent">New from template</span> in the top bar to apply a genre skill.
-          </p>
-
-          {recentProjects.length > 0 && (
-            <div className="mt-6 border-t border-border-default pt-4">
-              <h3 className="type-label m-0 mb-2">Recent Projects</h3>
-              <div className="flex max-h-40 flex-col gap-1 overflow-auto">
-                {recentProjects.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    className="list-row cursor-pointer"
-                    onClick={() => loadProjectFolder(p)}
-                  >
-                    <FolderOpen size={13} className="shrink-0 text-accent" />
-                    <span className="type-mono min-w-0 flex-1 truncate" title={p}>
-                      {p}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="type-micro mt-6 text-center text-text-muted">Powered by Tauri v2 & Rust</div>
-        </div>
-      </div>
-    );
-  }
-
   const openHierarchy = useCallback(() => {
     setActiveTab("entities");
     setSidebarOpen(true);
@@ -1725,6 +1724,98 @@ export function App() {
     undo,
     redo,
   ]);
+
+  if (isTauri && !projectPath) {
+    return (
+      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-bg-base text-text-primary">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-80"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 40%, rgba(0,240,255,0.08) 0%, transparent 55%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.06) 0%, transparent 45%)",
+          }}
+        />
+        <div className="relative z-10 w-[min(480px,calc(100vw-32px))] rounded-[18px] border border-white/[0.08] bg-[rgba(16,18,22,0.92)] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <img src={logoUrl} alt="Playroom" className="mb-3 size-14 object-contain" />
+            <h1 className="type-display m-0 tracking-[0.08em]">PLAYROOM</h1>
+            <p className="type-body mt-1.5">Open a project folder that contains a gamekit/ directory</p>
+          </div>
+
+          <button
+            type="button"
+            disabled={isLoadingProject}
+            onClick={handleOpenProject}
+            className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-accent/40 bg-accent/15 px-4 py-3 text-md font-semibold tracking-[-0.015em] text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
+          >
+            <FolderOpen size={16} />
+            {isLoadingProject ? "Opening…" : "Open Project Folder"}
+          </button>
+
+          {exampleProjects.length > 0 && (
+            <div className="mt-5">
+              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
+                Example projects
+              </h3>
+              <div className="flex flex-col gap-1.5">
+                {exampleProjects.map((ex) => (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    disabled={isLoadingProject}
+                    onClick={() => loadProjectFolder(ex.path)}
+                    className="flex w-full flex-col items-start gap-0.5 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.08] disabled:opacity-50"
+                  >
+                    <span className="text-[13px] font-semibold tracking-[-0.015em] text-[rgba(245,245,247,0.92)]">
+                      {ex.name}
+                    </span>
+                    <span className="text-[11px] text-[rgba(235,235,245,0.4)]">{ex.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recentProjects.length > 0 && (
+            <div className="mt-5 border-t border-white/[0.06] pt-4">
+              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
+                Recent
+              </h3>
+              <div className="flex max-h-36 flex-col gap-1 overflow-auto">
+                {recentProjects.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    disabled={isLoadingProject}
+                    className="list-row cursor-pointer disabled:opacity-50"
+                    onClick={() => loadProjectFolder(p)}
+                  >
+                    <Folder size={13} className="shrink-0 text-accent" />
+                    <span className="type-mono min-w-0 flex-1 truncate" title={p}>
+                      {p}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {projectLoadError && (
+            <div className="mt-4 rounded-[12px] border border-error/30 bg-error/10 px-3 py-2 text-[11px] leading-relaxed text-error whitespace-pre-wrap">
+              {projectLoadError}
+            </div>
+          )}
+
+          <p className="type-micro mt-5 text-center text-text-muted">
+            Tip: pick the project root (e.g. templates/expo-game), not only the gamekit folder.
+            Requires <code className="text-accent">pnpm build</code> first.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
     <main
