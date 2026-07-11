@@ -27,6 +27,7 @@ export type TabsListProps = React.HTMLAttributes<HTMLDivElement> & {
   __onTabsChange?: (v: string) => void;
 };
 
+/** Segmented glass control — Apple tab strip */
 export function TabsList({
   className,
   children,
@@ -38,7 +39,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "flex shrink-0 items-stretch gap-0 bg-bg-base",
+        "flex shrink-0 items-center gap-0.5 rounded-[12px] border border-white/[0.06] bg-white/[0.04] p-0.5",
         className
       )}
       {...props}
@@ -76,11 +77,10 @@ export function TabsTrigger({
       aria-selected={active}
       onClick={() => __onTabsChange?.(value)}
       className={cn(
-        "relative h-8 px-3 text-2xs font-semibold uppercase tracking-[0.1em] text-text-muted transition-colors",
-        "hover:text-text-secondary",
-        active && "text-accent",
+        "relative h-7 flex-1 rounded-[10px] px-3 text-[11px] font-semibold tracking-[-0.01em] transition-[color,background] duration-150",
+        "text-[rgba(235,235,245,0.5)] hover:text-[rgba(245,245,247,0.85)]",
         active &&
-          "after:absolute after:inset-x-2 after:top-0 after:h-0.5 after:rounded-b after:bg-accent after:content-['']",
+          "bg-white/[0.1] text-accent shadow-[inset_0_0_0_0.5px_rgba(0,240,255,0.25)]",
         className
       )}
       {...props}

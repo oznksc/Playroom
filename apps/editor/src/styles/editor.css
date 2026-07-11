@@ -998,13 +998,28 @@
 
 .search-field > svg {
   position: absolute;
-  left: 8px;
-  color: var(--text-muted);
+  left: 10px;
+  z-index: 1;
+  color: rgba(235, 235, 245, 0.4);
   pointer-events: none;
 }
 
 .search-field > input {
-  padding-left: 28px;
+  padding-left: 30px;
+}
+
+/* Soft Apple-style scrollbar inside glass sheets */
+.float-sheet-left *,
+.float-sheet-right *,
+.bottom-sheet * {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.float-sheet-left *::-webkit-scrollbar-thumb,
+.float-sheet-right *::-webkit-scrollbar-thumb,
+.bottom-sheet *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
 }
 
 .field-grid {

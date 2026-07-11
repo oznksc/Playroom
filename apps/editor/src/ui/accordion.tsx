@@ -11,7 +11,7 @@ const accentBorder: Record<AccordionAccent, string> = {
   green: "border-l-accent-green",
   gold: "border-l-selection",
   red: "border-l-error",
-  muted: "border-l-border-strong",
+  muted: "border-l-white/15",
 };
 
 export type AccordionSectionProps = {
@@ -29,6 +29,7 @@ export type AccordionSectionProps = {
   staticHeader?: boolean;
 };
 
+/** Glass card accordion — matches tab-bar chip language */
 export function AccordionSection({
   icon,
   label,
@@ -45,30 +46,31 @@ export function AccordionSection({
   return (
     <div
       className={cn(
-        "mb-1.5 overflow-hidden rounded-[12px] border-l-2 bg-white/[0.05]",
+        "mb-1.5 overflow-hidden rounded-[12px] border border-white/[0.06] border-l-2 bg-white/[0.05]",
         accentBorder[accent],
         className
       )}
     >
-      <div className="flex h-[34px] items-center gap-0.5 px-1">
+      <div className="flex h-9 items-center gap-0.5 px-1">
         <button
           type="button"
           onClick={staticHeader ? undefined : onToggle}
           disabled={staticHeader}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 rounded-[10px] px-1.5 py-1 text-left text-sm font-medium text-[rgba(245,245,247,0.9)]",
+            "flex min-w-0 flex-1 items-center gap-1.5 rounded-[10px] px-1.5 py-1 text-left text-[12px] font-medium tracking-[-0.01em] text-[rgba(245,245,247,0.9)]",
             !staticHeader && "hover:bg-white/[0.06]",
             staticHeader && "cursor-default disabled:opacity-100"
           )}
         >
-          {!staticHeader && (
-            open ? (
-              <ChevronDown size={12} className="shrink-0 text-text-muted" />
+          {!staticHeader &&
+            (open ? (
+              <ChevronDown size={12} className="shrink-0 text-[rgba(235,235,245,0.4)]" />
             ) : (
-              <ChevronRight size={12} className="shrink-0 text-text-muted" />
-            )
+              <ChevronRight size={12} className="shrink-0 text-[rgba(235,235,245,0.4)]" />
+            ))}
+          {icon && (
+            <span className="shrink-0 text-[rgba(235,235,245,0.55)] [&_svg]:size-3">{icon}</span>
           )}
-          {icon && <span className="shrink-0 text-text-secondary [&_svg]:size-3">{icon}</span>}
           <span className="truncate">{label}</span>
         </button>
         <span className="flex shrink-0 items-center gap-0.5 pr-0.5">
@@ -88,7 +90,7 @@ export function AccordionSection({
           )}
         </span>
       </div>
-      {open && <div className="flex flex-col gap-1.5 p-2">{children}</div>}
+      {open && <div className="flex flex-col gap-1.5 border-t border-white/[0.05] p-2">{children}</div>}
     </div>
   );
 }

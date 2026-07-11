@@ -487,14 +487,15 @@ export function drawWorldGrid(
   const bottom = Math.ceil((worldBottom + pad) / step) * step;
   const z = Math.max(0.0001, zoom);
   const hair = 1 / z;
+  const majorW = 1.5 / z;
 
   context.save();
   for (let x = left; x <= right; x += step) {
     const major = Math.round(x / step) % majorEvery === 0;
     context.strokeStyle = major
-      ? "rgba(255, 255, 255, 0.07)"
-      : "rgba(255, 255, 255, 0.035)";
-    context.lineWidth = hair;
+      ? "rgba(255, 255, 255, 0.16)"
+      : "rgba(255, 255, 255, 0.08)";
+    context.lineWidth = major ? majorW : hair;
     context.beginPath();
     context.moveTo(x, top);
     context.lineTo(x, bottom);
@@ -503,9 +504,9 @@ export function drawWorldGrid(
   for (let y = top; y <= bottom; y += step) {
     const major = Math.round(y / step) % majorEvery === 0;
     context.strokeStyle = major
-      ? "rgba(255, 255, 255, 0.07)"
-      : "rgba(255, 255, 255, 0.035)";
-    context.lineWidth = hair;
+      ? "rgba(255, 255, 255, 0.16)"
+      : "rgba(255, 255, 255, 0.08)";
+    context.lineWidth = major ? majorW : hair;
     context.beginPath();
     context.moveTo(left, y);
     context.lineTo(right, y);

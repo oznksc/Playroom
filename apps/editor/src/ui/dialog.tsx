@@ -16,8 +16,7 @@ export const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px]",
-      "data-[state=open]:animate-in data-[state=closed]:animate-out",
+      "fixed inset-0 z-50 bg-black/50 backdrop-blur-[8px]",
       className
     )}
     {...props}
@@ -37,7 +36,9 @@ export const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-[min(440px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2",
-        "rounded-lg border border-border-default bg-bg-surface shadow-lg outline-none",
+        "rounded-[18px] border border-white/[0.08] bg-[rgba(16,18,22,0.92)] outline-none",
+        "shadow-[0_16px_48px_rgba(0,0,0,0.55),0_0_0_0.5px_rgba(255,255,255,0.08),inset_0_0.5px_0_rgba(255,255,255,0.1)]",
+        "backdrop-blur-[22px] backdrop-saturate-150",
         className
       )}
       {...props}
@@ -46,8 +47,8 @@ export const DialogContent = React.forwardRef<
       {showClose && (
         <DialogPrimitive.Close asChild>
           <IconButton
-            className="absolute right-2 top-2"
-            size="sm"
+            className="absolute right-2.5 top-2.5"
+            size="md"
             title="Close"
             aria-label="Close"
           >
@@ -67,7 +68,7 @@ export function DialogHeader({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-4 py-3 pr-10 text-base font-semibold text-text-primary",
+        "flex items-center gap-2 border-b border-white/[0.06] px-4 py-3.5 pr-11 text-[14px] font-semibold tracking-[-0.02em] text-[rgba(245,245,247,0.95)]",
         className
       )}
       {...props}
@@ -79,7 +80,15 @@ export function DialogBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-4 py-3 text-base leading-relaxed text-text-secondary", className)} {...props} />;
+  return (
+    <div
+      className={cn(
+        "px-4 py-3.5 text-[13px] leading-relaxed tracking-[-0.01em] text-[rgba(235,235,245,0.65)]",
+        className
+      )}
+      {...props}
+    />
+  );
 }
 
 export function DialogFooter({
@@ -89,7 +98,7 @@ export function DialogFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-2 px-4 py-3",
+        "flex items-center justify-end gap-2 border-t border-white/[0.06] px-4 py-3",
         className
       )}
       {...props}
@@ -103,7 +112,10 @@ export const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-md font-semibold tracking-[-0.015em] text-text-primary", className)}
+    className={cn(
+      "text-[14px] font-semibold tracking-[-0.02em] text-[rgba(245,245,247,0.95)]",
+      className
+    )}
     {...props}
   />
 ));
@@ -115,7 +127,10 @@ export const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-base leading-relaxed text-text-secondary", className)}
+    className={cn(
+      "text-[13px] leading-relaxed tracking-[-0.01em] text-[rgba(235,235,245,0.55)]",
+      className
+    )}
     {...props}
   />
 ));

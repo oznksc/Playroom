@@ -12,16 +12,16 @@
   --color-bg-surface: #0b0f17;
   --color-bg-elevated: #121824;
   --color-bg-overlay: #182030;
-  --color-bg-hover: #222d42;
-  --color-bg-active: #2d3c59;
+  --color-bg-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-active: rgba(255, 255, 255, 0.12);
 
-  --color-border-subtle: rgba(0, 240, 255, 0.05);
-  --color-border-default: rgba(255, 255, 255, 0.06);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
 
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-primary: rgba(245, 245, 247, 0.96);
+  --color-text-secondary: rgba(235, 235, 245, 0.6);
+  --color-text-muted: rgba(235, 235, 245, 0.4);
 
   --color-accent: #00f0ff;
   --color-accent-hover: #80f7ff;
@@ -35,11 +35,13 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
 
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 999px;
 
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Compact dense-editor type scale (rem @ 13px root) */
@@ -60,13 +62,15 @@
   --text-2xl: 1.6923rem; /* ~22px */
   --text-2xl--line-height: 1.2;
 
-  --tracking-label: 0.08em;
-  --tracking-tab: 0.1em;
-  --tracking-brand: 0.12em;
+  --tracking-label: -0.01em;
+  --tracking-tab: -0.01em;
+  --tracking-brand: 0.04em;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.03);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.48), 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
   --shadow-glow-cyan: 0 0 12px rgba(0, 240, 255, 0.35);
   --shadow-glow-green: 0 0 12px rgba(16, 185, 129, 0.35);
   --shadow-glow-red: 0 0 12px rgba(239, 68, 68, 0.35);
@@ -94,16 +98,24 @@
   --bg-surface: #0b0f17;
   --bg-elevated: #121824;
   --bg-overlay: #182030;
-  --bg-hover: #222d42;
-  --bg-active: #2d3c59;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-active: rgba(255, 255, 255, 0.12);
 
-  --border-subtle: rgba(0, 240, 255, 0.05);
-  --border-default: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: rgba(245, 245, 247, 0.96);
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-muted: rgba(235, 235, 245, 0.4);
+
+  /* Apple glass surfaces (shared with tab bar / play pill) */
+  --glass-fill: rgba(22, 22, 24, 0.8);
+  --glass-fill-deep: rgba(16, 18, 22, 0.88);
+  --glass-chip: rgba(255, 255, 255, 0.06);
+  --glass-chip-hover: rgba(255, 255, 255, 0.1);
+  --glass-fg: rgba(235, 235, 245, 0.55);
+  --glass-fg-hover: rgba(235, 235, 245, 0.9);
 
   --accent: #00f0ff;
   --accent-hover: #80f7ff;
@@ -119,13 +131,16 @@
   --warning: #f59e0b;
   --error: #ef4444;
 
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.03);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.48), 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
   --glow-cyan: 0 0 12px rgba(0, 240, 255, 0.35);
   --glow-green: 0 0 12px rgba(16, 185, 129, 0.35);
   --glow-red: 0 0 12px rgba(239, 68, 68, 0.35);
@@ -222,9 +237,29 @@ pre {
   font-size: var(--type-label-size);
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
   color: var(--text-muted);
+}
+
+/* Shared glass utility for cards / menus / chips */
+.glass-chip {
+  background: var(--glass-chip);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.glass-chip:hover {
+  background: var(--glass-chip-hover);
+}
+
+.glass-panel {
+  background: var(--glass-fill-deep);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
 }
 
 .type-micro {
@@ -276,10 +311,10 @@ pre {
   font-variant-numeric: tabular-nums;
 }
 
-/* Scrollbars — dense editor style */
+/* Scrollbars — soft glass style */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--bg-active) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -292,12 +327,12 @@ pre {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--bg-active);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .focus-ring:focus-visible {
