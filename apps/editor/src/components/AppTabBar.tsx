@@ -15,11 +15,25 @@ import {
   LayoutTemplate,
   LogOut,
   Settings,
+  MousePointer,
+  Move,
+  RefreshCcw,
+  Maximize,
+  Paintbrush,
+  Eraser,
+  Magnet,
+  Grid3x3,
+  Eye,
+  EyeOff,
+  Focus,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
 
 export type TabBarDestination = "hierarchy" | "inspector" | "content" | "agent";
+export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" | "erase";
 
 type AppTabBarProps = {
   active: TabBarDestination | null;
@@ -28,6 +42,12 @@ type AppTabBarProps = {
   saveState: SaveState;
   playFps?: number;
   projectPath?: string | null;
+  activeTool: CanvasTool;
+  snap: boolean;
+  snapSize: number;
+  showGrid: boolean;
+  showColliders: boolean;
+  zoom: number;
   onHierarchy: () => void;
   onInspector: () => void;
   onContent: () => void;
@@ -41,7 +61,17 @@ type AppTabBarProps = {
   onOpenWizard?: () => void;
   onSettings: () => void;
   onCloseProject?: () => void;
+  onActiveToolChange: (tool: CanvasTool) => void;
+  onSnapToggle: (snap: boolean) => void;
+  onSnapSizeChange: (size: number) => void;
+  onToggleGrid: (val: boolean) => void;
+  onToggleColliders: (val: boolean) => void;
+  onZoomChange: (zoom: number) => void;
+  onCenterView: () => void;
 };
+
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
 
 /**
  * Single chrome surface: every editor action lives here (Apple-style dock).
@@ -53,6 +83,12 @@ export function AppTabBar({
   saveState,
   playFps = 0,
   projectPath,
+  activeTool,
+  snap,
+  snapSize,
+  showGrid,
+  showColliders,
+  zoom,
   onHierarchy,
   onInspector,
   onContent,
@@ -66,6 +102,13 @@ export function AppTabBar({
   onOpenWizard,
   onSettings,
   onCloseProject,
+  onActiveToolChange,
+  onSnapToggle,
+  onSnapSizeChange,
+  onToggleGrid,
+  onToggleColliders,
+  onZoomChange,
+  onCenterView,
 }: AppTabBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const playingLive = isPlaying && !isPaused;
@@ -73,6 +116,7 @@ export function AppTabBar({
   return (
     <nav className="app-tabbar" aria-label="Editor">
       <div className="app-tabbar-scroll">
+        {/* Panels */}
         <TabItem
           label="Hierarchy"
           active={active === "hierarchy"}
@@ -100,6 +144,7 @@ export function AppTabBar({
 
         <span className="app-tabbar-sep" aria-hidden />
 
+        {/* Project */}
         <TabItem
           label="Refresh"
           active={false}
@@ -129,6 +174,103 @@ export function AppTabBar({
 
         <span className="app-tabbar-sep" aria-hidden />
 
+        {/* Canvas tools (were top-left HUD) */}
+        <TabItem
+          label="Select"
+          active={activeTool === "select"}
+          onClick={() => onActiveToolChange("select")}
+          icon={<MousePointer size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Move"
+          active={activeTool === "translate"}
+          onClick={() => onActiveToolChange("translate")}
+          icon={<Move size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Rotate"
+          active={activeTool === "rotate"}
+          onClick={() => onActiveToolChange("rotate")}
+          icon={<RefreshCcw size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Scale"
+          active={activeTool === "scale"}
+          onClick={() => onActiveToolChange("scale")}
+          icon={<Maximize size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Paint"
+          active={activeTool === "paint"}
+          onClick={() => onActiveToolChange("paint")}
+          icon={<Paintbrush size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Erase"
+          active={activeTool === "erase"}
+          onClick={() => onActiveToolChange("erase")}
+          icon={<Eraser size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Snap"
+          active={snap}
+          onClick={() => onSnapToggle(!snap)}
+          icon={<Magnet size={18} strokeWidth={1.75} />}
+        />
+        {snap && (
+          <label className="app-tabbar-select" title="Snap size">
+            <select
+              value={snapSize}
+              onChange={(e) => onSnapSizeChange(Number(e.target.value))}
+            >
+              <option value={8}>8</option>
+              <option value={16}>16</option>
+              <option value={32}>32</option>
+              <option value={64}>64</option>
+            </select>
+          </label>
+        )}
+
+        <span className="app-tabbar-sep" aria-hidden />
+
+        {/* View (were top-right HUD) */}
+        <TabItem
+          label="Grid"
+          active={showGrid}
+          onClick={() => onToggleGrid(!showGrid)}
+          icon={<Grid3x3 size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Colliders"
+          active={showColliders}
+          onClick={() => onToggleColliders(!showColliders)}
+          icon={showColliders ? <Eye size={18} strokeWidth={1.75} /> : <EyeOff size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Center"
+          active={false}
+          onClick={onCenterView}
+          icon={<Focus size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="Zoom −"
+          active={false}
+          onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))}
+          icon={<ZoomOut size={18} strokeWidth={1.75} />}
+        />
+        <span className="app-tabbar-zoom" title="Zoom">
+          {Math.round(zoom * 100)}%
+        </span>
+        <TabItem
+          label="Zoom +"
+          active={false}
+          onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))}
+          icon={<ZoomIn size={18} strokeWidth={1.75} />}
+        />
+
+        <span className="app-tabbar-sep" aria-hidden />
+
+        {/* Play */}
         <div className="app-tabbar-center">
           <button
             type="button"

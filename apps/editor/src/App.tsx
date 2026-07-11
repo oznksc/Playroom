@@ -97,6 +97,7 @@ export function App() {
   const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
   const [status, setStatus] = useState("Loading");
   const [zoom, setZoom] = useState(1);
+  const [viewResetKey, setViewResetKey] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -1361,6 +1362,7 @@ export function App() {
           snapSize={snapSize}
           isPlaying={isPlaying}
           paintTileId={paintTileId}
+          viewResetKey={viewResetKey}
           onVirtualInput={(action, pressed) => {
             const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
             if (pressed) pressedKeysRef.current.add(key);
@@ -1532,6 +1534,22 @@ export function App() {
         onOpenWizard={() => setWizardOpen(true)}
         onSettings={() => setAgentSettingsOpen(true)}
         onCloseProject={isTauri ? handleCloseProject : undefined}
+        activeTool={activeTool}
+        snap={snap}
+        snapSize={snapSize}
+        showGrid={showGrid}
+        showColliders={showColliders}
+        zoom={zoom}
+        onActiveToolChange={setActiveTool}
+        onSnapToggle={setSnap}
+        onSnapSizeChange={setSnapSize}
+        onToggleGrid={setShowGrid}
+        onToggleColliders={setShowColliders}
+        onZoomChange={setZoom}
+        onCenterView={() => {
+          setZoom(1);
+          setViewResetKey((k) => k + 1);
+        }}
       />
 
       {/* Left floating sheet */}

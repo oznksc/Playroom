@@ -1,31 +1,21 @@
 import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent, TilemapComponent } from "@gamekit/schema";
 import {
-  ZoomIn,
-  ZoomOut,
-  Magnet,
   Plus,
   ClipboardPaste,
   MousePointer,
   Move,
-  RefreshCcw,
-  Maximize,
   Grid,
-  Eye,
-  EyeOff,
   Copy,
   Scissors,
   Trash2,
   CopyPlus,
-  Focus,
-  Paintbrush,
-  Eraser,
 } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
 import { drawScene, hitEntity, hitGuiNode, hitComponentInstance } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
-import { IconButton, cn } from "@/ui";
+import { cn } from "@/ui";
 
 type SceneCanvasProps = {
   scene?: GameKitScene;
@@ -45,6 +35,8 @@ type SceneCanvasProps = {
   isPlaying: boolean;
   /** Active paint brush tile id (1-based tileset index; 0 clears). */
   paintTileId?: number;
+  /** Increment to reset pan to origin. */
+  viewResetKey?: number;
   onVirtualInput?: (action: "left" | "right" | "jump", pressed: boolean) => void;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
@@ -86,6 +78,7 @@ export function SceneCanvas({
   snapSize,
   isPlaying,
   paintTileId = 1,
+  viewResetKey = 0,
   onVirtualInput,
   onZoomChange,
   onSnapToggle,
@@ -120,6 +113,10 @@ export function SceneCanvas({
   } | undefined>();
   
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    if (!viewResetKey) return;
+    setPan({ x: 0, y: 0 });
+  }, [viewResetKey]);
   const [panning, setPanning] = useState<{ startX: number; startY: number; panStartX: number; panStartY: number } | undefined>();
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const images = useImageCache(assets);
@@ -294,14 +291,6 @@ export function SceneCanvas({
       }
     : {};
 
-  const tools = [
-    { id: "select" as const, icon: <MousePointer size={14} />, title: "Selection Tool (Q)" },
-    { id: "translate" as const, icon: <Move size={14} />, title: "Translate Gizmo (W)" },
-    { id: "rotate" as const, icon: <RefreshCcw size={14} />, title: "Rotate Tool (E)" },
-    { id: "scale" as const, icon: <Maximize size={14} />, title: "Scale Gizmo (R)" },
-    { id: "paint" as const, icon: <Paintbrush size={14} />, title: "Tile paint (B)" },
-    { id: "erase" as const, icon: <Eraser size={14} />, title: "Tile erase (X)" },
-  ];
 
   return (
     <section
@@ -312,83 +301,13 @@ export function SceneCanvas({
     >
       {isPlaying && (
         <div
-          className="absolute left-1/2 top-2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-md border border-accent-green/40 bg-bg-surface/95 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-accent-green shadow-md"
+          className="pointer-events-none absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-bg-surface/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-accent-green backdrop-blur-sm"
           role="status"
         >
-          <span className="size-1.5 animate-pulse rounded-full bg-accent-green shadow-glow-green" />
-          Play mode — Arrow keys / WASD / Space · On-screen pad below
+          <span className="size-1.5 animate-pulse rounded-full bg-accent-green" />
+          Play · WASD / Arrows / Space
         </div>
       )}
-
-      <div className="absolute left-3 top-3 z-20 flex items-center gap-1 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
-        <div className="flex items-center gap-0.5">
-          {tools.map((tool) => (
-            <IconButton
-              key={tool.id}
-              size="md"
-              variant={activeTool === tool.id ? "active" : "ghost"}
-              onClick={() => onActiveToolChange(tool.id)}
-              title={tool.title}
-            >
-              {tool.icon}
-            </IconButton>
-          ))}
-        </div>
-        <div className="hud-divider mx-1 h-4 w-px bg-border-default" />
-        <div className="flex items-center gap-0.5">
-          <IconButton
-            size="md"
-            variant={snap ? "active" : "ghost"}
-            onClick={() => onSnapToggle(!snap)}
-            title="Toggle Snap to Grid"
-          >
-            <Magnet size={14} />
-          </IconButton>
-          {snap && (
-            <select
-              className="h-6 rounded-sm border border-border-default bg-bg-base px-1.5 text-[10px] font-semibold text-text-secondary outline-none focus:border-accent"
-              value={snapSize}
-              onChange={(e) => onSnapSizeChange(Number(e.target.value))}
-              title="Grid Snapping Dimension"
-            >
-              <option value="8">8px</option>
-              <option value="16">16px</option>
-              <option value="32">32px</option>
-              <option value="64">64px</option>
-            </select>
-          )}
-        </div>
-      </div>
-
-      <div className="absolute right-3 top-3 z-20 flex items-center gap-0.5 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
-        <IconButton
-          size="md"
-          variant={showGrid ? "active" : "ghost"}
-          onClick={() => onToggleGrid(!showGrid)}
-          title="Toggle Visual Grid"
-        >
-          <Grid size={14} />
-        </IconButton>
-        <IconButton
-          size="md"
-          variant={showColliders ? "active" : "ghost"}
-          onClick={() => onToggleColliders(!showColliders)}
-          title="Toggle Collider Geometry"
-        >
-          {showColliders ? <Eye size={14} /> : <EyeOff size={14} />}
-        </IconButton>
-        <div className="mx-1 h-4 w-px bg-border-default" />
-        <IconButton
-          size="md"
-          onClick={() => {
-            onZoomChange(1);
-            setPan({ x: 0, y: 0 });
-          }}
-          title="Center Canvas camera"
-        >
-          <Focus size={14} />
-        </IconButton>
-      </div>
 
       <ContextMenu items={getCanvasContextMenuItems()}>
         <div className="canvas-viewport max-h-[calc(100vh-120px)] max-w-full overflow-auto rounded-lg bg-[#090c12]">
@@ -625,25 +544,6 @@ export function SceneCanvas({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-md border border-border-default bg-bg-surface/90 p-1 shadow-md backdrop-blur-sm">
-        <IconButton
-          size="sm"
-          onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))}
-          title="Zoom out"
-        >
-          <ZoomOut size={13} />
-        </IconButton>
-        <span className="min-w-[44px] text-center font-mono text-[10px] text-text-secondary">
-          {Math.round(zoom * 100)}%
-        </span>
-        <IconButton
-          size="sm"
-          onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))}
-          title="Zoom in"
-        >
-          <ZoomIn size={13} />
-        </IconButton>
-      </div>
     </section>
   );
 }
