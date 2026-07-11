@@ -413,97 +413,159 @@
   pointer-events: auto;
 }
 
-/* Bottom sheet — content browser / timeline / console (above tab bar) */
+/*
+ * Content drawer — sits flush above the Apple tab bar.
+ * Closed: fully hidden. Open: slides up from tab bar.
+ */
 .bottom-sheet {
+  --tabbar-clearance: 78px;
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 78px;
-  z-index: 38;
+  left: 50%;
+  bottom: var(--tabbar-clearance);
+  z-index: 40;
   display: flex;
   flex-direction: column;
-  max-height: min(42vh, 380px);
-  border-radius: 12px;
-  background: rgba(11, 15, 23, 0.94);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  width: min(720px, calc(100vw - 24px));
+  max-height: min(44vh, 400px);
+  border-radius: 16px 16px 18px 18px;
+  background: rgba(22, 22, 24, 0.92);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
   box-shadow:
-    0 -8px 32px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 -12px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  transition: max-height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-50%) translateY(16px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
 }
 
-.bottom-sheet.collapsed {
-  max-height: 40px;
+.bottom-sheet.open {
+  transform: translateX(-50%) translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.bottom-sheet.collapsed .drawer-content-box {
-  display: none;
+/* Visual link to tab bar — small gap, centered over dock */
+.bottom-sheet::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 40px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
 }
 
-.drawer-tabs-bar {
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 8px 0 14px;
+}
+
+.bottom-sheet-handle {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.bottom-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.bottom-sheet-title span {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.bottom-sheet-tabs {
   display: flex;
   align-items: center;
   gap: 2px;
-  height: 40px;
-  flex-shrink: 0;
-  padding: 0 6px;
-  background: transparent;
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
 }
 
-.drawer-tab {
-  position: relative;
+.bottom-sheet-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   height: 28px;
   padding: 0 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color 120ms ease,
-    background 120ms ease;
 }
 
-.drawer-tab:hover {
+.bottom-sheet-tab:hover {
   color: var(--text-secondary);
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.drawer-tab.active {
+.bottom-sheet-tab.active {
   color: var(--accent);
   background: var(--accent-muted);
 }
 
-.drawer-collapse-btn {
-  margin-left: auto;
+.bottom-sheet-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  margin-top: 4px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
 }
 
-.drawer-collapse-btn:hover {
+.bottom-sheet-close:hover {
   color: var(--text-primary);
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .drawer-content-box {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.shell.has-bottom-sheet:not(.drawer-collapsed) .tile-palette {
+  bottom: calc(min(44vh, 400px) + 96px);
 }
 
 /* Top-right actions removed — everything is on .app-tabbar */
@@ -527,13 +589,8 @@
     0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-.shell.has-bottom-sheet:not(.drawer-collapsed) .tile-palette {
-  bottom: calc(min(42vh, 380px) + 90px);
-}
-
-.shell.has-bottom-sheet:not(.drawer-collapsed) .app-tabbar {
-  /* keep tab bar above sheet edge */
-  bottom: 10px;
+.shell.has-bottom-sheet .app-tabbar {
+  bottom: 12px;
 }
 
 .tile-palette-label {
@@ -672,9 +729,8 @@
   }
 
   .bottom-sheet {
-    left: 8px;
-    right: 8px;
-    bottom: 76px;
+    width: calc(100vw - 16px);
+    bottom: 72px;
   }
 
   .app-tabbar {

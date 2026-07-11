@@ -1,14 +1,7 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  FolderOpen,
-  Folder,
-  Clock3,
-  Terminal,
-} from "lucide-react";
+import { FolderOpen, Folder, Clock3, Terminal, X } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
 import { Sidebar } from "./components/Sidebar.js";
@@ -1703,42 +1696,54 @@ export function App() {
         </div>
       </div>
 
-      {/* Bottom sheet */}
+      {/* Content drawer — docks just above the tab bar */}
       {scene && (
-        <section className={`bottom-sheet${bottomDrawerCollapsed ? " collapsed" : ""}`}>
-          <div className="drawer-tabs-bar">
-            {(
-              [
-                ["assets", "Content", <Folder key="i" size={12} strokeWidth={1.75} />] as const,
-                ...(MVP_SHOW_TIMELINE
-                  ? ([["timeline", "Timeline", <Clock3 key="i" size={12} strokeWidth={1.75} />]] as const)
-                  : []),
-                ...(MVP_SHOW_CONSOLE
-                  ? ([["console", "Console", <Terminal key="i" size={12} strokeWidth={1.75} />]] as const)
-                  : []),
-              ] as const
-            ).map(([id, label, icon]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => {
-                  setActiveBottomTab(id as BottomTab);
-                  setBottomDrawerCollapsed(false);
-                  setSidebarOpen(false);
-                }}
-                className={activeBottomTab === id && !bottomDrawerCollapsed ? "drawer-tab active" : "drawer-tab"}
-              >
-                {icon}
-                {label}
-              </button>
-            ))}
+        <section
+          className={`bottom-sheet${!bottomDrawerCollapsed ? " open" : ""}`}
+          aria-hidden={bottomDrawerCollapsed}
+          aria-label="Content browser"
+        >
+          <div className="bottom-sheet-handle" aria-hidden />
+          <div className="bottom-sheet-header">
+            {(MVP_SHOW_TIMELINE || MVP_SHOW_CONSOLE) ? (
+              <div className="bottom-sheet-tabs">
+                {(
+                  [
+                    ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
+                    ...(MVP_SHOW_TIMELINE
+                      ? ([["timeline", "Timeline", <Clock3 key="i" size={13} strokeWidth={1.75} />]] as const)
+                      : []),
+                    ...(MVP_SHOW_CONSOLE
+                      ? ([["console", "Console", <Terminal key="i" size={13} strokeWidth={1.75} />]] as const)
+                      : []),
+                  ] as const
+                ).map(([id, label, icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={activeBottomTab === id ? "bottom-sheet-tab active" : "bottom-sheet-tab"}
+                    onClick={() => setActiveBottomTab(id as BottomTab)}
+                  >
+                    {icon}
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <h2 className="bottom-sheet-title">
+                <Folder size={14} strokeWidth={1.75} />
+                Content
+                <span>{snapshot.assets.length} assets</span>
+              </h2>
+            )}
             <button
               type="button"
-              className="drawer-collapse-btn"
-              onClick={() => setBottomDrawerCollapsed((v) => !v)}
-              title={bottomDrawerCollapsed ? "Expand content browser" : "Collapse"}
+              className="bottom-sheet-close"
+              title="Close"
+              aria-label="Close content drawer"
+              onClick={() => setBottomDrawerCollapsed(true)}
             >
-              {bottomDrawerCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              <X size={16} strokeWidth={1.75} />
             </button>
           </div>
           <div className="drawer-content-box">
