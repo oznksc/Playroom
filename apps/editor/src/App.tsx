@@ -8,7 +8,6 @@ import {
   Terminal,
   X,
   Layers,
-  SlidersHorizontal,
   Sparkles,
   Save,
   RefreshCw,
@@ -1005,58 +1004,85 @@ export function App() {
     });
   }
 
+  /** Scene files are stored as `*.scene.json`; levels may legacy-store bare ids like `main`. */
+  function normalizeSceneFile(id: string): string {
+    if (!id) return id;
+    return id.endsWith(".scene.json") ? id : `${id}.scene.json`;
+  }
+
+  function sceneFileMatches(a: string, b: string): boolean {
+    return normalizeSceneFile(a) === normalizeSceneFile(b);
+  }
+
+  function commitLevels(levels: GameKitLevel[]) {
+    setSnapshot((prev) => ({ ...prev, levels }));
+    persistProject({ levels }).catch((e) => {
+      setStatus(e instanceof Error ? e.message : "Failed to save levels");
+    });
+  }
+
   function handleCreateLevel(name: string) {
+    const baseId = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "") || "level";
+    const existing = new Set(snapshot.levels.map((l) => l.id));
+    let id = baseId;
+    let n = 2;
+    while (existing.has(id)) {
+      id = `${baseId}-${n++}`;
+    }
     const newLevel: GameKitLevel = {
-      id: name.toLowerCase().replace(/\s+/g, "-"),
+      id,
       name,
       order: snapshot.levels.length + 1,
       sceneIds: [],
-      unlocked: snapshot.levels.length === 0
+      unlocked: snapshot.levels.length === 0,
     };
-    setSnapshot((prev) => ({ ...prev, levels: [...prev.levels, newLevel] }));
-    setIsDirty(true);
-    triggerAutoSave();
+    commitLevels([...snapshot.levels, newLevel]);
     addConsoleLog("system", `Created new game level ${name}`);
   }
 
   function handleDeleteLevel(levelId: string) {
-    setSnapshot((prev) => ({ ...prev, levels: prev.levels.filter((l) => l.id !== levelId) }));
-    setIsDirty(true);
-    triggerAutoSave();
+    commitLevels(snapshot.levels.filter((l) => l.id !== levelId));
     addConsoleLog("system", `Deleted game level ID: ${levelId}`);
   }
 
   function handleToggleUnlockLevel(levelId: string) {
-    setSnapshot((prev) => ({
-      ...prev,
-      levels: prev.levels.map((l) => l.id === levelId ? { ...l, unlocked: !l.unlocked } : l)
-    }));
-    setIsDirty(true);
-    triggerAutoSave();
+    commitLevels(
+      snapshot.levels.map((l) =>
+        l.id === levelId ? { ...l, unlocked: !l.unlocked } : l
+      )
+    );
   }
 
   function handleReorderLevels(levels: GameKitLevel[]) {
-    setSnapshot((prev) => ({ ...prev, levels }));
-    setIsDirty(true);
-    triggerAutoSave();
+    commitLevels(levels);
   }
 
   function handleAssignSceneToLevel(levelId: string, sceneId: string) {
-    setSnapshot((prev) => ({
-      ...prev,
-      levels: prev.levels.map((l) => l.id === levelId ? { ...l, sceneIds: [...l.sceneIds, sceneId] } : l)
-    }));
-    setIsDirty(true);
-    triggerAutoSave();
+    const file = normalizeSceneFile(sceneId);
+    commitLevels(
+      snapshot.levels.map((l) =>
+        l.id === levelId && !l.sceneIds.some((s) => sceneFileMatches(s, file))
+          ? { ...l, sceneIds: [...l.sceneIds.map(normalizeSceneFile), file] }
+          : l.id === levelId
+            ? { ...l, sceneIds: l.sceneIds.map(normalizeSceneFile) }
+            : l
+      )
+    );
   }
 
   function handleRemoveSceneFromLevel(levelId: string, sceneId: string) {
-    setSnapshot((prev) => ({
-      ...prev,
-      levels: prev.levels.map((l) => l.id === levelId ? { ...l, sceneIds: l.sceneIds.filter((s) => s !== sceneId) } : l)
-    }));
-    setIsDirty(true);
-    triggerAutoSave();
+    commitLevels(
+      snapshot.levels.map((l) =>
+        l.id === levelId
+          ? {
+              ...l,
+              sceneIds: l.sceneIds
+                .map(normalizeSceneFile)
+                .filter((s) => !sceneFileMatches(s, sceneId)),
+            }
+          : l
+      )
+    );
   }
 
   // GUI node management
@@ -1365,15 +1391,13 @@ export function App() {
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
 
-  // Canvas-first: open inspector sheet when something is selected
+  // Inspector is selection-driven only (not on the tab bar)
   useEffect(() => {
-    if (
+    const hasSelection =
       selectedEntityIds.size > 0 ||
-      selectedGuiNodeId ||
-      selectedComponentInstanceId
-    ) {
-      setInspectorOpen(true);
-    }
+      !!selectedGuiNodeId ||
+      !!selectedComponentInstanceId;
+    setInspectorOpen(hasSelection);
   }, [selectedEntityIds, selectedGuiNodeId, selectedComponentInstanceId]);
 
 
@@ -1392,15 +1416,18 @@ export function App() {
     addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
   }
 
-  const openHierarchy = useCallback(() => {
-    setActiveTab("entities");
+  const openLeftPanel = useCallback((tab: SidebarTab) => {
+    setActiveTab(tab);
     setSidebarOpen(true);
     setBottomDrawerCollapsed(true);
   }, []);
 
-  const openInspector = useCallback(() => {
-    setInspectorOpen(true);
-  }, []);
+  const openHierarchy = useCallback(() => openLeftPanel("entities"), [openLeftPanel]);
+  const openScenes = useCallback(() => openLeftPanel("scenes"), [openLeftPanel]);
+  const openPrefabs = useCallback(() => openLeftPanel("prefabs"), [openLeftPanel]);
+  const openLevels = useCallback(() => openLeftPanel("levels"), [openLeftPanel]);
+  const openAgent = useCallback(() => openLeftPanel("agent"), [openLeftPanel]);
+  const openWorld = useCallback(() => openLeftPanel("world"), [openLeftPanel]);
 
   const openContent = useCallback((tab: BottomTab = "assets") => {
     setActiveBottomTab(tab);
@@ -1408,17 +1435,27 @@ export function App() {
     setSidebarOpen(false);
   }, []);
 
-  const openAgent = useCallback(() => {
-    setActiveTab("agent");
-    setSidebarOpen(true);
-    setBottomDrawerCollapsed(true);
-  }, []);
-
-  const openScenes = useCallback(() => {
-    setActiveTab("scenes");
-    setSidebarOpen(true);
-    setBottomDrawerCollapsed(true);
-  }, []);
+  const saveEntityAsPrefab = useCallback(
+    async (entityId: string) => {
+      try {
+        const entity = sceneRef.current?.entities.find((e) => e.id === entityId);
+        const { createPrefabFromEntityApi } = await import("./components/PrefabPanel.js");
+        const result = await createPrefabFromEntityApi({
+          sceneFile: currentSceneFile,
+          entityId,
+          name: entity?.name,
+        });
+        setStatus(`Prefab saved: ${result.file}`);
+        addConsoleLog("system", `Prefab saved: ${result.file}`);
+        openPrefabs();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Create prefab failed";
+        setStatus(msg);
+        addConsoleLog("error", msg);
+      }
+    },
+    [currentSceneFile, addConsoleLog, openPrefabs]
+  );
 
   const centerView = useCallback(() => {
     setZoom(1);
@@ -1435,14 +1472,6 @@ export function App() {
         keywords: ["entities", "panel", "sidebar"],
         icon: ic(<Layers size={14} strokeWidth={1.75} />),
         run: openHierarchy,
-      },
-      {
-        id: "nav-inspector",
-        label: "Open Inspector",
-        section: "Navigate",
-        keywords: ["properties", "panel"],
-        icon: ic(<SlidersHorizontal size={14} strokeWidth={1.75} />),
-        run: openInspector,
       },
       {
         id: "nav-content",
@@ -1464,9 +1493,51 @@ export function App() {
         id: "nav-scenes",
         label: "Open Scenes",
         section: "Navigate",
-        keywords: ["levels", "files"],
+        keywords: ["files", "management"],
         icon: ic(<FileText size={14} strokeWidth={1.75} />),
         run: openScenes,
+      },
+      {
+        id: "nav-prefabs",
+        label: "Open Prefabs",
+        section: "Navigate",
+        keywords: ["templates", "instances", "reuse"],
+        icon: ic(<Box size={14} strokeWidth={1.75} />),
+        run: openPrefabs,
+      },
+      {
+        id: "create-prefab",
+        label: selectedEntity
+          ? `Save “${selectedEntity.name || selectedEntity.id}” as Prefab`
+          : "Save selection as Prefab",
+        section: "Create",
+        keywords: ["prefab", "template", "save"],
+        icon: ic(<Box size={14} strokeWidth={1.75} />),
+        disabled: !selectedEntity,
+        run: () => {
+          if (!selectedEntity) return;
+          void saveEntityAsPrefab(selectedEntity.id);
+        },
+      },
+      ...(MVP_SHOW_LEVELS
+        ? [
+            {
+              id: "nav-levels",
+              label: "Open Levels",
+              section: "Navigate",
+              keywords: ["levels", "order", "unlock"],
+              icon: ic(<Layers size={14} strokeWidth={1.75} />),
+              run: openLevels,
+            } satisfies CommandItem,
+          ]
+        : []),
+      {
+        id: "nav-world",
+        label: "Open World Settings",
+        section: "Navigate",
+        keywords: ["viewport", "gravity", "responsive", "scene"],
+        icon: ic(<Settings size={14} strokeWidth={1.75} />),
+        run: openWorld,
       },
       {
         id: "tool-select",
@@ -1716,13 +1787,18 @@ export function App() {
     snapshot.scenes,
     scene?.entities,
     openHierarchy,
-    openInspector,
     openContent,
     openAgent,
     openScenes,
+    openPrefabs,
+    openLevels,
+    openWorld,
     centerView,
     undo,
     redo,
+    selectedEntity,
+    currentSceneFile,
+    saveEntityAsPrefab,
   ]);
 
   if (isTauri && !projectPath) {
@@ -1924,6 +2000,7 @@ export function App() {
           }}
           onDuplicateEntity={(id) => duplicateEntity(id)}
           onDeleteEntity={(id) => deleteEntity(id)}
+          onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
         />
 
         {(activeTool === "paint" || activeTool === "erase") && (
@@ -1972,43 +2049,55 @@ export function App() {
             ? "content"
             : sidebarOpen && activeTab === "agent"
               ? "agent"
-              : sidebarOpen
-                ? "hierarchy"
-                : inspectorOpen
-                  ? "inspector"
-                  : null
+              : sidebarOpen && activeTab === "world"
+                ? "world"
+                : sidebarOpen && activeTab === "scenes"
+                  ? "scenes"
+                  : sidebarOpen && activeTab === "prefabs"
+                    ? "prefabs"
+                    : sidebarOpen && activeTab === "levels"
+                      ? "levels"
+                      : sidebarOpen
+                        ? "hierarchy"
+                        : null
         }
         saveState={saveState}
         projectPath={isTauri ? projectPath : null}
+        showLevels={MVP_SHOW_LEVELS}
         onHierarchy={() => {
-          if (sidebarOpen && activeTab === "entities") {
-            setSidebarOpen(false);
-          } else {
-            setActiveTab("entities");
-            setSidebarOpen(true);
-            setBottomDrawerCollapsed(true);
-          }
+          if (sidebarOpen && activeTab === "entities") setSidebarOpen(false);
+          else openHierarchy();
         }}
-        onInspector={() => {
-          setInspectorOpen((v) => !v);
+        onScenes={() => {
+          if (sidebarOpen && activeTab === "scenes") setSidebarOpen(false);
+          else openScenes();
         }}
+        onPrefabs={() => {
+          if (sidebarOpen && activeTab === "prefabs") setSidebarOpen(false);
+          else openPrefabs();
+        }}
+        onLevels={
+          MVP_SHOW_LEVELS
+            ? () => {
+                if (sidebarOpen && activeTab === "levels") setSidebarOpen(false);
+                else openLevels();
+              }
+            : undefined
+        }
         onContent={() => {
           if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
             setBottomDrawerCollapsed(true);
           } else {
-            setActiveBottomTab("assets");
-            setBottomDrawerCollapsed(false);
-            setSidebarOpen(false);
+            openContent("assets");
           }
         }}
         onAgent={() => {
-          if (sidebarOpen && activeTab === "agent") {
-            setSidebarOpen(false);
-          } else {
-            setActiveTab("agent");
-            setSidebarOpen(true);
-            setBottomDrawerCollapsed(true);
-          }
+          if (sidebarOpen && activeTab === "agent") setSidebarOpen(false);
+          else openAgent();
+        }}
+        onWorld={() => {
+          if (sidebarOpen && activeTab === "world") setSidebarOpen(false);
+          else openWorld();
         }}
         onSave={saveScene}
         onRefresh={refresh}
@@ -2068,6 +2157,7 @@ export function App() {
                 if (entity) pasteEntity(entity);
               }}
               onDuplicateEntity={(id) => duplicateEntity(id)}
+              onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
               onAddEntity={addEntity}
               onAddTemplate={addTemplateEntity}
             />
@@ -2085,12 +2175,20 @@ export function App() {
             <PrefabPanel
               sceneFile={currentSceneFile}
               selectedEntityId={selectedEntityId}
+              selectedEntityName={selectedEntity?.name}
               onInstantiated={() => {
                 refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
               }}
               onStatus={(message) => {
                 setStatus(message);
-                addConsoleLog("system", message);
+                addConsoleLog(
+                  message.toLowerCase().includes("fail") || message.toLowerCase().includes("select")
+                    ? message.toLowerCase().includes("fail")
+                      ? "error"
+                      : "warn"
+                    : "system",
+                  message
+                );
               }}
             />
           )}
@@ -2106,14 +2204,42 @@ export function App() {
               }}
             />
           )}
+          {activeTab === "world" && scene && (
+            <SceneSettings scene={scene} onChange={updateScene} />
+          )}
+          {activeTab === "world" && !scene && (
+            <div className="flex h-full items-center justify-center p-4 text-center text-[12px] text-text-muted">
+              Load a scene to edit world settings.
+            </div>
+          )}
           {MVP_SHOW_LEVELS && activeTab === "levels" && (
             <LevelPanel
               levels={snapshot.levels}
               scenes={snapshot.scenes}
-              currentLevelId={snapshot.levels.find((l) => l.sceneIds.includes(currentSceneFile))?.id ?? null}
+              currentLevelId={
+                snapshot.levels.find((l) =>
+                  l.sceneIds.some((s) => sceneFileMatches(s, currentSceneFile))
+                )?.id ?? null
+              }
               onSelectLevel={(levelId) => {
                 const level = snapshot.levels.find((l) => l.id === levelId);
-                if (level && level.sceneIds.length > 0) setCurrentSceneFile(level.sceneIds[0]);
+                if (!level) return;
+                // Prefer first attached scene; normalize legacy bare ids ("main" → "main.scene.json")
+                const raw = level.sceneIds[0];
+                if (!raw) {
+                  addConsoleLog("warn", `Level "${level.name}" has no scenes attached.`);
+                  return;
+                }
+                const file = normalizeSceneFile(raw);
+                if (!snapshot.scenes.some((s) => sceneFileMatches(s, file))) {
+                  addConsoleLog(
+                    "error",
+                    `Level scene "${file}" not found. Attach a valid scene file first.`
+                  );
+                  setStatus(`Scene not found: ${file}`);
+                  return;
+                }
+                setCurrentSceneFile(file);
               }}
               onCreateLevel={handleCreateLevel}
               onDeleteLevel={handleDeleteLevel}
@@ -2152,10 +2278,9 @@ export function App() {
         </div>
       </div>
 
-      {/* Right floating inspector sheet */}
+      {/* Right floating inspector sheet — entity / GUI properties only */}
       <div className={`float-sheet-right${inspectorOpen ? " open" : ""}`} role="dialog" aria-label="Inspector">
         <div className="inspector-column" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          {scene && <SceneSettings scene={scene} onChange={updateScene} />}
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector
               instance={scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)!}

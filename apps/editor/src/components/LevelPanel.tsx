@@ -1,5 +1,6 @@
 import type { GameKitLevel } from "@gamekit/schema";
-import { Plus, Trash2, Lock, Unlock, GripVertical, FileCode } from "lucide-react";
+import { Plus, Trash2, Lock, Unlock, GripVertical, FileCode, Check, X } from "lucide-react";
+import { useState } from "react";
 import {
   Panel,
   PanelHeader,
@@ -9,6 +10,8 @@ import {
   EmptyState,
   Select,
   Badge,
+  Input,
+  Button,
   cn,
 } from "@/ui";
 
@@ -25,6 +28,10 @@ type LevelPanelProps = {
   onRemoveScene: (levelId: string, sceneId: string) => void;
 };
 
+function sceneLabel(sceneId: string) {
+  return sceneId.replace(/\.scene\.json$/, "");
+}
+
 export function LevelPanel({
   levels,
   scenes,
@@ -37,9 +44,15 @@ export function LevelPanel({
   onAssignScene,
   onRemoveScene,
 }: LevelPanelProps) {
-  function handleCreate() {
-    const name = prompt("Enter level name:");
-    if (name) onCreateLevel(name);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  function handleCreateSubmit() {
+    const name = newName.trim();
+    if (!name) return;
+    onCreateLevel(name);
+    setNewName("");
+    setCreating(false);
   }
 
   function handleMoveUp(level: GameKitLevel) {
@@ -68,18 +81,62 @@ export function LevelPanel({
 
   return (
     <Panel>
-      <PanelHeader>
+      <PanelHeader className="h-9">
         <PanelTitle accent="gold">Levels</PanelTitle>
-        <IconButton size="sm" onClick={handleCreate} title="Create level">
+        <IconButton
+          size="sm"
+          onClick={() => {
+            setCreating(true);
+            setNewName("");
+          }}
+          title="Create level"
+        >
           <Plus size={13} />
         </IconButton>
       </PanelHeader>
       <PanelBody className="space-y-2 p-1.5">
-        {sortedLevels.length === 0 ? (
+        {creating && (
+          <div className="flex items-center gap-1 rounded-[12px] border border-accent/30 bg-accent/10 p-1.5">
+            <Input
+              autoFocus
+              className="h-7 flex-1"
+              placeholder="Level name…"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateSubmit();
+                if (e.key === "Escape") {
+                  setCreating(false);
+                  setNewName("");
+                }
+              }}
+            />
+            <IconButton size="sm" variant="accent" title="Create" onClick={handleCreateSubmit}>
+              <Check size={12} />
+            </IconButton>
+            <IconButton
+              size="sm"
+              title="Cancel"
+              onClick={() => {
+                setCreating(false);
+                setNewName("");
+              }}
+            >
+              <X size={12} />
+            </IconButton>
+          </div>
+        )}
+
+        {sortedLevels.length === 0 && !creating ? (
           <EmptyState
             icon={<FileCode size={16} />}
             title="No levels"
             description="Create a level and attach scene configs."
+            action={
+              <Button size="sm" variant="solid" onClick={() => setCreating(true)}>
+                <Plus size={12} /> New level
+              </Button>
+            }
           />
         ) : (
           sortedLevels.map((level) => {
@@ -109,10 +166,24 @@ export function LevelPanel({
                   <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-text-primary">
                     {level.name}
                   </span>
-                  <IconButton size="sm" title="Move up" onClick={(e) => { e.stopPropagation(); handleMoveUp(level); }}>
+                  <IconButton
+                    size="sm"
+                    title="Move up"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveUp(level);
+                    }}
+                  >
                     <span className="text-[9px]">▲</span>
                   </IconButton>
-                  <IconButton size="sm" title="Move down" onClick={(e) => { e.stopPropagation(); handleMoveDown(level); }}>
+                  <IconButton
+                    size="sm"
+                    title="Move down"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveDown(level);
+                    }}
+                  >
                     <span className="text-[9px]">▼</span>
                   </IconButton>
                   <IconButton
@@ -137,7 +208,7 @@ export function LevelPanel({
                     <Trash2 size={11} />
                   </IconButton>
                 </div>
-                <div className="space-y-1 pl-4">
+                <div className="space-y-1 pl-1">
                   {level.sceneIds.length === 0 && (
                     <span className="text-[10px] text-text-muted">No scenes attached</span>
                   )}
@@ -146,9 +217,7 @@ export function LevelPanel({
                       key={sceneId}
                       className="flex items-center gap-1 rounded-[8px] bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-text-secondary"
                     >
-                      <span className="min-w-0 flex-1 truncate">
-                        {sceneId.replace(".scene.json", "")}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate">{sceneLabel(sceneId)}</span>
                       <button
                         type="button"
                         className="text-text-muted hover:text-error"
@@ -162,7 +231,7 @@ export function LevelPanel({
                     </div>
                   ))}
                   <Select
-                    className="h-[24px] text-[10px]"
+                    className="h-7 text-[11px]"
                     value=""
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
@@ -171,10 +240,15 @@ export function LevelPanel({
                   >
                     <option value="">Attach scene…</option>
                     {scenes
-                      .filter((s) => !level.sceneIds.includes(s))
+                      .filter(
+                        (s) =>
+                          !level.sceneIds.some(
+                            (id) => sceneLabel(id) === sceneLabel(s) || id === s
+                          )
+                      )
                       .map((sceneId) => (
                         <option key={sceneId} value={sceneId}>
-                          {sceneId.replace(".scene.json", "")}
+                          {sceneLabel(sceneId)}
                         </option>
                       ))}
                   </Select>

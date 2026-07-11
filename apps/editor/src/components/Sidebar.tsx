@@ -13,6 +13,7 @@ import {
   ClipboardPaste,
   CopyPlus,
   FileQuestion,
+  Boxes,
 } from "lucide-react";
 import { useState } from "react";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
@@ -38,6 +39,7 @@ type SidebarProps = {
   onCutEntity?: (id: string) => void;
   onPasteEntity?: () => void;
   onDuplicateEntity?: (id: string) => void;
+  onSaveAsPrefab?: (id: string) => void;
   onAddEntity: () => void;
   onAddTemplate?: (templateType: "empty" | "sprite" | "collider" | "player" | "camera") => void;
 };
@@ -51,6 +53,7 @@ export function Sidebar({
   onCutEntity,
   onPasteEntity,
   onDuplicateEntity,
+  onSaveAsPrefab,
   onAddEntity,
   onAddTemplate,
 }: SidebarProps) {
@@ -107,6 +110,18 @@ export function Sidebar({
         onClick: () => onDuplicateEntity?.(entityId),
       },
     ];
+
+    if (onSaveAsPrefab) {
+      items.push(
+        { id: "sep-prefab", label: "", separator: true },
+        {
+          id: "prefab",
+          label: "Save as Prefab…",
+          icon: <Boxes size={14} />,
+          onClick: () => onSaveAsPrefab(entityId),
+        }
+      );
+    }
 
     if (onDeleteEntity) {
       items.push(
@@ -168,7 +183,7 @@ export function Sidebar({
         </div>
       )}
 
-      <PanelBody className="space-y-0.5 p-1.5">
+      <PanelBody className="flex flex-col gap-0 p-1">
         {filteredEntities.length === 0 ? (
           <EmptyState
             icon={<FileQuestion size={16} />}
@@ -193,11 +208,11 @@ export function Sidebar({
                     }
                   }}
                 >
-                  <span className="shrink-0">{getEntityIcon(entity)}</span>
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-text-primary">
+                  <span className="shrink-0 leading-none">{getEntityIcon(entity)}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12px] leading-none text-text-primary">
                     {entity.name || "Unnamed Entity"}
                   </span>
-                  <Badge variant="mono" className="row-meta !ml-0">
+                  <Badge variant="mono" className="row-meta !ml-0 !px-1 !py-0 text-[9px]">
                     {entity.id.slice(0, 5)}…
                   </Badge>
                 </div>
