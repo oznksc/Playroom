@@ -1,5 +1,6 @@
-import type { GameKitScene, Orientation, ResponsiveConfig } from "@gamekit/schema";
-import { Settings, Monitor, Shield, Gauge, Globe } from "lucide-react";
+import type { FallDeathAction, GameKitScene, GameRulesConfig, Orientation, ResponsiveConfig } from "@gamekit/schema";
+import { DEFAULT_GAME_RULES } from "@gamekit/schema";
+import { Settings, Monitor, Shield, Gauge, Globe, Skull } from "lucide-react";
 import { useState } from "react";
 import {
   NumberField,
@@ -19,15 +20,31 @@ type SceneSettingsProps = {
   onChange: (mutator: (scene: GameKitScene) => void) => void;
 };
 
+function ensureGameRules(draft: GameKitScene): GameRulesConfig {
+  if (!draft.gameRules) {
+    draft.gameRules = {
+      fallDeathEnabled: DEFAULT_GAME_RULES.fallDeathEnabled,
+      fallMargin: DEFAULT_GAME_RULES.fallMargin,
+      onFall: DEFAULT_GAME_RULES.onFall,
+      lives: DEFAULT_GAME_RULES.lives,
+      gameOverMessage: DEFAULT_GAME_RULES.gameOverMessage,
+      winMessage: DEFAULT_GAME_RULES.winMessage,
+    };
+  }
+  return draft.gameRules;
+}
+
 /**
- * World / scene settings panel — viewport, gravity, responsive, safe area.
+ * World / scene settings panel — viewport, gravity, game rules, responsive, safe area.
  * Lives as its own left-sheet workspace (not inside the entity inspector).
  */
 export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
   const responsive = scene.responsive;
+  const rules = scene.gameRules ?? {};
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
     Scene: false,
     Gravity: false,
+    GameRules: false,
     Responsive: true,
     SafeArea: true,
   });
@@ -145,6 +162,132 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
               }
             />
           </div>
+        </AccordionSection>
+
+        <AccordionSection
+          icon={<Skull size={12} />}
+          label="Game rules"
+          open={!collapsed.GameRules}
+          onToggle={() => toggleCollapse("GameRules")}
+          accent="purple"
+        >
+          <CheckboxField
+            label="Fall death (void)"
+            checked={rules.fallDeathEnabled !== false}
+            onChange={(checked) =>
+              onChange((draft) => {
+                ensureGameRules(draft).fallDeathEnabled = checked;
+              })
+            }
+          />
+          <p className="text-[10px] leading-snug text-text-muted">
+            When the player drops below the fall line, trigger game over or respawn.
+            Leave Fall Y empty to use the lowest ground + margin.
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberField
+              label="Fall Y"
+              value={typeof rules.fallY === "number" ? rules.fallY : 0}
+              onChange={(value) =>
+                onChange((draft) => {
+                  const gr = ensureGameRules(draft);
+                  if (!value) {
+                    delete gr.fallY;
+                  } else {
+                    gr.fallY = value;
+                  }
+                })
+              }
+            />
+            <NumberField
+              label="Margin"
+              value={rules.fallMargin ?? DEFAULT_GAME_RULES.fallMargin}
+              onChange={(value) =>
+                onChange((draft) => {
+                  ensureGameRules(draft).fallMargin = value;
+                })
+              }
+            />
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold tracking-[-0.01em] text-text-muted">
+              On fall
+            </span>
+            <Select
+              value={rules.onFall ?? DEFAULT_GAME_RULES.onFall}
+              onChange={(event) =>
+                onChange((draft) => {
+                  ensureGameRules(draft).onFall = event.target.value as FallDeathAction;
+                })
+              }
+            >
+              <option value="gameOver">Game over</option>
+              <option value="respawn">Respawn</option>
+            </Select>
+          </label>
+          <NumberField
+            label="Lives (0 = unlimited)"
+            value={rules.lives ?? DEFAULT_GAME_RULES.lives}
+            onChange={(value) =>
+              onChange((draft) => {
+                ensureGameRules(draft).lives = Math.max(0, Math.floor(value));
+              })
+            }
+          />
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberField
+              label="Spawn X"
+              value={rules.spawnPoint?.x ?? 0}
+              onChange={(value) =>
+                onChange((draft) => {
+                  const gr = ensureGameRules(draft);
+                  gr.spawnPoint = {
+                    x: value,
+                    y: gr.spawnPoint?.y ?? 0,
+                  };
+                })
+              }
+            />
+            <NumberField
+              label="Spawn Y"
+              value={rules.spawnPoint?.y ?? 0}
+              onChange={(value) =>
+                onChange((draft) => {
+                  const gr = ensureGameRules(draft);
+                  gr.spawnPoint = {
+                    x: gr.spawnPoint?.x ?? 0,
+                    y: value,
+                  };
+                })
+              }
+            />
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold tracking-[-0.01em] text-text-muted">
+              Game over message
+            </span>
+            <Input
+              value={rules.gameOverMessage ?? DEFAULT_GAME_RULES.gameOverMessage}
+              onChange={(event) =>
+                onChange((draft) => {
+                  ensureGameRules(draft).gameOverMessage = event.target.value;
+                })
+              }
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold tracking-[-0.01em] text-text-muted">
+              Win message
+            </span>
+            <Input
+              value={rules.winMessage ?? DEFAULT_GAME_RULES.winMessage}
+              onChange={(event) =>
+                onChange((draft) => {
+                  ensureGameRules(draft).winMessage = event.target.value;
+                })
+              }
+            />
+          </label>
         </AccordionSection>
 
         <AccordionSection

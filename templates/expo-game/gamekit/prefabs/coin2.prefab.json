@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "coin2",
+  "name": "Coin2",
+  "sourceEntityName": "Coin2",
+  "components": [
+    {
+      "type": "Transform",
+      "position": {
+        "x": 550,
+        "y": 160
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 1,
+        "y": 1
+      }
+    },
+    {
+      "type": "Sprite",
+      "assetId": "target",
+      "width": 28,
+      "height": 28,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "type": "AabbCollider",
+      "offset": {
+        "x": -14,
+        "y": -14
+      },
+      "size": {
+        "x": 28,
+        "y": 28
+      },
+      "isStatic": true,
+      "isTrigger": true,
+      "layer": 2,
+      "mask": 1
+    }
+  ],
+  "createdAt": "2026-07-11T11:29:55.491Z"
+}

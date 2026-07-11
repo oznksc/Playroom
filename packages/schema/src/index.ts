@@ -330,6 +330,107 @@ export const DEFAULT_INPUT_MAP: InputMapConfig = {
   ],
 };
 
+/** What happens when the player falls below the void threshold. */
+export type FallDeathAction = "gameOver" | "respawn";
+
+/**
+ * Scene-level play rules (void death, lives, spawn). Optional on scenes for
+ * backward compatibility; runtimes merge with DEFAULT_GAME_RULES.
+ */
+export type GameRulesConfig = {
+  /** Master switch for void / fall death. Default true. */
+  fallDeathEnabled?: boolean;
+  /**
+   * Absolute world Y at/above which the player has fallen (Y-down).
+   * When omitted, runtimes use the lowest solid surface + fallMargin.
+   */
+  fallY?: number;
+  /** Extra margin below auto-detected ground when fallY is omitted. Default 120. */
+  fallMargin?: number;
+  /** gameOver = end run; respawn = reset to spawn (lives permitting). Default gameOver. */
+  onFall?: FallDeathAction;
+  /**
+   * Lives when onFall is "respawn". When depleted → game over.
+   * Omit or 0 = unlimited respawns.
+   */
+  lives?: number;
+  /** Override spawn position. When omitted, player start position at play begin is used. */
+  spawnPoint?: Vector2;
+  /** Overlay copy on game over. */
+  gameOverMessage?: string;
+  /** Overlay copy when all coins collected / goal reached (web demo). */
+  winMessage?: string;
+};
+
+export const DEFAULT_GAME_RULES: Required<
+  Pick<
+    GameRulesConfig,
+    "fallDeathEnabled" | "fallMargin" | "onFall" | "lives" | "gameOverMessage" | "winMessage"
+  >
+> &
+  GameRulesConfig = {
+  fallDeathEnabled: true,
+  fallMargin: 120,
+  onFall: "gameOver",
+  lives: 3,
+  gameOverMessage: "Game Over",
+  winMessage: "You win!",
+};
+
+/** Merge scene gameRules with defaults for runtime consumption. */
+export function resolveGameRules(rules?: GameRulesConfig | null): GameRulesConfig & {
+  fallDeathEnabled: boolean;
+  fallMargin: number;
+  onFall: FallDeathAction;
+  lives: number;
+  gameOverMessage: string;
+  winMessage: string;
+} {
+  return {
+    fallDeathEnabled: rules?.fallDeathEnabled ?? DEFAULT_GAME_RULES.fallDeathEnabled,
+    fallMargin: rules?.fallMargin ?? DEFAULT_GAME_RULES.fallMargin,
+    onFall: rules?.onFall === "respawn" ? "respawn" : "gameOver",
+    lives: typeof rules?.lives === "number" && Number.isFinite(rules.lives) ? Math.max(0, Math.floor(rules.lives)) : DEFAULT_GAME_RULES.lives,
+    gameOverMessage: rules?.gameOverMessage?.trim() || DEFAULT_GAME_RULES.gameOverMessage,
+    winMessage: rules?.winMessage?.trim() || DEFAULT_GAME_RULES.winMessage,
+    ...(typeof rules?.fallY === "number" && Number.isFinite(rules.fallY) ? { fallY: rules.fallY } : {}),
+    ...(rules?.spawnPoint &&
+    typeof rules.spawnPoint.x === "number" &&
+    typeof rules.spawnPoint.y === "number"
+      ? { spawnPoint: { x: rules.spawnPoint.x, y: rules.spawnPoint.y } }
+      : {}),
+  };
+}
+
+/**
+ * Resolve the Y threshold for fall death.
+ * Prefer explicit fallY; otherwise lowest static non-trigger collider bottom + margin.
+ */
+export function resolveFallDeathY(
+  scene: {
+    viewport: { height: number };
+    entities: GameKitEntity[];
+    gameRules?: GameRulesConfig;
+  },
+  rules?: GameRulesConfig,
+): number {
+  const r = resolveGameRules(rules ?? scene.gameRules);
+  if (typeof r.fallY === "number") return r.fallY;
+
+  let maxBottom = Number.NEGATIVE_INFINITY;
+  for (const entity of scene.entities) {
+    const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+    const aabb = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+    if (!transform || !aabb || !aabb.isStatic || aabb.isTrigger) continue;
+    const bottom = transform.position.y + aabb.offset.y + aabb.size.y;
+    if (bottom > maxBottom) maxBottom = bottom;
+  }
+  if (!Number.isFinite(maxBottom)) {
+    maxBottom = scene.viewport.height;
+  }
+  return maxBottom + r.fallMargin;
+}
+
 export type GameKitScene = {
   schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
   id: string;
@@ -350,6 +451,8 @@ export type GameKitScene = {
   };
   /** Optional keyboard/touch action map. Defaults applied at runtime when omitted. */
   inputMap?: InputMapConfig;
+  /** Optional play rules: void death, lives, spawn, messages. */
+  gameRules?: GameRulesConfig;
 };
 
 export type GameKitAsset = {
@@ -425,6 +528,14 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
     timeline: { tracks: [], duration: 0, loop: false, playing: false },
     gui: { nodes: [], componentInstances: [] },
     inputMap: { bindings: [...DEFAULT_INPUT_MAP.bindings] },
+    gameRules: {
+      fallDeathEnabled: DEFAULT_GAME_RULES.fallDeathEnabled,
+      fallMargin: DEFAULT_GAME_RULES.fallMargin,
+      onFall: DEFAULT_GAME_RULES.onFall,
+      lives: DEFAULT_GAME_RULES.lives,
+      gameOverMessage: DEFAULT_GAME_RULES.gameOverMessage,
+      winMessage: DEFAULT_GAME_RULES.winMessage,
+    },
   };
 }
 
@@ -522,9 +633,58 @@ export function validateScene(input: unknown): ValidationResult<GameKitScene> {
     ...(input.inputMap !== undefined
       ? { inputMap: validateInputMap(input.inputMap, errors) }
       : {}),
+    ...(input.gameRules !== undefined
+      ? { gameRules: validateGameRules(input.gameRules, errors) }
+      : {}),
   };
 
   return errors.length === 0 ? { ok: true, value: scene } : { ok: false, errors };
+}
+
+function validateGameRules(input: unknown, errors: string[]): GameRulesConfig {
+  if (!isRecord(input)) {
+    errors.push("gameRules must be an object");
+    return {};
+  }
+  const rules: GameRulesConfig = {};
+  if (input.fallDeathEnabled !== undefined) {
+    if (typeof input.fallDeathEnabled !== "boolean") {
+      errors.push("gameRules.fallDeathEnabled must be a boolean");
+    } else {
+      rules.fallDeathEnabled = input.fallDeathEnabled;
+    }
+  }
+  if (input.fallY !== undefined) {
+    rules.fallY = expectNumber(input.fallY, "gameRules.fallY", errors);
+  }
+  if (input.fallMargin !== undefined) {
+    rules.fallMargin = expectNumber(input.fallMargin, "gameRules.fallMargin", errors);
+  }
+  if (input.onFall !== undefined) {
+    if (input.onFall !== "gameOver" && input.onFall !== "respawn") {
+      errors.push('gameRules.onFall must be "gameOver" or "respawn"');
+    } else {
+      rules.onFall = input.onFall;
+    }
+  }
+  if (input.lives !== undefined) {
+    const lives = expectNumber(input.lives, "gameRules.lives", errors);
+    if (Number.isFinite(lives) && lives < 0) {
+      errors.push("gameRules.lives must be >= 0");
+    } else if (Number.isFinite(lives)) {
+      rules.lives = Math.floor(lives);
+    }
+  }
+  if (input.spawnPoint !== undefined) {
+    rules.spawnPoint = validateVector(input.spawnPoint, "gameRules.spawnPoint", errors);
+  }
+  if (input.gameOverMessage !== undefined) {
+    rules.gameOverMessage = expectString(input.gameOverMessage, "gameRules.gameOverMessage", errors);
+  }
+  if (input.winMessage !== undefined) {
+    rules.winMessage = expectString(input.winMessage, "gameRules.winMessage", errors);
+  }
+  return rules;
 }
 
 function validateInputMap(input: unknown, errors: string[]): InputMapConfig {

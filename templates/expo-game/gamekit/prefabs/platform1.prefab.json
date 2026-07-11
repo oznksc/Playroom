@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "platform1",
+  "name": "Platform1",
+  "sourceEntityName": "Platform1",
+  "components": [
+    {
+      "type": "Transform",
+      "position": {
+        "x": 300,
+        "y": 260
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 1,
+        "y": 1
+      }
+    },
+    {
+      "type": "Sprite",
+      "assetId": "platform",
+      "width": 150,
+      "height": 20,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "type": "AabbCollider",
+      "offset": {
+        "x": -75,
+        "y": -10
+      },
+      "size": {
+        "x": 150,
+        "y": 20
+      },
+      "isStatic": true,
+      "isTrigger": false,
+      "layer": 1,
+      "mask": 1
+    }
+  ],
+  "createdAt": "2026-07-11T11:29:48.044Z"
+}
