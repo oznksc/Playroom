@@ -54,7 +54,7 @@ export function PlayControls({
       </button>
 
       {isPlaying && (
-        <div className="play-controls-telemetry">
+        <div className="play-controls-telemetry" title="WASD · Arrows · Space">
           <Cpu size={11} className="play-controls-cpu" aria-hidden />
           <span className="play-controls-stat">
             <strong>{playFps || "—"}</strong>

@@ -109,7 +109,9 @@ export function LegacyContextMenu({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="w-full min-w-0">{children}</div>
+        <div className="h-full w-full min-h-0 min-w-0" data-canvas-shell>
+          {children}
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         {items.map((item) =>

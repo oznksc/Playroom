@@ -257,21 +257,30 @@ export function drawScene(
         }
       }
 
-      // CameraFollow viewport frame gizmo
+      // CameraFollow target marker (not the game screen — that is the viewport frame)
       const camFollow = findComponent<CameraFollowComponent>(entity, "CameraFollow");
       if (camFollow) {
-        const vw = scene.viewport.width;
-        const vh = scene.viewport.height;
-        context.strokeStyle = "rgba(139,92,246,0.5)";
-        context.lineWidth = 1;
-        context.setLineDash([6, 4]);
-        context.strokeRect(
-          transform.position.x - vw / 2,
-          transform.position.y - vh / 2,
-          vw,
-          vh
-        );
+        const cx = transform.position.x;
+        const cy = transform.position.y;
+        context.strokeStyle = "rgba(167, 139, 250, 0.85)";
+        context.fillStyle = "rgba(167, 139, 250, 0.2)";
+        context.lineWidth = 1.5;
         context.setLineDash([]);
+        context.beginPath();
+        context.arc(cx, cy, 10, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        context.beginPath();
+        context.moveTo(cx - 16, cy);
+        context.lineTo(cx + 16, cy);
+        context.moveTo(cx, cy - 16);
+        context.lineTo(cx, cy + 16);
+        context.stroke();
+        context.fillStyle = "rgba(196, 181, 253, 0.9)";
+        context.font = "10px ui-sans-serif, system-ui, sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "bottom";
+        context.fillText("Camera", cx, cy - 14);
       }
 
       // ParticleSystem preview puffs
@@ -455,6 +464,158 @@ function drawGrid(context: CanvasRenderingContext2D, width: number, height: numb
     context.lineTo(width, y);
     context.stroke();
   }
+}
+
+/**
+ * Infinite-ish editor grid in world space (visible bounds only).
+ * Call while the context is in world transform. `zoom` keeps strokes ~1 CSS px.
+ */
+export function drawWorldGrid(
+  context: CanvasRenderingContext2D,
+  worldLeft: number,
+  worldTop: number,
+  worldRight: number,
+  worldBottom: number,
+  zoom: number,
+  step = 32,
+  majorEvery = 4
+) {
+  const pad = step * 2;
+  const left = Math.floor((worldLeft - pad) / step) * step;
+  const top = Math.floor((worldTop - pad) / step) * step;
+  const right = Math.ceil((worldRight + pad) / step) * step;
+  const bottom = Math.ceil((worldBottom + pad) / step) * step;
+  const z = Math.max(0.0001, zoom);
+  const hair = 1 / z;
+
+  context.save();
+  for (let x = left; x <= right; x += step) {
+    const major = Math.round(x / step) % majorEvery === 0;
+    context.strokeStyle = major
+      ? "rgba(255, 255, 255, 0.07)"
+      : "rgba(255, 255, 255, 0.035)";
+    context.lineWidth = hair;
+    context.beginPath();
+    context.moveTo(x, top);
+    context.lineTo(x, bottom);
+    context.stroke();
+  }
+  for (let y = top; y <= bottom; y += step) {
+    const major = Math.round(y / step) % majorEvery === 0;
+    context.strokeStyle = major
+      ? "rgba(255, 255, 255, 0.07)"
+      : "rgba(255, 255, 255, 0.035)";
+    context.lineWidth = hair;
+    context.beginPath();
+    context.moveTo(left, y);
+    context.lineTo(right, y);
+    context.stroke();
+  }
+  context.restore();
+}
+
+export type SceneFrameOptions = {
+  /** Visible world bounds (for dimming everything outside the game screen). */
+  worldLeft: number;
+  worldTop: number;
+  worldRight: number;
+  worldBottom: number;
+};
+
+/**
+ * Locked game screen = scene.viewport at world (0,0) → (width, height).
+ * Draws dim outside + solid border + corner brackets + size label.
+ * Call under the world transform.
+ */
+export function drawSceneFrame(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  zoom: number,
+  world?: SceneFrameOptions
+) {
+  const z = Math.max(0.0001, zoom);
+  const hair = 1 / z;
+  const border = 2 / z;
+  const corner = Math.min(18 / z, Math.min(width, height) * 0.12);
+
+  context.save();
+  context.setLineDash([]);
+
+  // Dim workspace outside the locked screen
+  if (world) {
+    const { worldLeft: L, worldTop: T, worldRight: R, worldBottom: B } = world;
+    context.fillStyle = "rgba(0, 0, 0, 0.48)";
+    context.beginPath();
+    context.rect(L, T, R - L, B - T);
+    context.rect(0, 0, width, height);
+    context.fill("evenodd");
+  }
+
+  // Solid locked-region border (true game screen)
+  context.strokeStyle = "rgba(0, 240, 255, 0.85)";
+  context.lineWidth = border;
+  context.lineJoin = "miter";
+  context.strokeRect(0, 0, width, height);
+
+  // Soft outer halo
+  context.strokeStyle = "rgba(0, 240, 255, 0.18)";
+  context.lineWidth = 8 / z;
+  context.strokeRect(-hair, -hair, width + 2 * hair, height + 2 * hair);
+
+  // Corner brackets (Figma-style crop marks)
+  context.strokeStyle = "rgba(0, 240, 255, 1)";
+  context.lineWidth = 3 / z;
+  context.lineCap = "square";
+  const drawCorner = (x0: number, y0: number, dx: number, dy: number) => {
+    context.beginPath();
+    context.moveTo(x0, y0 + dy * corner);
+    context.lineTo(x0, y0);
+    context.lineTo(x0 + dx * corner, y0);
+    context.stroke();
+  };
+  drawCorner(0, 0, 1, 1);
+  drawCorner(width, 0, -1, 1);
+  drawCorner(0, height, 1, -1);
+  drawCorner(width, height, -1, -1);
+
+  // Label: "Screen · W×H" above top-left
+  const label = `Screen  ${Math.round(width)}×${Math.round(height)}`;
+  const fontPx = 11 / z;
+  context.font = `600 ${fontPx}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+  context.textAlign = "left";
+  context.textBaseline = "bottom";
+  const padX = 6 / z;
+  const padY = 4 / z;
+  const textW = context.measureText(label).width;
+  const boxH = fontPx + padY * 2;
+  const boxW = textW + padX * 2;
+  const boxX = 0;
+  const boxY = -boxH - 4 / z;
+
+  context.fillStyle = "rgba(0, 240, 255, 0.16)";
+  context.strokeStyle = "rgba(0, 240, 255, 0.45)";
+  context.lineWidth = hair;
+  const r = 4 / z;
+  // rounded label chip
+  context.beginPath();
+  context.moveTo(boxX + r, boxY);
+  context.lineTo(boxX + boxW - r, boxY);
+  context.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+  context.lineTo(boxX + boxW, boxY + boxH - r);
+  context.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+  context.lineTo(boxX + r, boxY + boxH);
+  context.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+  context.lineTo(boxX, boxY + r);
+  context.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.fillStyle = "rgba(0, 240, 255, 0.95)";
+  context.fillText(label, boxX + padX, boxY + boxH - padY);
+
+  context.restore();
 }
 
 function drawGuiNode(

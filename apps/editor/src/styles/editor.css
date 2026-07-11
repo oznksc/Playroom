@@ -54,11 +54,13 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   background: var(--bg-base);
 }
 
+/* Full-bleed workspace — pan/zoom anywhere, not only on the game frame */
 .canvas-stage .canvas-viewport {
   position: absolute;
   inset: 0;
@@ -71,6 +73,7 @@
   border-radius: 0 !important;
   box-shadow: none !important;
   background: #090c12;
+  touch-action: none;
 }
 
 .canvas-stage .canvas-viewport canvas {
@@ -78,6 +81,30 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  touch-action: none;
+}
+
+/*
+ * Only the workspace shell fills the stage.
+ * Do NOT use `.canvas-panel > *` — absolute HUD chrome is also a direct child
+ * and would stretch to full-screen if given width/height 100%.
+ */
+.canvas-stage .canvas-panel > [data-canvas-shell],
+.canvas-stage .canvas-panel [data-canvas-workspace] {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* Absolute HUD overlays must size to content, never flex-fill the stage */
+.canvas-stage .canvas-panel > .absolute,
+.canvas-stage .canvas-panel > [class*="absolute"] {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  max-width: calc(100% - 24px);
+  height: auto !important;
 }
 
 /* Bottom-left brand — same vertical band as the tab bar */
@@ -136,9 +163,12 @@
   top: 12px;
   left: 50%;
   z-index: 45;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 2px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  height: auto;
   transform: translateX(-50%);
   padding: 4px 6px;
   border-radius: 999px;
@@ -146,6 +176,7 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  pointer-events: auto;
 }
 
 .play-controls-btn {
@@ -204,8 +235,9 @@
 }
 
 .play-controls-telemetry {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 6px;
   margin-left: 4px;
   padding: 0 8px 0 6px;
@@ -213,7 +245,30 @@
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 1;
+  white-space: nowrap;
   color: var(--text-muted);
+}
+
+/* Mobile/virtual game pad — sits above the floating tab bar */
+.canvas-virtual-pad {
+  position: absolute;
+  left: 50%;
+  /* tab bar bottom 12 + ~56 height + 12 gap */
+  bottom: 86px;
+  z-index: 46;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  height: auto;
+  max-width: none;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+/* Content drawer open — clear drawer + tab bar */
+.shell.has-bottom-sheet:not(.drawer-collapsed) .canvas-virtual-pad {
+  bottom: calc(min(44vh, 400px) + 96px);
 }
 
 .play-controls-cpu {
