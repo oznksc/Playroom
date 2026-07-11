@@ -1,6 +1,5 @@
 import type { GuiComponent, GuiNode } from "@gamekit/schema";
 import {
-  Plus,
   Trash2,
   Pencil,
   ArrowLeft,
@@ -8,8 +7,19 @@ import {
   Square,
   Image,
   Layers,
-  Package
+  Package,
+  Plus,
 } from "lucide-react";
+import {
+  Panel,
+  PanelHeader,
+  PanelTitle,
+  PanelBody,
+  IconButton,
+  EmptyState,
+  Badge,
+  cn,
+} from "@/ui";
 
 type GuiComponentPanelProps = {
   components: GuiComponent[];
@@ -25,17 +35,23 @@ type GuiComponentPanelProps = {
 
 function nodeIcon(type: GuiNode["type"]) {
   switch (type) {
-    case "Text": return <Type size={11} className="icon-gui-text" />;
-    case "Button": return <Square size={11} className="icon-gui-button" />;
-    case "Image": return <Image size={11} className="icon-gui-image" />;
+    case "Text":
+      return <Type size={11} className="text-accent-purple" />;
+    case "Button":
+      return <Square size={11} className="text-accent" />;
+    case "Image":
+      return <Image size={11} className="text-accent-green" />;
   }
 }
 
 function nodeLabel(node: GuiNode): string {
   switch (node.type) {
-    case "Text": return node.text || "Text";
-    case "Button": return node.text || "Button";
-    case "Image": return node.assetId || "Image";
+    case "Text":
+      return node.text || "Text";
+    case "Button":
+      return node.text || "Button";
+    case "Image":
+      return node.assetId || "Image";
   }
 }
 
@@ -48,7 +64,7 @@ export function GuiComponentPanel({
   onStopEdit,
   onAddNodeToComponent,
   onDeleteNodeFromComponent,
-  onPlaceInstance
+  onPlaceInstance,
 }: GuiComponentPanelProps) {
   const editingComponent = components.find((c) => c.id === editingComponentId);
 
@@ -59,106 +75,95 @@ export function GuiComponentPanel({
 
   if (editingComponent) {
     return (
-      <div className="gui-component-panel">
-        <div className="gui-component-panel-header">
-          <button type="button" className="icon-button" onClick={onStopEdit} title="Back to components">
-            <ArrowLeft size={13} />
-          </button>
-          <h3>{editingComponent.name}</h3>
-          <div className="gui-add-buttons">
-            <button type="button" className="icon-button" onClick={() => onAddNodeToComponent("Text")} title="Add Text">
-              <Type size={12} />
-            </button>
-            <button type="button" className="icon-button" onClick={() => onAddNodeToComponent("Button")} title="Add Button">
-              <Square size={12} />
-            </button>
-            <button type="button" className="icon-button" onClick={() => onAddNodeToComponent("Image")} title="Add Image">
-              <Image size={12} />
-            </button>
+      <Panel>
+        <PanelHeader>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <IconButton size="sm" onClick={onStopEdit} title="Back">
+              <ArrowLeft size={13} />
+            </IconButton>
+            <PanelTitle accent="purple" className="truncate">
+              {editingComponent.name}
+            </PanelTitle>
           </div>
-        </div>
-        <div className="gui-component-list-scroll">
+          <div className="flex items-center gap-0.5">
+            <IconButton size="sm" title="Add Text" onClick={() => onAddNodeToComponent("Text")}>
+              <Type size={12} />
+            </IconButton>
+            <IconButton size="sm" title="Add Button" onClick={() => onAddNodeToComponent("Button")}>
+              <Square size={12} />
+            </IconButton>
+            <IconButton size="sm" title="Add Image" onClick={() => onAddNodeToComponent("Image")}>
+              <Image size={12} />
+            </IconButton>
+          </div>
+        </PanelHeader>
+        <PanelBody className="space-y-0.5 p-1.5">
           {editingComponent.nodes.length === 0 ? (
-            <div className="hierarchy-empty">
-              <Layers size={20} style={{ opacity: 0.2 }} />
-              <p>No nodes in this component</p>
-            </div>
+            <EmptyState icon={<Layers size={16} />} title="No nodes in component" />
           ) : (
             editingComponent.nodes.map((node) => (
-              <div key={node.id} className="gui-item">
-                <span className="gui-item-icon">{nodeIcon(node.type)}</span>
-                <span className="gui-item-type">{node.type}</span>
-                <span className="gui-item-name" title={nodeLabel(node)}>{nodeLabel(node)}</span>
-                <button
-                  type="button"
-                  className="gui-item-delete"
+              <div key={node.id} className={cn("list-row")}>
+                {nodeIcon(node.type)}
+                <span className="min-w-0 flex-1 truncate text-[12px]">{nodeLabel(node)}</span>
+                <Badge variant="muted">{node.type}</Badge>
+                <IconButton
+                  size="sm"
+                  variant="danger"
                   onClick={() => onDeleteNodeFromComponent(node.id)}
-                  title="Remove node"
                 >
                   <Trash2 size={11} />
-                </button>
+                </IconButton>
               </div>
             ))
           )}
-        </div>
-      </div>
+        </PanelBody>
+      </Panel>
     );
   }
 
   return (
-    <div className="gui-component-panel">
-      <div className="gui-component-panel-header">
-        <h3>GUI Components</h3>
-        <button type="button" className="icon-button" onClick={handleAdd} title="Create new component">
+    <Panel>
+      <PanelHeader>
+        <PanelTitle accent="purple">GUI Components</PanelTitle>
+        <IconButton size="sm" onClick={handleAdd} title="Add component">
           <Plus size={13} />
-        </button>
-      </div>
-      <div className="gui-component-list-scroll">
+        </IconButton>
+      </PanelHeader>
+      <PanelBody className="space-y-0.5 p-1.5">
         {components.length === 0 ? (
-          <div className="hierarchy-empty">
-            <Package size={20} style={{ opacity: 0.2 }} />
-            <p>No components defined</p>
-          </div>
+          <EmptyState
+            icon={<Package size={16} />}
+            title="No GUI components"
+            description="Create reusable HUD pieces and place instances."
+          />
         ) : (
           components.map((comp) => (
-            <div key={comp.id} className="gui-component-item">
-              <div className="gui-component-item-header">
-                <Package size={12} className="icon-component" />
-                <span className="gui-component-name" title={comp.name}>{comp.name}</span>
-                <span className="gui-component-count">{comp.nodes.length} nodes</span>
-                <div className="gui-component-actions">
-                  <button
-                    type="button"
-                    className="gui-component-action-btn"
-                    onClick={() => onStartEdit(comp.id)}
-                    title="Edit component nodes"
-                  >
-                    <Pencil size={11} />
-                  </button>
-                  <button
-                    type="button"
-                    className="gui-component-action-btn"
-                    onClick={() => onPlaceInstance(comp.id)}
-                    title="Place instance in scene"
-                  >
-                    <Plus size={11} />
-                  </button>
-                  <button
-                    type="button"
-                    className="gui-component-action-btn btn-delete"
-                    onClick={() => {
-                      if (confirm(`Delete component "${comp.name}"?`)) onDeleteComponent(comp.id);
-                    }}
-                    title="Delete component"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              </div>
+            <div key={comp.id} className={cn("list-row")}>
+              <Package size={12} className="shrink-0 text-accent-purple" />
+              <span className="min-w-0 flex-1 truncate text-[12px] text-text-primary">
+                {comp.name}
+              </span>
+              <Badge variant="mono">{comp.nodes.length}</Badge>
+              <IconButton size="sm" title="Edit" onClick={() => onStartEdit(comp.id)}>
+                <Pencil size={11} />
+              </IconButton>
+              <IconButton size="sm" title="Place instance" onClick={() => onPlaceInstance(comp.id)}>
+                <Layers size={11} />
+              </IconButton>
+              <IconButton
+                size="sm"
+                variant="danger"
+                title="Delete"
+                onClick={() => {
+                  if (confirm(`Delete component "${comp.name}"?`)) onDeleteComponent(comp.id);
+                }}
+              >
+                <Trash2 size={11} />
+              </IconButton>
             </div>
           ))
         )}
-      </div>
-    </div>
+      </PanelBody>
+    </Panel>
   );
 }

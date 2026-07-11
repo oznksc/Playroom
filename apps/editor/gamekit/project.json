@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "name": "Playroom Game",
+  "scenes": [
+    "main.scene.json",
+    "platformer.scene.json",
+    "top-down.scene.json",
+    "physics-puzzle.scene.json"
+  ],
+  "levels": [
+    {
+      "id": "level-1",
+      "name": "Level 1",
+      "order": 1,
+      "sceneIds": [
+        "main"
+      ],
+      "unlocked": true
+    }
+  ],
+  "assets": [],
+  "guiComponents": [],
+  "activeScene": "physics-puzzle.scene.json"
+}

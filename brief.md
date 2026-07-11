@@ -18,7 +18,7 @@ The real object is the **canvas** — a viewport showing the scene with entities
 
 ## Composition Pattern
 
-**Operate.** The dominant layout is a 3-column workspace: sidebar (260px) | canvas (flex) | inspector (300px), with a topbar and bottom drawer. The canvas is the hero. Panels are dense tools, not showcases.
+**Operate.** Canvas-first: the viewport is full-bleed. Hierarchy, inspector, and content browser are floating sheets / bottom sheet overlays — they never permanently shrink the canvas. Top bar and activity rail float over the stage.
 
 ## Visual Foundation
 
@@ -27,7 +27,8 @@ The real object is the **canvas** — a viewport showing the scene with entities
 - **Secondary accent**: Engine Violet `#8b5cf6` — component sections, text node badges
 - **Tertiary accents**: Gold `#ffb300` (selection highlight), Green `#10b981` (play/success), Red `#ef4444` (stop/error)
 - **Neutral tint**: Blues (not pure gray) — `#94a3b8` secondary, `#64748b` muted
-- **Typography**: Inter / system-ui, monospace for IDs and numeric fields. Compact sizes (9–13px).
+- **Typography**: IBM Plex Sans (UI) + IBM Plex Mono (data) — technical tool faces, not soft SaaS geometrics. Compact scale 9–13px. Labels medium weight, modest tracking; avoid ultra-wide uppercase chrome.
+- **Sidebar nav**: Vertical icon rail (activity bar), not a horizontal tab strip.
 - **Radii**: 3px / 6px / 10px scale
 - **Borders**: Thin, low-contrast (`rgba(255,255,255,0.06)` default), cyan-tinted subtle
 - **Glow effects**: Cyan, green, red glows for active states — used sparingly
@@ -38,7 +39,7 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 
 ## Design Principles
 
-1. **Canvas-first.** The viewport is always the largest surface. UI chrome stays thin.
+1. **Canvas-first.** The viewport is full-bleed. Tool chrome floats; never a fixed 3-column squeeze.
 2. **Density over decoration.** Every pixel earns its place. No empty hero spaces inside panels.
 3. **Color as signal.** Accents indicate state (active, selected, playing, error), not decoration.
 4. **Consistent compactness.** Inspector fields, badges, and controls are uniformly small (22px height inputs, 10px labels). Scale stays tight.
@@ -68,5 +69,6 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 - **Accordions**: Left colored border, 38px header, collapsible body
 - **Buttons**: Icon buttons (20–24px), text buttons with 10px font, ghost style default
 - **Panels**: Full-height flex column, header bar (38px), scroll area below
-- **Tabs**: 8px font uppercase labels, active state with top accent line
+- **Sidebar activity rail**: 44px wide, icon + micro label, active = cyan left bar + muted fill
+- **Bottom drawer tabs**: title case, optional icon, bottom accent underline (not rounded pills)
 - **Status**: Dots (6px) for state, badges for types, monospace for IDs

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import logoUrl from "../../../../logo.png";
+import { Button, IconButton, StatusDot, cn } from "@/ui";
 
 const MVP_SHOW_PLAY_CONTROLS = true;
 
@@ -78,144 +79,144 @@ export function Topbar({
   onCloseProject,
 }: TopbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
+  const statusKind =
+    status === "Loading"
+      ? "loading"
+      : status.startsWith("Load") || status.includes("failed") || saveState === "error"
+        ? "error"
+        : saveState === "saved"
+          ? "success"
+          : "idle";
 
   return (
-    <header className="topbar">
-      {/* Brand logo & active scene */}
-      <div className="topbar-brand">
-        <img className="topbar-logo" src={logoUrl} alt="Playroom" />
-        <div className="brand-titles">
-          <h1>Playroom</h1>
-          <span className="brand-tag">MVP EDITOR</span>
+    <header className="flex h-12 shrink-0 items-center gap-3 bg-bg-surface px-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <img src={logoUrl} alt="Playroom" className="size-7 object-contain" />
+        <div className="hidden min-w-0 sm:block">
+          <div className="text-[13px] font-semibold leading-none text-text-primary">
+            Playroom
+          </div>
+          <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-text-muted">
+            Editor
+          </div>
         </div>
-        <ChevronRight size={12} className="brand-arrow" />
-        <span className="scene-name-label">{sceneName}</span>
-        {isDirty && <span className="dirty-indicator" title="Unsaved changes pending auto-save" />}
+        <ChevronRight size={12} className="shrink-0 text-text-muted" />
+        <span className="truncate font-mono text-[12px] font-medium text-text-secondary">
+          {sceneName}
+        </span>
+        {isDirty && <StatusDot status="dirty" title="Unsaved changes" />}
         {projectPath && onCloseProject && (
-          <button
-            type="button"
-            className="btn-close-project"
-            onClick={onCloseProject}
-            title="Close project folder and return to dashboard"
-          >
+          <Button size="sm" variant="secondary" onClick={onCloseProject} className="ml-1 hidden md:inline-flex">
             Close Project
-          </button>
+          </Button>
         )}
       </div>
 
-      {/* Center Panel: Simulation Ticker State Controls */}
       {MVP_SHOW_PLAY_CONTROLS && (
-        <div className="engine-simulation-controls">
-          <button
-            type="button"
-            className={`sim-btn sim-play ${isPlaying && !isPaused ? "active pulsing" : ""}`}
+        <div className="mx-auto flex items-center gap-1 rounded-md border border-border-default bg-bg-base p-0.5">
+          <IconButton
+            size="md"
+            variant={isPlaying && !isPaused ? "active" : "ghost"}
+            className={cn(isPlaying && !isPaused && "text-accent-green shadow-glow-green")}
             onClick={onPlayToggle}
-            title="Run Simulation (Play Game)"
+            title="Run Simulation"
           >
             <Play size={13} fill={isPlaying && !isPaused ? "currentColor" : "none"} />
-          </button>
-          <button
-            type="button"
-            className={`sim-btn sim-pause ${isPaused ? "active" : ""}`}
+          </IconButton>
+          <IconButton
+            size="md"
+            variant={isPaused ? "active" : "ghost"}
             onClick={onPauseToggle}
             disabled={!isPlaying}
-            title="Pause Active Simulation"
+            title="Pause Simulation"
           >
             <Pause size={13} fill={isPaused ? "currentColor" : "none"} />
-          </button>
-          <button
-            type="button"
-            className="sim-btn sim-stop"
-            onClick={onStop}
-            disabled={!isPlaying}
-            title="Stop Simulation & Reset Entities"
-          >
-            <Square size={13} fill="none" />
-          </button>
-
+          </IconButton>
+          <IconButton size="md" variant="danger" onClick={onStop} disabled={!isPlaying} title="Stop & Reset">
+            <Square size={12} />
+          </IconButton>
           {isPlaying && (
-            <div className="engine-telemetry">
-              <Cpu size={12} className="telemetry-icon" />
-              <span className="telemetry-stat">FPS: <strong className="glow-green-txt">{playFps || "—"}</strong></span>
-              <span className="telemetry-divider" />
-              <span className="telemetry-stat">Frame: <strong>{playFrameMs || "—"}ms</strong></span>
-              <span className="telemetry-divider" />
-              <span className="telemetry-stat">Entities: <strong>{entityCount}</strong></span>
+            <div className="ml-1 flex items-center gap-2 pl-2 pr-1 font-mono text-xs tracking-normal text-text-muted">
+              <Cpu size={11} className="text-accent" />
+              <span>
+                FPS <strong className="text-accent-green">{playFps || "—"}</strong>
+              </span>
+              <span>
+                {playFrameMs || "—"}
+                ms
+              </span>
+              <span>
+                Ent <strong className="text-text-secondary">{entityCount}</strong>
+              </span>
             </div>
           )}
         </div>
       )}
 
-      {/* Editor Tool Actions */}
-      <div className="toolbar">
-        <button type="button" className={`panel-toggle-btn${sidebarOpen ? " active" : ""}`} onClick={onToggleSidebar} title="Toggle sidebar panel">
+      <div className="ml-auto flex items-center gap-0.5">
+        <IconButton
+          size="md"
+          variant={sidebarOpen ? "active" : "ghost"}
+          onClick={onToggleSidebar}
+          title="Toggle sidebar"
+        >
           <PanelLeft size={14} />
-        </button>
-        <div className="toolbar-divider" />
-        <button type="button" className="toolbar-action-btn" title="Refresh local state" onClick={onRefresh}>
+        </IconButton>
+        <IconButton size="md" onClick={onRefresh} title="Refresh">
           <RefreshCw size={14} />
-        </button>
-        <div className="toolbar-divider" />
-        <button type="button" className="toolbar-action-btn" title="Import Asset (PNG/JPG)" onClick={() => fileInputRef.current?.click()}>
+        </IconButton>
+        <IconButton size="md" onClick={() => fileInputRef.current?.click()} title="Import asset">
           <Upload size={14} />
-        </button>
-        <button type="button" className="toolbar-action-btn" title="Create standard entity" onClick={onAddEntity}>
+        </IconButton>
+        <IconButton size="md" onClick={onAddEntity} title="Add entity">
           <Plus size={14} />
-        </button>
-        <div className="toolbar-divider" />
-        <button
-          type="button"
-          title="Save Layout (Ctrl+S)"
-          className={`toolbar-action-btn btn-save ${saveState === "saved" ? "save-success" : saveState === "error" ? "save-error" : ""}`}
+        </IconButton>
+        <IconButton
+          size="md"
+          variant={saveState === "saved" ? "accent" : saveState === "error" ? "danger" : "ghost"}
           onClick={onSave}
+          title="Save (Ctrl+S)"
         >
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
-        </button>
-        <div className="toolbar-divider" />
-        <div className="toolbar-divider" />
+        </IconButton>
         {onOpenWizard && (
-          <>
-            <div className="toolbar-divider" />
-            <button type="button" className="toolbar-action-btn" title="New scene from template" onClick={onOpenWizard}>
-              <LayoutTemplate size={14} />
-            </button>
-          </>
+          <IconButton size="md" onClick={onOpenWizard} title="New scene from template">
+            <LayoutTemplate size={14} />
+          </IconButton>
         )}
         {onOpenAgent && (
-          <>
-            <div className="toolbar-divider" />
-            <button type="button" className="toolbar-action-btn" title="Open AI Agent panel" onClick={onOpenAgent}>
-              <Sparkles size={14} />
-            </button>
-          </>
+          <IconButton size="md" onClick={onOpenAgent} title="Open AI Agent">
+            <Sparkles size={14} />
+          </IconButton>
         )}
-        <button type="button" className={`panel-toggle-btn${inspectorOpen ? " active" : ""}`} onClick={onToggleInspector} title="Toggle inspector panel">
+        <IconButton
+          size="md"
+          variant={inspectorOpen ? "active" : "ghost"}
+          onClick={onToggleInspector}
+          title="Toggle inspector"
+        >
           <PanelRight size={14} />
-        </button>
+        </IconButton>
         <input
           ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
-            if (file) {
-              onImport(file);
-            }
+            if (file) onImport(file);
             event.currentTarget.value = "";
           }}
-          style={{ display: "none" }}
         />
       </div>
 
-      {/* Rightmost: System connection status */}
-      <div className="topbar-status">
-        <span className={`status-dot ${statusClass}`} />
-        <span className="status-message">
+      <div className="hidden items-center gap-1.5 pl-3 lg:flex">
+        <StatusDot status={statusKind} />
+        <span className="max-w-[140px] truncate text-sm tracking-[-0.01em] text-text-secondary">
           {saveState === "saving" ? "Syncing..." : saveState === "saved" ? "Saved" : status}
         </span>
         {lastSaved && saveState === "idle" && (
-          <span className="last-saved-time">({formatLastSaved()})</span>
+          <span className="text-xs text-text-muted">({formatLastSaved()})</span>
         )}
       </div>
     </header>

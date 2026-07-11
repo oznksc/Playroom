@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 1,
+  "id": "platformer",
+  "name": "Platformer",
+  "viewport": {
+    "width": 844,
+    "height": 390,
+    "background": "#0b1220"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 1800
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "player-194yx9",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 100,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 48,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -24
+          },
+          "size": {
+            "x": 48,
+            "y": 48
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 0.05,
+          "isKinematic": false,
+          "gravityScale": 1,
+          "useGravity": true
+        },
+        {
+          "type": "PlayerController",
+          "speed": 300,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player-194yx9",
+          "smoothing": 0.12
+        }
+      ]
+    },
+    {
+      "id": "ground-uj768g",
+      "name": "Ground",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 422,
+            "y": 370
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "ground",
+          "width": 844,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -422,
+            "y": -20
+          },
+          "size": {
+            "x": 844,
+            "y": 40
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform1-zwwcpb",
+      "name": "Platform1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 300,
+            "y": 260
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform2-fdvooi",
+      "name": "Platform2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 550,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform3-70uobu",
+      "name": "Platform3",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 720,
+            "y": 140
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 120,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -60,
+            "y": -10
+          },
+          "size": {
+            "x": 120,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "coin1-l38zrv",
+      "name": "Coin1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 300,
+            "y": 220
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 28,
+          "height": 28,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "coin2-loit5r",
+      "name": "Coin2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 550,
+            "y": 160
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 28,
+          "height": 28,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "scorelabel-6rer8y",
+      "name": "ScoreLabel",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 24,
+            "y": 16
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Text",
+          "text": "Coins: 0",
+          "fontAssetId": "",
+          "size": 18,
+          "color": "#00f0ff",
+          "align": "left"
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 844,
+    "referenceHeight": 390,
+    "orientation": "landscape",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump"
+      }
+    ]
+  }
+}

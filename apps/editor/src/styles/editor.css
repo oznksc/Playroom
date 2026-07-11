@@ -1,0 +1,1305 @@
+/* ── Canvas-first floating chrome ───────────────────────────────── */
+/* Canvas owns the viewport. Sidebars / inspector / content are overlays. */
+/*
+ * Shared “glass dock” language (tab bar + play pill):
+ * dark translucent fill, strong blur, hairline ring, soft depth shadow.
+ */
+
+/* Glass tokens on :root so portaled UI (command palette) can use them */
+:root {
+  --glass-fill: rgba(22, 22, 24, 0.8);
+  --glass-fill-deep: rgba(16, 18, 22, 0.88);
+  --glass-blur: blur(22px) saturate(1.4);
+  --glass-ring: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --glass-inset: inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.48);
+  --glass-radius: 18px;
+  --glass-radius-sm: 14px;
+  --glass-fg: rgba(235, 235, 245, 0.55);
+  --glass-fg-hover: rgba(235, 235, 245, 0.9);
+  --glass-chip: rgba(255, 255, 255, 0.06);
+  --glass-chip-hover: rgba(255, 255, 255, 0.1);
+}
+
+.shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.glass-surface {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+}
+
+/* Full-bleed canvas stage — always the base layer */
+.canvas-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-base);
+}
+
+.canvas-stage .canvas-panel,
+.canvas-stage .canvasPanel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-base);
+}
+
+/* Full-bleed workspace — pan/zoom anywhere, not only on the game frame */
+.canvas-stage .canvas-viewport {
+  position: absolute;
+  inset: 0;
+  max-width: none !important;
+  max-height: none !important;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #090c12;
+  touch-action: none;
+}
+
+.canvas-stage .canvas-viewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+/*
+ * Only the workspace shell fills the stage.
+ * Do NOT use `.canvas-panel > *` — absolute HUD chrome is also a direct child
+ * and would stretch to full-screen if given width/height 100%.
+ */
+.canvas-stage .canvas-panel > [data-canvas-shell],
+.canvas-stage .canvas-panel [data-canvas-workspace] {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* Absolute HUD overlays must size to content, never flex-fill the stage */
+.canvas-stage .canvas-panel > .absolute,
+.canvas-stage .canvas-panel > [class*="absolute"] {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  max-width: calc(100% - 24px);
+  height: auto !important;
+}
+
+/* Bottom-left brand — same vertical band as the tab bar */
+.brand-corner {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 10px;
+  border-radius: 22px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  pointer-events: none;
+}
+
+.brand-corner-logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.brand-corner-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.brand-corner-dirty {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.brand-corner-settings {
+  color: var(--text-secondary) !important;
+}
+
+.brand-corner-settings:hover {
+  color: var(--text-primary) !important;
+}
+
+/* Compact simulation transport — top center (mini tab-bar style) */
+.play-controls {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  height: auto;
+  transform: translateX(-50%);
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  pointer-events: auto;
+}
+
+.play-controls-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(235, 235, 245, 0.75);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+
+.play-controls-btn:hover:not(:disabled) {
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.play-controls-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.play-controls-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.play-controls-btn.play {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+.play-controls-btn.play.live {
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+  box-shadow: 0 0 0 0.5px rgba(52, 211, 153, 0.35);
+}
+
+.play-controls-btn.play.paused {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.play-controls-btn.stop:not(:disabled):hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.play-controls-telemetry {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-left: 4px;
+  padding: 0 8px 0 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* Mobile/virtual game pad — sits above the floating tab bar */
+.canvas-virtual-pad {
+  position: absolute;
+  left: 50%;
+  /* tab bar bottom 12 + ~56 height + 12 gap */
+  bottom: 86px;
+  z-index: 46;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  height: auto;
+  max-width: none;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+/* Content drawer open — clear drawer + tab bar */
+.shell.has-bottom-sheet:not(.drawer-collapsed) .canvas-virtual-pad {
+  bottom: calc(min(44vh, 400px) + 96px);
+}
+
+.play-controls-cpu {
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.play-controls-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.play-controls-stat strong {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.play-controls-stat em {
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+.play-controls-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Apple-style floating tab bar — compact dock with expandable groups */
+.app-tabbar {
+  /* Symmetric side clearance so the bottom-left brand pill never collides */
+  --brand-clearance: 68px;
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 45;
+  max-width: calc(100vw - 24px - (var(--brand-clearance) * 2));
+  transform: translateX(-50%);
+  padding: 5px 6px;
+  border-radius: 22px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+}
+
+.app-tabbar-scroll {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  max-width: 100%;
+  /* visible so group flyouts are not clipped */
+  overflow: visible;
+  padding: 0 1px 1px;
+}
+
+.app-tabbar-sep {
+  flex-shrink: 0;
+  width: 1px;
+  height: 24px;
+  margin: 0 3px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
+}
+
+/* Expandable group shell */
+.app-tabbar-group {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.app-tabbar-group.has-active > .app-tabbar-group-trigger:not(.active) {
+  color: rgba(235, 235, 245, 0.78);
+}
+
+.app-tabbar-group-trigger .app-tabbar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-tabbar-chevron {
+  opacity: 0.55;
+  transition: transform 160ms ease, opacity 120ms ease;
+  transform: rotate(0deg);
+}
+
+.app-tabbar-chevron.open {
+  opacity: 0.9;
+  transform: rotate(180deg);
+}
+
+/* Flyout menu — glass card above the dock */
+.app-tabbar-flyout {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  transform: translateX(-50%);
+  animation: tabbar-flyout-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.app-tabbar-flyout.column {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 148px;
+  padding: 6px;
+  gap: 1px;
+}
+
+.app-tabbar-flyout.align-end {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.app-tabbar-flyout-sep {
+  flex-shrink: 0;
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
+}
+
+.app-tabbar-flyout.column .app-tabbar-flyout-sep {
+  width: 100%;
+  height: 1px;
+  margin: 4px 0;
+}
+
+@keyframes tabbar-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.app-tabbar-flyout.align-end {
+  animation-name: tabbar-flyout-in-end;
+}
+
+@keyframes tabbar-flyout-in-end {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.app-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 48px;
+  height: 42px;
+  padding: 4px 5px 2px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(235, 235, 245, 0.55);
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.app-tabbar-item:hover {
+  color: rgba(235, 235, 245, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-tabbar-item.active {
+  color: var(--accent);
+}
+
+.app-tabbar-item.active .app-tabbar-icon {
+  transform: scale(1.05);
+}
+
+.app-tabbar-item.tone-success {
+  color: var(--accent-green);
+}
+
+.app-tabbar-item.tone-error {
+  color: var(--error);
+}
+
+/* Compact items inside flyouts */
+.app-tabbar-item.compact {
+  min-width: 44px;
+  height: 40px;
+  padding: 3px 4px 2px;
+  border-radius: 10px;
+}
+
+.app-tabbar-item.compact .app-tabbar-label {
+  font-size: 8px;
+}
+
+/* List-style row items (Create / More) */
+.app-tabbar-item.row {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
+.app-tabbar-item.row .app-tabbar-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.app-tabbar-icon {
+  display: flex;
+  line-height: 0;
+  transition: transform 140ms ease;
+}
+
+.app-tabbar-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.app-tabbar-zoom {
+  flex-shrink: 0;
+  align-self: center;
+  min-width: 34px;
+  padding: 0 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.65);
+  text-align: center;
+}
+
+.app-tabbar-select {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  align-self: center;
+  margin: 0 2px;
+}
+
+.app-tabbar-select select {
+  height: 26px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(235, 235, 245, 0.75);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.app-tabbar-select select:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f5f7;
+}
+
+/* Floating sheets — same glass language as tab bar / play pill */
+.float-sheet-left,
+.float-sheet-right {
+  position: absolute;
+  top: 56px;
+  bottom: 88px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--glass-radius);
+  background: var(--glass-fill-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease;
+}
+
+.float-sheet-left {
+  left: 12px;
+  width: min(300px, calc(100vw - 80px));
+  transform: translateX(-14px) scale(0.98);
+}
+
+.float-sheet-right {
+  right: 12px;
+  width: min(320px, calc(100vw - 80px));
+  transform: translateX(14px) scale(0.98);
+}
+
+.float-sheet-left.open,
+.float-sheet-right.open {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.float-sheet-left .sidebar-content,
+.float-sheet-left .panel,
+.float-sheet-right .inspector-column,
+.float-sheet-right > * {
+  min-height: 0;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+/*
+ * Nested panel shells must stay transparent so the parent glass blur
+ * reads through (tab bar / play pill language).
+ */
+.float-sheet-left .bg-bg-surface,
+.float-sheet-right .bg-bg-surface,
+.bottom-sheet .bg-bg-surface,
+.float-sheet-left .bg-bg-base,
+.float-sheet-right .bg-bg-base,
+.bottom-sheet .bg-bg-base,
+.float-sheet-left .bg-bg-base\/50,
+.float-sheet-right .bg-bg-base\/50,
+.bottom-sheet .bg-bg-base\/50,
+.float-sheet-left .bg-bg-base\/40,
+.float-sheet-right .bg-bg-base\/40,
+.bottom-sheet .bg-bg-base\/40,
+.float-sheet-left .bg-bg-elevated,
+.float-sheet-right .bg-bg-elevated,
+.bottom-sheet .bg-bg-elevated,
+.float-sheet-left .bg-bg-elevated\/35,
+.float-sheet-right .bg-bg-elevated\/35 {
+  background: transparent !important;
+}
+
+/* Soft glass chips for cards / tool traces inside sheets */
+.float-sheet-left .border-border-default,
+.float-sheet-right .border-border-default,
+.bottom-sheet .border-border-default {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.float-sheet-left .rounded-md.border,
+.float-sheet-right .rounded-md.border,
+.bottom-sheet .rounded-md.border {
+  border-radius: 12px !important;
+  background: var(--glass-chip) !important;
+}
+
+/* Sheet chrome — pill headers matching tab items */
+.float-sheet-left .panel > .flex.h-9,
+.float-sheet-left [class*="PanelHeader"],
+.float-sheet-right .bg-bg-base\/50 {
+  background: transparent !important;
+}
+
+.float-sheet-left .list-row,
+.float-sheet-right .list-row,
+.bottom-sheet .list-row {
+  border-radius: 10px;
+  color: var(--glass-fg);
+}
+
+.float-sheet-left .list-row:hover,
+.float-sheet-right .list-row:hover,
+.bottom-sheet .list-row:hover {
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
+}
+
+.float-sheet-left .list-row[data-selected="true"],
+.float-sheet-left .list-row.active,
+.float-sheet-right .list-row[data-selected="true"],
+.float-sheet-right .list-row.active,
+.bottom-sheet .list-row[data-selected="true"],
+.bottom-sheet .list-row.active {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Accordion cards inside glass sheets */
+.float-sheet-left .mb-1\.5.overflow-hidden,
+.float-sheet-right .mb-1\.5.overflow-hidden {
+  border-radius: 12px;
+  background: var(--glass-chip) !important;
+}
+
+.float-sheet-left input,
+.float-sheet-right input,
+.float-sheet-left select,
+.float-sheet-right select,
+.float-sheet-left textarea,
+.float-sheet-right textarea,
+.bottom-sheet input,
+.bottom-sheet select,
+.bottom-sheet textarea {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  color: rgba(245, 245, 247, 0.92) !important;
+}
+
+.float-sheet-left button:not(.list-row):not([class*="IconButton"]),
+.float-sheet-right button:not(.list-row):not([class*="IconButton"]),
+.bottom-sheet button:not(.list-row):not(.bottom-sheet-tab):not(.bottom-sheet-close) {
+  border-radius: 10px;
+}
+
+/* Dim only when a sheet is open (optional light scrim) */
+.float-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: transparent;
+  pointer-events: none;
+}
+
+.float-scrim.visible {
+  pointer-events: auto;
+}
+
+/*
+ * Content drawer — same glass dock language, sits above tab bar.
+ * Closed: fully hidden. Open: slides up from tab bar.
+ */
+.bottom-sheet {
+  --tabbar-clearance: 78px;
+  position: absolute;
+  left: 50%;
+  bottom: var(--tabbar-clearance);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(720px, calc(100vw - 24px));
+  max-height: min(44vh, 400px);
+  border-radius: var(--glass-radius);
+  background: var(--glass-fill-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  overflow: hidden;
+  transform: translateX(-50%) translateY(16px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.bottom-sheet.open {
+  transform: translateX(-50%) translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 8px 0 14px;
+}
+
+.bottom-sheet-handle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.bottom-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(245, 245, 247, 0.95);
+}
+
+.bottom-sheet-title span {
+  color: var(--glass-fg);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.bottom-sheet-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding-top: 6px;
+}
+
+.bottom-sheet-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--glass-fg);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.bottom-sheet-tab:hover {
+  color: var(--glass-fg-hover);
+  background: var(--glass-chip);
+}
+
+.bottom-sheet-tab.active {
+  color: var(--accent);
+  background: rgba(0, 240, 255, 0.12);
+}
+
+.bottom-sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--glass-fg);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.bottom-sheet-close:hover {
+  color: var(--glass-fg-hover);
+  background: var(--glass-chip-hover);
+}
+
+.drawer-content-box {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.drawer-content-box > * {
+  background: transparent !important;
+  height: 100%;
+}
+
+.shell.has-bottom-sheet:not(.drawer-collapsed) .tile-palette {
+  bottom: calc(min(44vh, 400px) + 96px);
+}
+
+/* Top-right actions removed — everything is on .app-tabbar */
+
+/* Tile palette — glass dock, same language as tab bar / play pill */
+.tile-palette {
+  position: absolute;
+  left: 50%;
+  bottom: 86px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: var(--glass-radius-sm);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+}
+
+.shell.has-bottom-sheet .app-tabbar {
+  bottom: 12px;
+}
+
+.tile-palette-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--glass-fg);
+  white-space: nowrap;
+}
+
+.tile-palette-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 280px;
+}
+
+.tile-swatch {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--glass-chip);
+  color: var(--glass-fg);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.tile-swatch:hover {
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
+}
+
+.tile-swatch.active {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--accent);
+  box-shadow: 0 0 0 0.5px rgba(0, 240, 255, 0.35);
+}
+
+.tile-swatch.empty {
+  color: var(--text-muted);
+}
+
+/* List rows used across floating panels (glass chip hover) */
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--glass-fg);
+  font-size: var(--type-body-size, 12px);
+  font-weight: 500;
+  text-align: left;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.list-row:hover {
+  background: var(--glass-chip-hover);
+  color: var(--glass-fg-hover);
+}
+
+.list-row.active,
+.list-row[data-selected="true"] {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.list-row .row-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-field > svg {
+  position: absolute;
+  left: 10px;
+  z-index: 1;
+  color: rgba(235, 235, 245, 0.4);
+  pointer-events: none;
+}
+
+.search-field > input {
+  padding-left: 30px;
+}
+
+/* Soft Apple-style scrollbar inside glass sheets */
+.float-sheet-left *,
+.float-sheet-right *,
+.bottom-sheet * {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.float-sheet-left *::-webkit-scrollbar-thumb,
+.float-sheet-right *::-webkit-scrollbar-thumb,
+.bottom-sheet *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.field-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Mobile: sheets full-bleed edges */
+@media (max-width: 768px) {
+  .brand-corner {
+    bottom: 10px;
+    left: 8px;
+    height: 52px;
+  }
+
+  .float-sheet-left,
+  .float-sheet-right {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    top: 56px;
+    bottom: 84px;
+  }
+
+  .bottom-sheet {
+    width: calc(100vw - 16px);
+    bottom: 72px;
+  }
+
+  .app-tabbar {
+    --brand-clearance: 60px;
+    bottom: 10px;
+    max-width: calc(100vw - 16px - (var(--brand-clearance) * 2));
+  }
+
+  .app-tabbar-item {
+    min-width: 44px;
+  }
+
+  .float-status {
+    top: 8px;
+    right: 8px;
+    max-width: 40vw;
+  }
+}
+
+/* ── Command palette (Spotlight / ⌘K) ───────────────────────────── */
+.command-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  padding: min(14vh, 120px) 16px 24px;
+  pointer-events: auto;
+}
+
+.command-palette-scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: default;
+}
+
+.command-palette-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(520px, 72vh);
+  border-radius: 18px;
+  background: var(--glass-fill-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow:
+    var(--glass-shadow),
+    var(--glass-ring),
+    var(--glass-inset),
+    0 24px 80px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: command-palette-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes command-palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.command-palette-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  height: 52px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.command-palette-search-icon {
+  flex-shrink: 0;
+  color: var(--glass-fg);
+}
+
+.command-palette-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.96);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  outline: none;
+}
+
+.command-palette-input::placeholder {
+  color: var(--glass-fg);
+  font-weight: 450;
+}
+
+.command-palette-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.command-palette-esc {
+  flex-shrink: 0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--glass-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.command-palette-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.command-palette-section {
+  padding: 10px 10px 4px;
+  color: var(--glass-fg);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.command-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.88);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.command-palette-item:hover,
+.command-palette-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+.command-palette-item.active {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--accent, #00f0ff);
+}
+
+.command-palette-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  opacity: 0.9;
+}
+
+.command-palette-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-shortcut {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--glass-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.command-palette-item.active .command-palette-shortcut {
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(245, 245, 247, 0.7);
+}
+
+.command-palette-enter {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.command-palette-empty {
+  padding: 28px 12px;
+  color: var(--glass-fg);
+  font-size: 13px;
+  text-align: center;
+}
+
+.command-palette-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--glass-fg);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.command-palette-footer kbd {
+  display: inline-block;
+  margin-right: 2px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  line-height: 1.4;
+}

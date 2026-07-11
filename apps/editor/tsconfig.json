@@ -1,11 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../..",
+    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@gamekit/schema": ["../../packages/schema/src/index.ts"],
+      "@gamekit/schema/*": ["../../packages/schema/src/*"],
+      "@gamekit/runtime": ["../../packages/runtime/src/index.ts"],
+      "@gamekit/runtime/*": ["../../packages/runtime/src/*"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

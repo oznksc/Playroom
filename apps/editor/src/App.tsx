@@ -1,12 +1,50 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance } from "@gamekit/schema";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Gamepad2, FolderOpen, PanelLeft, PanelRight, X } from "lucide-react";
-import { Topbar } from "./components/Topbar.js";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  FolderOpen,
+  Folder,
+  Clock3,
+  Terminal,
+  X,
+  Layers,
+  SlidersHorizontal,
+  Sparkles,
+  Save,
+  RefreshCw,
+  Plus,
+  LayoutTemplate,
+  Settings,
+  LogOut,
+  MousePointer,
+  Move,
+  RefreshCcw,
+  Maximize,
+  Paintbrush,
+  Eraser,
+  Magnet,
+  Grid3x3,
+  Eye,
+  EyeOff,
+  Focus,
+  ZoomIn,
+  ZoomOut,
+  Undo2,
+  Redo2,
+  Play,
+  Square,
+  Box,
+  FileText,
+  Command,
+} from "lucide-react";
+import { BrandCorner } from "./components/BrandCorner.js";
+import { AppTabBar } from "./components/AppTabBar.js";
+import { PlayControls } from "./components/PlayControls.js";
+import { CommandPalette, type CommandItem } from "./components/CommandPalette.js";
 import { Sidebar } from "./components/Sidebar.js";
+import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { Inspector } from "./components/Inspector.js";
-import { Footer } from "./components/Footer.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { LevelPanel } from "./components/LevelPanel.js";
 import { SceneSettings } from "./components/SceneSettings.js";
@@ -53,7 +91,7 @@ const MVP_SHOW_LEVELS = true;
 const MVP_SHOW_TIMELINE = false;
 const MVP_SHOW_CONSOLE = false;
 
-type SidebarTab = "entities" | "scenes" | "prefabs" | "agent" | "levels" | "guis" | "components";
+type SidebarTab = SidebarTabId;
 type BottomTab = "assets" | "timeline" | "console";
 
 export function App() {
@@ -89,6 +127,7 @@ export function App() {
   const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
   const [status, setStatus] = useState("Loading");
   const [zoom, setZoom] = useState(1);
+  const [viewResetKey, setViewResetKey] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -120,11 +159,14 @@ export function App() {
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
   const sceneMtimeRef = useRef<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
-  const [inspectorOpen, setInspectorOpen] = useState(isDesktop);
-  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const commandPaletteOpenRef = useRef(false);
+  commandPaletteOpenRef.current = commandPaletteOpen;
   const [snapSize, setSnapSize] = useState(32);
   const [logs, setLogs] = useState<ConsoleLog[]>([
     { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
@@ -154,8 +196,47 @@ export function App() {
     }, AUTO_SAVE_DELAY_MS);
   }, []);
 
+  type ExampleProject = {
+    id: string;
+    name: string;
+    description: string;
+    path: string;
+  };
+
+  const [exampleProjects, setExampleProjects] = useState<ExampleProject[]>([]);
+  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    import("@tauri-apps/api/core")
+      .then(({ invoke }) => invoke<ExampleProject[]>("list_example_projects"))
+      .then((list) => setExampleProjects(list ?? []))
+      .catch(() => setExampleProjects([]));
+  }, [isTauri]);
+
+  async function waitForEditorApi(timeoutMs = 10_000): Promise<void> {
+    const start = Date.now();
+    let lastError = "Editor API not reachable";
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const res = await fetch(getApiUrl("/api/project"), { cache: "no-store" });
+        if (res.ok) {
+          await res.json();
+          return;
+        }
+        lastError = `API returned ${res.status}`;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : "Connection failed";
+      }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    throw new Error(`${lastError}. Is the CLI built? Run \`pnpm build\` then retry.`);
+  }
+
   const handleOpenProject = async () => {
     try {
+      setProjectLoadError(null);
       setStatus("Opening dialog...");
       const { invoke } = await import("@tauri-apps/api/core");
       const selected = await invoke<string | null>("select_directory");
@@ -166,24 +247,40 @@ export function App() {
       }
     } catch (e) {
       console.error(e);
-      setStatus(e instanceof Error ? e.message : "Failed to open project");
+      const msg = e instanceof Error ? e.message : String(e);
+      setStatus(msg);
+      setProjectLoadError(msg);
     }
   };
 
   const loadProjectFolder = async (path: string) => {
+    setIsLoadingProject(true);
+    setProjectLoadError(null);
     try {
-      setStatus("Starting server...");
+      setStatus("Starting server…");
       const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("start_server", { projectPath: path });
-      setProjectPath(path);
-      addToRecentProjects(path);
-      setStatus("Initializing project files...");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const resolved = await invoke<string>("start_server", { projectPath: path });
+      setStatus("Waiting for editor API…");
+      await waitForEditorApi();
+      setStatus("Loading project…");
+      // Keep welcome screen until scene is loaded — avoids empty-shell crash/black frame
       await refresh();
-      addConsoleLog("system", `Loaded project directory: ${path}`);
+      setProjectPath(resolved);
+      addToRecentProjects(resolved);
+      addConsoleLog("system", `Loaded project: ${resolved}`);
     } catch (e) {
       console.error(e);
-      setStatus(e instanceof Error ? e.message : "Failed to start server");
+      const msg =
+        typeof e === "string"
+          ? e
+          : e instanceof Error
+            ? e.message
+            : "Failed to start server";
+      setStatus(msg);
+      setProjectLoadError(msg);
+      setProjectPath(null);
+    } finally {
+      setIsLoadingProject(false);
     }
   };
 
@@ -273,9 +370,30 @@ export function App() {
       .catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
   }, [currentSceneFile, projectPath]);
 
+  // ⌘K / ⌘Space — Spotlight-style command palette (capture so it wins over fields)
+  useEffect(() => {
+    function handleCommandPaletteHotkey(event: KeyboardEvent) {
+      const meta = event.metaKey || event.ctrlKey;
+      if (!meta || event.shiftKey || event.altKey) return;
+
+      const isK = event.key === "k" || event.key === "K";
+      const isSpace = event.code === "Space";
+      if (!isK && !isSpace) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setCommandPaletteOpen((open) => !open);
+    }
+
+    window.addEventListener("keydown", handleCommandPaletteHotkey, true);
+    return () => window.removeEventListener("keydown", handleCommandPaletteHotkey, true);
+  }, []);
+
   // Global Keyboard listener for editor tools & keyframes
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (commandPaletteOpenRef.current) return;
+
       const ctrl = event.metaKey || event.ctrlKey;
       const isInput = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement;
 
@@ -1246,7 +1364,18 @@ export function App() {
   }
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
-  const statusClass = status === "Loading" ? "loading" : status.startsWith("Load") || status.includes("failed") || saveState === "error" ? "error" : "";
+
+  // Canvas-first: open inspector sheet when something is selected
+  useEffect(() => {
+    if (
+      selectedEntityIds.size > 0 ||
+      selectedGuiNodeId ||
+      selectedComponentInstanceId
+    ) {
+      setInspectorOpen(true);
+    }
+  }, [selectedEntityIds, selectedGuiNodeId, selectedComponentInstanceId]);
+
 
   function formatLastSaved(): string {
     if (!lastSaved) return "";
@@ -1263,107 +1392,653 @@ export function App() {
     addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
   }
 
+  const openHierarchy = useCallback(() => {
+    setActiveTab("entities");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+  }, []);
+
+  const openContent = useCallback((tab: BottomTab = "assets") => {
+    setActiveBottomTab(tab);
+    setBottomDrawerCollapsed(false);
+    setSidebarOpen(false);
+  }, []);
+
+  const openAgent = useCallback(() => {
+    setActiveTab("agent");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const openScenes = useCallback(() => {
+    setActiveTab("scenes");
+    setSidebarOpen(true);
+    setBottomDrawerCollapsed(true);
+  }, []);
+
+  const centerView = useCallback(() => {
+    setZoom(1);
+    setViewResetKey((k) => k + 1);
+  }, []);
+
+  const commandItems = useMemo((): CommandItem[] => {
+    const ic = (node: ReactNode) => node;
+    const items: CommandItem[] = [
+      {
+        id: "nav-hierarchy",
+        label: "Open Hierarchy",
+        section: "Navigate",
+        keywords: ["entities", "panel", "sidebar"],
+        icon: ic(<Layers size={14} strokeWidth={1.75} />),
+        run: openHierarchy,
+      },
+      {
+        id: "nav-inspector",
+        label: "Open Inspector",
+        section: "Navigate",
+        keywords: ["properties", "panel"],
+        icon: ic(<SlidersHorizontal size={14} strokeWidth={1.75} />),
+        run: openInspector,
+      },
+      {
+        id: "nav-content",
+        label: "Open Content",
+        section: "Navigate",
+        keywords: ["assets", "drawer", "files"],
+        icon: ic(<Folder size={14} strokeWidth={1.75} />),
+        run: () => openContent("assets"),
+      },
+      {
+        id: "nav-agent",
+        label: "Open Agent",
+        section: "Navigate",
+        keywords: ["ai", "assistant"],
+        icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
+        run: openAgent,
+      },
+      {
+        id: "nav-scenes",
+        label: "Open Scenes",
+        section: "Navigate",
+        keywords: ["levels", "files"],
+        icon: ic(<FileText size={14} strokeWidth={1.75} />),
+        run: openScenes,
+      },
+      {
+        id: "tool-select",
+        label: "Select tool",
+        section: "Tools",
+        shortcut: "Q",
+        icon: ic(<MousePointer size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("select"),
+      },
+      {
+        id: "tool-move",
+        label: "Move tool",
+        section: "Tools",
+        shortcut: "W",
+        icon: ic(<Move size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("translate"),
+      },
+      {
+        id: "tool-rotate",
+        label: "Rotate tool",
+        section: "Tools",
+        shortcut: "E",
+        icon: ic(<RefreshCcw size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("rotate"),
+      },
+      {
+        id: "tool-scale",
+        label: "Scale tool",
+        section: "Tools",
+        shortcut: "R",
+        icon: ic(<Maximize size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("scale"),
+      },
+      {
+        id: "tool-paint",
+        label: "Paint tool",
+        section: "Tools",
+        keywords: ["tile", "brush"],
+        icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("paint"),
+      },
+      {
+        id: "tool-erase",
+        label: "Erase tool",
+        section: "Tools",
+        icon: ic(<Eraser size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("erase"),
+      },
+      {
+        id: "tool-snap",
+        label: snap ? "Disable snap" : "Enable snap",
+        section: "Tools",
+        keywords: ["grid", "magnet"],
+        icon: ic(<Magnet size={14} strokeWidth={1.75} />),
+        run: () => setSnap((v) => !v),
+      },
+      {
+        id: "view-grid",
+        label: showGrid ? "Hide grid" : "Show grid",
+        section: "View",
+        icon: ic(<Grid3x3 size={14} strokeWidth={1.75} />),
+        run: () => setShowGrid((v) => !v),
+      },
+      {
+        id: "view-colliders",
+        label: showColliders ? "Hide colliders" : "Show colliders",
+        section: "View",
+        icon: ic(
+          showColliders ? (
+            <EyeOff size={14} strokeWidth={1.75} />
+          ) : (
+            <Eye size={14} strokeWidth={1.75} />
+          )
+        ),
+        run: () => setShowColliders((v) => !v),
+      },
+      {
+        id: "view-center",
+        label: "Center view",
+        section: "View",
+        keywords: ["reset", "camera", "fit"],
+        icon: ic(<Focus size={14} strokeWidth={1.75} />),
+        run: centerView,
+      },
+      {
+        id: "view-zoom-in",
+        label: "Zoom in",
+        section: "View",
+        icon: ic(<ZoomIn size={14} strokeWidth={1.75} />),
+        run: () => setZoom((z) => Math.min(4, z + 0.1)),
+      },
+      {
+        id: "view-zoom-out",
+        label: "Zoom out",
+        section: "View",
+        icon: ic(<ZoomOut size={14} strokeWidth={1.75} />),
+        run: () => setZoom((z) => Math.max(0.25, z - 0.1)),
+      },
+      {
+        id: "view-zoom-100",
+        label: "Zoom to 100%",
+        section: "View",
+        icon: ic(<Focus size={14} strokeWidth={1.75} />),
+        run: () => setZoom(1),
+      },
+      {
+        id: "create-entity",
+        label: "Add entity",
+        section: "Create",
+        keywords: ["new", "object"],
+        icon: ic(<Plus size={14} strokeWidth={1.75} />),
+        run: addEntity,
+      },
+      {
+        id: "create-template",
+        label: "New from template…",
+        section: "Create",
+        keywords: ["wizard", "skill", "genre"],
+        icon: ic(<LayoutTemplate size={14} strokeWidth={1.75} />),
+        run: () => setWizardOpen(true),
+      },
+      {
+        id: "edit-undo",
+        label: "Undo",
+        section: "Edit",
+        shortcut: "⌘Z",
+        icon: ic(<Undo2 size={14} strokeWidth={1.75} />),
+        disabled: !canUndo,
+        run: () => undo(),
+      },
+      {
+        id: "edit-redo",
+        label: "Redo",
+        section: "Edit",
+        shortcut: "⇧⌘Z",
+        icon: ic(<Redo2 size={14} strokeWidth={1.75} />),
+        disabled: !canRedo,
+        run: () => redo(),
+      },
+      {
+        id: "project-save",
+        label: "Save scene",
+        section: "Project",
+        shortcut: "⌘S",
+        icon: ic(<Save size={14} strokeWidth={1.75} />),
+        run: () => saveScene(),
+      },
+      {
+        id: "project-refresh",
+        label: "Refresh project",
+        section: "Project",
+        icon: ic(<RefreshCw size={14} strokeWidth={1.75} />),
+        run: () => {
+          refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+        },
+      },
+      {
+        id: "project-settings",
+        label: "Agent settings",
+        section: "Project",
+        keywords: ["preferences", "config"],
+        icon: ic(<Settings size={14} strokeWidth={1.75} />),
+        run: () => setAgentSettingsOpen(true),
+      },
+      {
+        id: "sim-play",
+        label: isPlaying
+          ? isPaused
+            ? "Resume simulation"
+            : "Pause simulation"
+          : "Play simulation",
+        section: "Simulation",
+        keywords: ["run", "preview"],
+        icon: ic(<Play size={14} strokeWidth={1.75} />),
+        run: handlePlayToggle,
+      },
+      {
+        id: "sim-stop",
+        label: "Stop simulation",
+        section: "Simulation",
+        icon: ic(<Square size={14} strokeWidth={1.75} />),
+        disabled: !isPlaying,
+        run: handleStop,
+      },
+      {
+        id: "cmd-palette-hint",
+        label: "Command menu",
+        section: "Help",
+        shortcut: "⌘K",
+        keywords: ["spotlight", "search", "palette"],
+        icon: ic(<Command size={14} strokeWidth={1.75} />),
+        run: () => setCommandPaletteOpen(true),
+      },
+    ];
+
+    if (isTauri && projectPath) {
+      items.push({
+        id: "project-close",
+        label: "Close project",
+        section: "Project",
+        icon: ic(<LogOut size={14} strokeWidth={1.75} />),
+        run: handleCloseProject,
+      });
+    }
+
+    for (const sceneFile of snapshot.scenes) {
+      items.push({
+        id: `scene-${sceneFile}`,
+        label: `Open scene “${sceneFile.replace(/\.scene\.json$/, "")}”`,
+        section: "Scenes",
+        keywords: ["goto", "switch", sceneFile],
+        icon: ic(<FileText size={14} strokeWidth={1.75} />),
+        run: () => setCurrentSceneFile(sceneFile),
+      });
+    }
+
+    for (const entity of scene?.entities ?? []) {
+      items.push({
+        id: `entity-${entity.id}`,
+        label: entity.name || entity.id,
+        section: "Entities",
+        keywords: ["select", "goto", entity.id],
+        icon: ic(<Box size={14} strokeWidth={1.75} />),
+        run: () => {
+          setSelectedEntityIds(new Set([entity.id]));
+          setSelectedGuiNodeId(null);
+          setSelectedComponentInstanceId(null);
+          setInspectorOpen(true);
+          setSidebarOpen(true);
+          setActiveTab("entities");
+          setBottomDrawerCollapsed(true);
+        },
+      });
+    }
+
+    return items;
+  }, [
+    snap,
+    showGrid,
+    showColliders,
+    canUndo,
+    canRedo,
+    isPlaying,
+    isPaused,
+    isTauri,
+    projectPath,
+    snapshot.scenes,
+    scene?.entities,
+    openHierarchy,
+    openInspector,
+    openContent,
+    openAgent,
+    openScenes,
+    centerView,
+    undo,
+    redo,
+  ]);
+
   if (isTauri && !projectPath) {
     return (
-      <div className="tauri-dashboard">
-        <div className="tauri-dashboard-card">
-          <div className="glow-effect"></div>
-          <div className="logo-section">
-            <img src={logoUrl} alt="Playroom" className="dashboard-logo" />
-            <h1>Playroom</h1>
-            <p className="subtitle">Local 2D scene editor for Expo projects</p>
-          </div>
-          
-          <div className="action-section">
-            <button type="button" className="btn-dashboard-primary" onClick={handleOpenProject}>
-              <FolderOpen size={18} />
-              <span>Open Project Folder</span>
-            </button>
-            <p className="dashboard-hint">
-              After opening a project, use <strong>New from template</strong> in the top bar to apply a genre skill.
-            </p>
+      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-bg-base text-text-primary">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-80"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 40%, rgba(0,240,255,0.08) 0%, transparent 55%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.06) 0%, transparent 45%)",
+          }}
+        />
+        <div className="relative z-10 w-[min(480px,calc(100vw-32px))] rounded-[18px] border border-white/[0.08] bg-[rgba(16,18,22,0.92)] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <img src={logoUrl} alt="Playroom" className="mb-3 size-14 object-contain" />
+            <h1 className="type-display m-0 tracking-[0.08em]">PLAYROOM</h1>
+            <p className="type-body mt-1.5">Open a project folder that contains a gamekit/ directory</p>
           </div>
 
-          {recentProjects.length > 0 && (
-            <div className="recent-projects-section">
-              <h3>Recent Projects</h3>
-              <div className="recent-list">
-                {recentProjects.map((p) => (
-                  <button 
-                    key={p} 
-                    type="button" 
-                    className="recent-item" 
-                    onClick={() => loadProjectFolder(p)}
+          <button
+            type="button"
+            disabled={isLoadingProject}
+            onClick={handleOpenProject}
+            className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-accent/40 bg-accent/15 px-4 py-3 text-md font-semibold tracking-[-0.015em] text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
+          >
+            <FolderOpen size={16} />
+            {isLoadingProject ? "Opening…" : "Open Project Folder"}
+          </button>
+
+          {exampleProjects.length > 0 && (
+            <div className="mt-5">
+              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
+                Example projects
+              </h3>
+              <div className="flex flex-col gap-1.5">
+                {exampleProjects.map((ex) => (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    disabled={isLoadingProject}
+                    onClick={() => loadProjectFolder(ex.path)}
+                    className="flex w-full flex-col items-start gap-0.5 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.08] disabled:opacity-50"
                   >
-                    <FolderOpen size={13} />
-                    <span className="recent-path" title={p}>{p}</span>
+                    <span className="text-[13px] font-semibold tracking-[-0.015em] text-[rgba(245,245,247,0.92)]">
+                      {ex.name}
+                    </span>
+                    <span className="text-[11px] text-[rgba(235,235,245,0.4)]">{ex.description}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="dashboard-footer">
-            <span>Powered by Tauri v2 & Rust</span>
-          </div>
+          {recentProjects.length > 0 && (
+            <div className="mt-5 border-t border-white/[0.06] pt-4">
+              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
+                Recent
+              </h3>
+              <div className="flex max-h-36 flex-col gap-1 overflow-auto">
+                {recentProjects.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    disabled={isLoadingProject}
+                    className="list-row cursor-pointer disabled:opacity-50"
+                    onClick={() => loadProjectFolder(p)}
+                  >
+                    <Folder size={13} className="shrink-0 text-accent" />
+                    <span className="type-mono min-w-0 flex-1 truncate" title={p}>
+                      {p}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {projectLoadError && (
+            <div className="mt-4 rounded-[12px] border border-error/30 bg-error/10 px-3 py-2 text-[11px] leading-relaxed text-error whitespace-pre-wrap">
+              {projectLoadError}
+            </div>
+          )}
+
+          <p className="type-micro mt-5 text-center text-text-muted">
+            Tip: pick the project root (e.g. templates/expo-game), not only the gamekit folder.
+            Requires <code className="text-accent">pnpm build</code> first.
+          </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <main className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}`}>
-        <Topbar
-          sceneName={scene?.name ?? currentSceneFile}
-          isDirty={isDirty}
-          saveState={saveState}
-          status={status}
-          lastSaved={lastSaved}
-          isPlaying={isPlaying}
-          isPaused={isPaused}
-          playFps={playFps}
-          playFrameMs={playFrameMs}
-          entityCount={scene?.entities.length ?? 0}
-          sidebarOpen={sidebarOpen}
-          inspectorOpen={inspectorOpen}
-          onPlayToggle={handlePlayToggle}
-          onPauseToggle={handlePlayToggle}
-          onStop={handleStop}
-          onRefresh={refresh}
-          onImport={importAsset}
-          onSave={saveScene}
-          onAddEntity={addEntity}
-          onToggleSidebar={() => setSidebarOpen((v) => !v)}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
-          onOpenAgent={() => {
-            setSidebarOpen(true);
-            setActiveTab("agent");
-          }}
-          onOpenWizard={() => setWizardOpen(true)}
-          formatLastSaved={formatLastSaved}
-          projectPath={isTauri ? projectPath : null}
-          onCloseProject={isTauri ? () => setProjectPath(null) : undefined}
 
+
+  return (
+    <main
+      className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}${!bottomDrawerCollapsed ? " has-bottom-sheet" : ""}`}
+    >
+      {/* Full-bleed canvas — primary focus */}
+      <div className="canvas-stage">
+        <SceneCanvas
+          scene={scene}
+          assets={snapshot.assets}
+          selectedEntityIds={selectedEntityIds}
+          selectedGuiNodeId={selectedGuiNodeId}
+          guiComponents={snapshot.guiComponents}
+          selectedComponentInstanceId={selectedComponentInstanceId}
+          showGuiTools={MVP_SHOW_GUI_TOOLS}
+          zoom={zoom}
+          snap={snap}
+          hasClipboard={clipboardRef.current !== null}
+          activeTool={activeTool}
+          showGrid={showGrid}
+          showColliders={showColliders}
+          snapSize={snapSize}
+          isPlaying={isPlaying}
+          paintTileId={paintTileId}
+          viewResetKey={viewResetKey}
+          onVirtualInput={(action, pressed) => {
+            const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
+            if (pressed) pressedKeysRef.current.add(key);
+            else pressedKeysRef.current.delete(key);
+          }}
+          onZoomChange={setZoom}
+          onSnapToggle={setSnap}
+          onSnapSizeChange={setSnapSize}
+          onActiveToolChange={setActiveTool}
+          onToggleGrid={setShowGrid}
+          onToggleColliders={setShowColliders}
+          onPaintTile={(entityId, gridX, gridY, tileId) => {
+            updateScene((draft) => {
+              const entity = draft.entities.find((e) => e.id === entityId);
+              if (!entity) return;
+              const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
+              if (!tm) return;
+              const idx = gridY * tm.gridWidth + gridX;
+              if (idx < 0 || idx >= tm.tiles.length) return;
+              if (tm.tiles[idx] === tileId) return;
+              tm.tiles[idx] = tileId;
+            });
+          }}
+          onSelect={(id, shift) => {
+            setSelectedGuiNodeId(null);
+            setSelectedComponentInstanceId(null);
+            if (!id) {
+              setSelectedEntityIds(new Set());
+              return;
+            }
+            setSelectedEntityIds((prev) => {
+              const next = new Set(shift ? prev : undefined);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
+          onSelectGuiNode={(id) => {
+            setSelectedEntityIds(new Set());
+            setSelectedComponentInstanceId(null);
+            setSelectedGuiNodeId(id);
+          }}
+          onSelectComponentInstance={(id) => {
+            setSelectedEntityIds(new Set());
+            setSelectedGuiNodeId(null);
+            setSelectedComponentInstanceId(id);
+          }}
+          onTransform={(id, updates) => {
+            push((draft) => {
+              if (!draft) return;
+              const entity = draft.entities.find((candidate) => candidate.id === id);
+              const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
+              if (transform) {
+                if (updates.position) transform.position = updates.position;
+                if (updates.rotation !== undefined) transform.rotation = updates.rotation;
+                if (updates.scale) transform.scale = updates.scale;
+              }
+            });
+            setIsDirty(true);
+            triggerAutoSave();
+          }}
+          onAddEntity={addEntity}
+          onPasteEntity={() => {
+            const entity = clipboardRef.current;
+            if (entity) pasteEntity(entity);
+          }}
+          onSelectAll={() => {
+            if (!scene) return;
+            setSelectedEntityIds(new Set(scene.entities.map((e) => e.id)));
+          }}
+          onCopyEntity={(id) => {
+            const entity = scene?.entities.find((e) => e.id === id);
+            if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
+          }}
+          onCutEntity={(id) => {
+            const entity = scene?.entities.find((e) => e.id === id);
+            if (entity) {
+              clipboardRef.current = structuredClone(entity) as GameKitEntity;
+              deleteEntity(id);
+            }
+          }}
+          onDuplicateEntity={(id) => duplicateEntity(id)}
+          onDeleteEntity={(id) => deleteEntity(id)}
         />
 
-      <section className={`workspace${!sidebarOpen ? " sidebar-collapsed" : ""}${!inspectorOpen ? " inspector-collapsed" : ""}`}>
-        <div className={`panel sidebar-tabs${sidebarOpen ? " panel-open" : ""}`}>
-          <div className="tab-bar">
-            <button type="button" className={activeTab === "entities" ? "active" : ""} onClick={() => setActiveTab("entities")}>Hierarchy</button>
-            <button type="button" className={activeTab === "scenes" ? "active" : ""} onClick={() => setActiveTab("scenes")}>Scenes</button>
-            <button type="button" className={activeTab === "prefabs" ? "active" : ""} onClick={() => setActiveTab("prefabs")}>Prefabs</button>
-            <button type="button" className={activeTab === "agent" ? "active" : ""} onClick={() => setActiveTab("agent")}>Agent</button>
-            {MVP_SHOW_LEVELS && (
-              <button type="button" className={activeTab === "levels" ? "active" : ""} onClick={() => setActiveTab("levels")}>Levels</button>
-            )}
-            {MVP_SHOW_GUI_TOOLS && (
-              <>
-                <button type="button" className={activeTab === "guis" ? "active" : ""} onClick={() => setActiveTab("guis")}>GUIs</button>
-                <button type="button" className={activeTab === "components" ? "active" : ""} onClick={() => setActiveTab("components")}>Comps</button>
-              </>
-            )}
+        {(activeTool === "paint" || activeTool === "erase") && (
+          <div className="tile-palette" role="toolbar" aria-label="Tile palette">
+            <span className="tile-palette-label">
+              {activeTool === "erase" ? "Erase" : "Brush"} · tile
+            </span>
+            <div className="tile-palette-swatches">
+              {Array.from({ length: 16 }, (_, i) => i).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`tile-swatch${paintTileId === id && activeTool === "paint" ? " active" : ""}${id === 0 ? " empty" : ""}`}
+                  onClick={() => {
+                    setPaintTileId(id);
+                    if (id === 0) setActiveTool("erase");
+                    else setActiveTool("paint");
+                  }}
+                  title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
+                >
+                  {id === 0 ? "·" : id}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="sidebar-content">
+        )}
+      </div>
+
+      {/* Bottom-left logo, tab-bar level — every action is on the tab bar */}
+      <BrandCorner isDirty={isDirty} />
+
+      <PlayControls
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        playFps={playFps}
+        playFrameMs={playFrameMs}
+        entityCount={scene?.entities.length ?? 0}
+        onPlayToggle={handlePlayToggle}
+        onStop={handleStop}
+      />
+
+      {/* Bottom tab bar — navigation, tools, project */}
+      <AppTabBar
+        active={
+          !bottomDrawerCollapsed
+            ? "content"
+            : sidebarOpen && activeTab === "agent"
+              ? "agent"
+              : sidebarOpen
+                ? "hierarchy"
+                : inspectorOpen
+                  ? "inspector"
+                  : null
+        }
+        saveState={saveState}
+        projectPath={isTauri ? projectPath : null}
+        onHierarchy={() => {
+          if (sidebarOpen && activeTab === "entities") {
+            setSidebarOpen(false);
+          } else {
+            setActiveTab("entities");
+            setSidebarOpen(true);
+            setBottomDrawerCollapsed(true);
+          }
+        }}
+        onInspector={() => {
+          setInspectorOpen((v) => !v);
+        }}
+        onContent={() => {
+          if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
+            setBottomDrawerCollapsed(true);
+          } else {
+            setActiveBottomTab("assets");
+            setBottomDrawerCollapsed(false);
+            setSidebarOpen(false);
+          }
+        }}
+        onAgent={() => {
+          if (sidebarOpen && activeTab === "agent") {
+            setSidebarOpen(false);
+          } else {
+            setActiveTab("agent");
+            setSidebarOpen(true);
+            setBottomDrawerCollapsed(true);
+          }
+        }}
+        onSave={saveScene}
+        onRefresh={refresh}
+        onImport={importAsset}
+        onAddEntity={addEntity}
+        onOpenWizard={() => setWizardOpen(true)}
+        onSettings={() => setAgentSettingsOpen(true)}
+        onCloseProject={isTauri ? handleCloseProject : undefined}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+        activeTool={activeTool}
+        snap={snap}
+        snapSize={snapSize}
+        showGrid={showGrid}
+        showColliders={showColliders}
+        zoom={zoom}
+        onActiveToolChange={setActiveTool}
+        onSnapToggle={setSnap}
+        onSnapSizeChange={setSnapSize}
+        onToggleGrid={setShowGrid}
+        onToggleColliders={setShowColliders}
+        onZoomChange={setZoom}
+        onCenterView={() => {
+          setZoom(1);
+          setViewResetKey((k) => k + 1);
+        }}
+      />
+
+      {/* Left floating sheet */}
+      <div className={`float-sheet-left${sidebarOpen ? " open" : ""}`} role="dialog" aria-label="Workspace panel">
+        <div className="sidebar-content">
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -1474,142 +2149,12 @@ export function App() {
               onPlaceInstance={addGuiComponentInstance}
             />
           )}
-          </div>
         </div>
+      </div>
 
-        <SceneCanvas
-          scene={scene}
-          assets={snapshot.assets}
-          selectedEntityIds={selectedEntityIds}
-          selectedGuiNodeId={selectedGuiNodeId}
-          guiComponents={snapshot.guiComponents}
-          selectedComponentInstanceId={selectedComponentInstanceId}
-          showGuiTools={MVP_SHOW_GUI_TOOLS}
-          zoom={zoom}
-          snap={snap}
-          hasClipboard={clipboardRef.current !== null}
-          activeTool={activeTool}
-          showGrid={showGrid}
-          showColliders={showColliders}
-          snapSize={snapSize}
-          isPlaying={isPlaying}
-          paintTileId={paintTileId}
-          onVirtualInput={(action, pressed) => {
-            const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
-            if (pressed) pressedKeysRef.current.add(key);
-            else pressedKeysRef.current.delete(key);
-          }}
-          onZoomChange={setZoom}
-          onSnapToggle={setSnap}
-          onSnapSizeChange={setSnapSize}
-          onActiveToolChange={setActiveTool}
-          onToggleGrid={setShowGrid}
-          onToggleColliders={setShowColliders}
-          onPaintTile={(entityId, gridX, gridY, tileId) => {
-            updateScene((draft) => {
-              const entity = draft.entities.find((e) => e.id === entityId);
-              if (!entity) return;
-              const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
-              if (!tm) return;
-              const idx = gridY * tm.gridWidth + gridX;
-              if (idx < 0 || idx >= tm.tiles.length) return;
-              if (tm.tiles[idx] === tileId) return;
-              tm.tiles[idx] = tileId;
-            });
-          }}
-          onSelect={(id, shift) => {
-            setSelectedGuiNodeId(null);
-            setSelectedComponentInstanceId(null);
-            if (!id) {
-              setSelectedEntityIds(new Set());
-              return;
-            }
-            setSelectedEntityIds((prev) => {
-              const next = new Set(shift ? prev : undefined);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              return next;
-            });
-          }}
-          onSelectGuiNode={(id) => {
-            setSelectedEntityIds(new Set());
-            setSelectedComponentInstanceId(null);
-            setSelectedGuiNodeId(id);
-          }}
-          onSelectComponentInstance={(id) => {
-            setSelectedEntityIds(new Set());
-            setSelectedGuiNodeId(null);
-            setSelectedComponentInstanceId(id);
-          }}
-          onTransform={(id, updates) => {
-            push((draft) => {
-              if (!draft) return;
-              const entity = draft.entities.find((candidate) => candidate.id === id);
-              const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
-              if (transform) {
-                if (updates.position) transform.position = updates.position;
-                if (updates.rotation !== undefined) transform.rotation = updates.rotation;
-                if (updates.scale) transform.scale = updates.scale;
-              }
-            });
-            setIsDirty(true);
-            triggerAutoSave();
-          }}
-          onAddEntity={addEntity}
-          onPasteEntity={() => {
-            const entity = clipboardRef.current;
-            if (entity) pasteEntity(entity);
-          }}
-          onSelectAll={() => {
-            if (!scene) return;
-            setSelectedEntityIds(new Set(scene.entities.map((e) => e.id)));
-          }}
-          onCopyEntity={(id) => {
-            const entity = scene?.entities.find((e) => e.id === id);
-            if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
-          }}
-          onCutEntity={(id) => {
-            const entity = scene?.entities.find((e) => e.id === id);
-            if (entity) {
-              clipboardRef.current = structuredClone(entity) as GameKitEntity;
-              deleteEntity(id);
-            }
-          }}
-          onDuplicateEntity={(id) => duplicateEntity(id)}
-          onDeleteEntity={(id) => deleteEntity(id)}
-        />
-
-        {(activeTool === "paint" || activeTool === "erase") && (
-          <div className="tile-palette" role="toolbar" aria-label="Tile palette">
-            <span className="tile-palette-label">
-              {activeTool === "erase" ? "Erase" : "Brush"} · tile
-            </span>
-            <div className="tile-palette-swatches">
-              {Array.from({ length: 16 }, (_, i) => i).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`tile-swatch${paintTileId === id && activeTool === "paint" ? " active" : ""}${id === 0 ? " empty" : ""}`}
-                  onClick={() => {
-                    setPaintTileId(id);
-                    if (id === 0) setActiveTool("erase");
-                    else setActiveTool("paint");
-                  }}
-                  title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
-                >
-                  {id === 0 ? "·" : id}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div
-          className={`panel-backdrop${sidebarOpen || inspectorOpen ? " visible" : ""}`}
-          onClick={() => { setSidebarOpen(false); setInspectorOpen(false); }}
-        />
-
-        <div className={`inspector-column${inspectorOpen ? " panel-open" : ""}`}>
+      {/* Right floating inspector sheet */}
+      <div className={`float-sheet-right${inspectorOpen ? " open" : ""}`} role="dialog" aria-label="Inspector">
+        <div className="inspector-column" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {scene && <SceneSettings scene={scene} onChange={updateScene} />}
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector
@@ -1640,43 +2185,56 @@ export function App() {
             />
           )}
         </div>
-      </section>
+      </div>
 
+      {/* Content drawer — docks just above the tab bar */}
       {scene && (
-        <section className={`bottom-drawer-panel${bottomDrawerCollapsed ? " collapsed" : ""}`}>
-          <div className="drawer-tabs-bar">
+        <section
+          className={`bottom-sheet${!bottomDrawerCollapsed ? " open" : ""}`}
+          aria-hidden={bottomDrawerCollapsed}
+          aria-label="Content browser"
+        >
+          <div className="bottom-sheet-handle" aria-hidden />
+          <div className="bottom-sheet-header">
+            {(MVP_SHOW_TIMELINE || MVP_SHOW_CONSOLE) ? (
+              <div className="bottom-sheet-tabs">
+                {(
+                  [
+                    ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
+                    ...(MVP_SHOW_TIMELINE
+                      ? ([["timeline", "Timeline", <Clock3 key="i" size={13} strokeWidth={1.75} />]] as const)
+                      : []),
+                    ...(MVP_SHOW_CONSOLE
+                      ? ([["console", "Console", <Terminal key="i" size={13} strokeWidth={1.75} />]] as const)
+                      : []),
+                  ] as const
+                ).map(([id, label, icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={activeBottomTab === id ? "bottom-sheet-tab active" : "bottom-sheet-tab"}
+                    onClick={() => setActiveBottomTab(id as BottomTab)}
+                  >
+                    {icon}
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <h2 className="bottom-sheet-title">
+                <Folder size={14} strokeWidth={1.75} />
+                Content
+                <span>{snapshot.assets.length} assets</span>
+              </h2>
+            )}
             <button
               type="button"
-              className={activeBottomTab === "assets" ? "drawer-tab active" : "drawer-tab"}
-              onClick={() => setActiveBottomTab("assets")}
+              className="bottom-sheet-close"
+              title="Close"
+              aria-label="Close content drawer"
+              onClick={() => setBottomDrawerCollapsed(true)}
             >
-              Content Browser
-            </button>
-            {MVP_SHOW_TIMELINE && (
-              <button
-                type="button"
-                className={activeBottomTab === "timeline" ? "drawer-tab active" : "drawer-tab"}
-                onClick={() => setActiveBottomTab("timeline")}
-              >
-                Sequencer Timeline
-              </button>
-            )}
-            {MVP_SHOW_CONSOLE && (
-              <button
-                type="button"
-                className={activeBottomTab === "console" ? "drawer-tab active" : "drawer-tab"}
-                onClick={() => setActiveBottomTab("console")}
-              >
-                Developer Console
-              </button>
-            )}
-            <button
-              type="button"
-              className="drawer-collapse-btn"
-              onClick={() => setBottomDrawerCollapsed((v) => !v)}
-              title={bottomDrawerCollapsed ? "Expand drawer" : "Collapse drawer"}
-            >
-              {bottomDrawerCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              <X size={16} strokeWidth={1.75} />
             </button>
           </div>
           <div className="drawer-content-box">
@@ -1690,10 +2248,7 @@ export function App() {
               />
             )}
             {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
-              <TimelinePanel
-                scene={scene}
-                onChange={updateScene}
-              />
+              <TimelinePanel scene={scene} onChange={updateScene} />
             )}
             {MVP_SHOW_CONSOLE && activeBottomTab === "console" && (
               <ConsolePanel
@@ -1705,15 +2260,6 @@ export function App() {
           </div>
         </section>
       )}
-
-      <Footer
-        scene={scene}
-        assetCount={snapshot.assets.length}
-        status={status}
-        saveState={saveState}
-        isDirty={isDirty}
-        statusClass={statusClass}
-      />
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard
@@ -1727,6 +2273,12 @@ export function App() {
           setStatus(message);
           addConsoleLog("system", message);
         }}
+      />
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        commands={commandItems}
       />
     </main>
   );

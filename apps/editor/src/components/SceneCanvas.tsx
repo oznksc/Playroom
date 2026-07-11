@@ -1,30 +1,26 @@
 import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent, TilemapComponent } from "@gamekit/schema";
 import {
-  ZoomIn,
-  ZoomOut,
-  Magnet,
   Plus,
   ClipboardPaste,
   MousePointer,
-  Move,
-  RefreshCcw,
-  Maximize,
-  Grid,
-  Eye,
-  EyeOff,
   Copy,
   Scissors,
   Trash2,
   CopyPlus,
-  Focus,
-  Paintbrush,
-  Eraser,
 } from "lucide-react";
-import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
-import { drawScene, hitEntity, hitGuiNode, hitComponentInstance } from "../lib/canvas.js";
+import {
+  drawScene,
+  drawSceneFrame,
+  drawWorldGrid,
+  hitEntity,
+  hitGuiNode,
+  hitComponentInstance,
+} from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
+import { cn } from "@/ui";
 
 type SceneCanvasProps = {
   scene?: GameKitScene;
@@ -44,6 +40,8 @@ type SceneCanvasProps = {
   isPlaying: boolean;
   /** Active paint brush tile id (1-based tileset index; 0 clears). */
   paintTileId?: number;
+  /** Increment to re-center the scene in the viewport. */
+  viewResetKey?: number;
   onVirtualInput?: (action: "left" | "right" | "jump", pressed: boolean) => void;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
@@ -67,6 +65,7 @@ type SceneCanvasProps = {
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
+const VOID_COLOR = "#090c12";
 
 export function SceneCanvas({
   scene,
@@ -85,13 +84,9 @@ export function SceneCanvas({
   snapSize,
   isPlaying,
   paintTileId = 1,
+  viewResetKey = 0,
   onVirtualInput,
   onZoomChange,
-  onSnapToggle,
-  onSnapSizeChange,
-  onActiveToolChange,
-  onToggleGrid,
-  onToggleColliders,
   onSelect,
   onSelectGuiNode,
   onSelectComponentInstance,
@@ -103,10 +98,12 @@ export function SceneCanvas({
   onCopyEntity,
   onCutEntity,
   onDuplicateEntity,
-  onDeleteEntity
+  onDeleteEntity,
 }: SceneCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [viewSize, setViewSize] = useState({ w: 0, h: 0 });
+
   // Drag states containing initial parameters
   const [drag, setDrag] = useState<{
     id: string;
@@ -117,18 +114,84 @@ export function SceneCanvas({
     startScale: { x: number; y: number };
     startPointer: { x: number; y: number };
   } | undefined>();
-  
+
+  /** World-space top-left of the visible view: screen = (world - pan) * zoom */
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [panning, setPanning] = useState<{ startX: number; startY: number; panStartX: number; panStartY: number } | undefined>();
+  const panRef = useRef(pan);
+  panRef.current = pan;
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  const [panning, setPanning] = useState<{
+    startX: number;
+    startY: number;
+    panStartX: number;
+    panStartY: number;
+  } | undefined>();
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const images = useImageCache(assets);
+  const didInitialCenter = useRef(false);
+
+  const centerSceneInView = useCallback(
+    (nextZoom = zoomRef.current) => {
+      if (!scene || viewSize.w <= 0 || viewSize.h <= 0) return;
+      setPan({
+        x: scene.viewport.width / 2 - viewSize.w / (2 * nextZoom),
+        y: scene.viewport.height / 2 - viewSize.h / (2 * nextZoom),
+      });
+    },
+    [scene, viewSize.w, viewSize.h]
+  );
+
+  // Full-bleed viewport size
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0]?.contentRect;
+      if (!cr) return;
+      setViewSize({
+        w: Math.max(1, Math.floor(cr.width)),
+        h: Math.max(1, Math.floor(cr.height)),
+      });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Center when requested (tab bar “Center”)
+  useEffect(() => {
+    if (!viewResetKey) return;
+    centerSceneInView();
+  }, [viewResetKey, centerSceneInView]);
+
+  // First layout: center the game viewport in the workspace
+  useEffect(() => {
+    if (didInitialCenter.current) return;
+    if (!scene || viewSize.w <= 0) return;
+    didInitialCenter.current = true;
+    centerSceneInView();
+  }, [scene, viewSize.w, viewSize.h, centerSceneInView]);
+
+  // Re-center when switching scenes (file id change via viewport dims + name)
+  const sceneKey = scene ? `${scene.id}:${scene.viewport.width}x${scene.viewport.height}` : "";
+  const prevSceneKey = useRef(sceneKey);
+  useEffect(() => {
+    if (!sceneKey || prevSceneKey.current === sceneKey) {
+      prevSceneKey.current = sceneKey;
+      return;
+    }
+    prevSceneKey.current = sceneKey;
+    centerSceneInView();
+  }, [sceneKey, centerSceneInView]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const ctrl = e.metaKey || e.ctrlKey;
-      const isInput = document.activeElement instanceof HTMLInputElement ||
-                      document.activeElement instanceof HTMLTextAreaElement ||
-                      document.activeElement instanceof HTMLSelectElement;
+      const isInput =
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement ||
+        document.activeElement instanceof HTMLSelectElement;
 
       if (!isInput) {
         if (e.code === "Space" || e.key === " ") {
@@ -138,14 +201,14 @@ export function SceneCanvas({
 
         if (ctrl && (e.key === "=" || e.key === "+")) {
           e.preventDefault();
-          onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1));
+          onZoomChange(Math.min(MAX_ZOOM, zoomRef.current + 0.1));
         } else if (ctrl && e.key === "-") {
           e.preventDefault();
-          onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1));
+          onZoomChange(Math.max(MIN_ZOOM, zoomRef.current - 0.1));
         } else if (ctrl && e.key === "0") {
           e.preventDefault();
           onZoomChange(1);
-          setPan({ x: 0, y: 0 });
+          centerSceneInView(1);
         }
       }
     }
@@ -168,23 +231,37 @@ export function SceneCanvas({
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [zoom, onZoomChange, setPan]);
+  }, [onZoomChange, centerSceneInView]);
 
+  // Wheel pan / pinch-zoom over the entire viewport
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     function handleWheel(event: WheelEvent) {
       event.preventDefault();
-      if (event.ctrlKey) {
-        // Pinch-to-zoom (trackpad) or Ctrl + scroll wheel
-        const delta = event.deltaY > 0 ? -0.1 : 0.1;
-        onZoomChange(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom + delta)));
+      const target = canvasRef.current;
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const sx = event.clientX - rect.left;
+      const sy = event.clientY - rect.top;
+      const z = zoomRef.current;
+      const p = panRef.current;
+      const worldX = sx / z + p.x;
+      const worldY = sy / z + p.y;
+
+      if (event.ctrlKey || event.metaKey) {
+        const delta = event.deltaY > 0 ? -0.08 : 0.08;
+        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((z + delta) * 100) / 100));
+        setPan({
+          x: worldX - sx / next,
+          y: worldY - sy / next,
+        });
+        onZoomChange(next);
       } else {
-        // 2-finger panning (trackpad) or mouse wheel panning
         setPan((prev) => ({
-          x: prev.x + event.deltaX / zoom,
-          y: prev.y + event.deltaY / zoom,
+          x: prev.x + event.deltaX / z,
+          y: prev.y + event.deltaY / z,
         }));
       }
     }
@@ -193,30 +270,91 @@ export function SceneCanvas({
     return () => {
       canvas.removeEventListener("wheel", handleWheel);
     };
-  }, [zoom, onZoomChange]);
+  }, [onZoomChange]);
 
+  // Full-viewport draw: void + world grid + scene + frame
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
-    if (!canvas || !context || !scene) return;
+    if (!canvas || !context || viewSize.w <= 0 || viewSize.h <= 0) return;
 
-    const pixelRatio = window.devicePixelRatio || 1;
-    canvas.width = scene.viewport.width * pixelRatio;
-    canvas.height = scene.viewport.height * pixelRatio;
-    canvas.style.width = `${scene.viewport.width}px`;
-    canvas.style.height = `${scene.viewport.height}px`;
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = viewSize.w;
+    const cssH = viewSize.h;
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
 
-    context.resetTransform();
-    context.scale(pixelRatio, pixelRatio);
-    drawScene(context, scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId, showGuiTools);
-  }, [scene, assets, images, selectedEntityIds, showGrid, showColliders, selectedGuiNodeId, guiComponents, selectedComponentInstanceId, showGuiTools]);
+    // Void fill (screen space)
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.fillStyle = VOID_COLOR;
+    context.fillRect(0, 0, cssW, cssH);
+
+    // World transform: screen = (world - pan) * zoom
+    context.setTransform(
+      dpr * zoom,
+      0,
+      0,
+      dpr * zoom,
+      -pan.x * zoom * dpr,
+      -pan.y * zoom * dpr
+    );
+
+    const worldLeft = pan.x;
+    const worldTop = pan.y;
+    const worldRight = pan.x + cssW / zoom;
+    const worldBottom = pan.y + cssH / zoom;
+
+    if (showGrid) {
+      drawWorldGrid(context, worldLeft, worldTop, worldRight, worldBottom, zoom, snapSize || 32);
+    }
+
+    if (scene) {
+      // Scene grid is redundant with world grid — skip internal grid
+      drawScene(
+        context,
+        scene,
+        assets,
+        images,
+        selectedEntityIds,
+        false,
+        showColliders,
+        selectedGuiNodeId,
+        guiComponents,
+        selectedComponentInstanceId,
+        showGuiTools
+      );
+      drawSceneFrame(context, scene.viewport.width, scene.viewport.height, zoom, {
+        worldLeft,
+        worldTop,
+        worldRight,
+        worldBottom,
+      });
+    }
+  }, [
+    scene,
+    assets,
+    images,
+    selectedEntityIds,
+    showGrid,
+    showColliders,
+    selectedGuiNodeId,
+    guiComponents,
+    selectedComponentInstanceId,
+    showGuiTools,
+    viewSize.w,
+    viewSize.h,
+    pan.x,
+    pan.y,
+    zoom,
+    snapSize,
+  ]);
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
-    if (!scene) return { x: 0, y: 0 };
+    const z = zoom;
     return {
-      x: (event.clientX - rect.left) / zoom + pan.x,
-      y: (event.clientY - rect.top) / zoom + pan.y
+      x: (event.clientX - rect.left) / z + pan.x,
+      y: (event.clientY - rect.top) / z + pan.y,
     };
   }
 
@@ -229,7 +367,7 @@ export function SceneCanvas({
         id: "add",
         label: "Add Entity",
         icon: <Plus size={14} />,
-        onClick: onAddEntity
+        onClick: onAddEntity,
       },
       {
         id: "paste",
@@ -237,7 +375,7 @@ export function SceneCanvas({
         icon: <ClipboardPaste size={14} />,
         shortcut: "⌘V",
         disabled: !hasClipboard,
-        onClick: onPasteEntity
+        onClick: onPasteEntity,
       },
       { id: "sep1", label: "", separator: true },
       {
@@ -245,397 +383,291 @@ export function SceneCanvas({
         label: "Select All",
         icon: <MousePointer size={14} />,
         shortcut: "⌘A",
-        onClick: onSelectAll
+        onClick: onSelectAll,
       },
-      ...(hasSelection && selectedId ? [
-        { id: "sep2", label: "", separator: true },
-        {
-          id: "copy",
-          label: "Copy",
-          icon: <Copy size={14} />,
-          shortcut: "⌘C",
-          onClick: () => onCopyEntity(selectedId)
-        },
-        {
-          id: "cut",
-          label: "Cut",
-          icon: <Scissors size={14} />,
-          shortcut: "⌘X",
-          onClick: () => onCutEntity(selectedId)
-        },
-        {
-          id: "duplicate",
-          label: "Duplicate",
-          icon: <CopyPlus size={14} />,
-          shortcut: "⌘D",
-          onClick: () => onDuplicateEntity(selectedId)
-        },
-        { id: "sep3", label: "", separator: true },
-        {
-          id: "delete",
-          label: "Delete",
-          icon: <Trash2 size={14} />,
-          shortcut: "⌫",
-          danger: true,
-          onClick: () => onDeleteEntity(selectedId)
-        }
-      ] : [])
+      ...(hasSelection && selectedId
+        ? [
+            { id: "sep2", label: "", separator: true },
+            {
+              id: "copy",
+              label: "Copy",
+              icon: <Copy size={14} />,
+              shortcut: "⌘C",
+              onClick: () => onCopyEntity(selectedId),
+            },
+            {
+              id: "cut",
+              label: "Cut",
+              icon: <Scissors size={14} />,
+              shortcut: "⌘X",
+              onClick: () => onCutEntity(selectedId),
+            },
+            {
+              id: "duplicate",
+              label: "Duplicate",
+              icon: <CopyPlus size={14} />,
+              shortcut: "⌘D",
+              onClick: () => onDuplicateEntity(selectedId),
+            },
+            { id: "sep3", label: "", separator: true },
+            {
+              id: "delete",
+              label: "Delete",
+              icon: <Trash2 size={14} />,
+              shortcut: "⌫",
+              danger: true,
+              onClick: () => onDeleteEntity(selectedId),
+            },
+          ]
+        : []),
     ];
   }
 
-  const containerStyle: React.CSSProperties = scene
-    ? {
-        width: scene.viewport.width,
-        height: scene.viewport.height,
-        transform: `scale(${zoom}) translate(${-pan.x}px, ${-pan.y}px)`,
-        transformOrigin: "0 0",
-        cursor: panning ? "grabbing" : isSpacePressed ? "grab" : "default",
-      }
-    : {};
+  const cursor = panning
+    ? "grabbing"
+    : isSpacePressed
+      ? "grab"
+      : activeTool === "paint" || activeTool === "erase"
+        ? "cell"
+        : "crosshair";
 
   return (
-    <section className={`canvasPanel ${isPlaying ? "live-simulating" : ""}`}>
-      {isPlaying && (
-        <div className="play-mode-banner" role="status">
-          <span className="play-mode-dot" />
-          PLAY MODE — Arrow keys / WASD / Space · On-screen pad below
-        </div>
+    <section
+      className={cn(
+        "canvas-panel relative min-h-0 overflow-hidden bg-bg-base",
+        isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"
       )}
-
-      {/* Floating HUD - Left Side: Transform Tools & Snap settings */}
-      <div className="canvas-hud-toolbar hud-left">
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={activeTool === "select" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("select")}
-            title="Selection Tool (Q)"
-          >
-            <MousePointer size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "translate" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("translate")}
-            title="Translate Gizmo (W)"
-          >
-            <Move size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "rotate" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("rotate")}
-            title="Rotate Tool (E)"
-          >
-            <RefreshCcw size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "scale" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("scale")}
-            title="Scale Gizmo (R)"
-          >
-            <Maximize size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "paint" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("paint")}
-            title="Tile paint (B)"
-          >
-            <Paintbrush size={14} />
-          </button>
-          <button
-            type="button"
-            className={activeTool === "erase" ? "hud-btn active" : "hud-btn"}
-            onClick={() => onActiveToolChange("erase")}
-            title="Tile erase (X)"
-          >
-            <Eraser size={14} />
-          </button>
-        </div>
-
-        <div className="hud-divider" />
-
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={snap ? "hud-btn active" : "hud-btn"}
-            onClick={() => onSnapToggle(!snap)}
-            title="Toggle Snap to Grid"
-          >
-            <Magnet size={14} />
-          </button>
-          {snap && (
-            <select
-              className="hud-select"
-              value={snapSize}
-              onChange={(e) => onSnapSizeChange(Number(e.target.value))}
-              title="Grid Snapping Dimension"
-            >
-              <option value="8">8px</option>
-              <option value="16">16px</option>
-              <option value="32">32px</option>
-              <option value="64">64px</option>
-            </select>
-          )}
-        </div>
-      </div>
-
-      {/* Floating HUD - Right Side: Grid toggles, Colliders, reset */}
-      <div className="canvas-hud-toolbar hud-right">
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className={showGrid ? "hud-btn active" : "hud-btn"}
-            onClick={() => onToggleGrid(!showGrid)}
-            title="Toggle Visual Grid"
-          >
-            <Grid size={14} />
-          </button>
-          <button
-            type="button"
-            className={showColliders ? "hud-btn active" : "hud-btn"}
-            onClick={() => onToggleColliders(!showColliders)}
-            title="Toggle Collider Geometry"
-          >
-            {showColliders ? <Eye size={14} /> : <EyeOff size={14} />}
-          </button>
-        </div>
-
-        <div className="hud-divider" />
-
-        <div className="hud-button-group">
-          <button
-            type="button"
-            className="hud-btn"
-            onClick={() => { onZoomChange(1); setPan({ x: 0, y: 0 }); }}
-            title="Center Canvas camera"
-          >
-            <Focus size={14} />
-          </button>
-        </div>
-      </div>
-
+    >
       <ContextMenu items={getCanvasContextMenuItems()}>
-        <div className="canvas-viewport">
-          <div style={containerStyle}>
-            <canvas
-              ref={canvasRef}
-              tabIndex={0}
-              onPointerDown={(event) => {
-                if (!scene) return;
-
-                if (event.button === 1 || (event.button === 0 && event.altKey) || (event.button === 0 && isSpacePressed)) {
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  setPanning({ startX: event.clientX, startY: event.clientY, panStartX: pan.x, panStartY: pan.y });
-                  return;
-                }
-
-                const point = pointerPosition(event);
-
-                // Tile paint / erase — paint on selected tilemap entity or hit tilemap
-                if ((activeTool === "paint" || activeTool === "erase") && onPaintTile && !isPlaying) {
-                  const tileTarget =
-                    [...selectedEntityIds]
-                      .map((id) => scene.entities.find((e) => e.id === id))
-                      .find((e) => e && findComponent(e, "Tilemap")) ??
-                    [...scene.entities].reverse().find((entity) => {
-                      const tm = findComponent<TilemapComponent>(entity, "Tilemap");
-                      const tr = findComponent<TransformComponent>(entity, "Transform");
-                      if (!tm || !tr) return false;
-                      const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
-                      const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
-                      return gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight;
-                    });
-                  if (tileTarget) {
-                    const tm = findComponent<TilemapComponent>(tileTarget, "Tilemap");
-                    const tr = findComponent<TransformComponent>(tileTarget, "Transform");
-                    if (tm && tr) {
-                      const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
-                      const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
-                      if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
-                        onSelect(tileTarget.id, false);
-                        onPaintTile(
-                          tileTarget.id,
-                          gx,
-                          gy,
-                          activeTool === "erase" ? 0 : paintTileId,
-                        );
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                        setDrag({
-                          id: tileTarget.id,
-                          dx: 0,
-                          dy: 0,
-                          startPosition: { x: 0, y: 0 },
-                          startRotation: 0,
-                          startScale: { x: 1, y: 1 },
-                          startPointer: { x: point.x, y: point.y },
-                        });
-                        return;
-                      }
-                    }
-                  }
-                }
-
-                if (showGuiTools) {
-                  // Check component instances first (highest layer)
-                  const instances = scene.gui?.componentInstances ?? [];
-                  const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
-                  const hitInst = [...instances].reverse().find((inst) => {
-                    const comp = compMap.get(inst.componentId);
-                    return comp && hitComponentInstance(inst, comp, point);
-                  });
-                  if (hitInst) {
-                    onSelectComponentInstance(hitInst.id);
-                    return;
-                  }
-                  // Check loose GUI nodes next
-                  const guiNodes = scene.gui?.nodes ?? [];
-                  const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
-                  if (hitGui) {
-                    onSelectGuiNode(hitGui.id);
-                    return;
-                  }
-                }
-                const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
-                if (!hit) {
-                  onSelect("", false);
-                  return;
-                }
-                
-                const transform = findComponent<TransformComponent>(hit, "Transform");
-                if (!transform) return;
-                onSelect(hit.id, event.shiftKey);
-                
-                // Store starting transform structures
-                setDrag({
-                  id: hit.id,
-                  dx: point.x - transform.position.x,
-                  dy: point.y - transform.position.y,
-                  startPosition: { x: transform.position.x, y: transform.position.y },
-                  startRotation: transform.rotation,
-                  startScale: { x: transform.scale.x, y: transform.scale.y },
-                  startPointer: { x: point.x, y: point.y }
-                });
+        <div
+          ref={viewportRef}
+          className="canvas-viewport"
+          data-canvas-shell
+          data-canvas-workspace
+        >
+          <canvas
+            ref={canvasRef}
+            tabIndex={0}
+            className="block h-full w-full outline-none [image-rendering:pixelated]"
+            style={{ cursor }}
+            onPointerDown={(event) => {
+              // Always allow pan gestures on the full workspace
+              if (
+                event.button === 1 ||
+                (event.button === 0 && event.altKey) ||
+                (event.button === 0 && isSpacePressed)
+              ) {
                 event.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerMove={(event) => {
-                if (panning) {
-                  const dx = (panning.startX - event.clientX) / zoom;
-                  const dy = (panning.startY - event.clientY) / zoom;
-                  setPan({ x: panning.panStartX + dx, y: panning.panStartY + dy });
-                  return;
-                }
-                if (!drag || !scene) return;
-                const point = pointerPosition(event);
+                setPanning({
+                  startX: event.clientX,
+                  startY: event.clientY,
+                  panStartX: pan.x,
+                  panStartY: pan.y,
+                });
+                return;
+              }
 
-                // Paint drag
-                if ((activeTool === "paint" || activeTool === "erase") && onPaintTile) {
-                  const entity = scene.entities.find((e) => e.id === drag.id);
-                  const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
-                  const tr = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+              if (!scene) {
+                onSelect("", false);
+                return;
+              }
+
+              const point = pointerPosition(event);
+
+              // Tile paint / erase — paint on selected tilemap entity or hit tilemap
+              if ((activeTool === "paint" || activeTool === "erase") && onPaintTile && !isPlaying) {
+                const tileTarget =
+                  [...selectedEntityIds]
+                    .map((id) => scene.entities.find((e) => e.id === id))
+                    .find((e) => e && findComponent(e, "Tilemap")) ??
+                  [...scene.entities].reverse().find((entity) => {
+                    const tm = findComponent<TilemapComponent>(entity, "Tilemap");
+                    const tr = findComponent<TransformComponent>(entity, "Transform");
+                    if (!tm || !tr) return false;
+                    const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
+                    const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
+                    return gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight;
+                  });
+                if (tileTarget) {
+                  const tm = findComponent<TilemapComponent>(tileTarget, "Tilemap");
+                  const tr = findComponent<TransformComponent>(tileTarget, "Transform");
                   if (tm && tr) {
                     const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
                     const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
                     if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
-                      onPaintTile(drag.id, gx, gy, activeTool === "erase" ? 0 : paintTileId);
+                      onSelect(tileTarget.id, false);
+                      onPaintTile(
+                        tileTarget.id,
+                        gx,
+                        gy,
+                        activeTool === "erase" ? 0 : paintTileId
+                      );
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      setDrag({
+                        id: tileTarget.id,
+                        dx: 0,
+                        dy: 0,
+                        startPosition: { x: 0, y: 0 },
+                        startRotation: 0,
+                        startScale: { x: 1, y: 1 },
+                        startPointer: { x: point.x, y: point.y },
+                      });
+                      return;
                     }
                   }
+                }
+              }
+
+              if (showGuiTools) {
+                const instances = scene.gui?.componentInstances ?? [];
+                const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
+                const hitInst = [...instances].reverse().find((inst) => {
+                  const comp = compMap.get(inst.componentId);
+                  return comp && hitComponentInstance(inst, comp, point);
+                });
+                if (hitInst) {
+                  onSelectComponentInstance(hitInst.id);
                   return;
                 }
-
-                // Q: Raw select mode - dragging disabled
-                if (activeTool === "select") {
+                const guiNodes = scene.gui?.nodes ?? [];
+                const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
+                if (hitGui) {
+                  onSelectGuiNode(hitGui.id);
                   return;
                 }
+              }
 
-                // W: Translate mode
-                if (activeTool === "translate") {
-                  let x = point.x - drag.dx;
-                  let y = point.y - drag.dy;
-                  if (snap) {
-                    x = Math.round(x / snapSize) * snapSize;
-                    y = Math.round(y / snapSize) * snapSize;
+              const hit = [...scene.entities]
+                .reverse()
+                .find((entity) => hitEntity(entity, point));
+              if (!hit) {
+                onSelect("", false);
+                return;
+              }
+
+              const transform = findComponent<TransformComponent>(hit, "Transform");
+              if (!transform) return;
+              onSelect(hit.id, event.shiftKey);
+
+              setDrag({
+                id: hit.id,
+                dx: point.x - transform.position.x,
+                dy: point.y - transform.position.y,
+                startPosition: { x: transform.position.x, y: transform.position.y },
+                startRotation: transform.rotation,
+                startScale: { x: transform.scale.x, y: transform.scale.y },
+                startPointer: { x: point.x, y: point.y },
+              });
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              if (panning) {
+                const z = zoom;
+                const dx = (panning.startX - event.clientX) / z;
+                const dy = (panning.startY - event.clientY) / z;
+                setPan({ x: panning.panStartX + dx, y: panning.panStartY + dy });
+                return;
+              }
+              if (!drag || !scene) return;
+              const point = pointerPosition(event);
+
+              if ((activeTool === "paint" || activeTool === "erase") && onPaintTile) {
+                const entity = scene.entities.find((e) => e.id === drag.id);
+                const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
+                const tr = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+                if (tm && tr) {
+                  const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
+                  const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
+                  if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
+                    onPaintTile(drag.id, gx, gy, activeTool === "erase" ? 0 : paintTileId);
                   }
-                  onTransform(drag.id, { position: { x: Math.round(x), y: Math.round(y) } });
-                  return;
+                }
+                return;
+              }
+
+              if (activeTool === "select") {
+                return;
+              }
+
+              if (activeTool === "translate") {
+                let x = point.x - drag.dx;
+                let y = point.y - drag.dy;
+                if (snap) {
+                  x = Math.round(x / snapSize) * snapSize;
+                  y = Math.round(y / snapSize) * snapSize;
+                }
+                onTransform(drag.id, { position: { x: Math.round(x), y: Math.round(y) } });
+                return;
+              }
+
+              if (activeTool === "rotate") {
+                const deltaX = point.x - drag.startPointer.x;
+                let rotation = drag.startRotation + Math.round(deltaX * 0.5);
+                if (snap) {
+                  rotation = Math.round(rotation / 15) * 15;
+                }
+                onTransform(drag.id, { rotation });
+                return;
+              }
+
+              if (activeTool === "scale") {
+                const deltaX = point.x - drag.startPointer.x;
+                const deltaY = point.y - drag.startPointer.y;
+
+                let sx = drag.startScale.x + deltaX * 0.01;
+                let sy = drag.startScale.y - deltaY * 0.01;
+
+                if (snap) {
+                  sx = Math.round(sx / 0.1) * 0.1;
+                  sy = Math.round(sy / 0.1) * 0.1;
                 }
 
-                // E: Rotate mode
-                if (activeTool === "rotate") {
-                  const deltaX = point.x - drag.startPointer.x;
-                  let rotation = drag.startRotation + Math.round(deltaX * 0.5);
-                  if (snap) {
-                    // Snap rotation to 15-degree increments
-                    rotation = Math.round(rotation / 15) * 15;
-                  }
-                  onTransform(drag.id, { rotation });
-                  return;
-                }
+                sx = Math.max(0.1, Math.round(sx * 100) / 100);
+                sy = Math.max(0.1, Math.round(sy * 100) / 100);
 
-                // R: Scale mode
-                if (activeTool === "scale") {
-                  const deltaX = point.x - drag.startPointer.x;
-                  const deltaY = point.y - drag.startPointer.y;
-                  
-                  let sx = drag.startScale.x + deltaX * 0.01;
-                  let sy = drag.startScale.y - deltaY * 0.01;
-                  
-                  if (snap) {
-                    sx = Math.round(sx / 0.1) * 0.1;
-                    sy = Math.round(sy / 0.1) * 0.1;
-                  }
-                  
-                  sx = Math.max(0.1, Math.round(sx * 100) / 100);
-                  sy = Math.max(0.1, Math.round(sy * 100) / 100);
-                  
-                  onTransform(drag.id, { scale: { x: sx, y: sy } });
-                  return;
-                }
-              }}
-              onPointerUp={() => { setDrag(undefined); setPanning(undefined); }}
-            />
-          </div>
+                onTransform(drag.id, { scale: { x: sx, y: sy } });
+              }
+            }}
+            onPointerUp={() => {
+              setDrag(undefined);
+              setPanning(undefined);
+            }}
+          />
         </div>
       </ContextMenu>
 
-      {/* Floating Status Badge / Play indicators overlay */}
-      {isPlaying && (
-        <div className="canvas-playing-overlay">
-          <div className="playing-pulse" />
-          <span>SIMULATION MODE ACTIVE</span>
-        </div>
-      )}
-
       {isPlaying && onVirtualInput && (
-        <div className="virtual-controls" aria-label="Virtual game controls">
-          <div className="virtual-dpad">
-            <button
-              type="button"
-              className="virtual-btn"
-              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("left", true); }}
-              onPointerUp={() => onVirtualInput("left", false)}
-              onPointerLeave={() => onVirtualInput("left", false)}
-              onPointerCancel={() => onVirtualInput("left", false)}
-            >
-              ◀
-            </button>
-            <button
-              type="button"
-              className="virtual-btn"
-              onPointerDown={(e) => { e.preventDefault(); onVirtualInput("right", true); }}
-              onPointerUp={() => onVirtualInput("right", false)}
-              onPointerLeave={() => onVirtualInput("right", false)}
-              onPointerCancel={() => onVirtualInput("right", false)}
-            >
-              ▶
-            </button>
+        <div className="canvas-virtual-pad" aria-label="Virtual game controls">
+          <div className="flex gap-1">
+            {(
+              [
+                ["left", "◀"],
+                ["right", "▶"],
+              ] as const
+            ).map(([action, label]) => (
+              <button
+                key={action}
+                type="button"
+                className="flex size-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 text-sm text-text-primary shadow-md active:border-accent active:bg-accent-muted"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onVirtualInput(action, true);
+                }}
+                onPointerUp={() => onVirtualInput(action, false)}
+                onPointerLeave={() => onVirtualInput(action, false)}
+                onPointerCancel={() => onVirtualInput(action, false)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <button
             type="button"
-            className="virtual-btn virtual-jump"
-            onPointerDown={(e) => { e.preventDefault(); onVirtualInput("jump", true); }}
+            className="flex h-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 px-4 text-[11px] font-semibold text-text-primary shadow-md active:border-accent-green active:bg-accent-green/15"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onVirtualInput("jump", true);
+            }}
             onPointerUp={() => onVirtualInput("jump", false)}
             onPointerLeave={() => onVirtualInput("jump", false)}
             onPointerCancel={() => onVirtualInput("jump", false)}
@@ -644,17 +676,6 @@ export function SceneCanvas({
           </button>
         </div>
       )}
-
-      {/* Canvas Foot Controls */}
-      <div className="canvas-controls">
-        <button type="button" onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))} title="Zoom out">
-          <ZoomOut size={13} />
-        </button>
-        <span className="zoom-text">{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => onZoomChange(Math.min(MAX_ZOOM, zoom + 0.1))} title="Zoom in">
-          <ZoomIn size={13} />
-        </button>
-      </div>
     </section>
   );
 }

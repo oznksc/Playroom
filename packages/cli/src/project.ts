@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream } from "node:fs";
+import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, extname, join, relative } from "node:path";
 import { pipeline } from "node:stream/promises";
@@ -268,7 +268,18 @@ export async function getProjectSnapshot(root: string): Promise<{
   };
 }
 
+/**
+ * Resolve the gamekit data directory from a project root.
+ * Accepts either:
+ * - project root containing `gamekit/project.json` (normal)
+ * - the `gamekit/` folder itself (user selected it in the file picker)
+ */
 export function getGameKitRoot(root: string): string {
+  // Prefer treating root as the gamekit folder when it already looks like one
+  // (user picked `.../gamekit` in the file dialog).
+  if (existsSync(join(root, "project.json")) && existsSync(join(root, "scenes"))) {
+    return root;
+  }
   return join(root, "gamekit");
 }
 

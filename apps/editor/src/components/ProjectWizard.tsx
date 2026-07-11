@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
-import { Sparkles, X, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronRight, LayoutTemplate } from "lucide-react";
 import { getApiUrl } from "../lib/api.js";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogTitle,
+  DialogDescription,
+  Button,
+  EmptyState,
+  Badge,
+  cn,
+} from "@/ui";
 
 export type SkillOption = {
   id: string;
@@ -41,8 +53,6 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
     };
   }, [open, onStatus]);
 
-  if (!open) return null;
-
   async function apply(skill: SkillOption) {
     setApplying(skill.id);
     try {
@@ -64,46 +74,66 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
   }
 
   return (
-    <div className="wizard-overlay" onClick={onClose}>
-      <div className="wizard-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="wizard-header">
-          <Sparkles size={14} />
-          <span>New scene from template</span>
-          <button type="button" className="wizard-close" onClick={onClose} title="Close">
-            <X size={14} />
-          </button>
-        </div>
-        <p className="wizard-intro">
-          Pick a genre template. A new scene is created with entities, colliders, and input bindings.
-        </p>
-        <div className="wizard-list">
-          {loading ? (
-            <p className="wizard-empty">Loading templates…</p>
-          ) : skills.length === 0 ? (
-            <p className="wizard-empty">No skill templates found.</p>
-          ) : (
-            skills.map((skill) => (
-              <button
-                key={skill.id}
-                type="button"
-                className="wizard-skill"
-                disabled={!!applying}
-                onClick={() => void apply(skill)}
-              >
-                <span className="wizard-skill-main">
-                  <span className="wizard-skill-name">{skill.name}</span>
-                  <span className="wizard-skill-desc">{skill.description}</span>
-                  <span className="wizard-skill-meta">
-                    {skill.id} · {skill.entityCount} entities
-                  </span>
-                </span>
-                <ChevronRight size={14} />
-              </button>
-            ))
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="w-[min(480px,calc(100vw-32px))]">
+        <DialogHeader>
+          <Sparkles size={14} className="text-accent" />
+          <DialogTitle className="text-[12px]">New scene from template</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3">
+          <DialogDescription>
+            Pick a genre template. A new scene is created with entities, colliders, and input bindings.
+          </DialogDescription>
+          <div className="flex max-h-[360px] flex-col gap-1.5 overflow-auto">
+            {loading ? (
+              <p className="py-8 text-center text-[11px] text-text-muted">Loading templates…</p>
+            ) : skills.length === 0 ? (
+              <EmptyState
+                icon={<LayoutTemplate size={16} />}
+                title="No templates"
+                description="Skill templates were not found for this project."
+              />
+            ) : (
+              skills.map((skill) => (
+                <button
+                  key={skill.id}
+                  type="button"
+                  disabled={applying !== null}
+                  onClick={() => apply(skill)}
+                  className={cn(
+                    "group flex w-full items-start gap-3 rounded-md border border-border-default bg-bg-base p-3 text-left transition-colors",
+                    "hover:border-accent/40 hover:bg-bg-hover",
+                    applying === skill.id && "border-accent/50 bg-accent-muted"
+                  )}
+                >
+                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border-default bg-bg-elevated text-accent">
+                    <LayoutTemplate size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-text-primary">{skill.name}</span>
+                      <Badge variant="muted">{skill.entityCount} entities</Badge>
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-snug text-text-muted">{skill.description}</p>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    className="mt-1 shrink-0 text-text-muted group-hover:text-accent"
+                  />
+                </button>
+              ))
+            )}
+          </div>
+          {applying && (
+            <p className="text-center text-[10px] text-accent">Applying template…</p>
           )}
-        </div>
-        {applying && <div className="wizard-status">Applying {applying}…</div>}
-      </div>
-    </div>
+          <div className="flex justify-end pt-1">
+            <Button variant="secondary" size="md" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

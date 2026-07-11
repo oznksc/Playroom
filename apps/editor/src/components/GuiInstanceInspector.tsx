@@ -1,25 +1,24 @@
-import type { GuiComponentInstance, GuiComponent, GuiNode, GuiText, GuiButton, GuiImage, GameKitAsset } from "@gamekit/schema";
+import type {
+  GuiComponentInstance,
+  GuiComponent,
+  GuiNode,
+  GuiText,
+  GuiButton,
+  GuiImage,
+  GameKitAsset,
+} from "@gamekit/schema";
 import { Package, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-
-type NumberFieldProps = {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-};
-
-function NumberField({ label, value, onChange }: NumberFieldProps) {
-  return (
-    <div className="inspector-num-field">
-      <span className="field-badge">{label}</span>
-      <input
-        type="number"
-        value={Math.round(value * 100) / 100}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </div>
-  );
-}
+import {
+  NumberField,
+  IconButton,
+  EmptyState,
+  AccordionSection,
+  Select,
+  Input,
+  CheckboxField,
+  cn,
+} from "@/ui";
 
 type GuiInstanceInspectorProps = {
   instance: GuiComponentInstance;
@@ -29,7 +28,13 @@ type GuiInstanceInspectorProps = {
   onDelete: () => void;
 };
 
-export function GuiInstanceInspector({ instance, component, assets, onChange, onDelete }: GuiInstanceInspectorProps) {
+export function GuiInstanceInspector({
+  instance,
+  component,
+  assets,
+  onChange,
+  onDelete,
+}: GuiInstanceInspectorProps) {
   const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
 
   function toggleNodeCollapse(nodeId: string) {
@@ -50,135 +55,155 @@ export function GuiInstanceInspector({ instance, component, assets, onChange, on
 
   if (!component) {
     return (
-      <aside className="panel inspector">
-        <div className="empty-state">
-          <Package size={32} style={{ opacity: 0.1 }} />
-          <p>Component not found</p>
-          <span className="tip">The referenced component definition may have been deleted.</span>
-        </div>
+      <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
+        <EmptyState
+          icon={<Package size={16} />}
+          title="Component not found"
+          description="The referenced component definition may have been deleted."
+        />
       </aside>
     );
   }
 
   return (
-    <aside className="panel inspector">
-      <div className="inspector-section-header">
-        <div className="entity-main-details">
-          <span className="gui-type-badge">{component.name}</span>
-          <span className="entity-uuid-badge">{instance.id.slice(0, 8)}</span>
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
+      <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 px-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-[12px] font-bold text-text-primary">{component.name}</span>
+          <span className="font-mono text-[9px] tracking-wide text-text-muted">
+            {instance.id.slice(0, 8)}
+          </span>
         </div>
-        <button
-          type="button"
-          className="icon-button danger btn-delete-entity"
-          onClick={onDelete}
-          title="Remove instance"
-        >
+        <IconButton size="sm" variant="danger" onClick={onDelete} title="Remove instance">
           <Trash2 size={13} />
-        </button>
+        </IconButton>
       </div>
 
-      <div className="inspector-scroll-area">
-        {/* Position Section */}
-        <div className="inspector-section-card">
-          <div className="inspector-section-title-row accent-transform">
-            <button type="button" className="accordion-toggle" onClick={() => {}}>
-              <span className="section-label-text">Instance Position</span>
-            </button>
+      <div className="min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
+        <AccordionSection label="Instance Position" open staticHeader onToggle={() => {}} accent="purple">
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberField
+              label="X"
+              value={instance.x}
+              onChange={(v) => onChange((inst) => { inst.x = v; })}
+            />
+            <NumberField
+              label="Y"
+              value={instance.y}
+              onChange={(v) => onChange((inst) => { inst.y = v; })}
+            />
           </div>
-          <div className="inspector-card-body">
-            <div className="inspector-field-grid">
-              <div className="field-grid-row dual-fields">
-                <NumberField label="X" value={instance.x} onChange={(v) => onChange((inst) => { inst.x = v; })} />
-                <NumberField label="Y" value={instance.y} onChange={(v) => onChange((inst) => { inst.y = v; })} />
-              </div>
-              <div className="field-checkbox-row">
-                <input
-                  id="inst-visible-check"
-                  type="checkbox"
-                  checked={instance.visible !== false}
-                  onChange={(e) => onChange((inst) => { inst.visible = e.target.checked; })}
-                />
-                <label htmlFor="inst-visible-check">Visible</label>
-              </div>
-              <div className="field-checkbox-row">
-                <input
-                  id="inst-interactive-check"
-                  type="checkbox"
-                  checked={instance.interactive === true}
-                  onChange={(e) => onChange((inst) => { inst.interactive = e.target.checked; })}
-                />
-                <label htmlFor="inst-interactive-check">Interactive</label>
-              </div>
-            </div>
-          </div>
-        </div>
+          <CheckboxField
+            label="Visible"
+            checked={instance.visible !== false}
+            onChange={(checked) => onChange((inst) => { inst.visible = checked; })}
+          />
+          <CheckboxField
+            label="Interactive"
+            checked={instance.interactive === true}
+            onChange={(checked) => onChange((inst) => { inst.interactive = checked; })}
+          />
+        </AccordionSection>
 
-        {/* Node Overrides Section */}
-        <div className="inspector-section-card">
-          <div className="inspector-section-title-row accent-sprite">
-            <button type="button" className="accordion-toggle" onClick={() => {}}>
-              <span className="section-label-text">Node Overrides ({component.nodes.length})</span>
-            </button>
-          </div>
-          <div className="inspector-card-body">
-            {component.nodes.length === 0 ? (
-              <div style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", padding: 8 }}>
-                Component has no nodes
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {component.nodes.map((node) => {
-                  const isCollapsed = collapsedNodes[node.id] !== false;
-                  return (
-                    <div key={node.id} style={{ background: "var(--bg-base)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)" }}>
-                      <button
-                        type="button"
-                        className="accordion-toggle"
-                        onClick={() => toggleNodeCollapse(node.id)}
-                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 6px", fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", width: "100%", background: "transparent", border: "none", cursor: "pointer" }}
-                      >
-                        {isCollapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                        <span>{node.type}</span>
-                        <span style={{ color: "var(--text-muted)", fontSize: 9 }}>{nodeLabel(node)}</span>
-                      </button>
-                      {!isCollapsed && (
-                        <div style={{ padding: "4px 6px 6px", borderTop: "1px solid var(--border-default)", display: "flex", flexDirection: "column", gap: 4 }}>
-                          {node.type === "Text" && (
-                            <>
-                              <OverrideField label="text" nodeId={node.id} override={getOverride(node.id, "text")} fallback={(node as GuiText).text} onChange={(v) => setOverride(node.id, "text", v)} />
-                              <OverrideField label="color" nodeId={node.id} override={getOverride(node.id, "color")} fallback={(node as GuiText).color ?? "#ffffff"} onChange={(v) => setOverride(node.id, "color", v)} type="color" />
-                            </>
-                          )}
-                          {node.type === "Button" && (
-                            <>
-                              <OverrideField label="text" nodeId={node.id} override={getOverride(node.id, "text")} fallback={(node as GuiButton).text} onChange={(v) => setOverride(node.id, "text", v)} />
-                              <OverrideField label="color" nodeId={node.id} override={getOverride(node.id, "color")} fallback={(node as GuiButton).color ?? "#ffffff"} onChange={(v) => setOverride(node.id, "color", v)} type="color" />
-                              <OverrideField label="backgroundColor" nodeId={node.id} override={getOverride(node.id, "backgroundColor")} fallback={(node as GuiButton).backgroundColor ?? "#333333"} onChange={(v) => setOverride(node.id, "backgroundColor", v)} type="color" />
-                            </>
-                          )}
-                          {node.type === "Image" && (
-                            <div className="inspector-select-wrapper">
-                              <label className="inspector-select-label">assetId override</label>
-                              <select
-                                value={String(getOverride(node.id, "assetId") ?? (node as GuiImage).assetId)}
-                                onChange={(e) => setOverride(node.id, "assetId", e.target.value)}
-                              >
-                                <option value="">— (default: {(node as GuiImage).assetId}) —</option>
-                                {assets.map((a) => (
-                                  <option key={a.id} value={a.id}>{a.id}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+        <AccordionSection
+          label={`Node Overrides (${component.nodes.length})`}
+          open
+          onToggle={() => {}}
+          accent="cyan"
+        >
+          {component.nodes.length === 0 ? (
+            <p className="py-2 text-center text-[10px] text-text-muted">Component has no nodes</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {component.nodes.map((node) => {
+                const isCollapsed = collapsedNodes[node.id] !== false;
+                return (
+                  <div
+                    key={node.id}
+                    className="overflow-hidden rounded-md border border-border-default bg-bg-base"
+                  >
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[10px] font-semibold text-text-secondary hover:bg-bg-hover"
+                      onClick={() => toggleNodeCollapse(node.id)}
+                    >
+                      {isCollapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                      <span>{node.type}</span>
+                      <span className="truncate text-[9px] text-text-muted">{nodeLabel(node)}</span>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="flex flex-col gap-1.5 border-t border-border-default p-2">
+                        {node.type === "Text" && (
+                          <>
+                            <OverrideField
+                              label="text"
+                              override={getOverride(node.id, "text")}
+                              fallback={(node as GuiText).text}
+                              onChange={(v) => setOverride(node.id, "text", v)}
+                            />
+                            <OverrideField
+                              label="color"
+                              override={getOverride(node.id, "color")}
+                              fallback={(node as GuiText).color ?? "#ffffff"}
+                              onChange={(v) => setOverride(node.id, "color", v)}
+                              type="color"
+                            />
+                          </>
+                        )}
+                        {node.type === "Button" && (
+                          <>
+                            <OverrideField
+                              label="text"
+                              override={getOverride(node.id, "text")}
+                              fallback={(node as GuiButton).text}
+                              onChange={(v) => setOverride(node.id, "text", v)}
+                            />
+                            <OverrideField
+                              label="color"
+                              override={getOverride(node.id, "color")}
+                              fallback={(node as GuiButton).color ?? "#ffffff"}
+                              onChange={(v) => setOverride(node.id, "color", v)}
+                              type="color"
+                            />
+                            <OverrideField
+                              label="backgroundColor"
+                              override={getOverride(node.id, "backgroundColor")}
+                              fallback={(node as GuiButton).backgroundColor ?? "#333333"}
+                              onChange={(v) => setOverride(node.id, "backgroundColor", v)}
+                              type="color"
+                            />
+                          </>
+                        )}
+                        {node.type === "Image" && (
+                          <label className="flex flex-col gap-1">
+                            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                              assetId override
+                            </span>
+                            <Select
+                              value={String(
+                                getOverride(node.id, "assetId") ?? (node as GuiImage).assetId
+                              )}
+                              onChange={(e) => setOverride(node.id, "assetId", e.target.value)}
+                            >
+                              <option value="">
+                                — (default: {(node as GuiImage).assetId}) —
+                              </option>
+                              {assets.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.id}
+                                </option>
+                              ))}
+                            </Select>
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </AccordionSection>
       </div>
     </aside>
   );
@@ -186,32 +211,52 @@ export function GuiInstanceInspector({ instance, component, assets, onChange, on
 
 function nodeLabel(node: GuiNode): string {
   switch (node.type) {
-    case "Text": return node.text || "Text";
-    case "Button": return node.text || "Button";
-    case "Image": return node.assetId || "Image";
+    case "Text":
+      return node.text || "Text";
+    case "Button":
+      return node.text || "Button";
+    case "Image":
+      return node.assetId || "Image";
   }
 }
 
 type OverrideFieldProps = {
   label: string;
-  nodeId: string;
   override: unknown;
   fallback: string;
   onChange: (value: string) => void;
   type?: "text" | "color";
 };
 
-function OverrideField({ label, nodeId, override, fallback, onChange, type = "text" }: OverrideFieldProps) {
+function OverrideField({
+  label,
+  override,
+  fallback,
+  onChange,
+  type = "text",
+}: OverrideFieldProps) {
   const hasOverride = override !== undefined && override !== null;
   return (
-    <div className="inspector-text-field">
-      <span className="field-badge">{label}</span>
-      <input
-        type={type}
-        value={hasOverride ? String(override) : fallback}
-        onChange={(e) => onChange(e.target.value)}
-        style={hasOverride ? { borderLeft: "2px solid var(--accent)" } : undefined}
-      />
-    </div>
+    <label className="flex flex-col gap-1">
+      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">{label}</span>
+      {type === "color" ? (
+        <input
+          type="color"
+          className={cn(
+            "h-7 w-full cursor-pointer rounded border border-border-default bg-transparent",
+            hasOverride && "border-l-2 border-l-accent"
+          )}
+          value={hasOverride ? String(override) : fallback}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <Input
+          type="text"
+          className={cn(hasOverride && "border-l-2 border-l-accent")}
+          value={hasOverride ? String(override) : fallback}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </label>
   );
 }
