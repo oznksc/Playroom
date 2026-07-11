@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Layers,
-  SlidersHorizontal,
   Folder,
   Sparkles,
   Save,
@@ -29,11 +28,23 @@ import {
   MoreHorizontal,
   ChevronUp,
   Command,
+  Globe,
+  FileCode,
+  Boxes,
+  Map,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
 
-export type TabBarDestination = "hierarchy" | "inspector" | "content" | "agent";
+/** Left workspace destinations (shown on tab bar). */
+export type TabBarDestination =
+  | "hierarchy"
+  | "scenes"
+  | "prefabs"
+  | "levels"
+  | "content"
+  | "agent"
+  | "world";
 export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" | "erase";
 
 type AppTabBarProps = {
@@ -46,10 +57,14 @@ type AppTabBarProps = {
   showGrid: boolean;
   showColliders: boolean;
   zoom: number;
+  showLevels?: boolean;
   onHierarchy: () => void;
-  onInspector: () => void;
+  onScenes: () => void;
+  onPrefabs: () => void;
+  onLevels?: () => void;
   onContent: () => void;
   onAgent: () => void;
+  onWorld: () => void;
   onSave: () => void;
   onRefresh: () => void;
   onImport: (file: File) => void;
@@ -70,7 +85,7 @@ type AppTabBarProps = {
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 
-type GroupId = "tools" | "view" | "create" | "more";
+type GroupId = "project" | "tools" | "view" | "create" | "more";
 
 const TOOL_META: Record<
   CanvasTool,
@@ -116,10 +131,14 @@ export function AppTabBar({
   showGrid,
   showColliders,
   zoom,
+  showLevels = true,
   onHierarchy,
-  onInspector,
+  onScenes,
+  onPrefabs,
+  onLevels,
   onContent,
   onAgent,
+  onWorld,
   onSave,
   onRefresh,
   onImport,
@@ -171,29 +190,70 @@ export function AppTabBar({
 
   const toolMeta = TOOL_META[activeTool];
   const viewActive = showGrid || showColliders;
+  const projectActive =
+    active === "hierarchy" ||
+    active === "scenes" ||
+    active === "prefabs" ||
+    active === "levels";
+
+  const projectFace =
+    active === "scenes"
+      ? { label: "Scenes", icon: <FileCode size={18} strokeWidth={1.75} /> }
+      : active === "prefabs"
+        ? { label: "Prefabs", icon: <Boxes size={18} strokeWidth={1.75} /> }
+        : active === "levels"
+          ? { label: "Levels", icon: <Map size={18} strokeWidth={1.75} /> }
+          : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
 
   return (
     <nav ref={barRef} className="app-tabbar" aria-label="Editor">
       <div className="app-tabbar-scroll">
-        {/* Primary panels — always visible */}
-        <TabItem
-          label="Hierarchy"
-          active={active === "hierarchy"}
-          onClick={() => {
-            setOpenGroup(null);
-            onHierarchy();
-          }}
-          icon={<Layers size={18} strokeWidth={1.75} />}
-        />
-        <TabItem
-          label="Inspector"
-          active={active === "inspector"}
-          onClick={() => {
-            setOpenGroup(null);
-            onInspector();
-          }}
-          icon={<SlidersHorizontal size={18} strokeWidth={1.75} />}
-        />
+        {/* Project workspace — Hierarchy / Scenes / Prefabs / Levels */}
+        <TabGroup
+          id="project"
+          label={projectFace.label}
+          icon={projectFace.icon}
+          open={openGroup === "project"}
+          active={openGroup === "project" || projectActive}
+          onToggle={() => toggleGroup("project")}
+          layout="column"
+        >
+          <TabItem
+            label="Hierarchy"
+            active={active === "hierarchy"}
+            compact
+            row
+            onClick={() => runAndClose(onHierarchy)}
+            icon={<Layers size={16} strokeWidth={1.75} />}
+          />
+          <TabItem
+            label="Scenes"
+            active={active === "scenes"}
+            compact
+            row
+            onClick={() => runAndClose(onScenes)}
+            icon={<FileCode size={16} strokeWidth={1.75} />}
+          />
+          <TabItem
+            label="Prefabs"
+            active={active === "prefabs"}
+            compact
+            row
+            onClick={() => runAndClose(onPrefabs)}
+            icon={<Boxes size={16} strokeWidth={1.75} />}
+          />
+          {showLevels && onLevels && (
+            <TabItem
+              label="Levels"
+              active={active === "levels"}
+              compact
+              row
+              onClick={() => runAndClose(onLevels)}
+              icon={<Map size={16} strokeWidth={1.75} />}
+            />
+          )}
+        </TabGroup>
+
         <TabItem
           label="Content"
           active={active === "content"}
@@ -211,6 +271,15 @@ export function AppTabBar({
             onAgent();
           }}
           icon={<Sparkles size={18} strokeWidth={1.75} />}
+        />
+        <TabItem
+          label="World"
+          active={active === "world"}
+          onClick={() => {
+            setOpenGroup(null);
+            onWorld();
+          }}
+          icon={<Globe size={18} strokeWidth={1.75} />}
         />
 
         <span className="app-tabbar-sep" aria-hidden />

@@ -6,6 +6,7 @@ import {
   Map,
   LayoutGrid,
   Package,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/ui";
 
@@ -14,6 +15,7 @@ export type SidebarTabId =
   | "scenes"
   | "prefabs"
   | "agent"
+  | "world"
   | "levels"
   | "guis"
   | "components";
@@ -30,6 +32,7 @@ const ICONS: Record<SidebarTabId, React.ReactNode> = {
   scenes: <FileCode size={15} strokeWidth={1.75} />,
   prefabs: <Boxes size={15} strokeWidth={1.75} />,
   agent: <Sparkles size={15} strokeWidth={1.75} />,
+  world: <Globe size={15} strokeWidth={1.75} />,
   levels: <Map size={15} strokeWidth={1.75} />,
   guis: <LayoutGrid size={15} strokeWidth={1.75} />,
   components: <Package size={15} strokeWidth={1.75} />,

@@ -951,20 +951,22 @@
   color: var(--text-muted);
 }
 
-/* List rows used across floating panels (glass chip hover) */
+/* List rows used across floating panels (glass chip hover) — dense hierarchy */
 .list-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  min-height: 30px;
-  padding: 4px 8px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0 6px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--glass-fg);
   font-size: var(--type-body-size, 12px);
   font-weight: 500;
+  line-height: 1;
   text-align: left;
   transition:
     background 120ms ease,

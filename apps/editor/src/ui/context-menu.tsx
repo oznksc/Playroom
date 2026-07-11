@@ -107,14 +107,24 @@ export type LegacyContextMenuItem = {
 export function LegacyContextMenu({
   items,
   children,
+  /** Fill parent (canvas viewport). Default is content-sized so list rows stay dense. */
+  fill = false,
 }: {
   items: LegacyContextMenuItem[];
   children: React.ReactNode;
+  fill?: boolean;
 }) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="h-full w-full min-h-0 min-w-0" data-canvas-shell>
+        <div
+          className={
+            fill
+              ? "h-full w-full min-h-0 min-w-0"
+              : "block w-full min-w-0"
+          }
+          {...(fill ? { "data-canvas-shell": true } : {})}
+        >
           {children}
         </div>
       </ContextMenuTrigger>

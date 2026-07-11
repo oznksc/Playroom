@@ -7,6 +7,7 @@ import {
   Scissors,
   Trash2,
   CopyPlus,
+  Boxes,
 } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
@@ -61,6 +62,7 @@ type SceneCanvasProps = {
   onCutEntity: (id: string) => void;
   onDuplicateEntity: (id: string) => void;
   onDeleteEntity: (id: string) => void;
+  onSaveAsPrefab?: (id: string) => void;
 };
 
 const MIN_ZOOM = 0.25;
@@ -99,10 +101,14 @@ export function SceneCanvas({
   onCutEntity,
   onDuplicateEntity,
   onDeleteEntity,
+  onSaveAsPrefab,
 }: SceneCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewSize, setViewSize] = useState({ w: 0, h: 0 });
+  /** Entity under the last right-click (context menu target). */
+  const contextEntityIdRef = useRef<string | undefined>();
+  const [, setContextMenuTick] = useState(0);
 
   // Drag states containing initial parameters
   const [drag, setDrag] = useState<{
@@ -349,18 +355,32 @@ export function SceneCanvas({
     snapSize,
   ]);
 
-  function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
+  function clientToWorld(clientX: number, clientY: number, el: HTMLElement) {
+    const rect = el.getBoundingClientRect();
     const z = zoom;
     return {
-      x: (event.clientX - rect.left) / z + pan.x,
-      y: (event.clientY - rect.top) / z + pan.y,
+      x: (clientX - rect.left) / z + pan.x,
+      y: (clientY - rect.top) / z + pan.y,
     };
   }
 
+  function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
+    return clientToWorld(event.clientX, event.clientY, event.currentTarget);
+  }
+
+  function hitEntityAtClient(clientX: number, clientY: number, el: HTMLElement) {
+    if (!scene) return undefined;
+    const point = clientToWorld(clientX, clientY, el);
+    return [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
+  }
+
+  function resolveMenuEntityId(): string | undefined {
+    return contextEntityIdRef.current ?? [...selectedEntityIds][0];
+  }
+
   function getCanvasContextMenuItems(): ContextMenuItem[] {
-    const hasSelection = selectedEntityIds.size > 0;
-    const selectedId = [...selectedEntityIds][0];
+    const selectedId = resolveMenuEntityId();
+    const hasSelection = !!selectedId;
 
     return [
       {
@@ -409,6 +429,16 @@ export function SceneCanvas({
               shortcut: "⌘D",
               onClick: () => onDuplicateEntity(selectedId),
             },
+            ...(onSaveAsPrefab
+              ? [
+                  {
+                    id: "prefab",
+                    label: "Save as Prefab…",
+                    icon: <Boxes size={14} />,
+                    onClick: () => onSaveAsPrefab(selectedId),
+                  },
+                ]
+              : []),
             { id: "sep3", label: "", separator: true },
             {
               id: "delete",
@@ -438,7 +468,7 @@ export function SceneCanvas({
         isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"
       )}
     >
-      <ContextMenu items={getCanvasContextMenuItems()}>
+      <ContextMenu items={getCanvasContextMenuItems()} fill>
         <div
           ref={viewportRef}
           className="canvas-viewport"
@@ -450,6 +480,26 @@ export function SceneCanvas({
             tabIndex={0}
             className="block h-full w-full outline-none [image-rendering:pixelated]"
             style={{ cursor }}
+            onContextMenu={(event) => {
+              // Select entity under cursor so context actions (incl. prefab) target it
+              if (isPlaying || !scene) {
+                contextEntityIdRef.current = undefined;
+                return;
+              }
+              const hit = hitEntityAtClient(event.clientX, event.clientY, event.currentTarget);
+              contextEntityIdRef.current = hit?.id;
+              setContextMenuTick((t) => t + 1);
+              if (hit) onSelect(hit.id, false);
+            }}
+            onDoubleClick={(event) => {
+              if (isPlaying || !scene || !onSaveAsPrefab) return;
+              event.preventDefault();
+              const hit = hitEntityAtClient(event.clientX, event.clientY, event.currentTarget);
+              if (!hit) return;
+              // Double-click entity → select + save as prefab
+              onSelect(hit.id, false);
+              onSaveAsPrefab(hit.id);
+            }}
             onPointerDown={(event) => {
               // Always allow pan gestures on the full workspace
               if (
