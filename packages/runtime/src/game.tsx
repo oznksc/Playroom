@@ -17,6 +17,7 @@ import { updateFollowPath } from "./path.js";
 import { evaluateScriptEvent, transitionFsm } from "./script.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
+import { deepClone } from "./clone.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -28,7 +29,7 @@ export type GameKitGameProps = {
 };
 
 export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter }: GameKitGameProps) {
-  const entitiesRef = useRef(structuredClone(scene.entities));
+  const entitiesRef = useRef(deepClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
   const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
@@ -44,7 +45,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    entitiesRef.current = structuredClone(scene.entities);
+    entitiesRef.current = deepClone(scene.entities);
     controllersRef.current.clear();
     rigidBodyRefs.current.clear();
     cameraFollowRef.current = null;

@@ -19,6 +19,7 @@ import {
 } from "./collision.js";
 import { createPlayerController, type PlayerControllerInput } from "./player.js";
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
+import { deepClone } from "./clone.js";
 
 export type SimulateOptions = {
   steps: number;
@@ -47,7 +48,7 @@ export type SimulateResult = {
 export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions): SimulateResult {
   const steps = Math.max(0, Math.min(Math.floor(options.steps), 600));
   const fixedDt = options.fixedDt ?? RIGID_BODY_FIXED_DT;
-  const working: GameKitScene = structuredClone(scene);
+  const working: GameKitScene = deepClone(scene);
 
   const controllers = new Map<string, ReturnType<typeof createPlayerController>>();
   const bodies = new Map<string, ReturnType<typeof createRigidBody>>();
@@ -114,7 +115,7 @@ function stepEntity(
   dt: number,
   gravity: { x: number; y: number },
 ): GameKitEntity {
-  const ent = structuredClone(entity);
+  const ent = deepClone(entity);
   const transform = ent.components.find((c): c is TransformComponent => c.type === "Transform");
   if (!transform) return ent;
 
