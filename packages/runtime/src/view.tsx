@@ -7,6 +7,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
 
+export type TransitionOverlay = {
+  opacity: number;
+  color?: string;
+};
+
 export type GameKitViewProps = {
   scene: GameKitScene;
   assets?: Record<string, unknown>;
@@ -17,6 +22,8 @@ export type GameKitViewProps = {
   };
   /** Live particle snapshots keyed by emitter entity id (from GameKitGame loop). */
   particlesByEntity?: Record<string, Particle[]>;
+  /** Full-screen overlay for scene transitions. */
+  transitionOverlay?: TransitionOverlay | null;
 };
 
 type ViewportScale = {
@@ -100,6 +107,7 @@ export function GameKitView({
   assets = {},
   camera = { x: 0, y: 0, zoom: 1 },
   particlesByEntity = {},
+  transitionOverlay = null,
 }: GameKitViewProps): ReactElement {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -203,6 +211,16 @@ export function GameKitView({
             return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;
           })}
         </Group>
+        {transitionOverlay && transitionOverlay.opacity > 0 && (
+          <Rect
+            x={0}
+            y={0}
+            width={screenWidth}
+            height={screenHeight}
+            color={Skia.Color(transitionOverlay.color ?? "#000000")}
+            opacity={transitionOverlay.opacity}
+          />
+        )}
       </Canvas>
     </View>
   );

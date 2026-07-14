@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { GameKitScene } from "@gamekit/schema";
+import type { GameKitScene, SceneTransitionDef } from "@gamekit/schema";
 import { GameKitPhaserScene } from "./scene.js";
 
 export type GameKitGameOptions = {
@@ -8,10 +8,11 @@ export type GameKitGameOptions = {
   container: HTMLElement;
   pixelArt?: boolean;
   debug?: boolean;
+  transition?: SceneTransitionDef;
 };
 
 export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
-  const { scene, assets, container } = options;
+  const { scene, assets, container, transition } = options;
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -50,7 +51,7 @@ export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
   };
 
   const game = new Phaser.Game(config);
-  game.scene.add("gamekit", new GameKitPhaserScene(scene, assets), true);
+  game.scene.add("gamekit", new GameKitPhaserScene(scene, assets, transition), true);
 
   return game;
 }
