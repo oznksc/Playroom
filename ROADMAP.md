@@ -58,7 +58,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 ### Tasks
 - [x] `Tilemap` (self-contained: tileset asset + grid + flat tile array) — editör render + runtime Skia render
 - [x] `Text` bileşeni (font assetId, size, color, align)
-- [ ] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
+- [x] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
 - [ ] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
 - [ ] `Light2D` (point/spot, range, intensity, color) — runtime-web Phaser ışıklarıyla eşle
 - [x] `StateMachine` (states + transitions + events)
@@ -71,8 +71,8 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `add_tilemap` — entity'ye `Tilemap` bileşeni ekler (tilesetId, tileWidth/Height, columns, gridWidth/Height)
 - [x] `paint_tile` — tilemap üzerinde gridX/gridY pozisyonuna tileId yazar
 - [x] `add_text` — `Text` bileşeni ekler (font, boyut, hizalama)
-- `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
-- `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
+- [x] `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
+- [x] `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
 - `add_particle_system` — emitter parametreleriyle `ParticleSystem` oluşturur
 - `add_state_machine` — states + transitions + event'leri tanımlar
 - `add_script` — JSON DSL ile event handler ekler
