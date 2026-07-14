@@ -17,6 +17,7 @@ import type {
   SceneTransitionDef,
   FollowPathComponent,
   Light2DComponent,
+  NineSliceComponent,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -184,6 +185,11 @@ export class GameKitPhaserScene extends Phaser.Scene {
       if (audio && !loadedKeys.has(audio.assetId) && this.assetUrls[audio.assetId]) {
         this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
         loadedKeys.add(audio.assetId);
+      }
+      const nineSlice = findComponent<NineSliceComponent>(entity, "NineSlice");
+      if (nineSlice && !loadedKeys.has(nineSlice.assetId) && this.assetUrls[nineSlice.assetId]) {
+        this.load.image(nineSlice.assetId, this.assetUrls[nineSlice.assetId]);
+        loadedKeys.add(nineSlice.assetId);
       }
       const text = findComponent<TextComponent>(entity, "Text");
       if (text?.fontAssetId && !loadedKeys.has(`font:${text.fontAssetId}`) && this.assetUrls[text.fontAssetId]) {
@@ -806,6 +812,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     const rigidBodyComp = findComponent<RigidBodyComponent>(entity, "RigidBody");
     const cameraComp = findComponent<CameraFollowComponent>(entity, "CameraFollow");
     const textComp = findComponent<TextComponent>(entity, "Text");
+    const nineSliceComp = findComponent<NineSliceComponent>(entity, "NineSlice");
 
     // HUD / world text (no physics)
     if (textComp && !spriteComp && !animComp) {
@@ -890,6 +897,37 @@ export class GameKitPhaserScene extends Phaser.Scene {
         rect.setOrigin(spriteComp.anchor.x, spriteComp.anchor.y);
         originX = spriteComp.anchor.x;
         originY = spriteComp.anchor.y;
+        gameObject = rect;
+      }
+    } else if (nineSliceComp) {
+      if (this.textures.exists(nineSliceComp.assetId)) {
+        const nineslice = this.add.nineslice(
+          transform.position.x,
+          transform.position.y,
+          nineSliceComp.assetId,
+          undefined,
+          nineSliceComp.width,
+          nineSliceComp.height,
+          nineSliceComp.leftWidth,
+          nineSliceComp.rightWidth,
+          nineSliceComp.topHeight,
+          nineSliceComp.bottomHeight
+        );
+        nineslice.setOrigin(0.5, 0.5);
+        originX = 0.5;
+        originY = 0.5;
+        gameObject = nineslice;
+      } else {
+        const rect = this.add.rectangle(
+          transform.position.x,
+          transform.position.y,
+          nineSliceComp.width,
+          nineSliceComp.height,
+          0xff5555
+        );
+        rect.setOrigin(0.5, 0.5);
+        originX = 0.5;
+        originY = 0.5;
         gameObject = rect;
       }
     } else {

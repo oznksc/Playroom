@@ -242,4 +242,51 @@ describe("new validation and search tools", () => {
     expect(lightComp.intensity).toBe(1.5);
     expect(lightComp.color).toBe("#ffff00");
   });
+
+  it("adds a NineSlice component to an entity using add_nine_slice tool", async () => {
+    const scene = createEmptyScene("Main");
+    scene.entities.push({
+      id: "panel-1",
+      name: "Panel Entity",
+      components: [
+        {
+          type: "Transform",
+          position: { x: 100, y: 100 },
+          rotation: 0,
+          scale: { x: 1, y: 1 }
+        }
+      ]
+    });
+    const gkDir = join(tmpDir, "gamekit");
+    const scenesDir = join(gkDir, "scenes");
+    await writeFile(join(scenesDir, "main.scene.json"), sceneToJson(scene));
+
+    const tool = (server as any)._registeredTools.add_nine_slice;
+    const result = await tool.handler({
+      scenePath: "main.scene.json",
+      entityId: "panel-1",
+      nineSlice: {
+        assetId: "ui-frame",
+        width: 150,
+        height: 120,
+        leftWidth: 15,
+        rightWidth: 15,
+        topHeight: 15,
+        bottomHeight: 15
+      }
+    });
+
+    expect(result).toBeDefined();
+    const entity = JSON.parse(result.content[0].text);
+    expect(entity.id).toBe("panel-1");
+    const nineSliceComp = entity.components.find((c: any) => c.type === "NineSlice");
+    expect(nineSliceComp).toBeDefined();
+    expect(nineSliceComp.assetId).toBe("ui-frame");
+    expect(nineSliceComp.width).toBe(150);
+    expect(nineSliceComp.height).toBe(120);
+    expect(nineSliceComp.leftWidth).toBe(15);
+    expect(nineSliceComp.rightWidth).toBe(15);
+    expect(nineSliceComp.topHeight).toBe(15);
+    expect(nineSliceComp.bottomHeight).toBe(15);
+  });
 });

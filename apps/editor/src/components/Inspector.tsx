@@ -18,7 +18,8 @@ import type {
   FollowPathComponent,
   StateMachineComponent,
   ScriptComponent,
-  Light2DComponent
+  Light2DComponent,
+  NineSliceComponent
 } from "@gamekit/schema";
 import {
   Box,
@@ -40,6 +41,7 @@ import {
   Sparkles,
   Grid3x3,
   Sun,
+  Square,
 } from "lucide-react";
 import { useState } from "react";
 import { findComponent } from "../lib/components.js";
@@ -94,6 +96,7 @@ export function Inspector({
     Script: true,
     ParticleSystem: true,
     Light2D: true,
+    NineSlice: true,
   });
 
   const [selectedCompToAdd, setSelectedCompToAdd] = useState("");
@@ -116,6 +119,7 @@ export function Inspector({
   const script = entity ? findComponent<ScriptComponent>(entity, "Script") : undefined;
   const particleSystem = entity ? findComponent<ParticleSystemComponent>(entity, "ParticleSystem") : undefined;
   const light2D = entity ? findComponent<Light2DComponent>(entity, "Light2D") : undefined;
+  const nineSlice = entity ? findComponent<NineSliceComponent>(entity, "NineSlice") : undefined;
 
   function toggleCollapse(comp: string) {
     setCollapsed((prev) => ({ ...prev, [comp]: !prev[comp] }));
@@ -280,6 +284,17 @@ export function Inspector({
           intensity: 1.0,
           color: "#ffffff"
         });
+      } else if (val === "NineSlice") {
+        draft.components.push({
+          type: "NineSlice",
+          assetId: assets[0]?.id ?? "",
+          width: 100,
+          height: 100,
+          leftWidth: 10,
+          rightWidth: 10,
+          topHeight: 10,
+          bottomHeight: 10
+        });
       }
     });
 
@@ -294,6 +309,7 @@ export function Inspector({
         CameraFollow: "Camera",
         ParticleSystem: "ParticleSystem",
         Light2D: "Light2D",
+        NineSlice: "NineSlice",
       };
       return { ...prev, [keyMap[val] ?? val]: false };
     });
@@ -319,6 +335,7 @@ export function Inspector({
     if (!script) missingComponents.push({ val: "Script", label: "Behavior Script" });
     if (!particleSystem) missingComponents.push({ val: "ParticleSystem", label: "Particle System" });
     if (!light2D) missingComponents.push({ val: "Light2D", label: "Light 2D" });
+    if (!nineSlice) missingComponents.push({ val: "NineSlice", label: "NineSlice Sprite" });
   }
 
   return (
@@ -1289,6 +1306,108 @@ export function Inspector({
                 </>
               ) : (
                 <p className="text-center text-[10px] text-text-muted">No light component</p>
+              )}
+            </AccordionSection>
+
+            <AccordionSection
+              icon={<Square size={12} />}
+              label="NineSlice Sprite"
+              open={!collapsed.NineSlice}
+              onToggle={() => toggleCollapse("NineSlice")}
+              removable={!!nineSlice}
+              onRemove={() =>
+                onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "NineSlice");
+                })
+              }
+              accent="purple"
+            >
+              {nineSlice ? (
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                      Asset
+                    </span>
+                    <Select
+                      value={nineSlice.assetId}
+                      onChange={(e) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.assetId =
+                            e.target.value;
+                        })
+                      }
+                    >
+                      <option value="">— Select —</option>
+                      {assets.filter(a => a.kind === "image").map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.id}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberField
+                      label="Width"
+                      value={nineSlice.width}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.width = v;
+                        })
+                      }
+                    />
+                    <NumberField
+                      label="Height"
+                      value={nineSlice.height}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.height = v;
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberField
+                      label="Left Width"
+                      value={nineSlice.leftWidth}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.leftWidth = v;
+                        })
+                      }
+                    />
+                    <NumberField
+                      label="Right Width"
+                      value={nineSlice.rightWidth}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.rightWidth = v;
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberField
+                      label="Top Height"
+                      value={nineSlice.topHeight}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.topHeight = v;
+                        })
+                      }
+                    />
+                    <NumberField
+                      label="Bottom Height"
+                      value={nineSlice.bottomHeight}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          findComponent<NineSliceComponent>(d, "NineSlice")!.bottomHeight = v;
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-[10px] text-text-muted">No NineSlice component</p>
               )}
             </AccordionSection>
 
