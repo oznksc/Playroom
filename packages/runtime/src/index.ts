@@ -102,6 +102,8 @@ export {
   updateParticleEmitter,
   particleRenderSize,
   particleRenderColor,
+  particleRenderAlpha,
+  particleLifeProgress,
   type Particle,
   type ParticleEmitterState,
 } from "./particles.js";
