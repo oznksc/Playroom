@@ -15,6 +15,7 @@ import type {
   ScriptComponent,
   AudioSourceComponent,
   SceneTransitionDef,
+  FollowPathComponent,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -32,6 +33,7 @@ import {
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent } from "@gamekit/runtime/script";
+import { updateFollowPath } from "@gamekit/runtime";
 
 type Transformable = {
   x: number;
@@ -400,20 +402,31 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     for (const entity of this.activeEntities) {
       const binding = this.bindings.get(entity.id);
-      if (!binding || binding.isStatic || binding.isTrigger) continue;
+      if (!binding) continue;
 
       const transform = findComponent<TransformComponent>(entity, "Transform");
       if (!transform) continue;
 
+      const followPath = findComponent<FollowPathComponent>(entity, "FollowPath");
+      if (followPath) {
+        updateFollowPath(followPath, transform, dt);
+      }
+
       const go = binding.gameObject;
       // Dynamic bodies drive transform from physics; non-physics objects from transform
-      if (binding.body && typeof go.x === "number") {
+      if (binding.body && !binding.isStatic && !binding.isTrigger && typeof go.x === "number") {
         transform.position.x = go.x;
         transform.position.y = go.y;
       } else {
         if (go.setPosition) go.setPosition(transform.position.x, transform.position.y);
         if (go.setRotation) go.setRotation(Phaser.Math.DegToRad(transform.rotation));
         if (go.setScale) go.setScale(transform.scale.x, transform.scale.y);
+
+        if (go.body && (binding.isStatic || binding.isTrigger)) {
+          if ("updateFromGameObject" in go.body) {
+            (go.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+          }
+        }
       }
     }
 
