@@ -97,6 +97,8 @@ export {
   type SimulateOptions,
   type SimulateResult,
 } from "./simulate.js";
+export { VirtualJoystick } from "./joystick.js";
+export type { VirtualJoystickProps } from "./joystick.js";
 export {
   createParticleEmitter,
   updateParticleEmitter,

@@ -1,4 +1,4 @@
-import type { GameKitLevel, GameKitScene, GameKitProject } from "@gamekit/schema";
+import type { GameKitLevel, GameKitScene, GameKitProject, GameSavePayload } from "@gamekit/schema";
 import type { AssetRegistry, LoadedScene } from "./scene.js";
 import { loadScene } from "./scene.js";
 
@@ -376,10 +376,4 @@ export class SceneManager {
   }
 }
 
-export type GameSavePayload = {
-  version: 1;
-  persistentState: Record<string, unknown>;
-  levels: Array<{ id: string; unlocked: boolean }>;
-  currentSceneId: string | null;
-  currentLevelId: string | null;
-};
+export { type GameSavePayload };

@@ -19,6 +19,7 @@ import {
   hitEntity,
   hitGuiNode,
   hitComponentInstance,
+  hitPolygonVertex,
 } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
@@ -35,7 +36,7 @@ type SceneCanvasProps = {
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
-  activeTool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase";
+  activeTool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit";
   showGrid: boolean;
   showColliders: boolean;
   snapSize: number;
@@ -54,13 +55,14 @@ type SceneCanvasProps = {
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
-  onActiveToolChange: (tool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase") => void;
+  onActiveToolChange: (tool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit") => void;
   onToggleGrid: (val: boolean) => void;
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
   onSelectGuiNode: (id: string) => void;
   onSelectComponentInstance: (id: string) => void;
   onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
+  onPolygonPointsChange?: (id: string, points: { x: number; y: number }[]) => void;
   onPaintTile?: (entityId: string, gridX: number, gridY: number, tileId: number) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
@@ -101,6 +103,7 @@ export function SceneCanvas({
   onSelectGuiNode,
   onSelectComponentInstance,
   onTransform,
+  onPolygonPointsChange,
   onPaintTile,
   onAddEntity,
   onPasteEntity,
@@ -126,6 +129,13 @@ export function SceneCanvas({
     startPosition: { x: number; y: number };
     startRotation: number;
     startScale: { x: number; y: number };
+    startPointer: { x: number; y: number };
+  } | undefined>();
+
+  const [polygonDrag, setPolygonDrag] = useState<{
+    entityId: string;
+    vertexIndex: number;
+    startPoints: { x: number; y: number }[];
     startPointer: { x: number; y: number };
   } | undefined>();
 
@@ -364,7 +374,7 @@ export function SceneCanvas({
           guiComponents,
           selectedComponentInstanceId,
           showGuiTools,
-          { skipViewportChrome: true, skipScreenSpaceText: true },
+          { skipViewportChrome: true, skipScreenSpaceText: true, activeTool },
         );
         context.restore();
 
@@ -397,6 +407,7 @@ export function SceneCanvas({
           guiComponents,
           selectedComponentInstanceId,
           showGuiTools,
+          { activeTool },
         );
         drawSceneFrame(context, vw, vh, zoom, {
           worldLeft,
@@ -660,6 +671,27 @@ export function SceneCanvas({
                 }
               }
 
+              // Polygon vertex hit — only in polygon-edit mode
+              if (activeTool === "polygon-edit" && !isPlaying) {
+                for (const entity of [...scene.entities].reverse()) {
+                  const vi = hitPolygonVertex(entity, point, zoom);
+                  if (vi >= 0) {
+                    onSelect(entity.id, false);
+                    const polygon = findComponent(entity, "PolygonCollider") as { points: { x: number; y: number }[] } | undefined;
+                    if (polygon) {
+                      setPolygonDrag({
+                        entityId: entity.id,
+                        vertexIndex: vi,
+                        startPoints: polygon.points.map((p) => ({ ...p })),
+                        startPointer: { x: point.x, y: point.y },
+                      });
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                    }
+                    return;
+                  }
+                }
+              }
+
               const hit = [...scene.entities]
                 .reverse()
                 .find((entity) => hitEntity(entity, point));
@@ -689,6 +721,30 @@ export function SceneCanvas({
                 const dx = (panning.startX - event.clientX) / z;
                 const dy = (panning.startY - event.clientY) / z;
                 setPan({ x: panning.panStartX + dx, y: panning.panStartY + dy });
+                return;
+              }
+              if (polygonDrag && scene && onPolygonPointsChange) {
+                let point = pointerPosition(event);
+                if (snap) {
+                  point = {
+                    x: Math.round(point.x / snapSize) * snapSize,
+                    y: Math.round(point.y / snapSize) * snapSize,
+                  };
+                }
+                const entity = scene.entities.find((e) => e.id === polygonDrag.entityId);
+                const polygon = entity ? findComponent(entity, "PolygonCollider") as { offset: { x: number; y: number }; points: { x: number; y: number }[] } | undefined : undefined;
+                if (polygon) {
+                  const ox = (entity ? findComponent(entity, "Transform") as { position: { x: number; y: number } } | undefined : undefined)?.position.x ?? 0;
+                  const oy = (entity ? findComponent(entity, "Transform") as { position: { x: number; y: number } } | undefined : undefined)?.position.y ?? 0;
+                  const newPoints = polygonDrag.startPoints.map((p, i) => {
+                    if (i !== polygonDrag.vertexIndex) return p;
+                    return {
+                      x: Math.round(point.x - ox - polygon.offset.x),
+                      y: Math.round(point.y - oy - polygon.offset.y),
+                    };
+                  });
+                  onPolygonPointsChange(polygonDrag.entityId, newPoints);
+                }
                 return;
               }
               if (!drag || !scene) return;
@@ -754,6 +810,7 @@ export function SceneCanvas({
             onPointerUp={() => {
               setDrag(undefined);
               setPanning(undefined);
+              setPolygonDrag(undefined);
             }}
           />
         </div>

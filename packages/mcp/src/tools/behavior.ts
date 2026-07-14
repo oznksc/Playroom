@@ -6,7 +6,9 @@ import {
   TweenInputSchema,
   FollowPathInputSchema,
   StateMachineInputSchema,
-  ScriptInputSchema
+  ScriptInputSchema,
+  TextInputSchema,
+  AudioSourceInputSchema
 } from "../schemas/component.js";
 
 export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
@@ -121,6 +123,66 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Script" as const, ...script };
+      entity.components.push(component as GameKitComponent);
+      await fileIO.writeScene(filename, scene);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    "add_text",
+    "Add a Text component to an entity in a scene",
+    {
+      scenePath: z.string().describe("Scene filename"),
+      entityId: z.string().describe("Entity ID"),
+      text: TextInputSchema.omit({ type: true }).describe("Text configuration properties"),
+    },
+    async ({ scenePath, entityId, text }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+
+      const entity = scene.entities.find((e) => e.id === entityId);
+      if (!entity) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          isError: true,
+        };
+      }
+
+      const component = { type: "Text" as const, ...text };
+      entity.components.push(component as GameKitComponent);
+      await fileIO.writeScene(filename, scene);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    "add_audio_source",
+    "Add an AudioSource component to an entity in a scene",
+    {
+      scenePath: z.string().describe("Scene filename"),
+      entityId: z.string().describe("Entity ID"),
+      audioSource: AudioSourceInputSchema.omit({ type: true }).describe("AudioSource configuration properties"),
+    },
+    async ({ scenePath, entityId, audioSource }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+
+      const entity = scene.entities.find((e) => e.id === entityId);
+      if (!entity) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          isError: true,
+        };
+      }
+
+      const component = { type: "AudioSource" as const, ...audioSource };
       entity.components.push(component as GameKitComponent);
       await fileIO.writeScene(filename, scene);
 

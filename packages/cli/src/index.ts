@@ -2,11 +2,11 @@
 import { basename, join, resolve } from "node:path";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
-import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
+import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject, saveGameState, loadGameState, listSaveSlots } from "./project.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
 
-export { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject } from "./project.js";
+export { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject, saveGameState, loadGameState, listSaveSlots } from "./project.js";
 export { startEditorServer } from "./server.js";
 
 async function main(argv: string[]): Promise<void> {
@@ -62,6 +62,35 @@ async function main(argv: string[]): Promise<void> {
       console.log(`Exported runnable ${platform === "web" ? "web" : "Expo"} app: ${output}`);
       if (platform === "web") {
         console.log(`Run 'cd ${output} && pnpm install && pnpm dev' to start.`);
+      }
+      return;
+    }
+    case "save": {
+      const saveSlot = args.find((arg) => !arg.startsWith("--"));
+      if (!saveSlot) {
+        throw new Error("Usage: gamekit save <slot-name>");
+      }
+      await saveGameState(cwd, saveSlot);
+      console.log(`Saved game state to slot: ${saveSlot}`);
+      return;
+    }
+    case "load": {
+      const loadSlot = args.find((arg) => !arg.startsWith("--"));
+      if (!loadSlot) {
+        throw new Error("Usage: gamekit load <slot-name>");
+      }
+      await loadGameState(cwd, loadSlot);
+      console.log(`Loaded game state from slot: ${loadSlot}`);
+      return;
+    }
+    case "list-saves": {
+      const slots = await listSaveSlots(cwd);
+      if (slots.length === 0) {
+        console.log("No save slots found.");
+      } else {
+        for (const s of slots) {
+          console.log(`  ${s.slotName} — ${s.levelsUnlocked}/${s.totalLevels} levels unlocked, scene: ${s.currentScene ?? "none"}`);
+        }
       }
       return;
     }
@@ -232,7 +261,7 @@ async function main(argv: string[]): Promise<void> {
       const icon = { error: "✖", warn: "⚠", info: "·" } as const;
       console.log(`Playroom doctor — ${report.projectPath}`);
       console.log(
-        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}`,
+        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}  Prefabs: ${report.summary.prefabs}`,
       );
       console.log("");
       for (const issue of report.issues) {

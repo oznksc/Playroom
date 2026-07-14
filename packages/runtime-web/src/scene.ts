@@ -14,6 +14,8 @@ import type {
   TextComponent,
   ScriptComponent,
   AudioSourceComponent,
+  SceneTransitionDef,
+  FollowPathComponent,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -31,6 +33,7 @@ import {
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent } from "@gamekit/runtime/script";
+import { updateFollowPath } from "@gamekit/runtime";
 
 type Transformable = {
   x: number;
@@ -121,8 +124,16 @@ export class GameKitPhaserScene extends Phaser.Scene {
   /** Coyote-time / ground stick to avoid Y vibration on platform seams. */
   private groundedGraceFrames = 0;
   private static readonly GROUND_GRACE = 4;
+  private transitionData: SceneTransitionDef | null = null;
+  private joystickBase: Phaser.GameObjects.Graphics | null = null;
+  private joystickThumb: Phaser.GameObjects.Graphics | null = null;
+  private joystickActive = false;
+  private joystickCenter = { x: 0, y: 0 };
+  private joystickDx = 0;
+  private joystickDy = 0;
+  private loadedFonts = new Map<string, string>();
 
-  constructor(sceneData: GameKitScene, assetUrls: Record<string, string>) {
+  constructor(sceneData: GameKitScene, assetUrls: Record<string, string>, transition?: SceneTransitionDef) {
     super("GameKitScene");
     this.sceneData = sceneData;
     this.assetUrls = assetUrls;
@@ -130,6 +141,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.gameRules = resolveGameRules(sceneData.gameRules);
     this.fallY = resolveFallDeathY(sceneData, this.gameRules);
     this.livesRemaining = this.gameRules.lives > 0 ? this.gameRules.lives : 0;
+    this.transitionData = transition ?? null;
     const player = sceneData.entities.find((e) =>
       e.components.some((c) => c.type === "PlayerController"),
     );
@@ -170,7 +182,30 @@ export class GameKitPhaserScene extends Phaser.Scene {
         this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
         loadedKeys.add(audio.assetId);
       }
+      const text = findComponent<TextComponent>(entity, "Text");
+      if (text?.fontAssetId && !loadedKeys.has(`font:${text.fontAssetId}`) && this.assetUrls[text.fontAssetId]) {
+        loadedKeys.add(`font:${text.fontAssetId}`);
+        const family = `GKFont-${text.fontAssetId}`;
+        const url = this.assetUrls[text.fontAssetId];
+        const css = `@font-face{font-family:'${family}';src:url('${url}') format('${this.fontFormat(url)}');font-display:swap;}`;
+        const style = document.createElement("style");
+        style.textContent = css;
+        document.head.appendChild(style);
+        const font = new FontFace(family, `url(${url})`);
+        font.load().then((loaded) => {
+          (document.fonts as unknown as { add(f: FontFace): void }).add(loaded);
+          this.loadedFonts.set(text.fontAssetId, family);
+        }).catch(() => {});
+      }
     }
+  }
+
+  private fontFormat(url: string): string {
+    const ext = url.split(".").pop()?.toLowerCase() ?? "";
+    if (ext === "woff2") return "woff2";
+    if (ext === "woff") return "woff";
+    if (ext === "otf") return "opentype";
+    return "truetype";
   }
 
   create(): void {
@@ -276,6 +311,13 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setScrollFactor(0)
         .setDepth(1600);
     }
+
+    if (this.transitionData && this.transitionData.type === "fade") {
+      const duration = Math.round((this.transitionData.duration ?? 0.3) * 1000);
+      this.cameras.main.fadeIn(duration, 0, 0, 0);
+    }
+
+    this.setupTouchJoystick();
   }
 
   update(_time: number, delta: number): void {
@@ -291,7 +333,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     if (this.playerBinding) {
       const { binding, controller, controllerData } = this.playerBinding;
-      const jumpDown = this.keys.jump.some((k) => k.isDown);
+      const jumpDown = this.keys.jump.some((k) => k.isDown) || this.joystickDy < -0.5;
       // Only jump on the frame the key is pressed — holding must not re-apply impulse
       const jumpPressed = jumpDown && !this.jumpHeldLastFrame;
       this.jumpHeldLastFrame = jumpDown;
@@ -315,13 +357,19 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
       // Horizontal only from controller; Phaser arcade owns gravity/Y.
       // Slight air control reduction so jumps feel less "floaty / fly away".
-      const direction =
+      const keyDirection =
         Number(this.keys.right.some((k) => k.isDown)) - Number(this.keys.left.some((k) => k.isDown));
+      const joystickDirection = Math.abs(this.joystickDx) > 0.3 ? Math.sign(this.joystickDx) : 0;
+      const direction = keyDirection !== 0 ? keyDirection : joystickDirection;
       const moveSpeed = touchingGround ? controllerData.speed : controllerData.speed * 0.85;
       body.setVelocityX(direction * moveSpeed);
 
+      // Jump from keyboard OR joystick upward swipe (dy < -0.5)
+      const joystickJump = this.joystickDy < -0.5 && !this.jumpHeldLastFrame;
+      const effectiveJump = jumpPressed || joystickJump;
+
       // Jump only when actually touching ground (not mere grace), edge-triggered
-      if (jumpPressed && touchingGround) {
+      if (effectiveJump && touchingGround) {
         body.setVelocityY(-controllerData.jumpVelocity);
         this.groundedGraceFrames = 0;
         controller.setGrounded(false);
@@ -354,20 +402,31 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     for (const entity of this.activeEntities) {
       const binding = this.bindings.get(entity.id);
-      if (!binding || binding.isStatic || binding.isTrigger) continue;
+      if (!binding) continue;
 
       const transform = findComponent<TransformComponent>(entity, "Transform");
       if (!transform) continue;
 
+      const followPath = findComponent<FollowPathComponent>(entity, "FollowPath");
+      if (followPath) {
+        updateFollowPath(followPath, transform, dt);
+      }
+
       const go = binding.gameObject;
       // Dynamic bodies drive transform from physics; non-physics objects from transform
-      if (binding.body && typeof go.x === "number") {
+      if (binding.body && !binding.isStatic && !binding.isTrigger && typeof go.x === "number") {
         transform.position.x = go.x;
         transform.position.y = go.y;
       } else {
         if (go.setPosition) go.setPosition(transform.position.x, transform.position.y);
         if (go.setRotation) go.setRotation(Phaser.Math.DegToRad(transform.rotation));
         if (go.setScale) go.setScale(transform.scale.x, transform.scale.y);
+
+        if (go.body && (binding.isStatic || binding.isTrigger)) {
+          if ("updateFromGameObject" in go.body) {
+            (go.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+          }
+        }
       }
     }
 
@@ -486,6 +545,72 @@ export class GameKitPhaserScene extends Phaser.Scene {
       right: toCodes(rightKeys).map((c) => keyboard.addKey(c)),
       jump: toCodes(jumpKeys).map((c) => keyboard.addKey(c)),
     };
+  }
+
+  private setupTouchJoystick(): void {
+    const baseRadius = 50;
+    const thumbRadius = 18;
+    const travel = 36;
+
+    this.joystickBase = this.add.graphics().setDepth(2000).setScrollFactor(0);
+    this.joystickThumb = this.add.graphics().setDepth(2001).setScrollFactor(0);
+
+    const drawBase = (x: number, y: number) => {
+      this.joystickBase!.clear();
+      this.joystickBase!.fillStyle(0xffffff, 0.15);
+      this.joystickBase!.fillCircle(x, y, baseRadius);
+      this.joystickBase!.lineStyle(2, 0xffffff, 0.3);
+      this.joystickBase!.strokeCircle(x, y, baseRadius);
+    };
+
+    const drawThumb = (x: number, y: number) => {
+      this.joystickThumb!.clear();
+      this.joystickThumb!.fillStyle(0xffffff, 0.8);
+      this.joystickThumb!.fillCircle(x, y, thumbRadius);
+    };
+
+    const hideJoystick = () => {
+      this.joystickBase!.clear();
+      this.joystickThumb!.clear();
+    };
+
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (pointer.x < this.scale.width / 2) {
+        this.joystickActive = true;
+        this.joystickCenter = { x: pointer.x, y: pointer.y };
+        drawBase(pointer.x, pointer.y);
+        drawThumb(pointer.x, pointer.y);
+        this.joystickDx = 0;
+        this.joystickDy = 0;
+      }
+    });
+
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      if (!this.joystickActive || !pointer.isDown) return;
+      const dx = pointer.x - this.joystickCenter.x;
+      const dy = pointer.y - this.joystickCenter.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const clamped = Math.min(dist, travel);
+      const angle = Math.atan2(dy, dx);
+      const nx = (clamped / travel) * Math.cos(angle);
+      const ny = (clamped / travel) * Math.sin(angle);
+
+      this.joystickDx = nx;
+      this.joystickDy = ny;
+      drawThumb(
+        this.joystickCenter.x + nx * travel,
+        this.joystickCenter.y + ny * travel,
+      );
+    });
+
+    const release = () => {
+      this.joystickActive = false;
+      this.joystickDx = 0;
+      this.joystickDy = 0;
+      hideJoystick();
+    };
+
+    this.input.on("pointerup", release);
   }
 
   private handleTriggerOverlap(triggerObj: Phaser.GameObjects.GameObject): void {
@@ -666,9 +791,11 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const isHud =
         transform.position.x < this.sceneData.viewport.width &&
         transform.position.y < 80;
+      const fontFamily = (textComp.fontAssetId && this.loadedFonts.get(textComp.fontAssetId))
+        || "IBM Plex Sans, system-ui, sans-serif";
       const textObject = this.add
         .text(transform.position.x, transform.position.y, textComp.text, {
-          fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+          fontFamily,
           fontSize: `${textComp.size || 16}px`,
           color: textComp.color || "#ffffff",
           align: textComp.align || "left",

@@ -35,7 +35,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const asset = { id, file, kind };
       project.assets.push(asset);
       await fileIO.writeProject(project);
-      await regenerateAssetsManifest(fileIO.assetsDir.replace(/\/assets$/, ""), project);
+      await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, asset, message: "Asset added and manifest regenerated" }, null, 2) }],
@@ -61,7 +61,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
 
       const removed = project.assets.splice(index, 1)[0];
       await fileIO.writeProject(project);
-      await regenerateAssetsManifest(fileIO.assetsDir.replace(/\/assets$/, ""), project);
+      await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, removed, message: "Asset removed and manifest regenerated" }, null, 2) }],
@@ -71,7 +71,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool("regenerate_manifest", "Regenerate the assets.ts manifest file", {}, async () => {
     const project = await fileIO.readProject();
-    await regenerateAssetsManifest(fileIO.assetsDir.replace(/\/assets$/, ""), project);
+    await regenerateAssetsManifest(fileIO.projectRoot, project);
 
     return {
       content: [{ type: "text", text: JSON.stringify({ success: true, message: "Assets manifest regenerated", assetCount: project.assets.length }) }],
@@ -118,7 +118,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const asset = { id, file: fileName, kind: "audio" as const };
       project.assets.push(asset);
       await fileIO.writeProject(project);
-      await regenerateAssetsManifest(fileIO.assetsDir.replace(/\/assets$/, ""), project);
+      await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, assetId: id, asset, message: "Audio asset imported successfully" }, null, 2) }],

@@ -5,7 +5,9 @@ import {
   createLevel,
   createPrefab,
   createProject,
+  parsePrefab,
   parseScene,
+  prefabToJson,
   resolveFallDeathY,
   resolveGameRules,
   sceneToJson,
@@ -503,5 +505,97 @@ describe("sprint 4 extensions: audio, text, and font", () => {
 
     const parsed = parseScene(JSON.parse(sceneToJson(scene)));
     expect(parsed.entities[0].components).toHaveLength(5); // transform + 4 behaviors
+  });
+});
+
+describe("prefab schema (comprehensive)", () => {
+  it("createPrefab generates id via slugify and stamps createdAt", () => {
+    const prefab = createPrefab("Gold Coin", [{ type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }]);
+    expect(prefab.id).toBe("gold-coin");
+    expect(prefab.name).toBe("Gold Coin");
+    expect(prefab.schemaVersion).toBe(1);
+    expect(prefab.createdAt).toBeDefined();
+    expect(new Date(prefab.createdAt!).getTime()).not.toBeNaN();
+  });
+
+  it("createPrefab deep-clones components (structuredClone isolation)", () => {
+    const components = [{ type: "Transform" as const, position: { x: 10, y: 20 }, rotation: 0, scale: { x: 1, y: 1 } }];
+    const prefab = createPrefab("T", components);
+    (components[0].position as { x: number }).x = 999;
+    expect(prefab.components[0].position).toEqual({ x: 10, y: 20 });
+  });
+
+  it("createPrefab stores sourceEntityName when provided", () => {
+    const prefab = createPrefab("P", [], "OriginalEntity");
+    expect(prefab.sourceEntityName).toBe("OriginalEntity");
+  });
+
+  it("createPrefab omits sourceEntityName when not provided", () => {
+    const prefab = createPrefab("P", []);
+    expect(prefab.sourceEntityName).toBeUndefined();
+  });
+
+  it("prefabToJson produces pretty-printed JSON with trailing newline", () => {
+    const prefab = createPrefab("X", []);
+    const json = prefabToJson(prefab);
+    expect(json.endsWith("\n")).toBe(true);
+    const parsed = JSON.parse(json);
+    expect(parsed.name).toBe("X");
+  });
+
+  it("parsePrefab returns valid prefab on good input", () => {
+    const prefab = createPrefab("Enemy", [{ type: "Transform", position: { x: 5, y: 5 }, rotation: 0, scale: { x: 1, y: 1 } }]);
+    const result = parsePrefab(prefab);
+    expect(result.name).toBe("Enemy");
+  });
+
+  it("parsePrefab throws on non-object input", () => {
+    expect(() => parsePrefab("not an object")).toThrow("Invalid Playroom prefab");
+    expect(() => parsePrefab(42)).toThrow("Invalid Playroom prefab");
+    expect(() => parsePrefab(null)).toThrow("Invalid Playroom prefab");
+  });
+
+  it("validatePrefab rejects non-object input", () => {
+    expect(validatePrefab(null).ok).toBe(false);
+    expect(validatePrefab("string").ok).toBe(false);
+    expect(validatePrefab(123).ok).toBe(false);
+  });
+
+  it("validatePrefab rejects missing schemaVersion", () => {
+    const result = validatePrefab({ id: "x", name: "X", components: [] });
+    expect(result.ok).toBe(false);
+  });
+
+  it("validatePrefab rejects wrong schemaVersion", () => {
+    const result = validatePrefab({ schemaVersion: 2, id: "x", name: "X", components: [] });
+    expect(result.ok).toBe(false);
+  });
+
+  it("validatePrefab rejects empty id", () => {
+    const result = validatePrefab({ schemaVersion: 1, id: "", name: "X", components: [] });
+    expect(result.ok).toBe(false);
+  });
+
+  it("validatePrefab rejects empty name", () => {
+    const result = validatePrefab({ schemaVersion: 1, id: "x", name: "", components: [] });
+    expect(result.ok).toBe(false);
+  });
+
+  it("validatePrefab accepts optional fields when valid", () => {
+    const input = {
+      schemaVersion: 1, id: "a", name: "A", components: [],
+      sourceEntityName: "Src", createdAt: "2026-01-01T00:00:00.000Z",
+    };
+    const result = validatePrefab(input);
+    expect(result.ok).toBe(true);
+  });
+
+  it("validatePrefab rejects non-string optional fields", () => {
+    const input = {
+      schemaVersion: 1, id: "a", name: "A", components: [],
+      sourceEntityName: 123, createdAt: true,
+    };
+    const result = validatePrefab(input);
+    expect(result.ok).toBe(false);
   });
 });

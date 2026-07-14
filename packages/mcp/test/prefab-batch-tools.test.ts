@@ -87,6 +87,125 @@ describe("prefab tools", () => {
     const transform = spawned.components.find((c: { type: string }) => c.type === "Transform");
     expect(transform.position).toEqual({ x: 100, y: 200 });
   });
+
+  it("create_prefab returns error for non-existent entity", async () => {
+    const createTool = (server as any)._registeredTools.create_prefab;
+    const result = JSON.parse(
+      (await createTool.handler({ scenePath: "main.scene.json", entityId: "fake-id", name: "Ghost" }))
+        .content[0].text,
+    );
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("not found");
+  });
+
+  it("create_prefab returns error for non-existent scene", async () => {
+    const createTool = (server as any)._registeredTools.create_prefab;
+    await expect(
+      createTool.handler({ scenePath: "missing.scene.json", entityId: "x", name: "X" })
+    ).rejects.toThrow();
+  });
+
+  it("instantiate_prefab returns error for non-existent prefab", async () => {
+    const instTool = (server as any)._registeredTools.instantiate_prefab;
+    const result = JSON.parse(
+      (await instTool.handler({ scenePath: "main.scene.json", prefabId: "no-such-prefab" }))
+        .content[0].text,
+    );
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("not found");
+  });
+
+  it("remove_prefab deletes file and returns success", async () => {
+    const scene = JSON.parse(
+      await (await import("node:fs/promises")).readFile(
+        join(tmpDir, "gamekit", "scenes", "main.scene.json"),
+        "utf8",
+      ),
+    );
+    const coinId = scene.entities[0].id;
+
+    const createTool = (server as any)._registeredTools.create_prefab;
+    await createTool.handler({ scenePath: "main.scene.json", entityId: coinId, name: "Coin" });
+
+    const removeTool = (server as any)._registeredTools.remove_prefab;
+    const result = JSON.parse(
+      (await removeTool.handler({ prefabId: "coin" })).content[0].text,
+    );
+    expect(result.success).toBe(true);
+    expect(result.removed).toBe("coin.prefab.json");
+
+    const files = await readdir(join(tmpDir, "gamekit", "prefabs"));
+    expect(files).not.toContain("coin.prefab.json");
+  });
+
+  it("remove_prefab returns error for non-existent prefab", async () => {
+    const removeTool = (server as any)._registeredTools.remove_prefab;
+    const result = JSON.parse(
+      (await removeTool.handler({ prefabId: "ghost" })).content[0].text,
+    );
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("not found");
+  });
+
+  it("list_prefabs returns empty array when no prefabs exist", async () => {
+    const listTool = (server as any)._registeredTools.list_prefabs;
+    const result = JSON.parse(
+      (await listTool.handler({})).content[0].text,
+    );
+    expect(result.prefabs).toBeDefined();
+    expect(result.prefabs.length).toBe(0);
+  });
+
+  it("list_prefabs returns created prefabs", async () => {
+    const scene = JSON.parse(
+      await (await import("node:fs/promises")).readFile(
+        join(tmpDir, "gamekit", "scenes", "main.scene.json"),
+        "utf8",
+      ),
+    );
+    const coinId = scene.entities[0].id;
+
+    const createTool = (server as any)._registeredTools.create_prefab;
+    await createTool.handler({ scenePath: "main.scene.json", entityId: coinId, name: "Coin" });
+
+    const listTool = (server as any)._registeredTools.list_prefabs;
+    const result = JSON.parse(
+      (await listTool.handler({})).content[0].text,
+    );
+    expect(result.prefabs.length).toBe(1);
+    expect(result.prefabs[0].name).toBe("Coin");
+    expect(result.prefabs[0].componentTypes).toContain("Transform");
+  });
+
+  it("instantiate_prefab with y-only overrides only y", async () => {
+    const scene = JSON.parse(
+      await (await import("node:fs/promises")).readFile(
+        join(tmpDir, "gamekit", "scenes", "main.scene.json"),
+        "utf8",
+      ),
+    );
+    const coinId = scene.entities[0].id;
+
+    const createTool = (server as any)._registeredTools.create_prefab;
+    await createTool.handler({ scenePath: "main.scene.json", entityId: coinId, name: "Coin" });
+
+    const instTool = (server as any)._registeredTools.instantiate_prefab;
+    const inst = JSON.parse(
+      (await instTool.handler({ scenePath: "main.scene.json", prefabId: "coin", y: 500 })).content[0].text,
+    );
+    expect(inst.success).toBe(true);
+
+    const after = JSON.parse(
+      await (await import("node:fs/promises")).readFile(
+        join(tmpDir, "gamekit", "scenes", "main.scene.json"),
+        "utf8",
+      ),
+    );
+    const spawned = after.entities.find((e: { id: string }) => e.id === inst.entity.id);
+    const transform = spawned.components.find((c: { type: string }) => c.type === "Transform");
+    expect(transform.position.x).toBe(10); // original x preserved
+    expect(transform.position.y).toBe(500);
+  });
 });
 
 describe("batch_apply_edit", () => {
