@@ -27,6 +27,7 @@ import {
   updateParticleEmitter,
   particleRenderColor,
   particleRenderSize,
+  particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent } from "@gamekit/runtime/script";
@@ -391,10 +392,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         );
         for (const p of particles) {
           const c = Phaser.Display.Color.ValueToColor(particleRenderColor(p));
-          this.particleGraphics.fillStyle(
-            c.color,
-            Math.max(0, 1 - p.age / Math.max(0.0001, p.lifetime)),
-          );
+          this.particleGraphics.fillStyle(c.color, particleRenderAlpha(p));
           this.particleGraphics.fillCircle(p.x, p.y, Math.max(0.5, particleRenderSize(p) / 2));
         }
       }

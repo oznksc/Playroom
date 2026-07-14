@@ -81,13 +81,52 @@ function spawnParticle(component: ParticleSystemComponent, origin: Vector2): Par
   };
 }
 
+export function particleLifeProgress(p: Particle): number {
+  return Math.min(1, Math.max(0, p.age / Math.max(0.0001, p.lifetime)));
+}
+
 export function particleRenderSize(p: Particle): number {
-  const t = Math.min(1, p.age / Math.max(0.0001, p.lifetime));
+  const t = particleLifeProgress(p);
   return p.sizeStart + (p.sizeEnd - p.sizeStart) * t;
 }
 
+/** Remaining opacity, fading linearly to 0 at end of life. Shared by both runtimes. */
+export function particleRenderAlpha(p: Particle): number {
+  return 1 - particleLifeProgress(p);
+}
+
+function parseHexColor(hex: string): { r: number; g: number; b: number } | null {
+  let value = hex.trim();
+  if (value.startsWith("#")) value = value.slice(1);
+  if (value.length === 3) {
+    value = value
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  if (value.length !== 6) return null;
+  const num = Number.parseInt(value, 16);
+  if (Number.isNaN(num)) return null;
+  return { r: (num >> 16) & 0xff, g: (num >> 8) & 0xff, b: num & 0xff };
+}
+
+function toHex(channel: number): string {
+  return Math.round(Math.min(255, Math.max(0, channel)))
+    .toString(16)
+    .padStart(2, "0");
+}
+
+/** True per-channel RGB interpolation from colorStart to colorEnd over the particle's life. */
 export function particleRenderColor(p: Particle): string {
-  // Prefer start color for MVP; full lerp would need hex parsing.
-  const t = p.age / Math.max(0.0001, p.lifetime);
-  return t < 0.5 ? p.colorStart : p.colorEnd;
+  const t = particleLifeProgress(p);
+  const start = parseHexColor(p.colorStart);
+  const end = parseHexColor(p.colorEnd);
+  if (!start || !end) {
+    // Non-hex colors can't be interpolated — fall back to a midpoint swap.
+    return t < 0.5 ? p.colorStart : p.colorEnd;
+  }
+  const r = start.r + (end.r - start.r) * t;
+  const g = start.g + (end.g - start.g) * t;
+  const b = start.b + (end.b - start.b) * t;
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
