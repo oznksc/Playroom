@@ -6,7 +6,6 @@ import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
-
 export type TransitionOverlay = {
   opacity: number;
   color?: string;
