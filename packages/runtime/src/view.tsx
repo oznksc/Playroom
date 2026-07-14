@@ -372,7 +372,15 @@ function TextNode({
   source: unknown;
 }): ReactElement | null {
   const font = useFont(source as string, textComponent.size);
-  if (!font) return null;
+  if (!font) {
+    if (__DEV__) {
+      const msg = textComponent.fontAssetId
+        ? `[GameKit] Font asset "${textComponent.fontAssetId}" not loaded — text "${textComponent.text.slice(0, 20)}" hidden`
+        : `[GameKit] No fontAssetId — text "${textComponent.text.slice(0, 20)}" hidden (set fontAssetId to a loaded font)`;
+      console.warn(msg);
+    }
+    return null;
+  }
 
   let x = transform.position.x;
   const y = transform.position.y;
