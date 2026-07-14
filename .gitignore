@@ -3,6 +3,7 @@ dist/
 .expo/
 .turbo/
 .vite/
+docs/.vitepress/cache/
 coverage/
 *.log
 *.tsbuildinfo
