@@ -61,7 +61,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [ ] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
 - [ ] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
 - [ ] `Light2D` (point/spot, range, intensity, color) — runtime-web Phaser ışıklarıyla eşle
-- [ ] `StateMachine` (states + transitions + events)
+- [x] `StateMachine` (states + transitions + events)
 - [ ] `Script` / behavior node (tetikli event handler, JSON DSL)
 - [ ] `Tween` / timeline track başına easing curves
 - [ ] `Path2D` + `FollowPath` (waypoint patrol)
