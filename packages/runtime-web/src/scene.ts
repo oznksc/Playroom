@@ -13,6 +13,7 @@ import type {
   ParticleSystemComponent,
   TextComponent,
   ScriptComponent,
+  AudioSourceComponent,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -100,6 +101,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   };
   private particleEmitters = new Map<string, ParticleEmitterState>();
   private particleGraphics: Phaser.GameObjects.Graphics | null = null;
+  private sounds = new Map<string, Phaser.Sound.BaseSound>();
   private textBindings: TextBinding[] = [];
   private coinsCollected = 0;
   private totalCoins = 0;
@@ -160,6 +162,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
           this.load.image(sprite.assetId, this.assetUrls[sprite.assetId]);
           loadedKeys.add(sprite.assetId);
         }
+      }
+
+      const audio = findComponent<AudioSourceComponent>(entity, "AudioSource");
+      if (audio && !loadedKeys.has(audio.assetId) && this.assetUrls[audio.assetId]) {
+        this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
+        loadedKeys.add(audio.assetId);
       }
     }
   }
@@ -239,6 +247,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
         this.particleEmitters.set(entity.id, createParticleEmitter());
       }
     }
+
+    this.setupAudio();
 
     // Run onStart scripts
     for (const entity of this.activeEntities) {
@@ -393,6 +403,42 @@ export class GameKitPhaserScene extends Phaser.Scene {
     // Keep HUD text fixed to camera
     for (const tb of this.textBindings) {
       // no-op: scrollFactor already 0
+    }
+  }
+
+  private setupAudio(): void {
+    for (const entity of this.activeEntities) {
+      const audio = findComponent<AudioSourceComponent>(entity, "AudioSource");
+      if (!audio) continue;
+      if (!this.cache.audio.exists(audio.assetId)) continue;
+
+      const sound = this.sound.add(audio.assetId, {
+        loop: audio.loop,
+        volume: Phaser.Math.Clamp(audio.volume, 0, 1),
+      });
+      this.sounds.set(entity.id, sound);
+
+      if (audio.playOnStart) {
+        sound.play();
+      }
+    }
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopAllSounds());
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => this.stopAllSounds());
+  }
+
+  playSound(entityId: string): void {
+    const sound = this.sounds.get(entityId);
+    if (sound && !sound.isPlaying) sound.play();
+  }
+
+  stopSound(entityId: string): void {
+    this.sounds.get(entityId)?.stop();
+  }
+
+  private stopAllSounds(): void {
+    for (const sound of this.sounds.values()) {
+      sound.stop();
     }
   }
 
