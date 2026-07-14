@@ -2,6 +2,7 @@ import type {
   AabbColliderComponent,
   CameraFollowComponent,
   CircleColliderComponent,
+  PolygonColliderComponent,
   GameKitAsset,
   GameKitEntity,
   PlayerControllerComponent,
@@ -98,6 +99,7 @@ export function Inspector({
   const sprite = entity ? findComponent<SpriteComponent>(entity, "Sprite") : undefined;
   const collider = entity ? findComponent<AabbColliderComponent>(entity, "AabbCollider") : undefined;
   const circleCollider = entity ? findComponent<CircleColliderComponent>(entity, "CircleCollider") : undefined;
+  const polygonCollider = entity ? findComponent<PolygonColliderComponent>(entity, "PolygonCollider") : undefined;
   const player = entity ? findComponent<PlayerControllerComponent>(entity, "PlayerController") : undefined;
   const rigidBody = entity ? findComponent<RigidBodyComponent>(entity, "RigidBody") : undefined;
   const camera = entity ? findComponent<CameraFollowComponent>(entity, "CameraFollow") : undefined;
@@ -137,13 +139,29 @@ export function Inspector({
           isStatic: false
         });
       } else if (val === "CircleCollider") {
-        draft.components.push({
-          type: "CircleCollider",
-          offset: { x: 0, y: 0 },
-          radius: 32,
-          isStatic: false,
-          isTrigger: false
-        });
+          draft.components.push({
+            type: "CircleCollider",
+            offset: { x: 0, y: 0 },
+            radius: 24,
+            isStatic: false,
+            isTrigger: false,
+            layer: 1,
+            mask: 1,
+          });
+      } else if (val === "PolygonCollider") {
+          draft.components.push({
+            type: "PolygonCollider",
+            offset: { x: 0, y: 0 },
+            points: [
+              { x: -16, y: -16 },
+              { x: 16, y: -16 },
+              { x: 16, y: 16 },
+              { x: -16, y: 16 },
+            ],
+            isStatic: false,
+            layer: 1,
+            mask: 1,
+          });
       } else if (val === "PlayerController") {
         draft.components.push({
           type: "PlayerController",
@@ -258,6 +276,7 @@ export function Inspector({
       const keyMap: Record<string, string> = {
         AabbCollider: "Collider",
         CircleCollider: "CircleCollider",
+        PolygonCollider: "PolygonCollider",
         PlayerController: "Player",
         RigidBody: "RigidBody",
         CameraFollow: "Camera",
@@ -275,6 +294,7 @@ export function Inspector({
     if (!textComp) missingComponents.push({ val: "Text", label: "Text Label" });
     if (!collider) missingComponents.push({ val: "AabbCollider", label: "Box Collider 2D" });
     if (MVP_SHOW_ADVANCED_PHYSICS && !circleCollider) missingComponents.push({ val: "CircleCollider", label: "Circle Collider 2D" });
+    if (MVP_SHOW_ADVANCED_PHYSICS && !polygonCollider) missingComponents.push({ val: "PolygonCollider", label: "Polygon Collider 2D" });
     if (!player) missingComponents.push({ val: "PlayerController", label: "Player Controller" });
     if (MVP_SHOW_ADVANCED_PHYSICS && !rigidBody) missingComponents.push({ val: "RigidBody", label: "RigidBody 2D" });
     if (!camera) missingComponents.push({ val: "CameraFollow", label: "Camera Follow" });
@@ -518,8 +538,19 @@ export function Inspector({
                                             findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
                                           })}
                                         />
-                                        <label htmlFor="collider-static-check">Static collider</label>
-                                      </div>
+                                         <label htmlFor="collider-static-check">Static collider</label>
+                                       </div>
+                                       <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
+                                         <input
+                                           id="collider-trigger-check"
+                                           type="checkbox" className="size-3.5 accent-accent"
+                                           checked={collider.isTrigger ?? false}
+                                           onChange={(event) => onChange((draft) => {
+                                             findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = event.target.checked;
+                                           })}
+                                         />
+                                         <label htmlFor="collider-trigger-check">Is Trigger (Overlap only)</label>
+                                       </div>
                 </>
               ) : (
                 <p className="text-center text-[10px] text-text-muted">No Box Collider attached</p>
@@ -606,6 +637,85 @@ export function Inspector({
                 </>
               ) : (
                 <p className="text-center text-[10px] text-text-muted">No Circle Collider attached</p>
+              )}
+            </AccordionSection>
+            )}
+
+            {/* PolygonCollider Component */}
+            {MVP_SHOW_ADVANCED_PHYSICS && (
+                          <AccordionSection
+              icon={<Route size={12} />}
+              label="Polygon Collider 2D"
+              open={!collapsed.PolygonCollider}
+              onToggle={() => toggleCollapse("PolygonCollider")}
+              removable={!!polygonCollider}
+              onRemove={() => onChange((draft) => {
+                draft.components = draft.components.filter((c) => c.type !== "PolygonCollider");
+              })}
+              accent="green"
+            >
+              {polygonCollider ? (
+                <>
+                  <div className="grid grid-cols-2 gap-1.5">
+                                          <NumberField
+                                            label="Offset X"
+                                            value={polygonCollider.offset.x}
+                                            onChange={(value) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.offset.x = value;
+                                            })}
+                                          />
+                                          <NumberField
+                                            label="Offset Y"
+                                            value={polygonCollider.offset.y}
+                                            onChange={(value) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.offset.y = value;
+                                            })}
+                                          />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                          <NumberField
+                                            label="Layer"
+                                            value={polygonCollider.layer ?? 1}
+                                            onChange={(value) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.layer = value;
+                                            })}
+                                          />
+                                          <NumberField
+                                            label="Mask"
+                                            value={polygonCollider.mask ?? 1}
+                                            onChange={(value) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.mask = value;
+                                            })}
+                                          />
+                                        </div>
+                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
+                                          <input
+                                            id="polygon-collider-static-check"
+                                            type="checkbox" className="size-3.5 accent-accent"
+                                            checked={polygonCollider.isStatic}
+                                            onChange={(event) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isStatic = event.target.checked;
+                                            })}
+                                          />
+                                          <label htmlFor="polygon-collider-static-check">Is Static (Rigid obstacle)</label>
+                                        </div>
+                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
+                                          <input
+                                            id="polygon-collider-trigger-check"
+                                            type="checkbox" className="size-3.5 accent-accent"
+                                            checked={polygonCollider.isTrigger ?? false}
+                                            onChange={(event) => onChange((draft) => {
+                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isTrigger = event.target.checked;
+                                            })}
+                                          />
+                                          <label htmlFor="polygon-collider-trigger-check">Is Trigger (Overlap only)</label>
+                                        </div>
+                                        <div className="text-[10px] text-text-muted">
+                                          {polygonCollider.points.length} point{polygonCollider.points.length !== 1 ? "s" : ""} — draw on canvas to edit
+                                        </div>
+                </>
+              ) : (
+                <p className="text-center text-[10px] text-text-muted">No Polygon Collider attached</p>
               )}
             </AccordionSection>
             )}
