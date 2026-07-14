@@ -129,6 +129,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private joystickCenter = { x: 0, y: 0 };
   private joystickDx = 0;
   private joystickDy = 0;
+  private loadedFonts = new Map<string, string>();
 
   constructor(sceneData: GameKitScene, assetUrls: Record<string, string>, transition?: SceneTransitionDef) {
     super("GameKitScene");
@@ -179,7 +180,31 @@ export class GameKitPhaserScene extends Phaser.Scene {
         this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
         loadedKeys.add(audio.assetId);
       }
+
+      const text = findComponent<TextComponent>(entity, "Text");
+      if (text?.fontAssetId && !loadedKeys.has(`font:${text.fontAssetId}`) && this.assetUrls[text.fontAssetId]) {
+        loadedKeys.add(`font:${text.fontAssetId}`);
+        const family = `GKFont-${text.fontAssetId}`;
+        const url = this.assetUrls[text.fontAssetId];
+        const css = `@font-face{font-family:'${family}';src:url('${url}') format('${this.fontFormat(url)}');font-display:swap;}`;
+        const style = document.createElement("style");
+        style.textContent = css;
+        document.head.appendChild(style);
+        const font = new FontFace(family, `url(${url})`);
+        font.load().then((loaded) => {
+          (document.fonts as unknown as { add(f: FontFace): void }).add(loaded);
+          this.loadedFonts.set(text.fontAssetId, family);
+        }).catch(() => {});
+      }
     }
+  }
+
+  private fontFormat(url: string): string {
+    const ext = url.split(".").pop()?.toLowerCase() ?? "";
+    if (ext === "woff2") return "woff2";
+    if (ext === "woff") return "woff";
+    if (ext === "otf") return "opentype";
+    return "truetype";
   }
 
   create(): void {
@@ -754,9 +779,11 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const isHud =
         transform.position.x < this.sceneData.viewport.width &&
         transform.position.y < 80;
+      const fontFamily = (textComp.fontAssetId && this.loadedFonts.get(textComp.fontAssetId))
+        || "IBM Plex Sans, system-ui, sans-serif";
       const textObject = this.add
         .text(transform.position.x, transform.position.y, textComp.text, {
-          fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+          fontFamily,
           fontSize: `${textComp.size || 16}px`,
           color: textComp.color || "#ffffff",
           align: textComp.align || "left",
