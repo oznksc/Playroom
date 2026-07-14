@@ -228,6 +228,17 @@ export type Light2DComponent = {
   color: string;
 };
 
+export type NineSliceComponent = {
+  type: "NineSlice";
+  assetId: string;
+  width: number;
+  height: number;
+  leftWidth: number;
+  rightWidth: number;
+  topHeight: number;
+  bottomHeight: number;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -247,7 +258,8 @@ export type GameKitComponent =
   | StateMachineComponent
   | ScriptComponent
   | ParticleSystemComponent
-  | Light2DComponent;
+  | Light2DComponent
+  | NineSliceComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -1204,6 +1216,19 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           range: expectNumber(component.range, `${path}.range`, errors),
           intensity: expectNumber(component.intensity, `${path}.intensity`, errors),
           color: expectString(component.color, `${path}.color`, errors),
+        });
+        return;
+      }
+      case "NineSlice": {
+        components.push({
+          type: "NineSlice",
+          assetId: expectString(component.assetId, `${path}.assetId`, errors),
+          width: expectNumber(component.width, `${path}.width`, errors),
+          height: expectNumber(component.height, `${path}.height`, errors),
+          leftWidth: expectNumber(component.leftWidth, `${path}.leftWidth`, errors),
+          rightWidth: expectNumber(component.rightWidth, `${path}.rightWidth`, errors),
+          topHeight: expectNumber(component.topHeight, `${path}.topHeight`, errors),
+          bottomHeight: expectNumber(component.bottomHeight, `${path}.bottomHeight`, errors),
         });
         return;
       }

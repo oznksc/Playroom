@@ -65,7 +65,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [ ] `Script` / behavior node (tetikli event handler, JSON DSL)
 - [ ] `Tween` / timeline track başına easing curves
 - [x] `Path2D` + `FollowPath` (waypoint patrol)
-- [ ] `NineSlice` sprite (UI ölçeklenebilir kenar)
+- [x] `NineSlice` sprite (UI ölçeklenebilir kenar)
 
 ### MCP Araçları (yeni)
 - [x] `add_tilemap` — entity'ye `Tilemap` bileşeni ekler (tilesetId, tileWidth/Height, columns, gridWidth/Height)
@@ -79,7 +79,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `add_tween` — başlangıç/bitiş değerleri + easing curve
 - [x] `add_path` — waypoint listesi ile `Path2D` oluşturur
 - [x] `add_light` — `Light2D` bileşeni ekler (`kind`, `range`, `intensity`, `color`)
-- `add_nine_slice` — 9-slice için `NineSlice` bileşeni
+- [x] `add_nine_slice` — 9-slice için `NineSlice` bileşeni
 
 ### Skill Güncellemeleri
 - `puzzle.json` → `Text` + `AudioSource` ile zenginleştir

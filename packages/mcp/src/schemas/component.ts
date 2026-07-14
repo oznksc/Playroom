@@ -193,6 +193,17 @@ export const Light2DInputSchema = z.object({
   color: z.string().default("#ffffff"),
 });
 
+export const NineSliceInputSchema = z.object({
+  type: z.literal("NineSlice"),
+  assetId: z.string().describe("Image asset ID for the 9-slice texture"),
+  width: z.number().positive().default(100),
+  height: z.number().positive().default(100),
+  leftWidth: z.number().nonnegative().default(10),
+  rightWidth: z.number().nonnegative().default(10),
+  topHeight: z.number().nonnegative().default(10),
+  bottomHeight: z.number().nonnegative().default(10),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -213,6 +224,7 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   ScriptInputSchema,
   ParticleSystemInputSchema,
   Light2DInputSchema,
+  NineSliceInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -235,4 +247,5 @@ export const ComponentTypeSchema = z.enum([
   "Script",
   "ParticleSystem",
   "Light2D",
+  "NineSlice",
 ]);

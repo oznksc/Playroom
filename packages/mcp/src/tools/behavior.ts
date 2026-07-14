@@ -10,7 +10,8 @@ import {
   TextInputSchema,
   AudioSourceInputSchema,
   ParticleSystemInputSchema,
-  Light2DInputSchema
+  Light2DInputSchema,
+  NineSliceInputSchema
 } from "../schemas/component.js";
 
 export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
@@ -245,6 +246,36 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Light2D" as const, ...light };
+      entity.components.push(component as GameKitComponent);
+      await fileIO.writeScene(filename, scene);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    "add_nine_slice",
+    "Add a NineSlice component to an entity in a scene",
+    {
+      scenePath: z.string().describe("Scene filename"),
+      entityId: z.string().describe("Entity ID"),
+      nineSlice: NineSliceInputSchema.omit({ type: true }).describe("NineSlice configuration properties"),
+    },
+    async ({ scenePath, entityId, nineSlice }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+
+      const entity = scene.entities.find((e) => e.id === entityId);
+      if (!entity) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          isError: true,
+        };
+      }
+
+      const component = { type: "NineSlice" as const, ...nineSlice };
       entity.components.push(component as GameKitComponent);
       await fileIO.writeScene(filename, scene);
 
