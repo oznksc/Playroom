@@ -29,7 +29,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
           isError: true,
         };
       }
@@ -39,7 +39,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       );
       if (existingCollider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity already has a collider: ${existingCollider.type}` }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" already has a ${existingCollider.type}. Use remove_component first to replace it.` }) }],
           isError: true,
         };
       }
@@ -123,7 +123,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
           isError: true,
         };
       }
@@ -131,7 +131,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const existing = entity.components.find((c) => c.type === "RigidBody");
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity already has a RigidBody component" }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" already has a RigidBody component. Use remove_component first to replace it.` }) }],
           isError: true,
         };
       }
@@ -170,7 +170,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
           isError: true,
         };
       }
@@ -182,7 +182,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
       if (!collider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity has no collider component" }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.` }) }],
           isError: true,
         };
       }
@@ -212,7 +212,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
           isError: true,
         };
       }
@@ -229,7 +229,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
       if (!circleCollider && !aabbCollider && !polygonCollider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity has no collider" }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.` }) }],
           isError: true,
         };
       }
