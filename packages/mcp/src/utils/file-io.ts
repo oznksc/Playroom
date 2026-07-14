@@ -15,6 +15,10 @@ import {
 export class FileIO {
   constructor(private basePath: string) {}
 
+  get projectRoot(): string {
+    return this.basePath;
+  }
+
   private get gamekitDir(): string {
     return join(this.basePath, "gamekit");
   }
