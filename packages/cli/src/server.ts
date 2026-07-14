@@ -205,7 +205,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
     if (body.action === "instantiate") {
       if (!body.sceneFile || !body.prefabId) {
-        sendJson(response, 400, { error: "Missing sceneFile or prefabId" });
+        sendJson(response, 400, { error: "Missing required field: sceneFile and prefabId are required for instantiate action." });
         return;
       }
       try {
@@ -223,7 +223,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
     // default: create from entity
     if (!body.sceneFile || !body.entityId) {
-      sendJson(response, 400, { error: "Missing sceneFile or entityId" });
+      sendJson(response, 400, { error: "Missing required field: sceneFile and entityId are required for create action." });
       return;
     }
     try {
@@ -275,7 +275,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       sceneName?: string;
     };
     if (!body.skillId) {
-      sendJson(response, 400, { error: "Missing skillId" });
+      sendJson(response, 400, { error: "Missing required field: skillId is required." });
       return;
     }
     try {

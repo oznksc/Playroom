@@ -88,7 +88,8 @@ describe("entity tool handlers", () => {
       name: "X",
     });
     expect(result.isError).toBe(true);
-    expect(data.error).toContain("Entity not found");
+    expect(data.error).toContain("not found");
+    expect(data.error).toContain("list_entities");
   });
 
   it("returns an error when removing a missing entity", async () => {
@@ -97,7 +98,8 @@ describe("entity tool handlers", () => {
       entityId: "nope",
     });
     expect(result.isError).toBe(true);
-    expect(data.error).toContain("Entity not found");
+    expect(data.error).toContain("not found");
+    expect(data.error).toContain("list_entities");
   });
 });
 
@@ -123,7 +125,7 @@ describe("component tool handlers", () => {
       component: comp,
     });
     expect(result.isError).toBe(true);
-    expect(data.error).toContain("already exists");
+    expect(data.error).toContain("already has");
   });
 
   it("updates component properties", async () => {
@@ -170,6 +172,6 @@ describe("component tool handlers", () => {
       props: { mass: 5 },
     });
     expect(result.isError).toBe(true);
-    expect(data.error).toContain("Component not found");
+    expect(data.error).toContain("has no");
   });
 });

@@ -84,7 +84,7 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
   try {
     sceneFiles = (await readdir(scenesDir)).filter((f) => f.endsWith(".scene.json"));
   } catch {
-    issues.push({ level: "error", code: "NO_SCENES_DIR", message: "gamekit/scenes/ missing" });
+    issues.push({ level: "error", code: "NO_SCENES_DIR", message: "gamekit/scenes/ directory missing. Run `gamekit init` to create the project structure." });
   }
 
   // Project scenes listed but missing on disk
@@ -142,12 +142,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     try {
       await stat(assetPath);
     } catch {
-      issues.push({
-        level: "error",
-        code: "ASSET_FILE_MISSING",
-        message: `Asset "${asset.id}" points to missing file "${asset.file}"`,
-        path: `gamekit/assets/${asset.file}`,
-      });
+        issues.push({
+          level: "error",
+          code: "ASSET_FILE_MISSING",
+          message: `Asset "${asset.id}" points to missing file "${asset.file}". Re-import the asset or remove it from project.assets.`,
+          path: `gamekit/assets/${asset.file}`,
+        });
     }
   }
 
