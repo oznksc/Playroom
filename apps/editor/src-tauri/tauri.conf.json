@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "gamekit-editor",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "version": "0.1.2",
+  "identifier": "com.oznksc.playroom.editor",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:5173",
