@@ -33,6 +33,14 @@ export type GameKitLevel = {
   unlocked: boolean;
 };
 
+export type GameSavePayload = {
+  version: 1;
+  persistentState: Record<string, unknown>;
+  levels: Array<{ id: string; unlocked: boolean }>;
+  currentSceneId: string | null;
+  currentLevelId: string | null;
+};
+
 export type TransformComponent = {
   type: "Transform";
   position: Vector2;
