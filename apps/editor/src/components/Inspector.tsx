@@ -19,45 +19,43 @@ import type {
   StateMachineComponent,
   ScriptComponent,
   Light2DComponent,
-  NineSliceComponent
+  NineSliceComponent,
 } from "@gamekit/schema";
 import {
   Box,
-  Circle,
-  ImagePlus,
-  Trash2,
   Plus,
-  Gamepad2,
-  Video,
-  FolderOpen,
   Focus,
-  Type,
-  Volume2,
-  Headphones,
-  Move,
-  Route,
-  GitBranch,
-  Code2,
-  Sparkles,
-  Grid3x3,
-  Sun,
-  Square,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { findComponent } from "../lib/components.js";
-import { getApiUrl } from "../lib/api.js";
 import {
-  NumberField,
-  IconButton,
   Select,
   Button,
   EmptyState,
-  AccordionSection,
-  CheckboxField,
-  ColorField,
-  Input,
-  Textarea,
+  IconButton,
 } from "@/ui";
+
+// Section components
+import { TransformSection } from "./inspector/TransformSection.js";
+import { SpriteSection } from "./inspector/SpriteSection.js";
+import { AabbColliderSection } from "./inspector/AabbColliderSection.js";
+import { CircleColliderSection } from "./inspector/CircleColliderSection.js";
+import { PolygonColliderSection } from "./inspector/PolygonColliderSection.js";
+import { RigidBodySection } from "./inspector/RigidBodySection.js";
+import { PlayerControllerSection } from "./inspector/PlayerControllerSection.js";
+import { CameraFollowSection } from "./inspector/CameraFollowSection.js";
+import { TilemapSection } from "./inspector/TilemapSection.js";
+import { TextSection } from "./inspector/TextSection.js";
+import { AudioSourceSection } from "./inspector/AudioSourceSection.js";
+import { AudioListenerSection } from "./inspector/AudioListenerSection.js";
+import { Light2DSection } from "./inspector/Light2DSection.js";
+import { NineSliceSection } from "./inspector/NineSliceSection.js";
+import { TweenSection } from "./inspector/TweenSection.js";
+import { FollowPathSection } from "./inspector/FollowPathSection.js";
+import { StateMachineSection } from "./inspector/StateMachineSection.js";
+import { ScriptSection } from "./inspector/ScriptSection.js";
+import { ParticleSystemSection } from "./inspector/ParticleSystemSection.js";
 
 const MVP_SHOW_ADVANCED_PHYSICS = true;
 
@@ -76,13 +74,14 @@ export function Inspector({
   entityIds,
   multiCount,
   onChange,
-  onDelete
+  onDelete,
 }: InspectorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
     Transform: false,
     Sprite: false,
     Collider: false,
     CircleCollider: true,
+    PolygonCollider: true,
     Player: false,
     RigidBody: true,
     Camera: false,
@@ -132,169 +131,44 @@ export function Inspector({
     onChange((draft) => {
       if (val === "Sprite") {
         const assetId = assets[0]?.id ?? "";
-        draft.components.push({
-          type: "Sprite",
-          assetId,
-          width: 64,
-          height: 64,
-          anchor: { x: 0.5, y: 0.5 }
-        });
-      } else       if (val === "AabbCollider") {
-        draft.components.push({
-          type: "AabbCollider",
-          offset: { x: -32, y: -32 },
-          size: { x: 64, y: 64 },
-          isStatic: false
-        });
+        draft.components.push({ type: "Sprite", assetId, width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } });
+      } else if (val === "AabbCollider") {
+        draft.components.push({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: false });
       } else if (val === "CircleCollider") {
-          draft.components.push({
-            type: "CircleCollider",
-            offset: { x: 0, y: 0 },
-            radius: 24,
-            isStatic: false,
-            isTrigger: false,
-            layer: 1,
-            mask: 1,
-          });
+        draft.components.push({ type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 24, isStatic: false, isTrigger: false, layer: 1, mask: 1 });
       } else if (val === "PolygonCollider") {
-          draft.components.push({
-            type: "PolygonCollider",
-            offset: { x: 0, y: 0 },
-            points: [
-              { x: -16, y: -16 },
-              { x: 16, y: -16 },
-              { x: 16, y: 16 },
-              { x: -16, y: 16 },
-            ],
-            isStatic: false,
-            layer: 1,
-            mask: 1,
-          });
+        draft.components.push({ type: "PolygonCollider", offset: { x: 0, y: 0 }, points: [{ x: -16, y: -16 }, { x: 16, y: -16 }, { x: 16, y: 16 }, { x: -16, y: 16 }], isStatic: false, layer: 1, mask: 1 });
       } else if (val === "PlayerController") {
-        draft.components.push({
-          type: "PlayerController",
-          speed: 300,
-          jumpVelocity: 600,
-          gravity: 1800
-        });
+        draft.components.push({ type: "PlayerController", speed: 300, jumpVelocity: 600, gravity: 1800 });
       } else if (val === "RigidBody") {
-        draft.components.push({
-          type: "RigidBody",
-          velocity: { x: 0, y: 0 },
-          angularVelocity: 0,
-          mass: 1,
-          drag: 0,
-          isKinematic: false,
-          gravityScale: 1,
-          useGravity: true
-        });
+        draft.components.push({ type: "RigidBody", velocity: { x: 0, y: 0 }, angularVelocity: 0, mass: 1, drag: 0, isKinematic: false, gravityScale: 1, useGravity: true });
       } else if (val === "CameraFollow") {
-        draft.components.push({
-          type: "CameraFollow",
-          targetId: draft.id,
-          smoothing: 0.18
-        });
+        draft.components.push({ type: "CameraFollow", targetId: draft.id, smoothing: 0.18 });
       } else if (val === "Tilemap") {
         const tilesetId = assets.find((a) => a.kind === "image")?.id ?? "";
-        draft.components.push({
-          type: "Tilemap",
-          tilesetId,
-          tileWidth: 32,
-          tileHeight: 32,
-          columns: 8,
-          gridWidth: 10,
-          gridHeight: 10,
-          tiles: new Array(100).fill(0)
-        });
+        draft.components.push({ type: "Tilemap", tilesetId, tileWidth: 32, tileHeight: 32, columns: 8, gridWidth: 10, gridHeight: 10, tiles: new Array(100).fill(0) });
       } else if (val === "Text") {
         const fontAssetId = assets.find((a) => a.kind === "font")?.id ?? "default";
-        draft.components.push({
-          type: "Text",
-          text: "Hello World",
-          fontAssetId,
-          size: 24,
-          color: "#ffffff",
-          align: "left"
-        });
+        draft.components.push({ type: "Text", text: "Hello World", fontAssetId, size: 24, color: "#ffffff", align: "left" });
       } else if (val === "AudioSource") {
         const assetId = assets.find((a) => a.kind === "audio")?.id ?? "";
-        draft.components.push({
-          type: "AudioSource",
-          assetId,
-          volume: 1.0,
-          loop: false,
-          playOnStart: true
-        });
+        draft.components.push({ type: "AudioSource", assetId, volume: 1.0, loop: false, playOnStart: true });
       } else if (val === "AudioListener") {
-        draft.components.push({
-          type: "AudioListener",
-          enabled: true
-        });
+        draft.components.push({ type: "AudioListener", enabled: true });
       } else if (val === "Tween") {
-        draft.components.push({
-          type: "Tween",
-          property: "position.x",
-          startValue: 0,
-          endValue: 100,
-          duration: 1.0,
-          easing: "linear",
-          loop: true,
-          pingPong: true
-        });
+        draft.components.push({ type: "Tween", property: "position.x", startValue: 0, endValue: 100, duration: 1.0, easing: "linear", loop: true, pingPong: true });
       } else if (val === "FollowPath") {
-        draft.components.push({
-          type: "FollowPath",
-          points: [],
-          speed: 100,
-          loop: true
-        });
+        draft.components.push({ type: "FollowPath", points: [], speed: 100, loop: true });
       } else if (val === "StateMachine") {
-        draft.components.push({
-          type: "StateMachine",
-          initialState: "idle",
-          states: [{ name: "idle" }]
-        });
+        draft.components.push({ type: "StateMachine", initialState: "idle", states: [{ name: "idle" }] });
       } else if (val === "Script") {
-        draft.components.push({
-          type: "Script",
-          handlers: []
-        });
+        draft.components.push({ type: "Script", handlers: [] });
       } else if (val === "ParticleSystem") {
-        draft.components.push({
-          type: "ParticleSystem",
-          maxParticles: 40,
-          emissionRate: 18,
-          lifetime: 0.9,
-          speed: 70,
-          gravityScale: 0.35,
-          colorStart: "#00f0ff",
-          colorEnd: "#8b5cf6",
-          sizeStart: 5,
-          sizeEnd: 0,
-          shape: "point",
-          width: 0,
-          height: 0,
-          active: true,
-        });
+        draft.components.push({ type: "ParticleSystem", maxParticles: 40, emissionRate: 18, lifetime: 0.9, speed: 70, gravityScale: 0.35, colorStart: "#00f0ff", colorEnd: "#8b5cf6", sizeStart: 5, sizeEnd: 0, shape: "point", width: 0, height: 0, active: true });
       } else if (val === "Light2D") {
-        draft.components.push({
-          type: "Light2D",
-          kind: "point",
-          range: 200,
-          intensity: 1.0,
-          color: "#ffffff"
-        });
+        draft.components.push({ type: "Light2D", kind: "point", range: 200, intensity: 1.0, color: "#ffffff" });
       } else if (val === "NineSlice") {
-        draft.components.push({
-          type: "NineSlice",
-          assetId: assets[0]?.id ?? "",
-          width: 100,
-          height: 100,
-          leftWidth: 10,
-          rightWidth: 10,
-          topHeight: 10,
-          bottomHeight: 10
-        });
+        draft.components.push({ type: "NineSlice", assetId: assets[0]?.id ?? "", width: 100, height: 100, leftWidth: 10, rightWidth: 10, topHeight: 10, bottomHeight: 10 });
       }
     });
 
@@ -349,9 +223,7 @@ export function Inspector({
                 type="text"
                 className="w-full rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-[13px] font-bold text-text-primary outline-none hover:border-border-strong hover:bg-bg-elevated focus:border-accent focus:bg-bg-elevated"
                 value={entity.name}
-                onChange={(e) => onChange((draft) => {
-                  draft.name = e.target.value;
-                })}
+                onChange={(e) => onChange((draft) => { draft.name = e.target.value; })}
                 placeholder="Entity Name"
                 title="Double click to rename entity"
               />
@@ -366,1640 +238,187 @@ export function Inspector({
 
           <div className="min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
             {/* Transform — Always Present */}
-                        <AccordionSection
-              icon={<Circle size={12} />}
-              label="Transform"
+            <TransformSection
+              transform={transform}
+              onChange={onChange}
               open={!collapsed.Transform}
               onToggle={() => toggleCollapse("Transform")}
-              accent="purple"
-            >
-              <div className="grid grid-cols-2 gap-1.5">
-                                    <NumberField
-                                      label="X"
-                                      value={transform.position.x}
-                                      onChange={(value) => onChange((draft) => {
-                                        findComponent<TransformComponent>(draft, "Transform")!.position.x = value;
-                                      })}
-                                    />
-                                    <NumberField
-                                      label="Y"
-                                      value={transform.position.y}
-                                      onChange={(value) => onChange((draft) => {
-                                        findComponent<TransformComponent>(draft, "Transform")!.position.y = value;
-                                      })}
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-1.5">
-                                    <NumberField
-                                      label="Scale X"
-                                      value={transform.scale.x}
-                                      onChange={(value) => onChange((draft) => {
-                                        findComponent<TransformComponent>(draft, "Transform")!.scale.x = value;
-                                      })}
-                                    />
-                                    <NumberField
-                                      label="Scale Y"
-                                      value={transform.scale.y}
-                                      onChange={(value) => onChange((draft) => {
-                                        findComponent<TransformComponent>(draft, "Transform")!.scale.y = value;
-                                      })}
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-1 gap-1.5">
-                                    <NumberField
-                                      label="Rotation"
-                                      value={transform.rotation}
-                                      onChange={(value) => onChange((draft) => {
-                                        findComponent<TransformComponent>(draft, "Transform")!.rotation = value;
-                                      })}
-                                    />
-                                  </div>
-            </AccordionSection>
+            />
 
-            {/* Sprite Component */}
-                        <AccordionSection
-              icon={<ImagePlus size={12} />}
-              label="Sprite Renderer"
+            {/* Sprite */}
+            <SpriteSection
+              sprite={sprite}
+              assets={assets}
+              onChange={onChange}
               open={!collapsed.Sprite}
               onToggle={() => toggleCollapse("Sprite")}
-              removable={!!sprite}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "Sprite");
-              })}
-              accent="cyan"
-            >
-              {sprite ? (
-                <>
-                  {/* Dynamic Visual Preview! */}
-                                    <div className="mb-2 flex items-center gap-2">
-                                      {assets.find(a => a.id === sprite.assetId) ? (
-                                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-default bg-bg-base">
-                                          <img src={getApiUrl(`/gamekit/assets/${assets.find(a => a.id === sprite.assetId)?.file}`)} alt="" />
-                                        </div>
-                                      ) : (
-                                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-default bg-bg-base text-text-muted">
-                                          <FolderOpen size={16} />
-                                        </div>
-                                      )}
-                                      <div className="min-w-0 flex-1">
-                                        <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset Ref</label>
-                                        <select className="h-[26px] w-full rounded-md border border-border-default bg-bg-base px-2 text-[12px] outline-none focus:border-accent"
-                                          value={sprite.assetId}
-                                          onChange={(event) => onChange((draft) => {
-                                            findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
-                                          })}
-                                        >
-                                          {assets.map((asset) => (
-                                            <option key={asset.id} value={asset.id}>{asset.id}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    </div>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Sprite"); })}
+            />
 
-                                    <div className="flex flex-col gap-1.5" style={{ marginTop: 10 }}>
-                                      <div className="grid grid-cols-2 gap-1.5">
-                                        <NumberField
-                                          label="Width"
-                                          value={sprite.width}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
-                                          })}
-                                        />
-                                        <NumberField
-                                          label="Height"
-                                          value={sprite.height}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
-                                          })}
-                                        />
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-1.5">
-                                        <NumberField
-                                          label="Anchor X"
-                                          value={sprite.anchor.x}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<SpriteComponent>(draft, "Sprite")!.anchor.x = value;
-                                          })}
-                                        />
-                                        <NumberField
-                                          label="Anchor Y"
-                                          value={sprite.anchor.y}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<SpriteComponent>(draft, "Sprite")!.anchor.y = value;
-                                          })}
-                                        />
-                                      </div>
-                                    </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">Sprite Renderer missing on this entity</p>
-              )}
-            </AccordionSection>
-
-            {/* Collider Component */}
-                        <AccordionSection
-              icon={<Box size={12} />}
-              label="Box Collider 2D"
+            {/* Box Collider */}
+            <AabbColliderSection
+              collider={collider}
+              onChange={onChange}
               open={!collapsed.Collider}
               onToggle={() => toggleCollapse("Collider")}
-              removable={!!collider}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "AabbCollider");
-              })}
-              accent="green"
-            >
-              {collider ? (
-                <>
-                  <div className="grid grid-cols-2 gap-1.5">
-                                        <NumberField
-                                          label="Width"
-                                          value={collider.size.x}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
-                                          })}
-                                        />
-                                        <NumberField
-                                          label="Height"
-                                          value={collider.size.y}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
-                                          })}
-                                        />
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-1.5">
-                                        <NumberField
-                                          label="Offset X"
-                                          value={collider.offset.x}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.x = value;
-                                          })}
-                                        />
-                                        <NumberField
-                                          label="Offset Y"
-                                          value={collider.offset.y}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.y = value;
-                                          })}
-                                        />
-                                      </div>
-                                      {MVP_SHOW_ADVANCED_PHYSICS && (
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Layer"
-                                            value={collider.layer ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Mask"
-                                            value={collider.mask ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
-                                            })}
-                                          />
-                                        </div>
-                                      )}
-                                      <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                        <input
-                                          id="collider-static-check"
-                                          type="checkbox" className="size-3.5 accent-accent"
-                                          checked={collider.isStatic}
-                                          onChange={(event) => onChange((draft) => {
-                                            findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
-                                          })}
-                                        />
-                                         <label htmlFor="collider-static-check">Static collider</label>
-                                       </div>
-                                       <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                         <input
-                                           id="collider-trigger-check"
-                                           type="checkbox" className="size-3.5 accent-accent"
-                                           checked={collider.isTrigger ?? false}
-                                           onChange={(event) => onChange((draft) => {
-                                             findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = event.target.checked;
-                                           })}
-                                         />
-                                         <label htmlFor="collider-trigger-check">Is Trigger (Overlap only)</label>
-                                       </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No Box Collider attached</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "AabbCollider"); })}
+            />
 
+            {/* Circle Collider */}
             {MVP_SHOW_ADVANCED_PHYSICS && (
-                          <AccordionSection
-              icon={<Circle size={12} />}
-              label="Circle Collider 2D"
-              open={!collapsed.CircleCollider}
-              onToggle={() => toggleCollapse("CircleCollider")}
-              removable={!!circleCollider}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "CircleCollider");
-              })}
-              accent="green"
-            >
-              {circleCollider ? (
-                <>
-                  <div className="grid grid-cols-1 gap-1.5">
-                                          <NumberField
-                                            label="Radius"
-                                            value={circleCollider.radius}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.radius = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Offset X"
-                                            value={circleCollider.offset.x}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.x = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Offset Y"
-                                            value={circleCollider.offset.y}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.y = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Layer"
-                                            value={circleCollider.layer ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.layer = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Mask"
-                                            value={circleCollider.mask ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.mask = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="circle-collider-static-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={circleCollider.isStatic}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="circle-collider-static-check">Is Static (Rigid obstacle)</label>
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="circle-collider-trigger-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={circleCollider.isTrigger}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="circle-collider-trigger-check">Is Trigger (Overlap only)</label>
-                                        </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No Circle Collider attached</p>
-              )}
-            </AccordionSection>
+              <CircleColliderSection
+                circleCollider={circleCollider}
+                onChange={onChange}
+                open={!collapsed.CircleCollider}
+                onToggle={() => toggleCollapse("CircleCollider")}
+                onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "CircleCollider"); })}
+              />
             )}
 
-            {/* PolygonCollider Component */}
+            {/* Polygon Collider */}
             {MVP_SHOW_ADVANCED_PHYSICS && (
-                          <AccordionSection
-              icon={<Route size={12} />}
-              label="Polygon Collider 2D"
-              open={!collapsed.PolygonCollider}
-              onToggle={() => toggleCollapse("PolygonCollider")}
-              removable={!!polygonCollider}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "PolygonCollider");
-              })}
-              accent="green"
-            >
-              {polygonCollider ? (
-                <>
-                  <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Offset X"
-                                            value={polygonCollider.offset.x}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.offset.x = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Offset Y"
-                                            value={polygonCollider.offset.y}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.offset.y = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Layer"
-                                            value={polygonCollider.layer ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.layer = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Mask"
-                                            value={polygonCollider.mask ?? 1}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.mask = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="polygon-collider-static-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={polygonCollider.isStatic}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isStatic = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="polygon-collider-static-check">Is Static (Rigid obstacle)</label>
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="polygon-collider-trigger-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={polygonCollider.isTrigger ?? false}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isTrigger = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="polygon-collider-trigger-check">Is Trigger (Overlap only)</label>
-                                        </div>
-                                        <div className="text-[10px] text-text-muted">
-                                          {polygonCollider.points.length} point{polygonCollider.points.length !== 1 ? "s" : ""} — draw on canvas to edit
-                                        </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No Polygon Collider attached</p>
-              )}
-            </AccordionSection>
+              <PolygonColliderSection
+                polygonCollider={polygonCollider}
+                onChange={onChange}
+                open={!collapsed.PolygonCollider}
+                onToggle={() => toggleCollapse("PolygonCollider")}
+                onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "PolygonCollider"); })}
+              />
             )}
 
-            {/* RigidBody Component */}
+            {/* RigidBody */}
             {MVP_SHOW_ADVANCED_PHYSICS && (
-                          <AccordionSection
-              icon={<Box size={12} />}
-              label="RigidBody 2D"
-              open={!collapsed.RigidBody}
-              onToggle={() => toggleCollapse("RigidBody")}
-              removable={!!rigidBody}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "RigidBody");
-              })}
-              accent="gold"
-            >
-              {rigidBody ? (
-                <>
-                  <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Vel X"
-                                            value={rigidBody.velocity.x}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.x = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Vel Y"
-                                            value={rigidBody.velocity.y}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.velocity.y = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Mass"
-                                            value={rigidBody.mass}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.mass = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Ang Vel"
-                                            value={rigidBody.angularVelocity}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.angularVelocity = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <NumberField
-                                            label="Drag"
-                                            value={rigidBody.drag}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.drag = value;
-                                            })}
-                                          />
-                                          <NumberField
-                                            label="Gravity Scale"
-                                            value={rigidBody.gravityScale}
-                                            onChange={(value) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.gravityScale = value;
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="rigid-body-kinematic-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={rigidBody.isKinematic}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="rigid-body-kinematic-check">Is Kinematic</label>
-                                        </div>
-                                        <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-                                          <input
-                                            id="rigid-body-gravity-check"
-                                            type="checkbox" className="size-3.5 accent-accent"
-                                            checked={rigidBody.useGravity}
-                                            onChange={(event) => onChange((draft) => {
-                                              findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = event.target.checked;
-                                            })}
-                                          />
-                                          <label htmlFor="rigid-body-gravity-check">Use Gravity</label>
-                                        </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No RigidBody attached</p>
-              )}
-            </AccordionSection>
+              <RigidBodySection
+                rigidBody={rigidBody}
+                onChange={onChange}
+                open={!collapsed.RigidBody}
+                onToggle={() => toggleCollapse("RigidBody")}
+                onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "RigidBody"); })}
+              />
             )}
 
-            {/* Player Controller Component */}
-                        <AccordionSection
-              icon={<Gamepad2 size={12} />}
-              label="Player Controller"
+            {/* Player Controller */}
+            <PlayerControllerSection
+              player={player}
+              onChange={onChange}
               open={!collapsed.Player}
               onToggle={() => toggleCollapse("Player")}
-              removable={!!player}
-              onRemove={() => onChange((draft) => {
-                draft.components = draft.components.filter((c) => c.type !== "PlayerController");
-              })}
-              accent="gold"
-            >
-              {player ? (
-                <>
-                  <div className="grid grid-cols-2 gap-1.5">
-                                        <NumberField
-                                          label="Speed"
-                                          value={player.speed}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<PlayerControllerComponent>(draft, "PlayerController")!.speed = value;
-                                          })}
-                                        />
-                                        <NumberField
-                                          label="Jump Vel"
-                                          value={player.jumpVelocity}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<PlayerControllerComponent>(draft, "PlayerController")!.jumpVelocity = value;
-                                          })}
-                                        />
-                                      </div>
-                                      <div className="grid grid-cols-1 gap-1.5">
-                                        <NumberField
-                                          label="Gravity"
-                                          value={player.gravity}
-                                          onChange={(value) => onChange((draft) => {
-                                            findComponent<PlayerControllerComponent>(draft, "PlayerController")!.gravity = value;
-                                          })}
-                                        />
-                                      </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">Standard physics controller unassigned</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "PlayerController"); })}
+            />
 
-            <AccordionSection
-              icon={<Video size={12} />}
-              label="Camera Follow"
+            {/* Camera Follow */}
+            <CameraFollowSection
+              camera={camera}
+              entityIds={entityIds}
+              currentEntityId={entity?.id}
+              onChange={onChange}
               open={!collapsed.Camera}
               onToggle={() => toggleCollapse("Camera")}
-              removable={!!camera}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "CameraFollow");
-                })
-              }
-              accent="cyan"
-            >
-              {camera ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Follow target
-                    </span>
-                    <Select
-                      value={camera.targetId}
-                      onChange={(event) =>
-                        onChange((draft) => {
-                          findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId =
-                            event.target.value;
-                        })
-                      }
-                    >
-                      <option value="">— Viewport center —</option>
-                      {entityIds
-                        .filter((id) => id !== entity?.id)
-                        .map((id) => (
-                          <option key={id} value={id}>
-                            {id}
-                          </option>
-                        ))}
-                    </Select>
-                  </label>
-                  <NumberField
-                    label="Smoothing"
-                    value={camera.smoothing}
-                    onChange={(value) =>
-                      onChange((draft) => {
-                        findComponent<CameraFollowComponent>(draft, "CameraFollow")!.smoothing =
-                          value;
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">Camera targeting missing</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "CameraFollow"); })}
+            />
 
-            <AccordionSection
-              icon={<Grid3x3 size={12} />}
-              label="Tilemap Renderer"
+            {/* Tilemap */}
+            <TilemapSection
+              tilemap={tilemap}
+              assets={assets}
+              onChange={onChange}
               open={!collapsed.Tilemap}
               onToggle={() => toggleCollapse("Tilemap")}
-              removable={!!tilemap}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "Tilemap");
-                })
-              }
-              accent="green"
-            >
-              {tilemap ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Tileset
-                    </span>
-                    <Select
-                      value={tilemap.tilesetId}
-                      onChange={(e) =>
-                        onChange((draft) => {
-                          findComponent<TilemapComponent>(draft, "Tilemap")!.tilesetId =
-                            e.target.value;
-                        })
-                      }
-                    >
-                      <option value="">— Select asset —</option>
-                      {assets.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.id}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <NumberField
-                      label="Tile W"
-                      value={tilemap.tileWidth}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TilemapComponent>(d, "Tilemap")!.tileWidth = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Tile H"
-                      value={tilemap.tileHeight}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TilemapComponent>(d, "Tilemap")!.tileHeight = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Columns"
-                      value={tilemap.columns}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TilemapComponent>(d, "Tilemap")!.columns = Math.max(1, Math.floor(v));
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Grid W"
-                      value={tilemap.gridWidth}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
-                          const w = Math.max(1, Math.floor(v));
-                          const h = tm.gridHeight;
-                          const next = new Array(w * h).fill(0);
-                          for (let y = 0; y < h; y++) {
-                            for (let x = 0; x < Math.min(w, tm.gridWidth); x++) {
-                              const src = y * tm.gridWidth + x;
-                              if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
-                            }
-                          }
-                          tm.gridWidth = w;
-                          tm.tiles = next;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Grid H"
-                      value={tilemap.gridHeight}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
-                          const h = Math.max(1, Math.floor(v));
-                          const w = tm.gridWidth;
-                          const next = new Array(w * h).fill(0);
-                          for (let y = 0; y < Math.min(h, tm.gridHeight); y++) {
-                            for (let x = 0; x < w; x++) {
-                              const src = y * tm.gridWidth + x;
-                              if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
-                            }
-                          }
-                          tm.gridHeight = h;
-                          tm.tiles = next;
-                        })
-                      }
-                    />
-                  </div>
-                  <p className="m-0 font-mono text-[10px] text-text-muted">
-                    {tilemap.tiles.length} cells · paint on canvas with brush tools
-                  </p>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No tilemap on this entity</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Tilemap"); })}
+            />
 
-            <AccordionSection
-              icon={<Type size={12} />}
-              label="Text Label"
+            {/* Text */}
+            <TextSection
+              textComp={textComp}
+              assets={assets}
+              onChange={onChange}
               open={!collapsed.Text}
               onToggle={() => toggleCollapse("Text")}
-              removable={!!textComp}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "Text");
-                })
-              }
-              accent="purple"
-            >
-              {textComp ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Text
-                    </span>
-                    <Input
-                      value={textComp.text}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<TextComponent>(d, "Text")!.text = e.target.value;
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Font asset
-                    </span>
-                    <Select
-                      value={textComp.fontAssetId}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<TextComponent>(d, "Text")!.fontAssetId = e.target.value;
-                        })
-                      }
-                    >
-                      <option value="default">default</option>
-                      {assets.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.id}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                  <NumberField
-                    label="Size"
-                    value={textComp.size}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<TextComponent>(d, "Text")!.size = v;
-                      })
-                    }
-                  />
-                  <ColorField
-                    label="Color"
-                    value={textComp.color}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<TextComponent>(d, "Text")!.color = v;
-                      })
-                    }
-                  />
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Align
-                    </span>
-                    <Select
-                      value={textComp.align}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<TextComponent>(d, "Text")!.align = e.target
-                            .value as TextComponent["align"];
-                        })
-                      }
-                    >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
-                    </Select>
-                  </label>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No text component</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Text"); })}
+            />
 
-            <AccordionSection
-              icon={<Volume2 size={12} />}
-              label="Audio Source"
+            {/* Audio Source */}
+            <AudioSourceSection
+              audioSource={audioSource}
+              assets={assets}
+              onChange={onChange}
               open={!collapsed.AudioSource}
               onToggle={() => toggleCollapse("AudioSource")}
-              removable={!!audioSource}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "AudioSource");
-                })
-              }
-              accent="gold"
-            >
-              {audioSource ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Asset
-                    </span>
-                    <Select
-                      value={audioSource.assetId}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<AudioSourceComponent>(d, "AudioSource")!.assetId =
-                            e.target.value;
-                        })
-                      }
-                    >
-                      <option value="">— Select —</option>
-                      {assets.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.id}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                  <NumberField
-                    label="Volume"
-                    value={audioSource.volume}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<AudioSourceComponent>(d, "AudioSource")!.volume = v;
-                      })
-                    }
-                  />
-                  <CheckboxField
-                    label="Loop"
-                    checked={audioSource.loop}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<AudioSourceComponent>(d, "AudioSource")!.loop = checked;
-                      })
-                    }
-                  />
-                  <CheckboxField
-                    label="Play on start"
-                    checked={audioSource.playOnStart}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<AudioSourceComponent>(d, "AudioSource")!.playOnStart =
-                          checked;
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No audio source</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "AudioSource"); })}
+            />
 
-            <AccordionSection
-              icon={<Headphones size={12} />}
-              label="Audio Listener"
+            {/* Audio Listener */}
+            <AudioListenerSection
+              audioListener={audioListener}
+              onChange={onChange}
               open={!collapsed.AudioListener}
               onToggle={() => toggleCollapse("AudioListener")}
-              removable={!!audioListener}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "AudioListener");
-                })
-              }
-              accent="muted"
-            >
-              {audioListener ? (
-                <CheckboxField
-                  label="Enabled"
-                  checked={audioListener.enabled}
-                  onChange={(checked) =>
-                    onChange((d) => {
-                      findComponent<AudioListenerComponent>(d, "AudioListener")!.enabled = checked;
-                    })
-                  }
-                />
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No audio listener</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "AudioListener"); })}
+            />
 
-            <AccordionSection
-              icon={<Sun size={12} />}
-              label="Light 2D"
+            {/* Light 2D */}
+            <Light2DSection
+              light2D={light2D}
+              onChange={onChange}
               open={!collapsed.Light2D}
               onToggle={() => toggleCollapse("Light2D")}
-              removable={!!light2D}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "Light2D");
-                })
-              }
-              accent="gold"
-            >
-              {light2D ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Kind
-                    </span>
-                    <Select
-                      value={light2D.kind}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<Light2DComponent>(d, "Light2D")!.kind = e.target
-                            .value as Light2DComponent["kind"];
-                        })
-                      }
-                    >
-                      <option value="point">Point</option>
-                      <option value="spot">Spot</option>
-                    </Select>
-                  </label>
-                  <NumberField
-                    label="Range"
-                    value={light2D.range}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<Light2DComponent>(d, "Light2D")!.range = v;
-                      })
-                    }
-                  />
-                  <NumberField
-                    label="Intensity"
-                    value={light2D.intensity}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<Light2DComponent>(d, "Light2D")!.intensity = v;
-                      })
-                    }
-                  />
-                  <ColorField
-                    label="Color"
-                    value={light2D.color}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<Light2DComponent>(d, "Light2D")!.color = v;
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No light component</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Light2D"); })}
+            />
 
-            <AccordionSection
-              icon={<Square size={12} />}
-              label="NineSlice Sprite"
+            {/* NineSlice */}
+            <NineSliceSection
+              nineSlice={nineSlice}
+              assets={assets}
+              onChange={onChange}
               open={!collapsed.NineSlice}
               onToggle={() => toggleCollapse("NineSlice")}
-              removable={!!nineSlice}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "NineSlice");
-                })
-              }
-              accent="purple"
-            >
-              {nineSlice ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Asset
-                    </span>
-                    <Select
-                      value={nineSlice.assetId}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.assetId =
-                            e.target.value;
-                        })
-                      }
-                    >
-                      <option value="">— Select —</option>
-                      {assets.filter(a => a.kind === "image").map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.id}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <NumberField
-                      label="Width"
-                      value={nineSlice.width}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.width = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Height"
-                      value={nineSlice.height}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.height = v;
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <NumberField
-                      label="Left Width"
-                      value={nineSlice.leftWidth}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.leftWidth = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Right Width"
-                      value={nineSlice.rightWidth}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.rightWidth = v;
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <NumberField
-                      label="Top Height"
-                      value={nineSlice.topHeight}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.topHeight = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Bottom Height"
-                      value={nineSlice.bottomHeight}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<NineSliceComponent>(d, "NineSlice")!.bottomHeight = v;
-                        })
-                      }
-                    />
-                  </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No NineSlice component</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "NineSlice"); })}
+            />
 
-            <AccordionSection
-              icon={<Move size={12} />}
-              label="Tween Animation"
+            {/* Tween */}
+            <TweenSection
+              tween={tween}
+              onChange={onChange}
               open={!collapsed.Tween}
               onToggle={() => toggleCollapse("Tween")}
-              removable={!!tween}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "Tween");
-                })
-              }
-              accent="cyan"
-            >
-              {tween ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Property
-                    </span>
-                    <Select
-                      value={tween.property}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<TweenComponent>(d, "Tween")!.property = e.target
-                            .value as TweenComponent["property"];
-                        })
-                      }
-                    >
-                      <option value="position.x">position.x</option>
-                      <option value="position.y">position.y</option>
-                      <option value="rotation">rotation</option>
-                      <option value="scale.x">scale.x</option>
-                      <option value="scale.y">scale.y</option>
-                    </Select>
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <NumberField
-                      label="Start"
-                      value={tween.startValue}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TweenComponent>(d, "Tween")!.startValue = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="End"
-                      value={tween.endValue}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TweenComponent>(d, "Tween")!.endValue = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Duration"
-                      value={tween.duration}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<TweenComponent>(d, "Tween")!.duration = v;
-                        })
-                      }
-                    />
-                  </div>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Easing
-                    </span>
-                    <Select
-                      value={tween.easing}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<TweenComponent>(d, "Tween")!.easing = e.target
-                            .value as TweenComponent["easing"];
-                        })
-                      }
-                    >
-                      <option value="linear">Linear</option>
-                      <option value="easeIn">Ease In</option>
-                      <option value="easeOut">Ease Out</option>
-                      <option value="easeInOut">Ease In Out</option>
-                    </Select>
-                  </label>
-                  <CheckboxField
-                    label="Loop"
-                    checked={tween.loop}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<TweenComponent>(d, "Tween")!.loop = checked;
-                      })
-                    }
-                  />
-                  <CheckboxField
-                    label="Ping pong"
-                    checked={tween.pingPong}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<TweenComponent>(d, "Tween")!.pingPong = checked;
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No tween</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Tween"); })}
+            />
 
-            <AccordionSection
-              icon={<Route size={12} />}
-              label="Path Follower"
+            {/* FollowPath */}
+            <FollowPathSection
+              followPath={followPath}
+              onChange={onChange}
               open={!collapsed.FollowPath}
               onToggle={() => toggleCollapse("FollowPath")}
-              removable={!!followPath}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "FollowPath");
-                })
-              }
-              accent="green"
-            >
-              {followPath ? (
-                <>
-                  <NumberField
-                    label="Speed"
-                    value={followPath.speed}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<FollowPathComponent>(d, "FollowPath")!.speed = v;
-                      })
-                    }
-                  />
-                  <CheckboxField
-                    label="Loop"
-                    checked={followPath.loop}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<FollowPathComponent>(d, "FollowPath")!.loop = checked;
-                      })
-                    }
-                  />
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Points JSON
-                    </span>
-                    <Textarea
-                      className="min-h-[64px] font-mono text-[10px]"
-                      value={JSON.stringify(followPath.points)}
-                      onChange={(e) => {
-                        try {
-                          const points = JSON.parse(e.target.value) as { x: number; y: number }[];
-                          if (!Array.isArray(points)) return;
-                          onChange((d) => {
-                            findComponent<FollowPathComponent>(d, "FollowPath")!.points = points;
-                          });
-                        } catch {
-                          /* ignore partial JSON */
-                        }
-                      }}
-                    />
-                  </label>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      onChange((d) => {
-                        findComponent<FollowPathComponent>(d, "FollowPath")!.points.push({
-                          x: 0,
-                          y: 0,
-                        });
-                      })
-                    }
-                  >
-                    Add point
-                  </Button>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No path follower</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "FollowPath"); })}
+            />
 
-            <AccordionSection
-              icon={<GitBranch size={12} />}
-              label="FSM State Machine"
+            {/* State Machine */}
+            <StateMachineSection
+              stateMachine={stateMachine}
+              onChange={onChange}
               open={!collapsed.StateMachine}
               onToggle={() => toggleCollapse("StateMachine")}
-              removable={!!stateMachine}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "StateMachine");
-                })
-              }
-              accent="purple"
-            >
-              {stateMachine ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Initial state
-                    </span>
-                    <Input
-                      value={stateMachine.initialState}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<StateMachineComponent>(d, "StateMachine")!.initialState =
-                            e.target.value;
-                        })
-                      }
-                    />
-                  </label>
-                  <div className="space-y-2.5">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      States
-                    </span>
-                    {stateMachine.states.map((st, i) => (
-                      <div key={i} className="border border-white/[0.06] rounded-[6px] p-2 space-y-2 bg-black/10">
-                        <div className="flex items-center gap-1">
-                          <Input
-                            value={st.name}
-                            onChange={(e) =>
-                              onChange((d) => {
-                                const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                                const oldName = sm.states[i].name;
-                                const newName = e.target.value;
-                                
-                                if (sm.initialState === oldName) {
-                                  sm.initialState = newName;
-                                }
-                                
-                                for (const s of sm.states) {
-                                  if (s.on) {
-                                    for (const [evt, target] of Object.entries(s.on)) {
-                                      if (target === oldName) {
-                                        s.on[evt] = newName;
-                                      }
-                                    }
-                                  }
-                                }
-                                
-                                sm.states[i].name = newName;
-                              })
-                            }
-                          />
-                          <IconButton
-                            size="sm"
-                            variant="danger"
-                            title="Remove state"
-                            onClick={() =>
-                              onChange((d) => {
-                                const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                                const stateToRemove = sm.states[i].name;
-                                sm.states.splice(i, 1);
-                                
-                                if (sm.initialState === stateToRemove) {
-                                  sm.initialState = sm.states[0]?.name ?? "";
-                                }
-                                for (const s of sm.states) {
-                                  if (s.on) {
-                                    for (const [evt, target] of Object.entries(s.on)) {
-                                      if (target === stateToRemove) {
-                                        delete s.on[evt];
-                                      }
-                                    }
-                                  }
-                                }
-                              })
-                            }
-                          >
-                            <Trash2 size={11} />
-                          </IconButton>
-                        </div>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "StateMachine"); })}
+            />
 
-                        {/* Transitions List */}
-                        <div className="space-y-1.5 pl-2 border-l-2 border-purple-500/20">
-                          <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">
-                            Transitions
-                          </span>
-                          {Object.entries(st.on || {}).map(([evt, target]) => (
-                            <div key={evt} className="flex items-center gap-1.5 text-[11px]">
-                              <span className="text-text-muted font-mono truncate max-w-[80px]" title={evt}>{evt}:</span>
-                              <Select
-                                value={target}
-                                className="h-6 py-0 text-[11px] px-1.5"
-                                onChange={(e) =>
-                                  onChange((d) => {
-                                    const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                                    const s = sm.states[i];
-                                    if (s.on) {
-                                      s.on[evt] = e.target.value;
-                                    }
-                                  })
-                                }
-                              >
-                                {stateMachine.states.map((s) => (
-                                  <option key={s.name} value={s.name}>
-                                    {s.name}
-                                  </option>
-                                ))}
-                              </Select>
-                              <IconButton
-                                size="sm"
-                                variant="ghost"
-                                title="Remove transition"
-                                onClick={() =>
-                                  onChange((d) => {
-                                    const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                                    const s = sm.states[i];
-                                    if (s.on) {
-                                      delete s.on[evt];
-                                    }
-                                  })
-                                }
-                              >
-                                <Trash2 size={10} />
-                              </IconButton>
-                            </div>
-                          ))}
-                          
-                          <AddTransitionForm
-                            stateIndex={i}
-                            states={stateMachine.states}
-                            onChange={onChange}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() =>
-                        onChange((d) => {
-                          findComponent<StateMachineComponent>(d, "StateMachine")!.states.push({
-                            name: `state_${stateMachine.states.length}`,
-                          });
-                        })
-                      }
-                    >
-                      Add state
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No state machine</p>
-              )}
-            </AccordionSection>
-
-            <AccordionSection
-              icon={<Code2 size={12} />}
-              label="Behavior Script"
+            {/* Script */}
+            <ScriptSection
+              script={script}
+              onChange={onChange}
               open={!collapsed.Script}
               onToggle={() => toggleCollapse("Script")}
-              removable={!!script}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "Script");
-                })
-              }
-              accent="muted"
-            >
-              {script ? (
-                <>
-                  <p className="m-0 text-[10px] text-text-muted">
-                    {script.handlers.length} handler(s). Events fire at runtime.
-                  </p>
-                  {script.handlers.map((h, i) => (
-                    <div
-                      key={i}
-                      className="rounded-md border border-border-default bg-bg-base p-2 space-y-1.5"
-                    >
-                      <label className="flex flex-col gap-1">
-                        <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                          Event
-                        </span>
-                        <Input
-                          value={h.event}
-                          onChange={(e) =>
-                            onChange((d) => {
-                              findComponent<ScriptComponent>(d, "Script")!.handlers[i].event =
-                                e.target.value;
-                            })
-                          }
-                          placeholder="onStart | onUpdate | onCollision…"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1">
-                        <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                          Actions JSON
-                        </span>
-                        <Textarea
-                          className="min-h-[56px] font-mono text-[10px]"
-                          value={JSON.stringify(h.actions, null, 0)}
-                          onChange={(e) => {
-                            try {
-                              const actions = JSON.parse(e.target.value);
-                              if (!Array.isArray(actions)) return;
-                              onChange((d) => {
-                                findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions =
-                                  actions;
-                              });
-                            } catch {
-                              /* ignore */
-                            }
-                          }}
-                        />
-                      </label>
-                      <IconButton
-                        size="sm"
-                        variant="danger"
-                        title="Remove handler"
-                        onClick={() =>
-                          onChange((d) => {
-                            findComponent<ScriptComponent>(d, "Script")!.handlers.splice(i, 1);
-                          })
-                        }
-                      >
-                        <Trash2 size={11} />
-                      </IconButton>
-                    </div>
-                  ))}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      onChange((d) => {
-                        findComponent<ScriptComponent>(d, "Script")!.handlers.push({
-                          event: "onStart",
-                          actions: [],
-                        });
-                      })
-                    }
-                  >
-                    Add handler
-                  </Button>
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No script</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "Script"); })}
+            />
 
-            <AccordionSection
-              icon={<Sparkles size={12} />}
-              label="Particle System"
+            {/* Particle System */}
+            <ParticleSystemSection
+              particleSystem={particleSystem}
+              onChange={onChange}
               open={!collapsed.ParticleSystem}
               onToggle={() => toggleCollapse("ParticleSystem")}
-              removable={!!particleSystem}
-              onRemove={() =>
-                onChange((draft) => {
-                  draft.components = draft.components.filter((c) => c.type !== "ParticleSystem");
-                })
-              }
-              accent="gold"
-            >
-              {particleSystem ? (
-                <>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <NumberField
-                      label="Max"
-                      value={particleSystem.maxParticles}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.maxParticles =
-                            v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Rate"
-                      value={particleSystem.emissionRate}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.emissionRate =
-                            v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Life"
-                      value={particleSystem.lifetime}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.lifetime = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Speed"
-                      value={particleSystem.speed}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.speed = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Gravity"
-                      value={particleSystem.gravityScale}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.gravityScale =
-                            v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Size 0"
-                      value={particleSystem.sizeStart}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.sizeStart = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Size 1"
-                      value={particleSystem.sizeEnd}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.sizeEnd = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Box W"
-                      value={particleSystem.width}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.width = v;
-                        })
-                      }
-                    />
-                    <NumberField
-                      label="Box H"
-                      value={particleSystem.height}
-                      onChange={(v) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.height = v;
-                        })
-                      }
-                    />
-                  </div>
-                  <ColorField
-                    label="Start"
-                    value={particleSystem.colorStart}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.colorStart = v;
-                      })
-                    }
-                  />
-                  <ColorField
-                    label="End"
-                    value={particleSystem.colorEnd}
-                    onChange={(v) =>
-                      onChange((d) => {
-                        findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.colorEnd = v;
-                      })
-                    }
-                  />
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                      Shape
-                    </span>
-                    <Select
-                      value={particleSystem.shape}
-                      onChange={(e) =>
-                        onChange((d) => {
-                          findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.shape = e
-                            .target.value as ParticleSystemComponent["shape"];
-                        })
-                      }
-                    >
-                      <option value="point">Point</option>
-                      <option value="box">Box</option>
-                    </Select>
-                  </label>
-                  <CheckboxField
-                    label="Active"
-                    checked={particleSystem.active}
-                    onChange={(checked) =>
-                      onChange((d) => {
-                        findComponent<ParticleSystemComponent>(d, "ParticleSystem")!.active =
-                          checked;
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <p className="text-center text-[10px] text-text-muted">No particle system</p>
-              )}
-            </AccordionSection>
+              onRemove={() => onChange((draft) => { draft.components = draft.components.filter((c) => c.type !== "ParticleSystem"); })}
+            />
           </div>
 
           {/* Component Adder Section */}
@@ -2043,63 +462,5 @@ export function Inspector({
         />
       )}
     </aside>
-  );
-}
-
-type AddTransitionFormProps = {
-  stateIndex: number;
-  states: { name: string }[];
-  onChange: (fn: (draft: any) => void) => void;
-};
-
-function AddTransitionForm({ stateIndex, states, onChange }: AddTransitionFormProps) {
-  const [eventInput, setEventInput] = useState("");
-  const [targetState, setTargetState] = useState("");
-
-  const handleAdd = () => {
-    const trimmedEvent = eventInput.trim();
-    const resolvedTarget = targetState || (states[0]?.name ?? "");
-    if (!trimmedEvent || !resolvedTarget) return;
-    onChange((d) => {
-      const sm = findComponent<StateMachineComponent>(d, "StateMachine");
-      if (sm) {
-        const state = sm.states[stateIndex];
-        if (!state.on) {
-          state.on = {};
-        }
-        state.on[trimmedEvent] = resolvedTarget;
-      }
-    });
-    setEventInput("");
-  };
-
-  return (
-    <div className="flex gap-1 mt-1.5 items-center">
-      <Input
-        placeholder="event (e.g. collisionEnter)"
-        className="h-7 text-[11px] px-2 w-[140px] shrink-0"
-        value={eventInput}
-        onChange={(e) => setEventInput(e.target.value)}
-      />
-      <Select
-        value={targetState || (states[0]?.name ?? "")}
-        className="h-7 py-0 text-[11px] px-1.5"
-        onChange={(e) => setTargetState(e.target.value)}
-      >
-        {states.map((s) => (
-          <option key={s.name} value={s.name}>
-            {s.name}
-          </option>
-        ))}
-      </Select>
-      <Button
-        size="sm"
-        className="h-7 text-[10px] px-2.5 shrink-0"
-        disabled={!eventInput.trim() || (!targetState && !states[0]?.name)}
-        onClick={handleAdd}
-      >
-        Add
-      </Button>
-    </div>
   );
 }

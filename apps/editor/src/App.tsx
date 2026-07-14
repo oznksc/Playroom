@@ -63,6 +63,8 @@ import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
 import { getApiUrl } from "./lib/api.js";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
+import { displacementFromVelocity, velocityFromDisplacement, computeSceneWorldBounds, clampPlayCamera } from "./lib/physics.js";
 import logoUrl from "../../../logo.png";
 
 // GameKit Runtime physics & logic imports
@@ -85,59 +87,6 @@ import type { TimelineState } from "@gamekit/runtime/timeline";
 import { createAudioController, type AudioController } from "@gamekit/runtime/audio";
 import { playerInputFromPressedKeys } from "@gamekit/runtime/input-map";
 import { createCameraFollow } from "@gamekit/runtime/camera";
-
-/** Integrate velocity (units/sec) over dt for collision solvers that take frame displacement. */
-function displacementFromVelocity(velocity: Vector2, dt: number): Vector2 {
-  return { x: velocity.x * dt, y: velocity.y * dt };
-}
-
-function velocityFromDisplacement(displacement: Vector2, dt: number): Vector2 {
-  if (dt <= 0) return { x: 0, y: 0 };
-  return { x: displacement.x / dt, y: displacement.y / dt };
-}
-
-/** World bounds for camera clamp (long side-scrollers). */
-function computeSceneWorldBounds(scene: GameKitScene): { minX: number; minY: number; maxX: number; maxY: number } {
-  let minX = 0;
-  let minY = 0;
-  let maxX = scene.viewport.width;
-  let maxY = scene.viewport.height;
-  for (const entity of scene.entities) {
-    const t = entity.components.find((c): c is TransformComponent => c.type === "Transform");
-    if (!t) continue;
-    const sprite = entity.components.find((c) => c.type === "Sprite") as { width?: number; height?: number } | undefined;
-    const halfW = (sprite?.width ?? 64) / 2;
-    const halfH = (sprite?.height ?? 64) / 2;
-    minX = Math.min(minX, t.position.x - halfW);
-    minY = Math.min(minY, t.position.y - halfH);
-    maxX = Math.max(maxX, t.position.x + halfW);
-    maxY = Math.max(maxY, t.position.y + halfH);
-  }
-  // Padding so the camera can show a little beyond content
-  return {
-    minX: minX - 32,
-    minY: Math.min(0, minY - 32),
-    maxX: maxX + 64,
-    maxY: maxY + 64,
-  };
-}
-
-function clampPlayCamera(
-  cam: Vector2,
-  scene: GameKitScene,
-  world: { minX: number; minY: number; maxX: number; maxY: number },
-): Vector2 {
-  const vw = scene.viewport.width;
-  const vh = scene.viewport.height;
-  const worldW = Math.max(vw, world.maxX - world.minX);
-  const worldH = Math.max(vh, world.maxY - world.minY);
-  const maxPanX = world.minX + Math.max(0, worldW - vw);
-  const maxPanY = world.minY + Math.max(0, worldH - vh);
-  return {
-    x: Math.min(maxPanX, Math.max(world.minX, cam.x)),
-    y: Math.min(maxPanY, Math.max(world.minY, cam.y)),
-  };
-}
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const MVP_SHOW_GUI_TOOLS = false;
@@ -442,186 +391,34 @@ export function App() {
       .catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
   }, [currentSceneFile, projectPath]);
 
-  // ⌘K / ⌘Space — Spotlight-style command palette (capture so it wins over fields)
-  useEffect(() => {
-    function handleCommandPaletteHotkey(event: KeyboardEvent) {
-      const meta = event.metaKey || event.ctrlKey;
-      if (!meta || event.shiftKey || event.altKey) return;
-
-      const isK = event.key === "k" || event.key === "K";
-      const isSpace = event.code === "Space";
-      if (!isK && !isSpace) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      setCommandPaletteOpen((open) => !open);
-    }
-
-    window.addEventListener("keydown", handleCommandPaletteHotkey, true);
-    return () => window.removeEventListener("keydown", handleCommandPaletteHotkey, true);
-  }, []);
-
-  // Global Keyboard listener for editor tools & keyframes
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (commandPaletteOpenRef.current) return;
-
-      const ctrl = event.metaKey || event.ctrlKey;
-      const isInput = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement;
-
-      // Listen to Arrow states for active play mode movements
-      if (isPlaying && !isPaused) {
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", " "].includes(event.key)) {
-          pressedKeysRef.current.add(event.key);
-          if (["ArrowUp", " "].includes(event.key)) {
-            event.preventDefault(); // Stop page scrolling
-          }
-          return;
-        }
-      }
-
-      if (ctrl && !event.shiftKey && event.key === "z") {
-        event.preventDefault();
-        undo();
-        return;
-      }
-      if (ctrl && (event.shiftKey && event.key === "z") || (ctrl && event.key === "y")) {
-        event.preventDefault();
-        redo();
-        return;
-      }
-      if (ctrl && !event.shiftKey && event.key === "s") {
-        event.preventDefault();
-        saveScene(sceneRef.current);
-        return;
-      }
-
-      // Viewport Gizmo shortcuts
-      if (!isInput && !isPlaying) {
-        if (event.key === "q" || event.key === "Q") { setActiveTool("select"); return; }
-        if (event.key === "w" || event.key === "W") { setActiveTool("translate"); return; }
-        if (event.key === "e" || event.key === "E") { setActiveTool("rotate"); return; }
-        if (event.key === "r" || event.key === "R") { setActiveTool("scale"); return; }
-        if (event.key === "p" || event.key === "P") { setActiveTool("polygon-edit"); return; }
-      }
-
-      // Arrow keys entity nudging
-      if (!isInput && !isPlaying && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        const ids = selectedEntityIdsRef.current;
-        if (ids.size > 0) {
-          event.preventDefault();
-          const amount = event.shiftKey ? 10 : 1;
-          push((draft) => {
-            if (!draft) return;
-            for (const id of ids) {
-              const entity = draft.entities.find((candidate) => candidate.id === id);
-              const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
-              if (transform) {
-                if (event.key === "ArrowUp") transform.position.y -= amount;
-                if (event.key === "ArrowDown") transform.position.y += amount;
-                if (event.key === "ArrowLeft") transform.position.x -= amount;
-                if (event.key === "ArrowRight") transform.position.x += amount;
-              }
-            }
-          });
-          setIsDirty(true);
-          triggerAutoSave();
-          return;
-        }
-      }
-
-      if (!isInput && (event.key === "Delete" || event.key === "Backspace")) {
-        const ids = selectedEntityIdsRef.current;
-        if (ids.size > 0) {
-          event.preventDefault();
-          ids.forEach((id) => deleteEntity(id));
-        }
-        return;
-      }
-      if (ctrl && event.key === "d") {
-        const ids = selectedEntityIdsRef.current;
-        if (ids.size > 0) {
-          event.preventDefault();
-          ids.forEach((id) => duplicateEntity(id));
-        }
-        return;
-      }
-      if (ctrl && event.key === "c") {
-        const ids = selectedEntityIdsRef.current;
-        if (ids.size > 0) {
-          event.preventDefault();
-          const s = sceneRef.current;
-          if (!s) return;
-          const entity = s.entities.find((e) => e.id === [...ids][0]);
-          if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
-        }
-        return;
-      }
-      if (ctrl && event.key === "v") {
-        const entity = clipboardRef.current;
-        if (!entity) return;
-        event.preventDefault();
-        pasteEntity(entity);
-        return;
-      }
-      if (event.key === "Escape") {
-        if (selectedEntityIdsRef.current.size > 0 || selectedGuiNodeIdRef.current || selectedComponentInstanceIdRef.current) {
-          event.preventDefault();
-          setSelectedEntityIds(new Set());
-          setSelectedGuiNodeId(null);
-          setSelectedComponentInstanceId(null);
-        }
-        return;
-      }
-      if (!isInput && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        const ids = [...selectedEntityIdsRef.current];
-        if (ids.length === 0) return;
-        event.preventDefault();
-        const moveMap: Record<string, { x: number; y: number }> = {
-          ArrowUp: { x: 0, y: -1 },
-          ArrowDown: { x: 0, y: 1 },
-          ArrowLeft: { x: -1, y: 0 },
-          ArrowRight: { x: 1, y: 0 },
-        };
-        const delta = event.shiftKey ? 10 : 1;
-        const move = moveMap[event.key];
-        if (!move) return;
-        const shouldSnap = snap;
-        push((draft) => {
-          if (!draft) return;
-          for (const eid of ids) {
-            const ent = draft.entities.find((e) => e.id === eid);
-            if (!ent) continue;
-            const t = findComponent<TransformComponent>(ent, "Transform");
-            if (!t) continue;
-            if (shouldSnap) {
-              const rounded = { x: Math.round(t.position.x / snapSize) * snapSize, y: Math.round(t.position.y / snapSize) * snapSize };
-              t.position.x = rounded.x + move.x * snapSize;
-              t.position.y = rounded.y + move.y * snapSize;
-            } else {
-              t.position.x = Math.round((t.position.x + move.x * delta) * 10) / 10;
-              t.position.y = Math.round((t.position.y + move.y * delta) * 10) / 10;
-            }
-          }
-        });
-      }
-    }
-
-    function handleKeyUp(event: KeyboardEvent) {
-      if (isPlaying && !isPaused) {
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", " "].includes(event.key)) {
-          pressedKeysRef.current.delete(event.key);
-        }
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [undo, redo, push, snap, snapSize, isPlaying, isPaused]);
+  // Keyboard shortcuts — command palette hotkey & editor gizmo/nudge shortcuts
+  useKeyboardShortcuts({
+    commandPaletteOpenRef,
+    isPlaying,
+    isPaused,
+    pressedKeysRef,
+    undo,
+    redo,
+    push,
+    saveScene,
+    sceneRef,
+    setActiveTool,
+    selectedEntityIdsRef,
+    setIsDirty,
+    triggerAutoSave,
+    deleteEntity,
+    duplicateEntity,
+    pasteEntity,
+    clipboardRef,
+    selectedGuiNodeIdRef,
+    selectedComponentInstanceIdRef,
+    setSelectedEntityIds,
+    setSelectedGuiNodeId,
+    setSelectedComponentInstanceId,
+    snap,
+    snapSize,
+    setCommandPaletteOpen,
+  });
 
   // Hot-reload scene when file changes on disk (agent / external edits)
   useEffect(() => {
