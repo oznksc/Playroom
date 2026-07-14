@@ -1,12 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
+import type { GameSavePayload } from "@gamekit/schema";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 export function registerPersistenceTools(server: McpServer, fileIO: FileIO): void {
-  // assetsDir is <project>/gamekit/assets → state lives in <project>/gamekit/
-  const gamekitDir = fileIO.assetsDir.replace(/[/\\]assets$/, "");
+  const gamekitDir = join(fileIO.projectRoot, "gamekit");
   const statePath = join(gamekitDir, "state.json");
   const savesDir = join(gamekitDir, "saves");
 
@@ -21,6 +21,29 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
 
   async function writeState(state: Record<string, unknown>): Promise<void> {
     await writeFile(statePath, JSON.stringify(state, null, 2));
+  }
+
+  async function buildSavePayload(): Promise<GameSavePayload> {
+    const project = await fileIO.readProject();
+    const persistentState = await readState();
+    return {
+      version: 1,
+      persistentState,
+      levels: project.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
+      currentSceneId: project.activeScene ?? null,
+      currentLevelId: null,
+    };
+  }
+
+  async function restoreFromPayload(payload: GameSavePayload): Promise<void> {
+    await writeState(payload.persistentState);
+    const project = await fileIO.readProject();
+    for (const level of project.levels) {
+      const saved = payload.levels.find((l) => l.id === level.id);
+      if (saved) level.unlocked = saved.unlocked;
+    }
+    if (payload.currentSceneId) project.activeScene = payload.currentSceneId;
+    await fileIO.writeProject(project);
   }
 
   server.tool(
@@ -56,18 +79,23 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
 
   server.tool(
     "save_game",
-    "Save the current persistent state to a slot",
+    "Save the current game state (persistent vars + levels + active scene) to a slot",
     {
       slotName: z.string().describe("Name of the save slot"),
     },
     async ({ slotName }) => {
-      const state = await readState();
       try {
         await mkdir(savesDir, { recursive: true });
+        const payload = await buildSavePayload();
         const slotPath = join(savesDir, `${slotName}.json`);
-        await writeFile(slotPath, JSON.stringify(state, null, 2));
+        await writeFile(slotPath, JSON.stringify(payload, null, 2));
         return {
-          content: [{ type: "text", text: JSON.stringify({ success: true, slotName }) }],
+          content: [{ type: "text", text: JSON.stringify({
+            success: true,
+            slotName,
+            levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
+            currentScene: payload.currentSceneId,
+          }) }],
         };
       } catch (err) {
         return {
@@ -80,7 +108,7 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
 
   server.tool(
     "load_game",
-    "Load the persistent state from a save slot",
+    "Load the game state from a save slot (restores persistent vars + levels + active scene)",
     {
       slotName: z.string().describe("Name of the save slot"),
     },
@@ -88,10 +116,15 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       const slotPath = join(savesDir, `${slotName}.json`);
       try {
         const content = await readFile(slotPath, "utf-8");
-        const state = JSON.parse(content);
-        await writeState(state);
+        const payload = JSON.parse(content) as GameSavePayload;
+        await restoreFromPayload(payload);
         return {
-          content: [{ type: "text", text: JSON.stringify({ success: true, slotName, state }) }],
+          content: [{ type: "text", text: JSON.stringify({
+            success: true,
+            slotName,
+            levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
+            currentScene: payload.currentSceneId,
+          }) }],
         };
       } catch (err) {
         return {
