@@ -1,0 +1,26 @@
+{
+  "name": "Top-Down Shooter",
+  "description": "A zero-gravity top-down arena with a controllable player, walls, enemies, and projectile-ready triggers.",
+  "orientation": "landscape",
+  "viewport": { "width": 844, "height": 520, "background": "#111827" },
+  "gravity": { "x": 0, "y": 0 },
+  "entities": [
+    { "name": "Player", "components": [
+      { "type": "Transform", "position": { "x": 140, "y": 260 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "Sprite", "assetId": "player", "width": 40, "height": 40, "anchor": { "x": 0.5, "y": 0.5 } },
+      { "type": "AabbCollider", "offset": { "x": -20, "y": -20 }, "size": { "x": 40, "y": 40 }, "isStatic": false, "isTrigger": false },
+      { "type": "RigidBody", "velocity": { "x": 0, "y": 0 }, "angularVelocity": 0, "mass": 1, "drag": 4, "isKinematic": false, "gravityScale": 0, "useGravity": false },
+      { "type": "PlayerController", "speed": 220, "jumpVelocity": 0, "gravity": 0 }
+    ] },
+    { "name": "Enemy", "components": [
+      { "type": "Transform", "position": { "x": 650, "y": 260 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "Sprite", "assetId": "enemy", "width": 40, "height": 40, "anchor": { "x": 0.5, "y": 0.5 } },
+      { "type": "AabbCollider", "offset": { "x": -20, "y": -20 }, "size": { "x": 40, "y": 40 }, "isStatic": false, "isTrigger": false },
+      { "type": "RigidBody", "velocity": { "x": 0, "y": 0 }, "angularVelocity": 0, "mass": 1, "drag": 1, "isKinematic": true, "gravityScale": 0, "useGravity": false }
+    ] },
+    { "name": "ArenaWall", "components": [
+      { "type": "Transform", "position": { "x": 422, "y": 20 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "AabbCollider", "offset": { "x": -422, "y": -12 }, "size": { "x": 844, "y": 24 }, "isStatic": true, "isTrigger": false }
+    ] }
+  ]
+}
