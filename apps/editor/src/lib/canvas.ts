@@ -32,6 +32,8 @@ export type DrawSceneOptions = {
    * screen space after the camera transform is restored.
    */
   skipScreenSpaceText?: boolean;
+  /** When "polygon-edit", draw vertex handles for polygon colliders. */
+  activeTool?: string;
 };
 
 export function drawScene(
@@ -239,6 +241,26 @@ export function drawScene(
         }
         context.closePath();
         context.fill();
+      }
+
+      // Polygon vertex handles (when polygon-edit tool is active)
+      if (polygon && polygon.points.length >= 1 && selectedEntityIds.has(entity.id) && options.activeTool === "polygon-edit") {
+        const pox = transform.position.x + polygon.offset.x;
+        const poy = transform.position.y + polygon.offset.y;
+        const zoom = Math.abs(context.getTransform().a) || 1;
+        const radius = 5 / zoom;
+        const strokeWidth = 1 / zoom;
+        for (let i = 0; i < polygon.points.length; i++) {
+          const px = pox + polygon.points[i].x;
+          const py = poy + polygon.points[i].y;
+          context.fillStyle = "#ffb300";
+          context.beginPath();
+          context.arc(px, py, radius, 0, Math.PI * 2);
+          context.fill();
+          context.strokeStyle = "#fff";
+          context.lineWidth = strokeWidth;
+          context.stroke();
+        }
       }
 
       // FollowPath waypoint gizmo — connected line + dots
@@ -831,6 +853,25 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
   }
 
   return false;
+}
+
+const VERTEX_HIT_RADIUS = 8;
+
+export function hitPolygonVertex(entity: GameKitEntity, point: { x: number; y: number }, zoom = 1): number {
+  const transform = findComponent<TransformComponent>(entity, "Transform");
+  const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
+  if (!transform || !polygon) return -1;
+  const ox = transform.position.x + polygon.offset.x;
+  const oy = transform.position.y + polygon.offset.y;
+  const hitRadius = VERTEX_HIT_RADIUS / zoom;
+  for (let i = 0; i < polygon.points.length; i++) {
+    const px = ox + polygon.points[i].x;
+    const py = oy + polygon.points[i].y;
+    const dx = point.x - px;
+    const dy = point.y - py;
+    if (dx * dx + dy * dy <= hitRadius * hitRadius) return i;
+  }
+  return -1;
 }
 
 function drawArrow(
