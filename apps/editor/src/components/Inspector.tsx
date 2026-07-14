@@ -17,7 +17,8 @@ import type {
   TweenComponent,
   FollowPathComponent,
   StateMachineComponent,
-  ScriptComponent
+  ScriptComponent,
+  Light2DComponent
 } from "@gamekit/schema";
 import {
   Box,
@@ -38,6 +39,7 @@ import {
   Code2,
   Sparkles,
   Grid3x3,
+  Sun,
 } from "lucide-react";
 import { useState } from "react";
 import { findComponent } from "../lib/components.js";
@@ -91,6 +93,7 @@ export function Inspector({
     StateMachine: true,
     Script: true,
     ParticleSystem: true,
+    Light2D: true,
   });
 
   const [selectedCompToAdd, setSelectedCompToAdd] = useState("");
@@ -112,6 +115,7 @@ export function Inspector({
   const stateMachine = entity ? findComponent<StateMachineComponent>(entity, "StateMachine") : undefined;
   const script = entity ? findComponent<ScriptComponent>(entity, "Script") : undefined;
   const particleSystem = entity ? findComponent<ParticleSystemComponent>(entity, "ParticleSystem") : undefined;
+  const light2D = entity ? findComponent<Light2DComponent>(entity, "Light2D") : undefined;
 
   function toggleCollapse(comp: string) {
     setCollapsed((prev) => ({ ...prev, [comp]: !prev[comp] }));
@@ -268,6 +272,14 @@ export function Inspector({
           height: 0,
           active: true,
         });
+      } else if (val === "Light2D") {
+        draft.components.push({
+          type: "Light2D",
+          kind: "point",
+          range: 200,
+          intensity: 1.0,
+          color: "#ffffff"
+        });
       }
     });
 
@@ -281,6 +293,7 @@ export function Inspector({
         RigidBody: "RigidBody",
         CameraFollow: "Camera",
         ParticleSystem: "ParticleSystem",
+        Light2D: "Light2D",
       };
       return { ...prev, [keyMap[val] ?? val]: false };
     });
@@ -305,6 +318,7 @@ export function Inspector({
     if (!stateMachine) missingComponents.push({ val: "StateMachine", label: "FSM State Machine" });
     if (!script) missingComponents.push({ val: "Script", label: "Behavior Script" });
     if (!particleSystem) missingComponents.push({ val: "ParticleSystem", label: "Particle System" });
+    if (!light2D) missingComponents.push({ val: "Light2D", label: "Light 2D" });
   }
 
   return (
@@ -1210,6 +1224,71 @@ export function Inspector({
                 />
               ) : (
                 <p className="text-center text-[10px] text-text-muted">No audio listener</p>
+              )}
+            </AccordionSection>
+
+            <AccordionSection
+              icon={<Sun size={12} />}
+              label="Light 2D"
+              open={!collapsed.Light2D}
+              onToggle={() => toggleCollapse("Light2D")}
+              removable={!!light2D}
+              onRemove={() =>
+                onChange((draft) => {
+                  draft.components = draft.components.filter((c) => c.type !== "Light2D");
+                })
+              }
+              accent="gold"
+            >
+              {light2D ? (
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                      Kind
+                    </span>
+                    <Select
+                      value={light2D.kind}
+                      onChange={(e) =>
+                        onChange((d) => {
+                          findComponent<Light2DComponent>(d, "Light2D")!.kind = e.target
+                            .value as Light2DComponent["kind"];
+                        })
+                      }
+                    >
+                      <option value="point">Point</option>
+                      <option value="spot">Spot</option>
+                    </Select>
+                  </label>
+                  <NumberField
+                    label="Range"
+                    value={light2D.range}
+                    onChange={(v) =>
+                      onChange((d) => {
+                        findComponent<Light2DComponent>(d, "Light2D")!.range = v;
+                      })
+                    }
+                  />
+                  <NumberField
+                    label="Intensity"
+                    value={light2D.intensity}
+                    onChange={(v) =>
+                      onChange((d) => {
+                        findComponent<Light2DComponent>(d, "Light2D")!.intensity = v;
+                      })
+                    }
+                  />
+                  <ColorField
+                    label="Color"
+                    value={light2D.color}
+                    onChange={(v) =>
+                      onChange((d) => {
+                        findComponent<Light2DComponent>(d, "Light2D")!.color = v;
+                      })
+                    }
+                  />
+                </>
+              ) : (
+                <p className="text-center text-[10px] text-text-muted">No light component</p>
               )}
             </AccordionSection>
 
