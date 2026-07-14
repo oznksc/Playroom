@@ -11,7 +11,7 @@ import {
 import type { FileIO } from "../utils/file-io.js";
 
 export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
-  server.tool("list_prefabs", "List all prefab templates in gamekit/prefabs/", {}, async () => {
+  server.tool("list_prefabs", "List all prefab template files in gamekit/prefabs/. Returns each prefab's file, id, name, component types, and source entity name. Unreadable files are included with an 'error' field.", {}, async () => {
     const files = await fileIO.listPrefabs();
     const prefabs = [];
     for (const file of files) {
@@ -35,7 +35,7 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "create_prefab",
-    "Create a prefab template from an existing entity in a scene",
+    "Create a prefab template from an entity in a scene. Captures all the entity's components into a reusable template file saved to gamekit/prefabs/<slug>.prefab.json. The prefab name defaults to the entity's name if not specified. Use instantiate_prefab to spawn instances of this prefab.",
     {
       scenePath: z.string().describe("Scene filename containing the source entity"),
       entityId: z.string().describe("Entity ID to capture as a prefab"),
@@ -82,7 +82,7 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "instantiate_prefab",
-    "Spawn a prefab instance into a scene at an optional world position",
+    "Spawn a prefab instance into a scene. Looks up the prefab by filename, id, or name (in that order). If x/y are provided, the instance's Transform position is set to those values; otherwise the prefab's original Transform position is used. The instance gets a fresh entity ID. Returns the created entity info and the source prefab ID.",
     {
       scenePath: z.string().describe("Target scene filename"),
       prefabId: z
@@ -191,7 +191,7 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "remove_prefab",
-    "Delete a prefab file from gamekit/prefabs/",
+    "Delete a prefab file from gamekit/prefabs/. Existing instances of this prefab in scenes are NOT removed and will become orphaned. Lookup is by filename or by slugified name.",
     {
       prefabId: z.string().describe("Prefab id or filename"),
     },

@@ -8,7 +8,7 @@ import { raycast } from "@gamekit/runtime/collision";
 export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
     "add_collider",
-    "Add an AabbCollider, CircleCollider, or PolygonCollider to an entity",
+    "Add a physics collider to an entity. Only one collider per entity is allowed (AabbCollider, CircleCollider, or PolygonCollider). Conditional requirements: AabbCollider requires 'size' ({x,y} in pixels, both > 0); CircleCollider requires 'radius' (pixels, > 0); PolygonCollider requires 'points' (array of >=3 local-coordinate vertices). 'layer' and 'mask' are integer bitmasks for collision filtering. Returns the updated entity.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -105,7 +105,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "add_rigid_body",
-    "Add a RigidBody component to an entity",
+    "Add a RigidBody to an entity for physics simulation. Only one RigidBody per entity is allowed. Dynamic bodies (isKinematic=false) respond to forces, gravity, and collisions. Kinematic bodies (isKinematic=true) move only via code. gravityScale: 0=float, 1=normal, 2=double. drag: 0=no air resistance, 1=full stop. Returns the updated entity.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -156,7 +156,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "set_collision_layer",
-    "Set collision layer and mask for an entity's collider",
+    "Set collision layer and/or mask bitmasks on an entity's existing collider. The entity must have an AabbCollider, CircleCollider, or PolygonCollider. Bitmask logic: collision occurs when (A.mask & B.layer) != 0 AND (B.mask & A.layer) != 0. Example: layer=1, mask=3 means this entity is on layer 1 and collides with layers 1 and 2.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -199,7 +199,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "set_trigger",
-    "Set a collider as a trigger (overlap-only, no collision response)",
+    "Set a collider as a trigger on an entity. Trigger colliders detect overlaps but do not produce physical collision responses (objects pass through). The entity must already have a collider (AabbCollider, CircleCollider, or PolygonCollider).",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -253,7 +253,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "raycast",
-    "Cast a ray from origin in direction and return the first entity hit",
+    "Cast a ray in the scene and return the first entity with a collider that intersects it. Direction vector is auto-normalized. Returns { hit: null } if nothing is hit, otherwise returns hit info with entityId, point, normal, and distance. Entities without colliders are ignored. maxDistance limits ray length in pixels (omit for unlimited). mask filters by collision layer bitmask.",
     {
       scenePath: z.string().describe("Scene filename"),
       originX: z.number().describe("Ray origin X"),
@@ -288,7 +288,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "query_overlaps",
-    "List all entities with colliders overlapping a given point or area",
+    "Query all entities whose colliders overlap a given point or circular area. radius=0 performs a point-in-collider test; radius>0 finds all colliders within that distance in pixels of the point. Returns an array of { entityId, colliderType } objects. Entities without a Transform or collider are ignored.",
     {
       scenePath: z.string().describe("Scene filename"),
       pointX: z.number().describe("Query point X"),
