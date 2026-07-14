@@ -35,6 +35,7 @@ import {
   Box,
   FileText,
   Command,
+  Route,
 } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
@@ -205,7 +206,7 @@ export function App() {
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
     []
   );
-  const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale" | "paint" | "erase">("translate");
+  const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit">("translate");
   const [paintTileId, setPaintTileId] = useState(1);
   const [playFps, setPlayFps] = useState(0);
   const [playFrameMs, setPlayFrameMs] = useState(0);
@@ -501,6 +502,7 @@ export function App() {
         if (event.key === "w" || event.key === "W") { setActiveTool("translate"); return; }
         if (event.key === "e" || event.key === "E") { setActiveTool("rotate"); return; }
         if (event.key === "r" || event.key === "R") { setActiveTool("scale"); return; }
+        if (event.key === "p" || event.key === "P") { setActiveTool("polygon-edit"); return; }
       }
 
       // Arrow keys entity nudging
@@ -1881,6 +1883,15 @@ export function App() {
         run: () => setActiveTool("erase"),
       },
       {
+        id: "tool-polygon-edit",
+        label: "Polygon edit tool",
+        section: "Tools",
+        keywords: ["polygon", "collider", "points"],
+        shortcut: "P",
+        icon: ic(<Route size={14} strokeWidth={1.75} />),
+        run: () => setActiveTool("polygon-edit"),
+      },
+      {
         id: "tool-snap",
         label: snap ? "Disable snap" : "Enable snap",
         section: "Tools",
@@ -2268,6 +2279,18 @@ export function App() {
                 if (updates.position) transform.position = updates.position;
                 if (updates.rotation !== undefined) transform.rotation = updates.rotation;
                 if (updates.scale) transform.scale = updates.scale;
+              }
+            });
+            setIsDirty(true);
+            triggerAutoSave();
+          }}
+          onPolygonPointsChange={(id, points) => {
+            push((draft) => {
+              if (!draft) return;
+              const entity = draft.entities.find((candidate) => candidate.id === id);
+              const polygon = entity?.components.find((c): c is import("@gamekit/schema").PolygonColliderComponent => c.type === "PolygonCollider");
+              if (polygon) {
+                polygon.points = points;
               }
             });
             setIsDirty(true);

@@ -1,7 +1,7 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent, SceneTransitionDef } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { GameKitView } from "./view.js";
+import { StyleSheet, View } from "react-native";
+import { GameKitView, type TransitionOverlay } from "./view.js";
 import { useGameLoop } from "./loop.js";
 import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
@@ -18,6 +18,7 @@ import { evaluateScriptEvent, transitionFsm } from "./script.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
 import { deepClone } from "./clone.js";
+import { VirtualJoystick } from "./joystick.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -26,9 +27,10 @@ export type GameKitGameProps = {
   onTriggerEnter?: (event: TriggerEvent) => void;
   onTriggerExit?: (event: TriggerEvent) => void;
   onCollisionEnter?: (event: CollisionEvent) => void;
+  transition?: SceneTransitionDef;
 };
 
-export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter }: GameKitGameProps) {
+export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter, transition }: GameKitGameProps) {
   const entitiesRef = useRef(deepClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
@@ -43,6 +45,35 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
+  const [transitionOverlay, setTransitionOverlay] = useState<TransitionOverlay | null>(null);
+  const prevSceneIdRef = useRef<string>(scene.id);
+
+  useEffect(() => {
+    if (prevSceneIdRef.current !== scene.id) {
+      const d = (transition?.type === "fade" || transition?.type === "slide")
+        ? (transition.duration ?? 0.3)
+        : 0;
+      if (d > 0) {
+        const steps = Math.max(8, Math.round(d * 30));
+        const stepMs = (d * 1000) / steps;
+        let step = 0;
+        setTransitionOverlay({ opacity: 1, color: "#000000" });
+        const interval = setInterval(() => {
+          step++;
+          const t = step / (steps / 2);
+          setTransitionOverlay({ opacity: Math.max(0, 1 - Math.min(t, 1)), color: "#000000" });
+          if (step >= steps) {
+            clearInterval(interval);
+            setTransitionOverlay(null);
+          }
+        }, stepMs);
+        prevSceneIdRef.current = scene.id;
+        return () => clearInterval(interval);
+      } else {
+        prevSceneIdRef.current = scene.id;
+      }
+    }
+  }, [scene.id, transition]);
 
   useEffect(() => {
     entitiesRef.current = deepClone(scene.entities);
@@ -428,63 +459,22 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           zoom: cameraStateRef.current.zoom,
         }}
         particlesByEntity={particlesByEntityRef.current}
+        transitionOverlay={transitionOverlay}
       />
       {showControls && (
-        <VirtualControls
-          onLeftPressIn={() => setLeft(true)}
-          onLeftPressOut={() => setLeft(false)}
-          onRightPressIn={() => setRight(true)}
-          onRightPressOut={() => setRight(false)}
-          onJumpPressIn={() => setJump(true)}
-          onJumpPressOut={() => setJump(false)}
+        <VirtualJoystick
+          onMove={(x, y) => {
+            setLeft(x < -0.3);
+            setRight(x > 0.3);
+            setJump(y < -0.5);
+          }}
+          onRelease={() => {
+            setLeft(false);
+            setRight(false);
+            setJump(false);
+          }}
         />
       )}
-    </View>
-  );
-}
-
-type VirtualControlsProps = {
-  onLeftPressIn: () => void;
-  onLeftPressOut: () => void;
-  onRightPressIn: () => void;
-  onRightPressOut: () => void;
-  onJumpPressIn: () => void;
-  onJumpPressOut: () => void;
-};
-
-function VirtualControls({
-  onLeftPressIn,
-  onLeftPressOut,
-  onRightPressIn,
-  onRightPressOut,
-  onJumpPressIn,
-  onJumpPressOut,
-}: VirtualControlsProps) {
-  return (
-    <View style={styles.controls} pointerEvents="box-none">
-      <View style={styles.dpad}>
-        <Pressable
-          onPressIn={onLeftPressIn}
-          onPressOut={onLeftPressOut}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>◀</Text>
-        </Pressable>
-        <Pressable
-          onPressIn={onRightPressIn}
-          onPressOut={onRightPressOut}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>▶</Text>
-        </Pressable>
-      </View>
-      <Pressable
-        onPressIn={onJumpPressIn}
-        onPressOut={onJumpPressOut}
-        style={[styles.button, styles.jumpButton]}
-      >
-        <Text style={styles.buttonText}>▲</Text>
-      </Pressable>
     </View>
   );
 }
@@ -492,39 +482,5 @@ function VirtualControls({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  controls: {
-    position: "absolute",
-    bottom: 40,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingHorizontal: 24,
-  },
-  dpad: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  button: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  buttonText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: 28,
-    fontWeight: "600",
-  },
-  jumpButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
   },
 });

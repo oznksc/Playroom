@@ -21,7 +21,8 @@ import {
   slugify,
   validatePrefab,
   validateProject,
-  validateScene
+  validateScene,
+  type GameSavePayload,
 } from "@gamekit/schema";
 
 export type InitResult = {
@@ -599,6 +600,79 @@ export async function exportProject(root: string, outputDir: string, platform: "
   await generateAssetRegistry(outputDir, platform);
 
   return outputDir;
+}
+
+export async function saveGameState(root: string, slotName: string): Promise<void> {
+  const gamekitRoot = getGameKitRoot(root);
+  const project = await readProject(root);
+  const savesDir = join(gamekitRoot, "saves");
+  await mkdir(savesDir, { recursive: true });
+
+  let persistentState: Record<string, unknown> = {};
+  try {
+    persistentState = JSON.parse(await readFile(join(gamekitRoot, "state.json"), "utf-8"));
+  } catch {}
+
+  const payload: GameSavePayload = {
+    version: 1,
+    persistentState,
+    levels: project.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
+    currentSceneId: project.activeScene ?? null,
+    currentLevelId: null,
+  };
+
+  await writeFile(join(savesDir, `${slotName}.json`), JSON.stringify(payload, null, 2));
+}
+
+export async function loadGameState(root: string, slotName: string): Promise<void> {
+  const gamekitRoot = getGameKitRoot(root);
+  const slotPath = join(gamekitRoot, "saves", `${slotName}.json`);
+  const content = await readFile(slotPath, "utf-8");
+  const payload = JSON.parse(content) as GameSavePayload;
+
+  const project = await readProject(root);
+  for (const level of project.levels) {
+    const saved = payload.levels.find((l) => l.id === level.id);
+    if (saved) level.unlocked = saved.unlocked;
+  }
+  if (payload.currentSceneId) project.activeScene = payload.currentSceneId;
+  await writeProject(root, project);
+
+  await writeFile(join(gamekitRoot, "state.json"), JSON.stringify(payload.persistentState, null, 2));
+}
+
+export type SaveSlotInfo = {
+  slotName: string;
+  levelsUnlocked: number;
+  totalLevels: number;
+  currentScene: string | null;
+  savedAt: string;
+};
+
+export async function listSaveSlots(root: string): Promise<SaveSlotInfo[]> {
+  const gamekitRoot = getGameKitRoot(root);
+  const savesDir = join(gamekitRoot, "saves");
+  let files: string[];
+  try {
+    files = await readdir(savesDir);
+  } catch {
+    return [];
+  }
+  const slots: SaveSlotInfo[] = [];
+  for (const file of files) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const content = JSON.parse(await readFile(join(savesDir, file), "utf-8")) as GameSavePayload;
+      slots.push({
+        slotName: file.replace(".json", ""),
+        levelsUnlocked: content.levels.filter((l) => l.unlocked).length,
+        totalLevels: content.levels.length,
+        currentScene: content.currentSceneId,
+        savedAt: "",
+      });
+    } catch {}
+  }
+  return slots;
 }
 
 function createStarterScene(): GameKitScene {

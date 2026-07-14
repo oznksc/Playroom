@@ -32,6 +32,7 @@ import {
   FileCode,
   Boxes,
   Map,
+  Route,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -45,7 +46,7 @@ export type TabBarDestination =
   | "content"
   | "agent"
   | "world";
-export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" | "erase";
+export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit";
 
 type AppTabBarProps = {
   active: TabBarDestination | null;
@@ -114,6 +115,10 @@ const TOOL_META: Record<
   erase: {
     label: "Erase",
     icon: (s = 18) => <Eraser size={s} strokeWidth={1.75} />,
+  },
+  "polygon-edit": {
+    label: "Polygon",
+    icon: (s = 18) => <Route size={s} strokeWidth={1.75} />,
   },
 };
 

@@ -20,6 +20,7 @@ import { registerBehaviorTools } from "./tools/behavior.js";
 import { registerSimulateTools } from "./tools/simulate.js";
 import { registerPrefabTools } from "./tools/prefabs.js";
 import { registerBatchTools } from "./tools/batch.js";
+import { registerInputTools } from "./tools/input.js";
 import { registerDoctorTools } from "./tools/doctor.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
@@ -54,6 +55,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerSimulateTools(server, fileIO);
   registerPrefabTools(server, fileIO);
   registerBatchTools(server, fileIO);
+  registerInputTools(server, fileIO);
   registerDoctorTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);

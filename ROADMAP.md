@@ -57,11 +57,11 @@ Schema is the contract; runtime + editor + MCP evolve together.
 
 ### Tasks
 - [x] `Tilemap` (self-contained: tileset asset + grid + flat tile array) — editör render + runtime Skia render
-- [ ] `Text` bileşeni (font assetId, size, color, align)
+- [x] `Text` bileşeni (font assetId, size, color, align)
 - [ ] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
 - [ ] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
 - [ ] `Light2D` (point/spot, range, intensity, color) — runtime-web Phaser ışıklarıyla eşle
-- [ ] `StateMachine` (states + transitions + events)
+- [x] `StateMachine` (states + transitions + events)
 - [ ] `Script` / behavior node (tetikli event handler, JSON DSL)
 - [ ] `Tween` / timeline track başına easing curves
 - [ ] `Path2D` + `FollowPath` (waypoint patrol)
@@ -70,7 +70,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 ### MCP Araçları (yeni)
 - [x] `add_tilemap` — entity'ye `Tilemap` bileşeni ekler (tilesetId, tileWidth/Height, columns, gridWidth/Height)
 - [x] `paint_tile` — tilemap üzerinde gridX/gridY pozisyonuna tileId yazar
-- `add_text` — `Text` bileşeni ekler (font, boyut, hizalama)
+- [x] `add_text` — `Text` bileşeni ekler (font, boyut, hizalama)
 - `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
 - `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
 - `add_particle_system` — emitter parametreleriyle `ParticleSystem` oluşturur
