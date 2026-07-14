@@ -63,6 +63,10 @@ import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
 import { getApiUrl } from "./lib/api.js";
+import { executeEditorConsoleCommand } from "./lib/editor-console.js";
+import { resetPlaySession } from "./lib/play-session.js";
+import { createPlayPhysicsState } from "./lib/play-physics-state.js";
+import { initializePlayCamera } from "./lib/play-camera.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { displacementFromVelocity, velocityFromDisplacement, computeSceneWorldBounds, clampPlayCamera } from "./lib/physics.js";
 import logoUrl from "../../../logo.png";
@@ -1249,52 +1253,15 @@ export function App() {
         playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
         setPlayLives(rules.lives > 0 ? rules.lives : null);
 
-        for (const entity of scene.entities) {
-          const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
-          if (pc) {
-            controllersRef.current.set(entity.id, createPlayerController(pc));
-          }
-          const rb = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
-          if (rb) {
-            rigidBodyRefs.current.set(entity.id, createRigidBody(rb));
-          }
-        }
+        const physicsState = createPlayPhysicsState(scene);
+        controllersRef.current = physicsState.controllers;
+        rigidBodyRefs.current = physicsState.rigidBodies;
 
-        // Seed camera on the player / CameraFollow target so the first frame isn't stuck at origin
-        let followTargetId: string | undefined;
-        let followSmoothing = 0.2;
-        for (const entity of scene.entities) {
-          const cf = entity.components.find((c): c is CameraFollowComponent => c.type === "CameraFollow");
-          if (cf) {
-            followTargetId = cf.targetId || entity.id;
-            followSmoothing = cf.smoothing > 0 ? cf.smoothing : 0.2;
-            break;
-          }
-        }
-        const target =
-          scene.entities.find((e) => e.id === followTargetId) ??
-          scene.entities.find((e) => e.components.some((c) => c.type === "PlayerController"));
-        const t = target?.components.find((c): c is TransformComponent => c.type === "Transform");
-        if (t) {
-          playSpawnRef.current = rules.spawnPoint
-            ? { ...rules.spawnPoint }
-            : { x: t.position.x, y: t.position.y };
-          const init = {
-            x: t.position.x - scene.viewport.width / 2,
-            y: t.position.y - scene.viewport.height / 2,
-          };
-          const world = computeSceneWorldBounds(scene);
-          const clamped = clampPlayCamera(init, scene, world);
-          cameraFollowRef.current = createCameraFollow({
-            viewport: { x: scene.viewport.width, y: scene.viewport.height },
-            smoothing: Math.min(1, Math.max(0.18, followSmoothing)),
-            initial: { position: clamped, zoom: 1 },
-          });
-          playViewPanRef.current = clamped;
-          setPlayViewPan(clamped);
-        } else if (rules.spawnPoint) {
-          playSpawnRef.current = { ...rules.spawnPoint };
-        }
+        const cameraState = initializePlayCamera(scene, rules);
+        if (cameraState.spawnPoint) playSpawnRef.current = cameraState.spawnPoint;
+        cameraFollowRef.current = cameraState.cameraFollow;
+        playViewPanRef.current = cameraState.pan;
+        setPlayViewPan(cameraState.pan);
 
         if (rules.fallDeathEnabled) {
           const fallY = resolveFallDeathY(scene, rules);
@@ -1338,20 +1305,7 @@ export function App() {
       setIsPaused(false);
       reset(preSimulationSceneRef.current);
       addConsoleLog("system", "IGNITE SIMULATOR: Sandbox execution stopped. Viewport reverted.");
-      controllersRef.current.clear();
-      rigidBodyRefs.current.clear();
-      animationStatesRef.current.clear();
-      triggerStateRef.current.clear();
-      collisionStateRef.current.clear();
-      cameraFollowRef.current = null;
-      playViewPanRef.current = null;
-      setPlayViewPan(null);
-      playOutcomeRef.current = "none";
-      setPlayOutcome(null);
-      setPlayLives(null);
-      fallCooldownRef.current = 0;
-      audioControllerRef.current?.dispose();
-      audioControllerRef.current = null;
+      resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
     }
   }
 
@@ -1361,19 +1315,7 @@ export function App() {
     setIsPlaying(false);
     setIsPaused(false);
     reset(snapshot);
-    controllersRef.current.clear();
-    rigidBodyRefs.current.clear();
-    animationStatesRef.current.clear();
-    triggerStateRef.current.clear();
-    collisionStateRef.current.clear();
-    cameraFollowRef.current = null;
-    playViewPanRef.current = null;
-    setPlayViewPan(null);
-    playOutcomeRef.current = "none";
-    setPlayOutcome(null);
-    fallCooldownRef.current = 0;
-    audioControllerRef.current?.dispose();
-    audioControllerRef.current = null;
+    resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
     // Fresh play after state settles
     window.setTimeout(() => {
       preSimulationSceneRef.current = structuredClone(snapshot);
@@ -1383,103 +1325,19 @@ export function App() {
 
   // Terminal slash commands
   function executeConsoleCommand(cmdStr: string) {
-    const tokens = cmdStr.trim().split(/\s+/);
-    const cmd = tokens[0].toLowerCase();
-
-    if (cmd === "/clear") {
+    if (cmdStr.trim().toLowerCase() === "/clear") {
       setLogs([]);
       return;
     }
-
-    addConsoleLog("system", `Executing command: ${cmdStr}`);
-
-    if (cmd === "/help") {
-      addConsoleLog("system", "Engine Command Console Reference:");
-      addConsoleLog("system", "  /spawn                - Spawns randomized solid obstacle Box.");
-      addConsoleLog("system", "  /gravity [number]     - Adjusts simulated gravity force (e.g. 1800).");
-      addConsoleLog("system", "  /speed [number]       - Overrides speed px/s on active Player.");
-      addConsoleLog("system", "  /clear                - Empties terminal logs history.");
-      return;
-    }
-
-    if (cmd === "/spawn") {
-      updateScene((draft) => {
-        const randX = Math.round(80 + Math.random() * 230);
-        const randY = Math.round(100 + Math.random() * 120);
-        const obstacle = createEntity(`Obstacle_${Math.round(Math.random() * 100)}`, { x: randX, y: randY });
-        
-        obstacle.components.push({
-          type: "AabbCollider",
-          offset: { x: -20, y: -20 },
-          size: { x: 40, y: 40 },
-          isStatic: true
-        });
-
-        const assetId = selectedAssetId ?? snapshot.assets[0]?.id;
-        if (assetId) {
-          obstacle.components.push({
-            type: "Sprite",
-            assetId,
-            width: 40,
-            height: 40,
-            anchor: { x: 0.5, y: 0.5 }
-          });
-        }
-        draft.entities.push(obstacle);
-        setSelectedEntityIds(new Set([obstacle.id]));
-      });
-      addConsoleLog("system", "Successfully spawned dynamic physics obstacle inside canvas.");
-      return;
-    }
-
-    if (cmd === "/gravity") {
-      const val = Number(tokens[1]);
-      if (isNaN(val)) {
-        addConsoleLog("error", "Failed to parse value. Usage: /gravity <number>");
-        return;
-      }
-      // Update local player entities
-      updateScene((draft) => {
-        draft.gravity.y = val;
-        draft.entities.forEach((ent) => {
-          const p = findComponent<PlayerControllerComponent>(ent, "PlayerController");
-          if (p) p.gravity = val;
-        });
-      });
-      addConsoleLog("physics", `Global gravity force coefficients updated to ${val} y-accel.`);
-      return;
-    }
-
-    if (cmd === "/speed") {
-      const val = Number(tokens[1]);
-      if (isNaN(val)) {
-        addConsoleLog("error", "Failed to parse value. Usage: /speed <number>");
-        return;
-      }
-      if (!selectedEntityId) {
-        addConsoleLog("warn", "No entity selected to apply character controller speed updates.");
-        return;
-      }
-      let found = false;
-      updateScene((draft) => {
-        const ent = draft.entities.find((e) => e.id === selectedEntityId);
-        if (ent) {
-          const player = findComponent<PlayerControllerComponent>(ent, "PlayerController");
-          if (player) {
-            player.speed = val;
-            found = true;
-          }
-        }
-      });
-      if (found) {
-        addConsoleLog("system", `Modified active PlayerController speed constants to ${val}px/s.`);
-      } else {
-        addConsoleLog("warn", "Selected entity lacks an active PlayerController script.");
-      }
-      return;
-    }
-
-    addConsoleLog("error", `Engine command '${cmd}' unrecognized. Enter '/help' to inspect command catalog.`);
+    executeEditorConsoleCommand({
+      command: cmdStr,
+      selectedAssetId,
+      fallbackAssetId: snapshot.assets[0]?.id,
+      selectedEntityId,
+      updateScene,
+      setSelectedEntityIds,
+      addConsoleLog,
+    });
   }
 
   const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
