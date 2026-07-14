@@ -1,6 +1,6 @@
 import { access, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { validateProject, validateScene, type GameKitProject, type GameKitScene } from "@gamekit/schema";
+import { validateProject, validateScene, validatePrefab, type GameKitProject, type GameKitScene } from "@gamekit/schema";
 import { getGameKitRoot } from "./project.js";
 
 export type DoctorIssue = {
@@ -18,6 +18,7 @@ export type DoctorReport = {
     scenes: number;
     assets: number;
     levels: number;
+    prefabs: number;
     errors: number;
     warnings: number;
   };
@@ -198,7 +199,82 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     });
   }
 
-  return finalize(root, issues, sceneFiles.length, project.assets.length, project.levels.length);
+  // Duplicate asset IDs
+  const assetIdCounts = new Map<string, number>();
+  for (const asset of project.assets) {
+    assetIdCounts.set(asset.id, (assetIdCounts.get(asset.id) ?? 0) + 1);
+  }
+  for (const [id, count] of assetIdCounts) {
+    if (count > 1) {
+      issues.push({
+        level: "error",
+        code: "ASSET_DUPLICATE",
+        message: `Asset ID "${id}" is registered ${count} times in project.assets`,
+      });
+    }
+  }
+
+  // Orphan asset files on disk (files in gamekit/assets/ not in project.assets)
+  const projectAssetFiles = new Set(project.assets.map((a) => a.file));
+  try {
+    const diskFiles = await readdir(assetsDir);
+    for (const file of diskFiles) {
+      if (!projectAssetFiles.has(file)) {
+        issues.push({
+          level: "warn",
+          code: "ASSET_ORPHAN_ON_DISK",
+          message: `File "${file}" exists in gamekit/assets/ but is not listed in project.assets`,
+          path: `gamekit/assets/${file}`,
+        });
+      }
+    }
+  } catch {
+    // assets dir may not exist — already covered by other checks
+  }
+
+  // Prefab validation
+  const prefabsDir = join(gamekitRoot, "prefabs");
+  let prefabFiles: string[] = [];
+  try {
+    prefabFiles = (await readdir(prefabsDir)).filter((f) => f.endsWith(".prefab.json"));
+  } catch {
+    // prefabs dir is optional — no issue if missing
+  }
+
+  for (const file of prefabFiles) {
+    const path = join(prefabsDir, file);
+    try {
+      const raw = JSON.parse(await readFile(path, "utf8"));
+      const result = validatePrefab(raw);
+      if (!result.ok) {
+        for (const err of result.errors) {
+          issues.push({ level: "error", code: "PREFAB_INVALID", message: err, path: `gamekit/prefabs/${file}` });
+        }
+      }
+    } catch (e) {
+      issues.push({
+        level: "error",
+        code: "PREFAB_PARSE",
+        message: e instanceof Error ? e.message : "Parse failed",
+        path: `gamekit/prefabs/${file}`,
+      });
+    }
+  }
+
+  // Transition target validation
+  if (project.transitions) {
+    for (const transition of project.transitions) {
+      if (transition.toSceneId && !project.scenes.includes(transition.toSceneId)) {
+        issues.push({
+          level: "warn",
+          code: "TRANSITION_TARGET_MISSING",
+          message: `Transition "${transition.name}" targets scene "${transition.toSceneId}" which is not in project.scenes`,
+        });
+      }
+    }
+  }
+
+  return finalize(root, issues, sceneFiles.length, project.assets.length, project.levels.length, prefabFiles.length);
 }
 
 function collectAssetRefs(scene: GameKitScene, out: Set<string>): void {
@@ -223,6 +299,7 @@ function finalize(
   scenes: number,
   assets: number,
   levels: number,
+  prefabs: number = 0,
 ): DoctorReport {
   const errors = issues.filter((i) => i.level === "error").length;
   const warnings = issues.filter((i) => i.level === "warn").length;
@@ -230,6 +307,6 @@ function finalize(
     ok: errors === 0,
     projectPath: join(getGameKitRoot(root), "project.json"),
     issues,
-    summary: { scenes, assets, levels, errors, warnings },
+    summary: { scenes, assets, levels, prefabs, errors, warnings },
   };
 }

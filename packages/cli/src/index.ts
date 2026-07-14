@@ -261,7 +261,7 @@ async function main(argv: string[]): Promise<void> {
       const icon = { error: "✖", warn: "⚠", info: "·" } as const;
       console.log(`Playroom doctor — ${report.projectPath}`);
       console.log(
-        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}`,
+        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}  Prefabs: ${report.summary.prefabs}`,
       );
       console.log("");
       for (const issue of report.issues) {
