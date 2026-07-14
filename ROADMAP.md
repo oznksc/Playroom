@@ -64,7 +64,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `StateMachine` (states + transitions + events)
 - [ ] `Script` / behavior node (tetikli event handler, JSON DSL)
 - [ ] `Tween` / timeline track başına easing curves
-- [ ] `Path2D` + `FollowPath` (waypoint patrol)
+- [x] `Path2D` + `FollowPath` (waypoint patrol)
 - [ ] `NineSlice` sprite (UI ölçeklenebilir kenar)
 
 ### MCP Araçları (yeni)
@@ -74,10 +74,10 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
 - [x] `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
 - `add_particle_system` — emitter parametreleriyle `ParticleSystem` oluşturur
-- `add_state_machine` — states + transitions + event'leri tanımlar
-- `add_script` — JSON DSL ile event handler ekler
-- `add_tween` — başlangıç/bitiş değerleri + easing curve
-- `add_path` — waypoint listesi ile `Path2D` oluşturur
+- [x] `add_state_machine` — states + transitions + event'leri tanımlar
+- [x] `add_script` — JSON DSL ile event handler ekler
+- [x] `add_tween` — başlangıç/bitiş değerleri + easing curve
+- [x] `add_path` — waypoint listesi ile `Path2D` oluşturur
 - `add_nine_slice` — 9-slice için `NineSlice` bileşeni
 
 ### Skill Güncellemeleri
