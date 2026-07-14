@@ -16,6 +16,7 @@ import type {
   AudioSourceComponent,
   SceneTransitionDef,
   FollowPathComponent,
+  Light2DComponent,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -106,6 +107,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private particleEmitters = new Map<string, ParticleEmitterState>();
   private particleGraphics: Phaser.GameObjects.Graphics | null = null;
   private sounds = new Map<string, Phaser.Sound.BaseSound>();
+  private lightSources = new Map<string, Phaser.GameObjects.Light>();
+  private hasLights = false;
   private textBindings: TextBinding[] = [];
   private coinsCollected = 0;
   private totalCoins = 0;
@@ -213,6 +216,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, world.width, world.height);
     this.cameras.main.setBounds(0, 0, world.width, world.height);
     this.cameras.main.setBackgroundColor(this.sceneData.viewport.background);
+
+    this.hasLights = this.activeEntities.some((e) => findComponent<Light2DComponent>(e, "Light2D") !== undefined);
+    if (this.hasLights) {
+      this.lights.enable();
+      this.lights.setAmbientColor(0x222222);
+    }
 
     const staticGroup = this.physics.add.staticGroup();
     const triggerGroup = this.physics.add.staticGroup();
@@ -427,6 +436,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
             (go.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
           }
         }
+      }
+
+      const light = this.lightSources.get(entity.id);
+      if (light) {
+        light.x = transform.position.x;
+        light.y = transform.position.y;
       }
     }
 
@@ -673,6 +688,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
     }
     this.activeEntities = this.activeEntities.filter((e) => e.id !== entityId);
     this.particleEmitters.delete(entityId);
+
+    const light = this.lightSources.get(entityId);
+    if (light) {
+      this.lights.removeLight(light);
+      this.lightSources.delete(entityId);
+    }
   }
 
   private refreshHud(): void {
@@ -1001,6 +1022,34 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     if (cameraComp) {
       this.cameraFollowData = cameraComp;
+    }
+
+    if (gameObject && this.hasLights && "setPipeline" in gameObject) {
+      (gameObject as any).setPipeline("Light2D");
+    }
+
+    const lightComp = findComponent<Light2DComponent>(entity, "Light2D");
+    if (lightComp && this.hasLights) {
+      try {
+        const colorHex = Phaser.Display.Color.HexStringToColor(lightComp.color).color;
+        const phaserLight = this.lights.addLight(
+          transform.position.x,
+          transform.position.y,
+          lightComp.range,
+          colorHex,
+          lightComp.intensity
+        );
+        this.lightSources.set(entity.id, phaserLight);
+      } catch {
+        const phaserLight = this.lights.addLight(
+          transform.position.x,
+          transform.position.y,
+          lightComp.range,
+          0xffffff,
+          lightComp.intensity
+        );
+        this.lightSources.set(entity.id, phaserLight);
+      }
     }
   }
 }

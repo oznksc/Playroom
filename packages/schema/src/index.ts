@@ -220,6 +220,14 @@ export type ParticleSystemComponent = {
   active: boolean;
 };
 
+export type Light2DComponent = {
+  type: "Light2D";
+  kind: "point" | "spot";
+  range: number;
+  intensity: number;
+  color: string;
+};
+
 export type GameKitComponent =
   | TransformComponent
   | SpriteComponent
@@ -238,7 +246,8 @@ export type GameKitComponent =
   | FollowPathComponent
   | StateMachineComponent
   | ScriptComponent
-  | ParticleSystemComponent;
+  | ParticleSystemComponent
+  | Light2DComponent;
 
 export type GameKitEntity = {
   id: string;
@@ -1180,6 +1189,21 @@ function validateComponents(input: unknown, entityPath: string, errors: string[]
           width: expectNumber(component.width ?? 0, `${path}.width`, errors),
           height: expectNumber(component.height ?? 0, `${path}.height`, errors),
           active: expectBoolean(component.active ?? true, `${path}.active`, errors),
+        });
+        return;
+      }
+      case "Light2D": {
+        const kind =
+          component.kind === "point" || component.kind === "spot" ? component.kind : "point";
+        if (component.kind !== undefined && kind !== component.kind) {
+          errors.push(`${path}.kind must be "point" or "spot"`);
+        }
+        components.push({
+          type: "Light2D",
+          kind,
+          range: expectNumber(component.range, `${path}.range`, errors),
+          intensity: expectNumber(component.intensity, `${path}.intensity`, errors),
+          color: expectString(component.color, `${path}.color`, errors),
         });
         return;
       }

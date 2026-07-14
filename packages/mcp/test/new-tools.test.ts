@@ -201,4 +201,45 @@ describe("new validation and search tools", () => {
     expect(particleComp.colorEnd).toBe("#0000ff");
     expect(particleComp.blendMode).toBe("add");
   });
+
+  it("adds a Light2D component to an entity using add_light tool", async () => {
+    const scene = createEmptyScene("Main");
+    scene.entities.push({
+      id: "light-1",
+      name: "Light Entity",
+      components: [
+        {
+          type: "Transform",
+          position: { x: 50, y: 50 },
+          rotation: 0,
+          scale: { x: 1, y: 1 }
+        }
+      ]
+    });
+    const gkDir = join(tmpDir, "gamekit");
+    const scenesDir = join(gkDir, "scenes");
+    await writeFile(join(scenesDir, "main.scene.json"), sceneToJson(scene));
+
+    const tool = (server as any)._registeredTools.add_light;
+    const result = await tool.handler({
+      scenePath: "main.scene.json",
+      entityId: "light-1",
+      light: {
+        kind: "spot",
+        range: 300,
+        intensity: 1.5,
+        color: "#ffff00"
+      }
+    });
+
+    expect(result).toBeDefined();
+    const entity = JSON.parse(result.content[0].text);
+    expect(entity.id).toBe("light-1");
+    const lightComp = entity.components.find((c: any) => c.type === "Light2D");
+    expect(lightComp).toBeDefined();
+    expect(lightComp.kind).toBe("spot");
+    expect(lightComp.range).toBe(300);
+    expect(lightComp.intensity).toBe(1.5);
+    expect(lightComp.color).toBe("#ffff00");
+  });
 });

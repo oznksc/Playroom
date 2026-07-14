@@ -185,6 +185,14 @@ export const ParticleSystemInputSchema = z.object({
   active: z.boolean().default(true),
 });
 
+export const Light2DInputSchema = z.object({
+  type: z.literal("Light2D"),
+  kind: z.enum(["point", "spot"]).default("point"),
+  range: z.number().positive().default(200),
+  intensity: z.number().positive().default(1.0),
+  color: z.string().default("#ffffff"),
+});
+
 export const ComponentInputSchema = z.discriminatedUnion("type", [
   TransformInputSchema,
   SpriteInputSchema,
@@ -204,6 +212,7 @@ export const ComponentInputSchema = z.discriminatedUnion("type", [
   StateMachineInputSchema,
   ScriptInputSchema,
   ParticleSystemInputSchema,
+  Light2DInputSchema,
 ]);
 
 export const ComponentTypeSchema = z.enum([
@@ -225,4 +234,5 @@ export const ComponentTypeSchema = z.enum([
   "StateMachine",
   "Script",
   "ParticleSystem",
+  "Light2D",
 ]);
