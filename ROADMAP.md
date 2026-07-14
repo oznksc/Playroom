@@ -59,7 +59,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `Tilemap` (self-contained: tileset asset + grid + flat tile array) — editör render + runtime Skia render
 - [x] `Text` bileşeni (font assetId, size, color, align)
 - [x] `AudioSource` + `AudioListener` (mp3/ogg/wav asset tipi) — şu an sadece image kabul
-- [ ] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
+- [x] `ParticleSystem` (emitter shape, lifetime, color over life, blending)
 - [ ] `Light2D` (point/spot, range, intensity, color) — runtime-web Phaser ışıklarıyla eşle
 - [x] `StateMachine` (states + transitions + events)
 - [ ] `Script` / behavior node (tetikli event handler, JSON DSL)
@@ -73,7 +73,7 @@ Schema is the contract; runtime + editor + MCP evolve together.
 - [x] `add_text` — `Text` bileşeni ekler (font, boyut, hizalama)
 - [x] `import_audio` — mp3/ogg/wav import eder, `AudioSource` için `assetId` döner
 - [x] `add_audio_source` — entity'ye `AudioSource` bağlar (`playOnStart`, `loop`, `volume`)
-- `add_particle_system` — emitter parametreleriyle `ParticleSystem` oluşturur
+- [x] `add_particle_system` — emitter parametreleriyle `ParticleSystem` oluşturur
 - [x] `add_state_machine` — states + transitions + event'leri tanımlar
 - [x] `add_script` — JSON DSL ile event handler ekler
 - [x] `add_tween` — başlangıç/bitiş değerleri + easing curve

@@ -144,4 +144,61 @@ describe("new validation and search tools", () => {
     expect(audioComp.loop).toBe(true);
     expect(audioComp.playOnStart).toBe(true);
   });
+
+  it("adds a ParticleSystem component to an entity using add_particle_system tool", async () => {
+    const scene = createEmptyScene("Main");
+    scene.entities.push({
+      id: "emitter-1",
+      name: "Emitter Entity",
+      components: [
+        {
+          type: "Transform",
+          position: { x: 50, y: 50 },
+          rotation: 0,
+          scale: { x: 1, y: 1 }
+        }
+      ]
+    });
+    const gkDir = join(tmpDir, "gamekit");
+    const scenesDir = join(gkDir, "scenes");
+    await writeFile(join(scenesDir, "main.scene.json"), sceneToJson(scene));
+
+    const tool = (server as any)._registeredTools.add_particle_system;
+    const result = await tool.handler({
+      scenePath: "main.scene.json",
+      entityId: "emitter-1",
+      particleSystem: {
+        maxParticles: 100,
+        emissionRate: 20,
+        lifetime: 1.5,
+        speedStart: 100,
+        speedEnd: 20,
+        angleStart: 0,
+        angleEnd: 360,
+        sizeStart: 8,
+        sizeEnd: 2,
+        colorStart: "#ff0000",
+        colorEnd: "#0000ff",
+        blendMode: "add"
+      }
+    });
+
+    expect(result).toBeDefined();
+    const entity = JSON.parse(result.content[0].text);
+    expect(entity.id).toBe("emitter-1");
+    const particleComp = entity.components.find((c: any) => c.type === "ParticleSystem");
+    expect(particleComp).toBeDefined();
+    expect(particleComp.maxParticles).toBe(100);
+    expect(particleComp.emissionRate).toBe(20);
+    expect(particleComp.lifetime).toBe(1.5);
+    expect(particleComp.speedStart).toBe(100);
+    expect(particleComp.speedEnd).toBe(20);
+    expect(particleComp.angleStart).toBe(0);
+    expect(particleComp.angleEnd).toBe(360);
+    expect(particleComp.sizeStart).toBe(8);
+    expect(particleComp.sizeEnd).toBe(2);
+    expect(particleComp.colorStart).toBe("#ff0000");
+    expect(particleComp.colorEnd).toBe("#0000ff");
+    expect(particleComp.blendMode).toBe("add");
+  });
 });
