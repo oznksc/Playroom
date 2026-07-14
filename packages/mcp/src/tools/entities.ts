@@ -7,11 +7,11 @@ import type { FileIO } from "../utils/file-io.js";
 export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
     "add_entity",
-    "Add a new entity to a scene",
+    "Add a new entity to a scene. Returns the created entity with its auto-generated ID. Components are optional; if omitted the entity has no components. Each component object must include a 'type' field (Transform, Sprite, AabbCollider, etc.). An entity cannot have two components of the same type.",
     {
-      scenePath: z.string().describe("Scene filename"),
-      name: z.string().describe("Entity name"),
-      components: z.array(ComponentInputSchema).optional().describe("Initial components"),
+      scenePath: z.string().describe("Scene filename including .scene.json extension (e.g., 'main.scene.json'). Resolves relative to gamekit/scenes/."),
+      name: z.string().describe("Entity name (does not need to be unique)"),
+      components: z.array(ComponentInputSchema).optional().describe("Optional array of component objects. Each must include a 'type' field (Transform, Sprite, AabbCollider, etc.). An entity cannot have two components of the same type."),
     },
     async ({ scenePath, name, components }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -33,7 +33,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "remove_entity",
-    "Remove an entity from a scene",
+    "Remove an entity from a scene by ID. This operation is not undoable. Any other entity referencing this entity (e.g., CameraFollow targetId) will retain the stale reference. Use list_entities to find valid IDs.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID to remove"),
@@ -61,7 +61,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "update_entity",
-    "Update entity properties (name)",
+    "Update an entity's properties. Currently only the 'name' field can be updated. At least one optional property must be provided; otherwise this is a no-op. Use list_entities to find valid IDs.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID to update"),
@@ -92,7 +92,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "add_component",
-    "Add a component to an entity",
+    "Add a component to an entity. The entity must not already have a component of the same type (use update_component to modify existing ones). Valid types: Transform, Sprite, AabbCollider, CircleCollider, PolygonCollider, PlayerController, RigidBody, CameraFollow, Animation, Tilemap, Text, AudioSource, AudioListener, Tween, FollowPath, StateMachine, Script, ParticleSystem. Returns the full updated entity.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -129,7 +129,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "update_component",
-    "Update component properties",
+    "Merge properties into an existing component on an entity. Pass only the fields you want to change; all other fields remain unchanged. The 'type' field cannot be changed. For CameraFollow, the targetId is validated against existing entity IDs. Use list_components to see what the entity currently has.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
@@ -181,7 +181,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
   server.tool(
     "remove_component",
-    "Remove a component from an entity",
+    "Remove a component from an entity by type. This is not undoable. Removing essential components (e.g., Transform) may cause runtime errors. Use list_components to see available component types on the entity.",
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
