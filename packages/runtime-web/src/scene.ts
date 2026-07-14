@@ -180,7 +180,6 @@ export class GameKitPhaserScene extends Phaser.Scene {
         this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
         loadedKeys.add(audio.assetId);
       }
-
       const text = findComponent<TextComponent>(entity, "Text");
       if (text?.fontAssetId && !loadedKeys.has(`font:${text.fontAssetId}`) && this.assetUrls[text.fontAssetId]) {
         loadedKeys.add(`font:${text.fontAssetId}`);
