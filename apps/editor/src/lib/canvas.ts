@@ -819,6 +819,17 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
     );
   }
 
+  const textComp = findComponent<TextComponent>(entity, "Text");
+  if (textComp) {
+    const w = textComp.text.length * textComp.size * 0.6;
+    const h = textComp.size;
+    let tx = transform.position.x;
+    if (textComp.align === "center") tx -= w / 2;
+    else if (textComp.align === "right") tx -= w;
+    const ty = transform.position.y;
+    return point.x >= tx && point.x <= tx + w && point.y >= ty && point.y <= ty + h;
+  }
+
   return false;
 }
 
