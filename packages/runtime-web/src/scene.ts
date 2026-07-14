@@ -14,6 +14,7 @@ import type {
   TextComponent,
   ScriptComponent,
   AudioSourceComponent,
+  SceneTransitionDef,
 } from "@gamekit/schema";
 import {
   DEFAULT_INPUT_MAP,
@@ -121,8 +122,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
   /** Coyote-time / ground stick to avoid Y vibration on platform seams. */
   private groundedGraceFrames = 0;
   private static readonly GROUND_GRACE = 4;
+  private transitionData: SceneTransitionDef | null = null;
 
-  constructor(sceneData: GameKitScene, assetUrls: Record<string, string>) {
+  constructor(sceneData: GameKitScene, assetUrls: Record<string, string>, transition?: SceneTransitionDef) {
     super("GameKitScene");
     this.sceneData = sceneData;
     this.assetUrls = assetUrls;
@@ -130,6 +132,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.gameRules = resolveGameRules(sceneData.gameRules);
     this.fallY = resolveFallDeathY(sceneData, this.gameRules);
     this.livesRemaining = this.gameRules.lives > 0 ? this.gameRules.lives : 0;
+    this.transitionData = transition ?? null;
     const player = sceneData.entities.find((e) =>
       e.components.some((c) => c.type === "PlayerController"),
     );
@@ -275,6 +278,11 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setOrigin(1, 0)
         .setScrollFactor(0)
         .setDepth(1600);
+    }
+
+    if (this.transitionData && this.transitionData.type === "fade") {
+      const duration = Math.round((this.transitionData.duration ?? 0.3) * 1000);
+      this.cameras.main.fadeIn(duration, 0, 0, 0);
     }
   }
 

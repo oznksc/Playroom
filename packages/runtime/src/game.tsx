@@ -1,7 +1,7 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent } from "@gamekit/schema";
+import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent, SceneTransitionDef } from "@gamekit/schema";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { GameKitView } from "./view.js";
+import { GameKitView, type TransitionOverlay } from "./view.js";
 import { useGameLoop } from "./loop.js";
 import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
@@ -26,9 +26,10 @@ export type GameKitGameProps = {
   onTriggerEnter?: (event: TriggerEvent) => void;
   onTriggerExit?: (event: TriggerEvent) => void;
   onCollisionEnter?: (event: CollisionEvent) => void;
+  transition?: SceneTransitionDef;
 };
 
-export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter }: GameKitGameProps) {
+export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter, transition }: GameKitGameProps) {
   const entitiesRef = useRef(deepClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
@@ -43,6 +44,35 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
   const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
   const [, setTick] = useState(0);
+  const [transitionOverlay, setTransitionOverlay] = useState<TransitionOverlay | null>(null);
+  const prevSceneIdRef = useRef<string>(scene.id);
+
+  useEffect(() => {
+    if (prevSceneIdRef.current !== scene.id) {
+      const d = (transition?.type === "fade" || transition?.type === "slide")
+        ? (transition.duration ?? 0.3)
+        : 0;
+      if (d > 0) {
+        const steps = Math.max(8, Math.round(d * 30));
+        const stepMs = (d * 1000) / steps;
+        let step = 0;
+        setTransitionOverlay({ opacity: 1, color: "#000000" });
+        const interval = setInterval(() => {
+          step++;
+          const t = step / (steps / 2);
+          setTransitionOverlay({ opacity: Math.max(0, 1 - Math.min(t, 1)), color: "#000000" });
+          if (step >= steps) {
+            clearInterval(interval);
+            setTransitionOverlay(null);
+          }
+        }, stepMs);
+        prevSceneIdRef.current = scene.id;
+        return () => clearInterval(interval);
+      } else {
+        prevSceneIdRef.current = scene.id;
+      }
+    }
+  }, [scene.id, transition]);
 
   useEffect(() => {
     entitiesRef.current = deepClone(scene.entities);
@@ -428,6 +458,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           zoom: cameraStateRef.current.zoom,
         }}
         particlesByEntity={particlesByEntityRef.current}
+        transitionOverlay={transitionOverlay}
       />
       {showControls && (
         <VirtualControls
