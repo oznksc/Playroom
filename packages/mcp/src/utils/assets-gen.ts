@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GameKitProject } from "@gamekit/schema";
 
@@ -8,6 +8,7 @@ export async function regenerateAssetsManifest(
 ): Promise<void> {
   const generatedDir = join(basePath, "gamekit", "generated");
   const assetsPath = join(generatedDir, "assets.ts");
+  await mkdir(generatedDir, { recursive: true });
 
   const entries = project.assets.map((asset) => {
     return `  "${asset.id}": require("../assets/${asset.file}")`;
