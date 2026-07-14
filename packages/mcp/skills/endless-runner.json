@@ -1,0 +1,25 @@
+{
+  "name": "Endless Runner",
+  "description": "A fast auto-runner with a player, scrolling obstacles, and collectible score triggers.",
+  "orientation": "landscape",
+  "viewport": { "width": 844, "height": 390, "background": "#101827" },
+  "gravity": { "x": 0, "y": 1800 },
+  "entities": [
+    { "name": "Runner", "components": [
+      { "type": "Transform", "position": { "x": 120, "y": 260 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "Sprite", "assetId": "player", "width": 44, "height": 44, "anchor": { "x": 0.5, "y": 0.5 } },
+      { "type": "AabbCollider", "offset": { "x": -22, "y": -22 }, "size": { "x": 44, "y": 44 }, "isStatic": false, "isTrigger": false },
+      { "type": "RigidBody", "velocity": { "x": 180, "y": 0 }, "angularVelocity": 0, "mass": 1, "drag": 0, "isKinematic": false, "gravityScale": 1, "useGravity": true },
+      { "type": "PlayerController", "speed": 180, "jumpVelocity": 600, "gravity": 1800 }
+    ] },
+    { "name": "Ground", "components": [
+      { "type": "Transform", "position": { "x": 422, "y": 370 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "AabbCollider", "offset": { "x": -422, "y": -20 }, "size": { "x": 844, "y": 40 }, "isStatic": true, "isTrigger": false }
+    ] },
+    { "name": "Obstacle", "components": [
+      { "type": "Transform", "position": { "x": 420, "y": 330 }, "rotation": 0, "scale": { "x": 1, "y": 1 } },
+      { "type": "Sprite", "assetId": "obstacle", "width": 32, "height": 40, "anchor": { "x": 0.5, "y": 0.5 } },
+      { "type": "AabbCollider", "offset": { "x": -16, "y": -20 }, "size": { "x": 32, "y": 40 }, "isStatic": true, "isTrigger": false }
+    ] }
+  ]
+}

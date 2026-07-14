@@ -88,7 +88,14 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const index = gridY * tilemap.gridWidth + gridX;
-      if (index < 0 || index >= tilemap.gridWidth * tilemap.gridHeight) {
+      if (
+        gridX < 0 ||
+        gridY < 0 ||
+        gridX >= tilemap.gridWidth ||
+        gridY >= tilemap.gridHeight ||
+        index < 0 ||
+        index >= tilemap.gridWidth * tilemap.gridHeight
+      ) {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: `Grid position (${gridX}, ${gridY}) is out of bounds for map size ${tilemap.gridWidth}x${tilemap.gridHeight}` }) }],
           isError: true,
