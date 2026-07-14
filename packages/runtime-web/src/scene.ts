@@ -13,14 +13,12 @@ import type {
   ParticleSystemComponent,
   TextComponent,
   ScriptComponent,
-  AudioSourceComponent,
   SceneTransitionDef,
   FollowPathComponent,
   Light2DComponent,
   NineSliceComponent,
 } from "@gamekit/schema";
 import {
-  DEFAULT_INPUT_MAP,
   resolveFallDeathY,
   resolveGameRules,
 } from "@gamekit/schema";
@@ -36,62 +34,20 @@ import {
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent } from "@gamekit/runtime/script";
 import { updateFollowPath } from "@gamekit/runtime";
-
-type Transformable = {
-  x: number;
-  y: number;
-  setPosition(x: number, y: number): unknown;
-  setRotation(radians: number): unknown;
-  setScale(x: number, y?: number): unknown;
-};
-
-type EntityBinding = {
-  entity: GameKitEntity;
-  gameObject: Phaser.GameObjects.GameObject & Transformable;
-  body: Phaser.Physics.Arcade.Body | null;
-  isStatic: boolean;
-  isTrigger: boolean;
-};
-
-type PlayerBinding = {
-  binding: EntityBinding;
-  controller: ReturnType<typeof createPlayerController>;
-  controllerData: PlayerControllerComponent;
-};
-
-type TextBinding = {
-  entityId: string;
-  textObject: Phaser.GameObjects.Text;
-  baseTemplate: string;
-};
-
-function findComponent<T extends { type: string }>(
-  entity: GameKitEntity,
-  type: T["type"],
-): T | undefined {
-  return entity.components.find((c) => c.type === type) as T | undefined;
-}
-
-function computeWorldBounds(scene: GameKitScene): { width: number; height: number } {
-  let maxX = scene.viewport.width;
-  let maxY = scene.viewport.height;
-
-  for (const entity of scene.entities) {
-    const transform = findComponent<TransformComponent>(entity, "Transform");
-    if (!transform) continue;
-    const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-    const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
-    const halfW = sprite ? sprite.width / 2 : aabb ? aabb.size.x / 2 : 0;
-    const halfH = sprite ? sprite.height / 2 : aabb ? aabb.size.y / 2 : 0;
-    maxX = Math.max(maxX, transform.position.x + halfW + 64);
-    maxY = Math.max(maxY, transform.position.y + halfH + 64);
-  }
-
-  return {
-    width: Math.max(scene.viewport.width, Math.ceil(maxX)),
-    height: Math.max(scene.viewport.height, Math.ceil(maxY)),
-  };
-}
+import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
+import { computeWorldBounds, findComponent } from "./scene-helpers.js";
+import { preloadEntityAssets } from "./asset-loader.js";
+import { configureSceneKeyboard, type SceneInputKeys } from "./scene-input.js";
+import { setupTouchJoystick as setupTouchJoystickInput } from "./touch-joystick.js";
+import { refreshSceneHud } from "./scene-hud.js";
+import { showSceneOverlay } from "./scene-overlay.js";
+import {
+  playSceneSound,
+  setupSceneAudio,
+  stopSceneAudio,
+  stopSceneSound,
+  type SceneSoundMap,
+} from "./scene-audio.js";
 
 export class GameKitPhaserScene extends Phaser.Scene {
   private sceneData: GameKitScene;
@@ -100,14 +56,10 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private playerBinding: PlayerBinding | null = null;
   private cameraFollowData: CameraFollowComponent | null = null;
   private timelineState: TimelineState = { elapsed: 0, playing: false };
-  private keys!: {
-    left: Phaser.Input.Keyboard.Key[];
-    right: Phaser.Input.Keyboard.Key[];
-    jump: Phaser.Input.Keyboard.Key[];
-  };
+  private keys!: SceneInputKeys;
   private particleEmitters = new Map<string, ParticleEmitterState>();
   private particleGraphics: Phaser.GameObjects.Graphics | null = null;
-  private sounds = new Map<string, Phaser.Sound.BaseSound>();
+  private sounds: SceneSoundMap = new Map();
   private lightSources = new Map<string, Phaser.GameObjects.Light>();
   private hasLights = false;
   private textBindings: TextBinding[] = [];
@@ -160,61 +112,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const loadedKeys = new Set<string>();
-
-    for (const entity of this.activeEntities) {
-      const sprite = findComponent<SpriteComponent>(entity, "Sprite");
-      const anim = findComponent<AnimationComponent>(entity, "Animation");
-
-      if (anim) {
-        if (!loadedKeys.has(anim.assetId) && this.assetUrls[anim.assetId]) {
-          this.load.spritesheet(anim.assetId, this.assetUrls[anim.assetId], {
-            frameWidth: anim.frameWidth,
-            frameHeight: anim.frameHeight,
-          });
-          loadedKeys.add(anim.assetId);
-        }
-      } else if (sprite) {
-        if (!loadedKeys.has(sprite.assetId) && this.assetUrls[sprite.assetId]) {
-          this.load.image(sprite.assetId, this.assetUrls[sprite.assetId]);
-          loadedKeys.add(sprite.assetId);
-        }
-      }
-
-      const audio = findComponent<AudioSourceComponent>(entity, "AudioSource");
-      if (audio && !loadedKeys.has(audio.assetId) && this.assetUrls[audio.assetId]) {
-        this.load.audio(audio.assetId, this.assetUrls[audio.assetId]);
-        loadedKeys.add(audio.assetId);
-      }
-      const nineSlice = findComponent<NineSliceComponent>(entity, "NineSlice");
-      if (nineSlice && !loadedKeys.has(nineSlice.assetId) && this.assetUrls[nineSlice.assetId]) {
-        this.load.image(nineSlice.assetId, this.assetUrls[nineSlice.assetId]);
-        loadedKeys.add(nineSlice.assetId);
-      }
-      const text = findComponent<TextComponent>(entity, "Text");
-      if (text?.fontAssetId && !loadedKeys.has(`font:${text.fontAssetId}`) && this.assetUrls[text.fontAssetId]) {
-        loadedKeys.add(`font:${text.fontAssetId}`);
-        const family = `GKFont-${text.fontAssetId}`;
-        const url = this.assetUrls[text.fontAssetId];
-        const css = `@font-face{font-family:'${family}';src:url('${url}') format('${this.fontFormat(url)}');font-display:swap;}`;
-        const style = document.createElement("style");
-        style.textContent = css;
-        document.head.appendChild(style);
-        const font = new FontFace(family, `url(${url})`);
-        font.load().then((loaded) => {
-          (document.fonts as unknown as { add(f: FontFace): void }).add(loaded);
-          this.loadedFonts.set(text.fontAssetId, family);
-        }).catch(() => {});
-      }
-    }
-  }
-
-  private fontFormat(url: string): string {
-    const ext = url.split(".").pop()?.toLowerCase() ?? "";
-    if (ext === "woff2") return "woff2";
-    if (ext === "woff") return "woff";
-    if (ext === "otf") return "opentype";
-    return "truetype";
+    preloadEntityAssets(this.load, this.activeEntities, this.assetUrls, this.loadedFonts);
   }
 
   create(): void {
@@ -485,153 +383,37 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private setupAudio(): void {
-    for (const entity of this.activeEntities) {
-      const audio = findComponent<AudioSourceComponent>(entity, "AudioSource");
-      if (!audio) continue;
-      if (!this.cache.audio.exists(audio.assetId)) continue;
-
-      const sound = this.sound.add(audio.assetId, {
-        loop: audio.loop,
-        volume: Phaser.Math.Clamp(audio.volume, 0, 1),
-      });
-      this.sounds.set(entity.id, sound);
-
-      if (audio.playOnStart) {
-        sound.play();
-      }
-    }
-
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopAllSounds());
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => this.stopAllSounds());
+    setupSceneAudio(this, this.activeEntities, this.sounds);
   }
 
   playSound(entityId: string): void {
-    const sound = this.sounds.get(entityId);
-    if (sound && !sound.isPlaying) sound.play();
+    playSceneSound(this.sounds, entityId);
   }
 
   stopSound(entityId: string): void {
-    this.sounds.get(entityId)?.stop();
+    stopSceneSound(this.sounds, entityId);
   }
 
   private stopAllSounds(): void {
-    for (const sound of this.sounds.values()) {
-      sound.stop();
-    }
+    stopSceneAudio(this.sounds);
   }
 
   private setupInput(): void {
-    const keyboard = this.input.keyboard;
-    if (!keyboard) {
-      this.keys = { left: [], right: [], jump: [] };
-      return;
-    }
-
-    const map = this.sceneData.inputMap ?? DEFAULT_INPUT_MAP;
-    const byAction = (action: string): string[] =>
-      map.bindings.find((b) => b.action === action)?.keys ?? [];
-
-    const toCodes = (keys: string[]): number[] => {
-      const codes: number[] = [];
-      for (const k of keys) {
-        if (k === " " || k === "Space" || k === "Spacebar") {
-          codes.push(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        } else if (k === "ArrowLeft") {
-          codes.push(Phaser.Input.Keyboard.KeyCodes.LEFT);
-        } else if (k === "ArrowRight") {
-          codes.push(Phaser.Input.Keyboard.KeyCodes.RIGHT);
-        } else if (k === "ArrowUp") {
-          codes.push(Phaser.Input.Keyboard.KeyCodes.UP);
-        } else if (k === "ArrowDown") {
-          codes.push(Phaser.Input.Keyboard.KeyCodes.DOWN);
-        } else if (k.length === 1) {
-          const upper = k.toUpperCase();
-          const code = (Phaser.Input.Keyboard.KeyCodes as Record<string, number>)[upper];
-          if (typeof code === "number") codes.push(code);
-        }
-      }
-      return [...new Set(codes)];
-    };
-
-    const leftKeys = byAction("move_left").length
-      ? byAction("move_left")
-      : ["ArrowLeft", "a", "A"];
-    const rightKeys = byAction("move_right").length
-      ? byAction("move_right")
-      : ["ArrowRight", "d", "D"];
-    const jumpKeys = byAction("jump").length ? byAction("jump") : ["ArrowUp", " ", "w", "W"];
-
-    this.keys = {
-      left: toCodes(leftKeys).map((c) => keyboard.addKey(c)),
-      right: toCodes(rightKeys).map((c) => keyboard.addKey(c)),
-      jump: toCodes(jumpKeys).map((c) => keyboard.addKey(c)),
-    };
+    this.keys = configureSceneKeyboard(this.input.keyboard, this.sceneData.inputMap);
   }
 
   private setupTouchJoystick(): void {
-    const baseRadius = 50;
-    const thumbRadius = 18;
-    const travel = 36;
-
-    this.joystickBase = this.add.graphics().setDepth(2000).setScrollFactor(0);
-    this.joystickThumb = this.add.graphics().setDepth(2001).setScrollFactor(0);
-
-    const drawBase = (x: number, y: number) => {
-      this.joystickBase!.clear();
-      this.joystickBase!.fillStyle(0xffffff, 0.15);
-      this.joystickBase!.fillCircle(x, y, baseRadius);
-      this.joystickBase!.lineStyle(2, 0xffffff, 0.3);
-      this.joystickBase!.strokeCircle(x, y, baseRadius);
-    };
-
-    const drawThumb = (x: number, y: number) => {
-      this.joystickThumb!.clear();
-      this.joystickThumb!.fillStyle(0xffffff, 0.8);
-      this.joystickThumb!.fillCircle(x, y, thumbRadius);
-    };
-
-    const hideJoystick = () => {
-      this.joystickBase!.clear();
-      this.joystickThumb!.clear();
-    };
-
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (pointer.x < this.scale.width / 2) {
-        this.joystickActive = true;
-        this.joystickCenter = { x: pointer.x, y: pointer.y };
-        drawBase(pointer.x, pointer.y);
-        drawThumb(pointer.x, pointer.y);
-        this.joystickDx = 0;
-        this.joystickDy = 0;
-      }
+    const thisScene = this;
+    setupTouchJoystickInput(this, {
+      get active() { return thisScene.joystickActive; },
+      set active(value: boolean) { thisScene.joystickActive = value; },
+      get center() { return thisScene.joystickCenter; },
+      set center(value: { x: number; y: number }) { thisScene.joystickCenter = value; },
+      get dx() { return thisScene.joystickDx; },
+      set dx(value: number) { thisScene.joystickDx = value; },
+      get dy() { return thisScene.joystickDy; },
+      set dy(value: number) { thisScene.joystickDy = value; },
     });
-
-    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      if (!this.joystickActive || !pointer.isDown) return;
-      const dx = pointer.x - this.joystickCenter.x;
-      const dy = pointer.y - this.joystickCenter.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const clamped = Math.min(dist, travel);
-      const angle = Math.atan2(dy, dx);
-      const nx = (clamped / travel) * Math.cos(angle);
-      const ny = (clamped / travel) * Math.sin(angle);
-
-      this.joystickDx = nx;
-      this.joystickDy = ny;
-      drawThumb(
-        this.joystickCenter.x + nx * travel,
-        this.joystickCenter.y + ny * travel,
-      );
-    });
-
-    const release = () => {
-      this.joystickActive = false;
-      this.joystickDx = 0;
-      this.joystickDy = 0;
-      hideJoystick();
-    };
-
-    this.input.on("pointerup", release);
   }
 
   private handleTriggerOverlap(triggerObj: Phaser.GameObjects.GameObject): void {
@@ -703,22 +485,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private refreshHud(): void {
-    for (const tb of this.textBindings) {
-      let text = tb.baseTemplate;
-      if (/coins?\s*:/i.test(text) || text.includes("{coins}")) {
-        text = text
-          .replace(/\{coins\}/gi, String(this.coinsCollected))
-          .replace(/Coins:\s*\d+/i, `Coins: ${this.coinsCollected}`)
-          .replace(/coins:\s*\d+/i, `Coins: ${this.coinsCollected}`);
-        if (this.totalCoins > 0 && !/\/\d+/.test(text) && /Coins:\s*\d+/i.test(text)) {
-          text = text.replace(
-            /Coins:\s*(\d+)/i,
-            `Coins: ${this.coinsCollected}/${this.totalCoins}`,
-          );
-        }
-      }
-      tb.textObject.setText(text);
-    }
+    refreshSceneHud(this.textBindings, this.coinsCollected, this.totalCoins);
   }
 
   private showWin(message: string): void {
@@ -767,33 +534,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private showOverlay(message: string, color: string): void {
-    if (this.winText) {
-      this.winText.setColor(color);
-      this.winText.setText(message);
-      return;
-    }
-    this.winText = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, message, {
-        fontFamily: "IBM Plex Sans, system-ui, sans-serif",
-        fontSize: "28px",
-        color,
-        backgroundColor: "#06090ecc",
-        padding: { x: 20, y: 12 },
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(2000);
-
-    this.add
-      .text(this.scale.width / 2, this.scale.height / 2 + 48, "Refresh page to retry", {
-        fontFamily: "IBM Plex Sans, system-ui, sans-serif",
-        fontSize: "14px",
-        color: "#8b9bb4",
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(2000);
+    this.winText = showSceneOverlay(this, this.winText, message, color);
   }
 
   private createEntity(
