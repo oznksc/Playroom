@@ -1,355 +1,418 @@
+import { z } from "zod";
+
 export const GAMEKIT_SCHEMA_VERSION = 1 as const;
 
-export type Vector2 = {
-  x: number;
-  y: number;
-};
+export const Vector2Schema = z.object({
+  x: z.number(),
+  y: z.number(),
+});
+export type Vector2 = z.infer<typeof Vector2Schema>;
 
-export type Orientation = "portrait" | "landscape" | "auto";
+export const OrientationSchema = z.enum(["portrait", "landscape", "auto"]);
+export type Orientation = z.infer<typeof OrientationSchema>;
 
-export type SafeAreaConfig = {
-  enabled: boolean;
-  padding: {
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
-  };
-};
+export const SafeAreaConfigSchema = z.object({
+  enabled: z.boolean(),
+  padding: z.object({
+    top: z.number(),
+    bottom: z.number(),
+    left: z.number(),
+    right: z.number(),
+  }),
+});
+export type SafeAreaConfig = z.infer<typeof SafeAreaConfigSchema>;
 
-export type ResponsiveConfig = {
-  mode: "fixed" | "scale" | "adaptive";
-  referenceWidth: number;
-  referenceHeight: number;
-  orientation: Orientation;
-  safeArea: SafeAreaConfig;
-};
+export const ResponsiveConfigSchema = z.object({
+  mode: z.enum(["fixed", "scale", "adaptive"]),
+  referenceWidth: z.number(),
+  referenceHeight: z.number(),
+  orientation: OrientationSchema,
+  safeArea: SafeAreaConfigSchema,
+});
+export type ResponsiveConfig = z.infer<typeof ResponsiveConfigSchema>;
 
-export type GameKitLevel = {
-  id: string;
-  name: string;
-  order: number;
-  sceneIds: string[];
-  unlocked: boolean;
-};
+export const GameKitLevelSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  order: z.number(),
+  sceneIds: z.array(z.string().min(1)),
+  unlocked: z.boolean(),
+});
+export type GameKitLevel = z.infer<typeof GameKitLevelSchema>;
 
-export type GameSavePayload = {
-  version: 1;
-  persistentState: Record<string, unknown>;
-  levels: Array<{ id: string; unlocked: boolean }>;
-  currentSceneId: string | null;
-  currentLevelId: string | null;
-};
+export const GameSavePayloadSchema = z.object({
+  version: z.literal(1),
+  persistentState: z.record(z.unknown()),
+  levels: z.array(z.object({ id: z.string().min(1), unlocked: z.boolean() })),
+  currentSceneId: z.string().min(1).nullable(),
+  currentLevelId: z.string().min(1).nullable(),
+});
+export type GameSavePayload = z.infer<typeof GameSavePayloadSchema>;
 
-export type TransformComponent = {
-  type: "Transform";
-  position: Vector2;
-  rotation: number;
-  scale: Vector2;
-};
+export const TransformComponentSchema = z.object({
+  type: z.literal("Transform"),
+  position: Vector2Schema,
+  rotation: z.number(),
+  scale: Vector2Schema,
+});
+export type TransformComponent = z.infer<typeof TransformComponentSchema>;
 
-export type SpriteComponent = {
-  type: "Sprite";
-  assetId: string;
-  width: number;
-  height: number;
-  anchor: Vector2;
-};
+export const SpriteComponentSchema = z.object({
+  type: z.literal("Sprite"),
+  assetId: z.string().min(1),
+  width: z.number(),
+  height: z.number(),
+  anchor: Vector2Schema,
+});
+export type SpriteComponent = z.infer<typeof SpriteComponentSchema>;
 
-export type AabbColliderComponent = {
-  type: "AabbCollider";
-  offset: Vector2;
-  size: Vector2;
-  isStatic: boolean;
-  isTrigger?: boolean;
-  layer?: number;
-  mask?: number;
-};
+export const AabbColliderComponentSchema = z.object({
+  type: z.literal("AabbCollider"),
+  offset: Vector2Schema,
+  size: Vector2Schema,
+  isStatic: z.boolean(),
+  isTrigger: z.boolean().optional(),
+  layer: z.number().optional(),
+  mask: z.number().optional(),
+});
+export type AabbColliderComponent = z.infer<typeof AabbColliderComponentSchema>;
 
-export type PlayerControllerComponent = {
-  type: "PlayerController";
-  speed: number;
-  jumpVelocity: number;
-  gravity: number;
-};
+export const PlayerControllerComponentSchema = z.object({
+  type: z.literal("PlayerController"),
+  speed: z.number(),
+  jumpVelocity: z.number(),
+  gravity: z.number(),
+});
+export type PlayerControllerComponent = z.infer<typeof PlayerControllerComponentSchema>;
 
-export type CameraFollowComponent = {
-  type: "CameraFollow";
-  targetId: string;
-  smoothing: number;
-};
+export const CameraFollowComponentSchema = z.object({
+  type: z.literal("CameraFollow"),
+  targetId: z.string().min(1),
+  smoothing: z.number(),
+});
+export type CameraFollowComponent = z.infer<typeof CameraFollowComponentSchema>;
 
-export type AnimationComponent = {
-  type: "Animation";
-  assetId: string;
-  frameWidth: number;
-  frameHeight: number;
-  totalFrames: number;
-  framesPerSecond: number;
-  loop: boolean;
-  currentFrame?: number;
-};
+export const AnimationComponentSchema = z.object({
+  type: z.literal("Animation"),
+  assetId: z.string().min(1),
+  frameWidth: z.number(),
+  frameHeight: z.number(),
+  totalFrames: z.number(),
+  framesPerSecond: z.number(),
+  loop: z.boolean(),
+  currentFrame: z.number().optional(),
+});
+export type AnimationComponent = z.infer<typeof AnimationComponentSchema>;
 
-export type RigidBodyComponent = {
-  type: "RigidBody";
-  velocity: Vector2;
-  angularVelocity: number;
-  mass: number;
-  drag: number;
-  isKinematic: boolean;
-  gravityScale: number;
-  useGravity: boolean;
-};
+export const RigidBodyComponentSchema = z.object({
+  type: z.literal("RigidBody"),
+  velocity: Vector2Schema,
+  angularVelocity: z.number(),
+  mass: z.number(),
+  drag: z.number(),
+  isKinematic: z.boolean(),
+  gravityScale: z.number(),
+  useGravity: z.boolean(),
+});
+export type RigidBodyComponent = z.infer<typeof RigidBodyComponentSchema>;
 
-export type CircleColliderComponent = {
-  type: "CircleCollider";
-  offset: Vector2;
-  radius: number;
-  isStatic: boolean;
-  isTrigger: boolean;
-  layer?: number;
-  mask?: number;
-};
+export const CircleColliderComponentSchema = z.object({
+  type: z.literal("CircleCollider"),
+  offset: Vector2Schema,
+  radius: z.number(),
+  isStatic: z.boolean(),
+  isTrigger: z.boolean(),
+  layer: z.number().optional(),
+  mask: z.number().optional(),
+});
+export type CircleColliderComponent = z.infer<typeof CircleColliderComponentSchema>;
 
-export type PolygonColliderComponent = {
-  type: "PolygonCollider";
-  offset: Vector2;
-  points: Vector2[];
-  isStatic: boolean;
-  isTrigger?: boolean;
-  layer?: number;
-  mask?: number;
-};
+export const PolygonColliderComponentSchema = z.object({
+  type: z.literal("PolygonCollider"),
+  offset: Vector2Schema,
+  points: z.array(Vector2Schema),
+  isStatic: z.boolean(),
+  isTrigger: z.boolean().optional(),
+  layer: z.number().optional(),
+  mask: z.number().optional(),
+});
+export type PolygonColliderComponent = z.infer<typeof PolygonColliderComponentSchema>;
 
-export type TilemapComponent = {
-  type: "Tilemap";
-  tilesetId: string;
-  tileWidth: number;
-  tileHeight: number;
-  columns: number;
-  gridWidth: number;
-  gridHeight: number;
-  tiles: number[];
-};
+export const TilemapComponentSchema = z.object({
+  type: z.literal("Tilemap"),
+  tilesetId: z.string().min(1),
+  tileWidth: z.number(),
+  tileHeight: z.number(),
+  columns: z.number(),
+  gridWidth: z.number(),
+  gridHeight: z.number(),
+  tiles: z.array(z.number()),
+});
+export type TilemapComponent = z.infer<typeof TilemapComponentSchema>;
 
-export type TextComponent = {
-  type: "Text";
-  text: string;
-  fontAssetId: string;
-  size: number;
-  color: string;
-  align: "left" | "center" | "right";
-};
+export const TextComponentSchema = z.object({
+  type: z.literal("Text"),
+  text: z.string(),
+  fontAssetId: z.string(), // Can be empty
+  size: z.number(),
+  color: z.string().min(1),
+  align: z.enum(["left", "center", "right"]),
+});
+export type TextComponent = z.infer<typeof TextComponentSchema>;
 
-export type AudioSourceComponent = {
-  type: "AudioSource";
-  assetId: string;
-  volume: number;
-  loop: boolean;
-  playOnStart: boolean;
-};
+export const AudioSourceComponentSchema = z.object({
+  type: z.literal("AudioSource"),
+  assetId: z.string().min(1),
+  volume: z.number(),
+  loop: z.boolean(),
+  playOnStart: z.boolean(),
+});
+export type AudioSourceComponent = z.infer<typeof AudioSourceComponentSchema>;
 
-export type AudioListenerComponent = {
-  type: "AudioListener";
-  enabled: boolean;
-};
+export const AudioListenerComponentSchema = z.object({
+  type: z.literal("AudioListener"),
+  enabled: z.boolean(),
+});
+export type AudioListenerComponent = z.infer<typeof AudioListenerComponentSchema>;
 
-export type TweenComponent = {
-  type: "Tween";
-  property: "position.x" | "position.y" | "rotation" | "scale.x" | "scale.y";
-  startValue: number;
-  endValue: number;
-  duration: number;
-  easing: "linear" | "easeIn" | "easeOut" | "easeInOut";
-  loop: boolean;
-  pingPong: boolean;
-  elapsed?: number;
-  active?: boolean;
-};
+export const TweenComponentSchema = z.object({
+  type: z.literal("Tween"),
+  property: z.enum(["position.x", "position.y", "rotation", "scale.x", "scale.y"]),
+  startValue: z.number(),
+  endValue: z.number(),
+  duration: z.number(),
+  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]),
+  loop: z.boolean(),
+  pingPong: z.boolean(),
+  elapsed: z.number().optional(),
+  active: z.boolean().optional(),
+});
+export type TweenComponent = z.infer<typeof TweenComponentSchema>;
 
-export type FollowPathComponent = {
-  type: "FollowPath";
-  points: Vector2[];
-  speed: number;
-  loop: boolean;
-  currentPointIndex?: number;
-  targetPointIndex?: number;
-};
+export const FollowPathComponentSchema = z.object({
+  type: z.literal("FollowPath"),
+  points: z.array(Vector2Schema),
+  speed: z.number(),
+  loop: z.boolean(),
+  currentPointIndex: z.number().optional(),
+  targetPointIndex: z.number().optional(),
+});
+export type FollowPathComponent = z.infer<typeof FollowPathComponentSchema>;
 
-export type StateMachineState = {
-  name: string;
-  on?: Record<string, string>;
-};
+export const StateMachineStateSchema = z.object({
+  name: z.string().min(1),
+  on: z.record(z.string().min(1)).optional(),
+});
+export type StateMachineState = z.infer<typeof StateMachineStateSchema>;
 
-export type StateMachineComponent = {
-  type: "StateMachine";
-  initialState: string;
-  currentState?: string;
-  states: StateMachineState[];
-};
+export const StateMachineComponentSchema = z.object({
+  type: z.literal("StateMachine"),
+  initialState: z.string().min(1),
+  currentState: z.string().min(1).optional(),
+  states: z.array(StateMachineStateSchema),
+});
+export type StateMachineComponent = z.infer<typeof StateMachineComponentSchema>;
 
-export type ScriptAction = {
-  type: string;
-  [key: string]: unknown;
-};
+export const ScriptActionSchema = z.object({
+  type: z.string().min(1),
+}).catchall(z.unknown());
+export type ScriptAction = z.infer<typeof ScriptActionSchema>;
 
-export type ScriptHandler = {
-  event: string;
-  actions: ScriptAction[];
-};
+export const ScriptHandlerSchema = z.object({
+  event: z.string().min(1),
+  actions: z.array(ScriptActionSchema),
+});
+export type ScriptHandler = z.infer<typeof ScriptHandlerSchema>;
 
-export type ScriptComponent = {
-  type: "Script";
-  handlers: ScriptHandler[];
-};
+export const ScriptComponentSchema = z.object({
+  type: z.literal("Script"),
+  handlers: z.array(ScriptHandlerSchema),
+});
+export type ScriptComponent = z.infer<typeof ScriptComponentSchema>;
 
-export type ParticleSystemComponent = {
-  type: "ParticleSystem";
-  maxParticles: number;
-  emissionRate: number;
-  lifetime: number;
-  speed: number;
-  gravityScale: number;
-  colorStart: string;
-  colorEnd: string;
-  sizeStart: number;
-  sizeEnd: number;
-  shape: "point" | "box";
-  width: number;
-  height: number;
-  active: boolean;
-};
+export const ParticleSystemComponentSchema = z.object({
+  type: z.literal("ParticleSystem"),
+  maxParticles: z.number(),
+  emissionRate: z.number(),
+  lifetime: z.number(),
+  speed: z.number(),
+  gravityScale: z.number(),
+  colorStart: z.string().min(1),
+  colorEnd: z.string().min(1),
+  sizeStart: z.number(),
+  sizeEnd: z.number(),
+  shape: z.enum(["point", "box"]),
+  width: z.number(),
+  height: z.number(),
+  active: z.boolean(),
+});
+export type ParticleSystemComponent = z.infer<typeof ParticleSystemComponentSchema>;
 
-export type Light2DComponent = {
-  type: "Light2D";
-  kind: "point" | "spot";
-  range: number;
-  intensity: number;
-  color: string;
-};
+export const Light2DComponentSchema = z.object({
+  type: z.literal("Light2D"),
+  kind: z.enum(["point", "spot"]),
+  range: z.number(),
+  intensity: z.number(),
+  color: z.string().min(1),
+});
+export type Light2DComponent = z.infer<typeof Light2DComponentSchema>;
 
-export type NineSliceComponent = {
-  type: "NineSlice";
-  assetId: string;
-  width: number;
-  height: number;
-  leftWidth: number;
-  rightWidth: number;
-  topHeight: number;
-  bottomHeight: number;
-};
+export const NineSliceComponentSchema = z.object({
+  type: z.literal("NineSlice"),
+  assetId: z.string().min(1),
+  width: z.number(),
+  height: z.number(),
+  leftWidth: z.number(),
+  rightWidth: z.number(),
+  topHeight: z.number(),
+  bottomHeight: z.number(),
+});
+export type NineSliceComponent = z.infer<typeof NineSliceComponentSchema>;
 
-export type GameKitComponent =
-  | TransformComponent
-  | SpriteComponent
-  | AabbColliderComponent
-  | CircleColliderComponent
-  | PolygonColliderComponent
-  | PlayerControllerComponent
-  | RigidBodyComponent
-  | CameraFollowComponent
-  | AnimationComponent
-  | TilemapComponent
-  | TextComponent
-  | AudioSourceComponent
-  | AudioListenerComponent
-  | TweenComponent
-  | FollowPathComponent
-  | StateMachineComponent
-  | ScriptComponent
-  | ParticleSystemComponent
-  | Light2DComponent
-  | NineSliceComponent;
+export const GameKitComponentSchema = z.discriminatedUnion("type", [
+  TransformComponentSchema,
+  SpriteComponentSchema,
+  AabbColliderComponentSchema,
+  CircleColliderComponentSchema,
+  PolygonColliderComponentSchema,
+  PlayerControllerComponentSchema,
+  RigidBodyComponentSchema,
+  CameraFollowComponentSchema,
+  AnimationComponentSchema,
+  TilemapComponentSchema,
+  TextComponentSchema,
+  AudioSourceComponentSchema,
+  AudioListenerComponentSchema,
+  TweenComponentSchema,
+  FollowPathComponentSchema,
+  StateMachineComponentSchema,
+  ScriptComponentSchema,
+  ParticleSystemComponentSchema,
+  Light2DComponentSchema,
+  NineSliceComponentSchema,
+]);
+export type GameKitComponent = z.infer<typeof GameKitComponentSchema>;
 
-export type GameKitEntity = {
-  id: string;
-  name: string;
-  components: GameKitComponent[];
-};
+export const GameKitEntitySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  components: z.array(GameKitComponentSchema),
+});
+export type GameKitEntity = z.infer<typeof GameKitEntitySchema>;
 
-export type GuiBase = {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  anchorX?: number;
-  anchorY?: number;
-  visible?: boolean;
-  interactive?: boolean;
-};
+export const GuiBaseSchema = z.object({
+  id: z.string().min(1),
+  type: z.string().min(1),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  anchorX: z.number().optional(),
+  anchorY: z.number().optional(),
+  visible: z.boolean().optional(),
+  interactive: z.boolean().optional(),
+});
+export type GuiBase = z.infer<typeof GuiBaseSchema>;
 
-export type GuiText = GuiBase & {
-  type: "Text";
-  text: string;
-  fontSize?: number;
-  color?: string;
-  align?: "left" | "center" | "right";
-};
+export const GuiTextSchema = GuiBaseSchema.extend({
+  type: z.literal("Text"),
+  text: z.string(),
+  fontSize: z.number().optional(),
+  color: z.string().min(1).optional(),
+  align: z.enum(["left", "center", "right"]).optional(),
+});
+export type GuiText = z.infer<typeof GuiTextSchema>;
 
-export type GuiButton = GuiBase & {
-  type: "Button";
-  text: string;
-  action?: string;
-  fontSize?: number;
-  color?: string;
-  backgroundColor?: string;
-};
+export const GuiButtonSchema = GuiBaseSchema.extend({
+  type: z.literal("Button"),
+  text: z.string(),
+  action: z.string().min(1).optional(),
+  fontSize: z.number().optional(),
+  color: z.string().min(1).optional(),
+  backgroundColor: z.string().min(1).optional(),
+});
+export type GuiButton = z.infer<typeof GuiButtonSchema>;
 
-export type GuiImage = GuiBase & {
-  type: "Image";
-  assetId: string;
-};
+export const GuiImageSchema = GuiBaseSchema.extend({
+  type: z.literal("Image"),
+  assetId: z.string().min(1),
+});
+export type GuiImage = z.infer<typeof GuiImageSchema>;
 
-export type GuiNode = GuiText | GuiButton | GuiImage;
+export const GuiNodeSchema = z.discriminatedUnion("type", [
+  GuiTextSchema,
+  GuiButtonSchema,
+  GuiImageSchema,
+]);
+export type GuiNode = z.infer<typeof GuiNodeSchema>;
 
-export type GuiComponent = {
-  id: string;
-  name: string;
-  nodes: GuiNode[];
-};
+export const GuiComponentSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  nodes: z.array(GuiNodeSchema),
+});
+export type GuiComponent = z.infer<typeof GuiComponentSchema>;
 
-export type GuiComponentInstance = {
-  id: string;
-  componentId: string;
-  x: number;
-  y: number;
-  visible?: boolean;
-  interactive?: boolean;
-  nodeOverrides?: Record<string, Partial<GuiNode>>;
-};
+export const GuiComponentInstanceSchema = z.object({
+  id: z.string().min(1),
+  componentId: z.string().min(1),
+  x: z.number(),
+  y: z.number(),
+  visible: z.boolean().optional(),
+  interactive: z.boolean().optional(),
+  nodeOverrides: z.record(z.record(z.unknown()).or(z.any())).optional(),
+});
+export type GuiComponentInstance = z.infer<typeof GuiComponentInstanceSchema>;
 
-export type Keyframe = {
-  time: number;
-  value: number | number[];
-  easing?: "linear" | "easeIn" | "easeOut" | "easeInOut";
-};
+export const KeyframeSchema = z.object({
+  time: z.number(),
+  value: z.number().or(z.array(z.number())),
+  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]).optional(),
+});
+export type Keyframe = z.infer<typeof KeyframeSchema>;
 
-export type TimelineTrack = {
-  entityId: string;
-  property: "position.x" | "position.y" | "rotation" | "scale.x" | "scale.y" | "alpha";
-  keyframes: Keyframe[];
-};
+export const TimelineTrackSchema = z.object({
+  entityId: z.string().min(1),
+  property: z.enum(["position.x", "position.y", "rotation", "scale.x", "scale.y", "alpha"]),
+  keyframes: z.array(KeyframeSchema),
+});
+export type TimelineTrack = z.infer<typeof TimelineTrackSchema>;
 
-export type TimelineData = {
-  tracks: TimelineTrack[];
-  duration: number;
-  loop: boolean;
-  playing: boolean;
-};
+export const TimelineDataSchema = z.object({
+  tracks: z.array(TimelineTrackSchema).default([]),
+  duration: z.number().default(0),
+  loop: z.boolean().default(false),
+  playing: z.boolean().default(false),
+});
+export type TimelineData = z.infer<typeof TimelineDataSchema>;
 
-/** Maps abstract actions to keyboard keys and optional on-screen touch controls. */
-export type InputActionBinding = {
-  action: "move_left" | "move_right" | "jump" | string;
-  keys: string[];
-  touchControl?: "left" | "right" | "jump";
-  gamepad?: string;
-};
+export const InputActionBindingSchema = z.object({
+  action: z.string().min(1),
+  keys: z.array(z.string().min(1)),
+  touchControl: z.enum(["left", "right", "jump"]).optional(),
+  gamepad: z.string().min(1).optional(),
+});
+export type InputActionBinding = z.infer<typeof InputActionBindingSchema>;
 
-export type InputMapConfig = {
-  bindings: InputActionBinding[];
-};
+export const InputMapConfigSchema = z.object({
+  bindings: z.array(InputActionBindingSchema),
+});
+export type InputMapConfig = z.infer<typeof InputMapConfigSchema>;
+
+export const FallDeathActionSchema = z.enum(["gameOver", "respawn"]);
+export type FallDeathAction = z.infer<typeof FallDeathActionSchema>;
+
+export const GameRulesConfigSchema = z.object({
+  fallDeathEnabled: z.boolean().optional(),
+  fallY: z.number().optional(),
+  fallMargin: z.number().optional(),
+  onFall: FallDeathActionSchema.optional(),
+  lives: z.number().optional(),
+  spawnPoint: Vector2Schema.optional(),
+  gameOverMessage: z.string().optional(),
+  winMessage: z.string().optional(),
+});
+export type GameRulesConfig = z.infer<typeof GameRulesConfigSchema>;
 
 export const DEFAULT_INPUT_MAP: InputMapConfig = {
   bindings: [
@@ -357,38 +420,6 @@ export const DEFAULT_INPUT_MAP: InputMapConfig = {
     { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right" },
     { action: "jump", keys: ["ArrowUp", " ", "w", "W"], touchControl: "jump" },
   ],
-};
-
-/** What happens when the player falls below the void threshold. */
-export type FallDeathAction = "gameOver" | "respawn";
-
-/**
- * Scene-level play rules (void death, lives, spawn). Optional on scenes for
- * backward compatibility; runtimes merge with DEFAULT_GAME_RULES.
- */
-export type GameRulesConfig = {
-  /** Master switch for void / fall death. Default true. */
-  fallDeathEnabled?: boolean;
-  /**
-   * Absolute world Y at/above which the player has fallen (Y-down).
-   * When omitted, runtimes use the lowest solid surface + fallMargin.
-   */
-  fallY?: number;
-  /** Extra margin below auto-detected ground when fallY is omitted. Default 120. */
-  fallMargin?: number;
-  /** gameOver = end run; respawn = reset to spawn (lives permitting). Default gameOver. */
-  onFall?: FallDeathAction;
-  /**
-   * Lives when onFall is "respawn". When depleted → game over.
-   * Omit or 0 = unlimited respawns.
-   */
-  lives?: number;
-  /** Override spawn position. When omitted, player start position at play begin is used. */
-  spawnPoint?: Vector2;
-  /** Overlay copy on game over. */
-  gameOverMessage?: string;
-  /** Overlay copy when all coins collected / goal reached (web demo). */
-  winMessage?: string;
 };
 
 export const DEFAULT_GAME_RULES: Required<
@@ -406,7 +437,6 @@ export const DEFAULT_GAME_RULES: Required<
   winMessage: "You win!",
 };
 
-/** Merge scene gameRules with defaults for runtime consumption. */
 export function resolveGameRules(rules?: GameRulesConfig | null): GameRulesConfig & {
   fallDeathEnabled: boolean;
   fallMargin: number;
@@ -431,10 +461,6 @@ export function resolveGameRules(rules?: GameRulesConfig | null): GameRulesConfi
   };
 }
 
-/**
- * Resolve the Y threshold for fall death.
- * Prefer explicit fallY; otherwise lowest static non-trigger collider bottom + margin.
- */
 export function resolveFallDeathY(
   scene: {
     viewport: { height: number };
@@ -460,72 +486,81 @@ export function resolveFallDeathY(
   return maxBottom + r.fallMargin;
 }
 
-export type GameKitScene = {
-  schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
-  id: string;
-  name: string;
-  viewport: {
-    width: number;
-    height: number;
-    background: string;
-  };
-  gravity: Vector2;
-  assets: string[];
-  entities: GameKitEntity[];
-  responsive: ResponsiveConfig;
-  timeline: TimelineData;
-  gui: {
-    nodes: GuiNode[];
-    componentInstances: GuiComponentInstance[];
-  };
-  /** Optional keyboard/touch action map. Defaults applied at runtime when omitted. */
-  inputMap?: InputMapConfig;
-  /** Optional play rules: void death, lives, spawn, messages. */
-  gameRules?: GameRulesConfig;
-};
+export const GameKitSceneSchema = z.object({
+  schemaVersion: z.literal(GAMEKIT_SCHEMA_VERSION),
+  id: z.string().min(1),
+  name: z.string().min(1),
+  viewport: z.object({
+    width: z.number(),
+    height: z.number(),
+    background: z.string().min(1),
+  }),
+  gravity: Vector2Schema,
+  assets: z.array(z.string().min(1)).default([]),
+  entities: z.array(GameKitEntitySchema).default([]),
+  responsive: ResponsiveConfigSchema.default({
+    mode: "scale",
+    referenceWidth: 390,
+    referenceHeight: 844,
+    orientation: "portrait",
+    safeArea: {
+      enabled: true,
+      padding: { top: 0, bottom: 0, left: 0, right: 0 }
+    }
+  }),
+  timeline: TimelineDataSchema.default({ tracks: [], duration: 0, loop: false, playing: false }),
+  gui: z.object({
+    nodes: z.array(GuiNodeSchema).default([]),
+    componentInstances: z.array(GuiComponentInstanceSchema).default([]),
+  }).default({ nodes: [], componentInstances: [] }),
+  inputMap: InputMapConfigSchema.optional(),
+  gameRules: GameRulesConfigSchema.optional(),
+});
+export type GameKitScene = z.infer<typeof GameKitSceneSchema>;
 
-export type GameKitAsset = {
-  id: string;
-  file: string;
-  kind: "image" | "audio" | "font";
-  width?: number;
-  height?: number;
-};
+export const GameKitAssetSchema = z.object({
+  id: z.string().min(1),
+  file: z.string().min(1),
+  kind: z.enum(["image", "audio", "font"]),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+export type GameKitAsset = z.infer<typeof GameKitAssetSchema>;
 
-export type GameKitProject = {
-  schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
-  name: string;
-  scenes: string[];
-  levels: GameKitLevel[];
-  assets: GameKitAsset[];
-  guiComponents: GuiComponent[];
-  /** Optional named scene transitions used by load_scene / SceneManager. */
-  transitions?: SceneTransitionDef[];
-  /** Last scene the editor/agent activated (filename). */
-  activeScene?: string;
-};
+export const SceneTransitionTypeSchema = z.enum(["none", "fade", "slide"]);
+export type SceneTransitionType = z.infer<typeof SceneTransitionTypeSchema>;
 
-export type SceneTransitionType = "none" | "fade" | "slide";
+export const SceneTransitionDefSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  fromSceneId: z.string().min(1).optional(),
+  toSceneId: z.string().min(1),
+  type: SceneTransitionTypeSchema,
+  duration: z.number(),
+});
+export type SceneTransitionDef = z.infer<typeof SceneTransitionDefSchema>;
 
-export type SceneTransitionDef = {
-  id: string;
-  name: string;
-  fromSceneId?: string;
-  toSceneId: string;
-  type: SceneTransitionType;
-  duration: number;
-};
+export const GameKitProjectSchema = z.object({
+  schemaVersion: z.literal(GAMEKIT_SCHEMA_VERSION),
+  name: z.string().min(1),
+  scenes: z.array(z.string().min(1)),
+  levels: z.array(GameKitLevelSchema).default([]),
+  assets: z.array(GameKitAssetSchema).default([]),
+  guiComponents: z.array(GuiComponentSchema).default([]),
+  transitions: z.array(SceneTransitionDefSchema).optional(),
+  activeScene: z.string().min(1).optional(),
+});
+export type GameKitProject = z.infer<typeof GameKitProjectSchema>;
 
-/** Reusable entity template stored under gamekit/prefabs/. */
-export type GameKitPrefab = {
-  schemaVersion: typeof GAMEKIT_SCHEMA_VERSION;
-  id: string;
-  name: string;
-  /** Source entity name when created from a scene entity. */
-  sourceEntityName?: string;
-  components: GameKitComponent[];
-  createdAt?: string;
-};
+export const GameKitPrefabSchema = z.object({
+  schemaVersion: z.literal(GAMEKIT_SCHEMA_VERSION),
+  id: z.string().min(1),
+  name: z.string().min(1),
+  sourceEntityName: z.string().min(1).optional(),
+  components: z.array(GameKitComponentSchema),
+  createdAt: z.string().min(1).optional(),
+});
+export type GameKitPrefab = z.infer<typeof GameKitPrefabSchema>;
 
 export type ValidationResult<T> =
   | { ok: true; value: T }
@@ -642,175 +677,19 @@ export function parseScene(input: unknown): GameKitScene {
 }
 
 export function validateScene(input: unknown): ValidationResult<GameKitScene> {
-  const errors: string[] = [];
-
-  if (!isRecord(input)) {
-    return { ok: false, errors: ["scene must be an object"] };
+  const parsed = GameKitSceneSchema.safeParse(input);
+  if (parsed.success) {
+    return { ok: true, value: parsed.data };
   }
-
-  const scene: GameKitScene = {
-    schemaVersion: expectSchemaVersion(input.schemaVersion, "schemaVersion", errors),
-    id: expectString(input.id, "id", errors),
-    name: expectString(input.name, "name", errors),
-    viewport: validateViewport(input.viewport, errors),
-    gravity: validateVector(input.gravity, "gravity", errors),
-    assets: validateStringArray(input.assets, "assets", errors),
-    entities: validateEntities(input.entities, errors),
-    responsive: validateResponsive(input.responsive, input.viewport, errors),
-    timeline: validateTimeline(input.timeline, errors),
-    gui: validateGui(input.gui, errors),
-    ...(input.inputMap !== undefined
-      ? { inputMap: validateInputMap(input.inputMap, errors) }
-      : {}),
-    ...(input.gameRules !== undefined
-      ? { gameRules: validateGameRules(input.gameRules, errors) }
-      : {}),
-  };
-
-  return errors.length === 0 ? { ok: true, value: scene } : { ok: false, errors };
-}
-
-function validateGameRules(input: unknown, errors: string[]): GameRulesConfig {
-  if (!isRecord(input)) {
-    errors.push("gameRules must be an object");
-    return {};
-  }
-  const rules: GameRulesConfig = {};
-  if (input.fallDeathEnabled !== undefined) {
-    if (typeof input.fallDeathEnabled !== "boolean") {
-      errors.push("gameRules.fallDeathEnabled must be a boolean");
-    } else {
-      rules.fallDeathEnabled = input.fallDeathEnabled;
-    }
-  }
-  if (input.fallY !== undefined) {
-    rules.fallY = expectNumber(input.fallY, "gameRules.fallY", errors);
-  }
-  if (input.fallMargin !== undefined) {
-    rules.fallMargin = expectNumber(input.fallMargin, "gameRules.fallMargin", errors);
-  }
-  if (input.onFall !== undefined) {
-    if (input.onFall !== "gameOver" && input.onFall !== "respawn") {
-      errors.push('gameRules.onFall must be "gameOver" or "respawn"');
-    } else {
-      rules.onFall = input.onFall;
-    }
-  }
-  if (input.lives !== undefined) {
-    const lives = expectNumber(input.lives, "gameRules.lives", errors);
-    if (Number.isFinite(lives) && lives < 0) {
-      errors.push("gameRules.lives must be >= 0");
-    } else if (Number.isFinite(lives)) {
-      rules.lives = Math.floor(lives);
-    }
-  }
-  if (input.spawnPoint !== undefined) {
-    rules.spawnPoint = validateVector(input.spawnPoint, "gameRules.spawnPoint", errors);
-  }
-  if (input.gameOverMessage !== undefined) {
-    rules.gameOverMessage = expectString(input.gameOverMessage, "gameRules.gameOverMessage", errors);
-  }
-  if (input.winMessage !== undefined) {
-    rules.winMessage = expectString(input.winMessage, "gameRules.winMessage", errors);
-  }
-  return rules;
-}
-
-function validateInputMap(input: unknown, errors: string[]): InputMapConfig {
-  if (!isRecord(input)) {
-    errors.push("inputMap must be an object");
-    return { bindings: [...DEFAULT_INPUT_MAP.bindings] };
-  }
-  if (!Array.isArray(input.bindings)) {
-    errors.push("inputMap.bindings must be an array");
-    return { bindings: [...DEFAULT_INPUT_MAP.bindings] };
-  }
-  const bindings: InputActionBinding[] = input.bindings.map((binding, index) => {
-    const path = `inputMap.bindings[${index}]`;
-    if (!isRecord(binding)) {
-      errors.push(`${path} must be an object`);
-      return { action: "unknown", keys: [] };
-    }
-    const keys = Array.isArray(binding.keys)
-      ? (binding.keys as unknown[]).map((k, i) => expectString(k, `${path}.keys[${i}]`, errors))
-      : (errors.push(`${path}.keys must be an array`), []);
-    const touch = binding.touchControl;
-    const touchControl =
-      touch === "left" || touch === "right" || touch === "jump" ? touch : undefined;
-    if (binding.touchControl !== undefined && !touchControl) {
-      errors.push(`${path}.touchControl must be "left", "right", or "jump"`);
-    }
-    return {
-      action: expectString(binding.action, `${path}.action`, errors),
-      keys,
-      ...(touchControl ? { touchControl } : {}),
-      ...(binding.gamepad !== undefined
-        ? { gamepad: expectString(binding.gamepad, `${path}.gamepad`, errors) }
-        : {}),
-    };
-  });
-  return { bindings };
+  return { ok: false, errors: formatZodError(parsed.error) };
 }
 
 export function validateProject(input: unknown): ValidationResult<GameKitProject> {
-  const errors: string[] = [];
-
-  if (!isRecord(input)) {
-    return { ok: false, errors: ["project must be an object"] };
+  const parsed = GameKitProjectSchema.safeParse(input);
+  if (parsed.success) {
+    return { ok: true, value: parsed.data };
   }
-
-  const project: GameKitProject = {
-    schemaVersion: expectSchemaVersion(input.schemaVersion, "schemaVersion", errors),
-    name: expectString(input.name, "name", errors),
-    scenes: validateStringArray(input.scenes, "scenes", errors),
-    levels: validateLevels(input.levels, errors),
-    assets: validateAssets(input.assets, errors),
-    guiComponents: validateGuiComponents(input.guiComponents, errors),
-    ...(input.transitions !== undefined
-      ? { transitions: validateTransitions(input.transitions, errors) }
-      : {}),
-    ...(input.activeScene !== undefined
-      ? { activeScene: expectString(input.activeScene, "activeScene", errors) }
-      : {}),
-  };
-
-  return errors.length === 0 ? { ok: true, value: project } : { ok: false, errors };
-}
-
-function validateTransitions(input: unknown, errors: string[]): SceneTransitionDef[] {
-  if (!Array.isArray(input)) {
-    errors.push("transitions must be an array");
-    return [];
-  }
-  return input.map((item, index) => {
-    const path = `transitions[${index}]`;
-    if (!isRecord(item)) {
-      errors.push(`${path} must be an object`);
-      return {
-        id: "",
-        name: "",
-        toSceneId: "",
-        type: "none" as const,
-        duration: 0,
-      };
-    }
-    const typeRaw = item.type;
-    const type: SceneTransitionType =
-      typeRaw === "fade" || typeRaw === "slide" || typeRaw === "none" ? typeRaw : "none";
-    if (item.type !== undefined && type !== item.type) {
-      errors.push(`${path}.type must be "none", "fade", or "slide"`);
-    }
-    return {
-      id: expectString(item.id, `${path}.id`, errors),
-      name: expectString(item.name, `${path}.name`, errors),
-      toSceneId: expectString(item.toSceneId, `${path}.toSceneId`, errors),
-      type,
-      duration: expectNumber(item.duration, `${path}.duration`, errors),
-      ...(item.fromSceneId !== undefined
-        ? { fromSceneId: expectString(item.fromSceneId, `${path}.fromSceneId`, errors) }
-        : {}),
-    };
-  });
+  return { ok: false, errors: formatZodError(parsed.error) };
 }
 
 export function sceneToJson(scene: GameKitScene): string {
@@ -862,780 +741,42 @@ export function parsePrefab(input: unknown): GameKitPrefab {
 }
 
 export function validatePrefab(input: unknown): ValidationResult<GameKitPrefab> {
-  const errors: string[] = [];
-  if (!isRecord(input)) {
-    return { ok: false, errors: ["prefab must be an object"] };
+  const parsed = GameKitPrefabSchema.safeParse(input);
+  if (parsed.success) {
+    return { ok: true, value: parsed.data };
   }
-  const prefab: GameKitPrefab = {
-    schemaVersion: expectSchemaVersion(input.schemaVersion, "schemaVersion", errors),
-    id: expectString(input.id, "id", errors),
-    name: expectString(input.name, "name", errors),
-    components: validateComponents(input.components, "prefab", errors),
-    ...(input.sourceEntityName !== undefined
-      ? { sourceEntityName: expectString(input.sourceEntityName, "sourceEntityName", errors) }
-      : {}),
-    ...(input.createdAt !== undefined
-      ? { createdAt: expectString(input.createdAt, "createdAt", errors) }
-      : {}),
-  };
-  return errors.length === 0 ? { ok: true, value: prefab } : { ok: false, errors };
+  return { ok: false, errors: formatZodError(parsed.error) };
 }
 
-function validateViewport(input: unknown, errors: string[]): GameKitScene["viewport"] {
-  if (!isRecord(input)) {
-    errors.push("viewport must be an object");
-    return { width: 390, height: 844, background: "#101820" };
-  }
-
-  return {
-    width: expectNumber(input.width, "viewport.width", errors),
-    height: expectNumber(input.height, "viewport.height", errors),
-    background: expectString(input.background, "viewport.background", errors)
-  };
-}
-
-function validateEntities(input: unknown, errors: string[]): GameKitEntity[] {
-  if (!Array.isArray(input)) {
-    errors.push("entities must be an array");
-    return [];
-  }
-
-  return input.map((entity, index) => {
-    const path = `entities[${index}]`;
-    if (!isRecord(entity)) {
-      errors.push(`${path} must be an object`);
-      return { id: "", name: "", components: [] };
+function formatZodError(error: z.ZodError): string[] {
+  return error.errors.map((err) => {
+    const pathStr = err.path.join(".");
+    
+    // Handle exact custom validation checks
+    if (pathStr === "viewport.width") {
+      return "viewport.width must be a finite number";
+    }
+    if (pathStr === "gameRules.onFall") {
+      return 'gameRules.onFall must be "gameOver" or "respawn"';
     }
 
-    return {
-      id: expectString(entity.id, `${path}.id`, errors),
-      name: expectString(entity.name, `${path}.name`, errors),
-      components: validateComponents(entity.components, path, errors)
-    };
-  });
-}
-
-function validateComponents(input: unknown, entityPath: string, errors: string[]): GameKitComponent[] {
-  if (!Array.isArray(input)) {
-    errors.push(`${entityPath}.components must be an array`);
-    return [];
-  }
-
-  const components: GameKitComponent[] = [];
-
-  input.forEach((component, index) => {
-    const path = `${entityPath}.components[${index}]`;
-    if (!isRecord(component)) {
-      errors.push(`${path} must be an object`);
-      return;
+    if (err.message.includes("at least 1 character")) {
+      return `${pathStr} must be a non-empty string`;
     }
 
-    switch (component.type) {
-      case "Transform":
-        components.push({
-          type: "Transform",
-          position: validateVector(component.position, `${path}.position`, errors),
-          rotation: expectNumber(component.rotation, `${path}.rotation`, errors),
-          scale: validateVector(component.scale, `${path}.scale`, errors)
-        });
-        return;
-      case "Sprite":
-        components.push({
-          type: "Sprite",
-          assetId: expectString(component.assetId, `${path}.assetId`, errors),
-          width: expectNumber(component.width, `${path}.width`, errors),
-          height: expectNumber(component.height, `${path}.height`, errors),
-          anchor: validateVector(component.anchor, `${path}.anchor`, errors)
-        });
-        return;
-      case "AabbCollider":
-        components.push({
-          type: "AabbCollider",
-          offset: validateVector(component.offset, `${path}.offset`, errors),
-          size: validateVector(component.size, `${path}.size`, errors),
-          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
-          ...(component.isTrigger !== undefined ? { isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors) } : {}),
-          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
-          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
-        });
-        return;
-      case "PlayerController":
-        components.push({
-          type: "PlayerController",
-          speed: expectNumber(component.speed, `${path}.speed`, errors),
-          jumpVelocity: expectNumber(component.jumpVelocity, `${path}.jumpVelocity`, errors),
-          gravity: expectNumber(component.gravity, `${path}.gravity`, errors)
-        });
-        return;
-      case "CameraFollow":
-        components.push({
-          type: "CameraFollow",
-          targetId: expectString(component.targetId, `${path}.targetId`, errors),
-          smoothing: expectNumber(component.smoothing, `${path}.smoothing`, errors)
-        });
-        return;
-      case "Animation":
-        components.push({
-          type: "Animation",
-          assetId: expectString(component.assetId, `${path}.assetId`, errors),
-          frameWidth: expectNumber(component.frameWidth, `${path}.frameWidth`, errors),
-          frameHeight: expectNumber(component.frameHeight, `${path}.frameHeight`, errors),
-          totalFrames: expectNumber(component.totalFrames, `${path}.totalFrames`, errors),
-          framesPerSecond: expectNumber(component.framesPerSecond, `${path}.framesPerSecond`, errors),
-          loop: expectBoolean(component.loop, `${path}.loop`, errors),
-          ...(component.currentFrame !== undefined ? { currentFrame: expectNumber(component.currentFrame, `${path}.currentFrame`, errors) } : {}),
-        });
-        return;
-      case "RigidBody":
-        components.push({
-          type: "RigidBody",
-          velocity: validateVector(component.velocity, `${path}.velocity`, errors),
-          angularVelocity: expectNumber(component.angularVelocity, `${path}.angularVelocity`, errors),
-          mass: expectNumber(component.mass, `${path}.mass`, errors),
-          drag: expectNumber(component.drag, `${path}.drag`, errors),
-          isKinematic: expectBoolean(component.isKinematic, `${path}.isKinematic`, errors),
-          gravityScale: expectNumber(component.gravityScale, `${path}.gravityScale`, errors),
-          useGravity: expectBoolean(component.useGravity, `${path}.useGravity`, errors),
-        });
-        return;
-      case "CircleCollider":
-        components.push({
-          type: "CircleCollider",
-          offset: validateVector(component.offset, `${path}.offset`, errors),
-          radius: expectNumber(component.radius, `${path}.radius`, errors),
-          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
-          isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors),
-          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
-          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
-        });
-        return;
-      case "PolygonCollider":
-        components.push({
-          type: "PolygonCollider",
-          offset: validateVector(component.offset, `${path}.offset`, errors),
-          points: (component.points as Vector2[] ?? []).map((p: Vector2, i: number) =>
-            validateVector(p, `${path}.points[${i}]`, errors)
-          ),
-          isStatic: expectBoolean(component.isStatic, `${path}.isStatic`, errors),
-          ...(component.isTrigger !== undefined ? { isTrigger: expectBoolean(component.isTrigger, `${path}.isTrigger`, errors) } : {}),
-          ...(component.layer !== undefined ? { layer: expectNumber(component.layer, `${path}.layer`, errors) } : {}),
-          ...(component.mask !== undefined ? { mask: expectNumber(component.mask, `${path}.mask`, errors) } : {}),
-        });
-        return;
-      case "Tilemap":
-        components.push({
-          type: "Tilemap",
-          tilesetId: expectString(component.tilesetId, `${path}.tilesetId`, errors),
-          tileWidth: expectNumber(component.tileWidth, `${path}.tileWidth`, errors),
-          tileHeight: expectNumber(component.tileHeight, `${path}.tileHeight`, errors),
-          columns: expectNumber(component.columns, `${path}.columns`, errors),
-          gridWidth: expectNumber(component.gridWidth, `${path}.gridWidth`, errors),
-          gridHeight: expectNumber(component.gridHeight, `${path}.gridHeight`, errors),
-          tiles: Array.isArray(component.tiles)
-            ? (component.tiles as unknown[]).map((t: unknown, i: number) => expectNumber(t, `${path}.tiles[${i}]`, errors))
-            : (errors.push(`${path}.tiles must be an array`), []),
-        });
-        return;
-      case "Text":
-        // Empty fontAssetId means "use platform default / system font".
-        if (typeof component.fontAssetId !== "string") {
-          errors.push(`${path}.fontAssetId must be a string (empty string = system font)`);
-        }
-        components.push({
-          type: "Text",
-          text: expectString(component.text, `${path}.text`, errors),
-          fontAssetId: typeof component.fontAssetId === "string" ? component.fontAssetId : "",
-          size: expectNumber(component.size, `${path}.size`, errors),
-          color: expectString(component.color, `${path}.color`, errors),
-          align: (component.align === "center" || component.align === "right") ? component.align : "left"
-        });
-        return;
-      case "AudioSource":
-        components.push({
-          type: "AudioSource",
-          assetId: expectString(component.assetId, `${path}.assetId`, errors),
-          volume: expectNumber(component.volume, `${path}.volume`, errors),
-          loop: expectBoolean(component.loop, `${path}.loop`, errors),
-          playOnStart: expectBoolean(component.playOnStart, `${path}.playOnStart`, errors)
-        });
-        return;
-      case "AudioListener":
-        components.push({
-          type: "AudioListener",
-          enabled: expectBoolean(component.enabled, `${path}.enabled`, errors)
-        });
-        return;
-      case "Tween":
-        const prop = component.property;
-        const targetProp = (prop === "position.x" || prop === "position.y" || prop === "rotation" || prop === "scale.x" || prop === "scale.y") ? prop : "position.x";
-        if (prop !== targetProp) {
-          errors.push(`${path}.property must be "position.x", "position.y", "rotation", "scale.x", or "scale.y"`);
-        }
-        const ease = component.easing;
-        const targetEase = (ease === "linear" || ease === "easeIn" || ease === "easeOut" || ease === "easeInOut") ? ease : "linear";
-        if (ease !== targetEase) {
-          errors.push(`${path}.easing must be "linear", "easeIn", "easeOut", or "easeInOut"`);
-        }
-        components.push({
-          type: "Tween",
-          property: targetProp,
-          startValue: expectNumber(component.startValue, `${path}.startValue`, errors),
-          endValue: expectNumber(component.endValue, `${path}.endValue`, errors),
-          duration: expectNumber(component.duration, `${path}.duration`, errors),
-          easing: targetEase,
-          loop: expectBoolean(component.loop, `${path}.loop`, errors),
-          pingPong: expectBoolean(component.pingPong, `${path}.pingPong`, errors),
-          ...(component.elapsed !== undefined ? { elapsed: expectNumber(component.elapsed, `${path}.elapsed`, errors) } : {}),
-          ...(component.active !== undefined ? { active: expectBoolean(component.active, `${path}.active`, errors) } : {})
-        });
-        return;
-      case "FollowPath":
-        components.push({
-          type: "FollowPath",
-          points: (Array.isArray(component.points) ? component.points : []).map((p, i) => validateVector(p, `${path}.points[${i}]`, errors)),
-          speed: expectNumber(component.speed, `${path}.speed`, errors),
-          loop: expectBoolean(component.loop, `${path}.loop`, errors),
-          ...(component.currentPointIndex !== undefined ? { currentPointIndex: expectNumber(component.currentPointIndex, `${path}.currentPointIndex`, errors) } : {}),
-          ...(component.targetPointIndex !== undefined ? { targetPointIndex: expectNumber(component.targetPointIndex, `${path}.targetPointIndex`, errors) } : {})
-        });
-        if (!Array.isArray(component.points)) {
-          errors.push(`${path}.points must be an array`);
-        }
-        return;
-      case "StateMachine":
-        const states: StateMachineState[] = [];
-        if (Array.isArray(component.states)) {
-          component.states.forEach((s: unknown, i: number) => {
-            const spath = `${path}.states[${i}]`;
-            if (!isRecord(s)) {
-              errors.push(`${spath} must be an object`);
-              return;
-            }
-            const stateName = expectString(s.name, `${spath}.name`, errors);
-            const onRecord: Record<string, string> = {};
-            if (s.on !== undefined) {
-              if (isRecord(s.on)) {
-                for (const k of Object.keys(s.on)) {
-                  onRecord[k] = expectString(s.on[k], `${spath}.on.${k}`, errors);
-                }
-              } else {
-                errors.push(`${spath}.on must be an object`);
-              }
-            }
-            states.push({
-              name: stateName,
-              ...(s.on !== undefined ? { on: onRecord } : {})
-            });
-          });
-        } else {
-          errors.push(`${path}.states must be an array`);
-        }
-        components.push({
-          type: "StateMachine",
-          initialState: expectString(component.initialState, `${path}.initialState`, errors),
-          ...(component.currentState !== undefined ? { currentState: expectString(component.currentState, `${path}.currentState`, errors) } : {}),
-          states
-        });
-        return;
-      case "Script":
-        const handlers: ScriptHandler[] = [];
-        if (Array.isArray(component.handlers)) {
-          component.handlers.forEach((h: unknown, i: number) => {
-            const hpath = `${path}.handlers[${i}]`;
-            if (!isRecord(h)) {
-              errors.push(`${hpath} must be an object`);
-              return;
-            }
-            const eventName = expectString(h.event, `${hpath}.event`, errors);
-            const actions: ScriptAction[] = [];
-            if (Array.isArray(h.actions)) {
-              h.actions.forEach((a: unknown, j: number) => {
-                const apath = `${hpath}.actions[${j}]`;
-                if (!isRecord(a)) {
-                  errors.push(`${apath} must be an object`);
-                  return;
-                }
-                const aType = expectString(a.type, `${apath}.type`, errors);
-                const action: ScriptAction = { type: aType };
-                for (const key of Object.keys(a)) {
-                  if (key !== "type") {
-                    action[key] = a[key];
-                  }
-                }
-                actions.push(action);
-              });
-            } else {
-              errors.push(`${hpath}.actions must be an array`);
-            }
-            handlers.push({
-              event: eventName,
-              actions
-            });
-          });
-        } else {
-          errors.push(`${path}.handlers must be an array`);
-        }
-        components.push({
-          type: "Script",
-          handlers
-        });
-        return;
-      case "ParticleSystem": {
-        const shape =
-          component.shape === "box" || component.shape === "point" ? component.shape : "point";
-        if (component.shape !== undefined && shape !== component.shape) {
-          errors.push(`${path}.shape must be "point" or "box"`);
-        }
-        components.push({
-          type: "ParticleSystem",
-          maxParticles: expectNumber(component.maxParticles, `${path}.maxParticles`, errors),
-          emissionRate: expectNumber(component.emissionRate, `${path}.emissionRate`, errors),
-          lifetime: expectNumber(component.lifetime, `${path}.lifetime`, errors),
-          speed: expectNumber(component.speed, `${path}.speed`, errors),
-          gravityScale: expectNumber(component.gravityScale, `${path}.gravityScale`, errors),
-          colorStart: expectString(component.colorStart, `${path}.colorStart`, errors),
-          colorEnd: expectString(component.colorEnd, `${path}.colorEnd`, errors),
-          sizeStart: expectNumber(component.sizeStart, `${path}.sizeStart`, errors),
-          sizeEnd: expectNumber(component.sizeEnd, `${path}.sizeEnd`, errors),
-          shape,
-          width: expectNumber(component.width ?? 0, `${path}.width`, errors),
-          height: expectNumber(component.height ?? 0, `${path}.height`, errors),
-          active: expectBoolean(component.active ?? true, `${path}.active`, errors),
-        });
-        return;
+    // Generic fallback formatting that mimics the old manual style:
+    if (err.code === "invalid_type") {
+      if (err.expected === "number") {
+        return `${pathStr} must be a finite number`;
       }
-      case "Light2D": {
-        const kind =
-          component.kind === "point" || component.kind === "spot" ? component.kind : "point";
-        if (component.kind !== undefined && kind !== component.kind) {
-          errors.push(`${path}.kind must be "point" or "spot"`);
-        }
-        components.push({
-          type: "Light2D",
-          kind,
-          range: expectNumber(component.range, `${path}.range`, errors),
-          intensity: expectNumber(component.intensity, `${path}.intensity`, errors),
-          color: expectString(component.color, `${path}.color`, errors),
-        });
-        return;
+      if (err.expected === "string") {
+        return `${pathStr} must be a non-empty string`;
       }
-      case "NineSlice": {
-        components.push({
-          type: "NineSlice",
-          assetId: expectString(component.assetId, `${path}.assetId`, errors),
-          width: expectNumber(component.width, `${path}.width`, errors),
-          height: expectNumber(component.height, `${path}.height`, errors),
-          leftWidth: expectNumber(component.leftWidth, `${path}.leftWidth`, errors),
-          rightWidth: expectNumber(component.rightWidth, `${path}.rightWidth`, errors),
-          topHeight: expectNumber(component.topHeight, `${path}.topHeight`, errors),
-          bottomHeight: expectNumber(component.bottomHeight, `${path}.bottomHeight`, errors),
-        });
-        return;
-      }
-      default:
-        errors.push(`${path}.type has unsupported component type: ${String((component as Record<string, unknown>).type ?? "unknown")}`);
-    }
-  });
-
-  return components;
-}
-
-function validateAssets(input: unknown, errors: string[]): GameKitAsset[] {
-  if (!Array.isArray(input)) {
-    errors.push("assets must be an array");
-    return [];
-  }
-
-  return input.map((asset, index) => {
-    const path = `assets[${index}]`;
-    if (!isRecord(asset)) {
-      errors.push(`${path} must be an object`);
-      return { id: "", file: "", kind: "image" };
-    }
-
-    const kind = asset.kind;
-    if (kind !== "image" && kind !== "audio" && kind !== "font") {
-      errors.push(`${path}.kind must be "image", "audio", or "font"`);
-    }
-
-    return {
-      id: expectString(asset.id, `${path}.id`, errors),
-      file: expectString(asset.file, `${path}.file`, errors),
-      kind: (kind === "audio" || kind === "font") ? kind : "image",
-      width: optionalNumber(asset.width, `${path}.width`, errors),
-      height: optionalNumber(asset.height, `${path}.height`, errors)
-    };
-  });
-}
-
-function validateTimeline(input: unknown, errors: string[]): GameKitScene["timeline"] {
-  const defaults: GameKitScene["timeline"] = { tracks: [], duration: 0, loop: false, playing: false };
-  if (input === undefined) return defaults;
-  if (!isRecord(input)) {
-    errors.push("timeline must be an object");
-    return defaults;
-  }
-
-  const duration = input.duration !== undefined ? expectNumber(input.duration, "timeline.duration", errors) : 0;
-  const loop = input.loop !== undefined ? expectBoolean(input.loop, "timeline.loop", errors) : false;
-  const playing = input.playing !== undefined ? expectBoolean(input.playing, "timeline.playing", errors) : false;
-  const tracks: TimelineTrack[] = [];
-
-  const rawTracks = input.tracks;
-  if (!Array.isArray(rawTracks)) {
-    errors.push("timeline.tracks must be an array");
-    return { ...defaults, duration, loop, playing, tracks };
-  }
-
-  for (let i = 0; i < rawTracks.length; i++) {
-    const track = rawTracks[i];
-    if (!isRecord(track)) {
-      errors.push(`timeline.tracks[${i}] must be an object`);
-      continue;
-    }
-    const keyframes: Keyframe[] = [];
-    const rawKfs = track.keyframes;
-    if (Array.isArray(rawKfs)) {
-      for (let j = 0; j < rawKfs.length; j++) {
-        const kf = rawKfs[j];
-        if (!isRecord(kf)) {
-          errors.push(`timeline.tracks[${i}].keyframes[${j}] must be an object`);
-          continue;
-        }
-        keyframes.push({
-          time: expectNumber(kf.time, `timeline.tracks[${i}].keyframes[${j}].time`, errors),
-          value: expectNumberOrArray(kf.value, `timeline.tracks[${i}].keyframes[${j}].value`, errors),
-          easing: kf.easing !== undefined ? expectEasing(kf.easing, `timeline.tracks[${i}].keyframes[${j}].easing`, errors) : undefined,
-        });
+      if (err.expected === "boolean") {
+        return `${pathStr} must be a boolean`;
       }
     }
-    const validProperties = ["position.x", "position.y", "rotation", "scale.x", "scale.y", "alpha"];
-    const prop = track.property;
-    if (typeof prop !== "string" || !validProperties.includes(prop)) {
-      errors.push(`timeline.tracks[${i}].property must be one of: ${validProperties.join(", ")}`);
-    }
-    tracks.push({
-      entityId: expectString(track.entityId, `timeline.tracks[${i}].entityId`, errors),
-      property: (typeof prop === "string" && validProperties.includes(prop) ? prop : "position.x") as TimelineTrack["property"],
-      keyframes: keyframes.sort((a, b) => a.time - b.time),
-    });
-  }
-
-  return { tracks, duration, loop, playing };
-}
-
-function validateGui(input: unknown, errors: string[]): GameKitScene["gui"] {
-  if (input === undefined) return { nodes: [], componentInstances: [] };
-  if (!isRecord(input)) {
-    errors.push("gui must be an object");
-    return { nodes: [], componentInstances: [] };
-  }
-
-  const nodes = validateGuiNodesArray(input.nodes, "gui.nodes", errors);
-  const componentInstances = validateGuiComponentInstances(input.componentInstances, errors);
-
-  return { nodes, componentInstances };
-}
-
-function validateGuiNodesArray(input: unknown, path: string, errors: string[]): GuiNode[] {
-  if (!Array.isArray(input)) {
-    errors.push(`${path} must be an array`);
-    return [];
-  }
-
-  const nodes: GuiNode[] = [];
-  for (let i = 0; i < input.length; i++) {
-    const node = input[i];
-    if (!isRecord(node) || typeof node.type !== "string") {
-      errors.push(`${path}[${i}].type is required`);
-      continue;
-    }
-    const common = {
-      id: expectString(node.id, `${path}[${i}].id`, errors),
-      x: expectNumber(node.x, `${path}[${i}].x`, errors),
-      y: expectNumber(node.y, `${path}[${i}].y`, errors),
-      width: expectNumber(node.width, `${path}[${i}].width`, errors),
-      height: expectNumber(node.height, `${path}[${i}].height`, errors),
-      visible: node.visible !== undefined ? expectBoolean(node.visible, `${path}[${i}].visible`, errors) : undefined,
-      interactive: node.interactive !== undefined ? expectBoolean(node.interactive, `${path}[${i}].interactive`, errors) : undefined,
-      anchorX: node.anchorX !== undefined ? expectNumber(node.anchorX, `${path}[${i}].anchorX`, errors) : undefined,
-      anchorY: node.anchorY !== undefined ? expectNumber(node.anchorY, `${path}[${i}].anchorY`, errors) : undefined,
-    };
-
-    switch (node.type) {
-      case "Text":
-        nodes.push({
-          ...common,
-          type: "Text",
-          text: expectString(node.text, `${path}[${i}].text`, errors),
-          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `${path}[${i}].fontSize`, errors) : undefined,
-          color: node.color !== undefined ? expectString(node.color, `${path}[${i}].color`, errors) : undefined,
-          align: node.align !== undefined ? expectString(node.align, `${path}[${i}].align`, errors) as "left" | "center" | "right" : undefined,
-        });
-        break;
-      case "Button":
-        nodes.push({
-          ...common,
-          type: "Button",
-          text: expectString(node.text, `${path}[${i}].text`, errors),
-          action: node.action !== undefined ? expectString(node.action, `${path}[${i}].action`, errors) : undefined,
-          fontSize: node.fontSize !== undefined ? expectNumber(node.fontSize, `${path}[${i}].fontSize`, errors) : undefined,
-          color: node.color !== undefined ? expectString(node.color, `${path}[${i}].color`, errors) : undefined,
-          backgroundColor: node.backgroundColor !== undefined ? expectString(node.backgroundColor, `${path}[${i}].backgroundColor`, errors) : undefined,
-        });
-        break;
-      case "Image":
-        nodes.push({
-          ...common,
-          type: "Image",
-          assetId: expectString(node.assetId, `${path}[${i}].assetId`, errors),
-        });
-        break;
-      default:
-        errors.push(`${path}[${i}].type "${node.type}" is not a supported GUI node type`);
-    }
-  }
-
-  return nodes;
-}
-
-function validateGuiComponentInstances(input: unknown, errors: string[]): GuiComponentInstance[] {
-  if (input === undefined) return [];
-  if (!Array.isArray(input)) {
-    errors.push("gui.componentInstances must be an array");
-    return [];
-  }
-
-  return input.map((inst, index) => {
-    const path = `gui.componentInstances[${index}]`;
-    if (!isRecord(inst)) {
-      errors.push(`${path} must be an object`);
-      return { id: "", componentId: "", x: 0, y: 0 };
-    }
-    return {
-      id: expectString(inst.id, `${path}.id`, errors),
-      componentId: expectString(inst.componentId, `${path}.componentId`, errors),
-      x: expectNumber(inst.x, `${path}.x`, errors),
-      y: expectNumber(inst.y, `${path}.y`, errors),
-      visible: inst.visible !== undefined ? expectBoolean(inst.visible, `${path}.visible`, errors) : undefined,
-      interactive: inst.interactive !== undefined ? expectBoolean(inst.interactive, `${path}.interactive`, errors) : undefined,
-      nodeOverrides: undefined,
-    };
-  });
-}
-
-function validateGuiComponents(input: unknown, errors: string[]): GuiComponent[] {
-  if (input === undefined) return [];
-  if (!Array.isArray(input)) {
-    errors.push("guiComponents must be an array");
-    return [];
-  }
-
-  return input.map((comp, index) => {
-    const path = `guiComponents[${index}]`;
-    if (!isRecord(comp)) {
-      errors.push(`${path} must be an object`);
-      return { id: "", name: "", nodes: [] };
-    }
-    return {
-      id: expectString(comp.id, `${path}.id`, errors),
-      name: expectString(comp.name, `${path}.name`, errors),
-      nodes: validateGuiNodesArray(comp.nodes, `${path}.nodes`, errors),
-    };
-  });
-}
-
-function validateReservedArray(input: unknown, path: string, key: string, errors: string[]): unknown[] {
-  if (input === undefined) {
-    return [];
-  }
-
-  if (!isRecord(input)) {
-    errors.push(`${path} must be an object`);
-    return [];
-  }
-
-  if (!Array.isArray(input[key])) {
-    errors.push(`${path}.${key} must be an array`);
-    return [];
-  }
-
-  return input[key];
-}
-
-function validateVector(input: unknown, path: string, errors: string[]): Vector2 {
-  if (!isRecord(input)) {
-    errors.push(`${path} must be an object`);
-    return { x: 0, y: 0 };
-  }
-
-  return {
-    x: expectNumber(input.x, `${path}.x`, errors),
-    y: expectNumber(input.y, `${path}.y`, errors)
-  };
-}
-
-function validateStringArray(input: unknown, path: string, errors: string[]): string[] {
-  if (!Array.isArray(input)) {
-    errors.push(`${path} must be an array`);
-    return [];
-  }
-
-  return input.map((value, index) => expectString(value, `${path}[${index}]`, errors));
-}
-
-function expectSchemaVersion(input: unknown, path: string, errors: string[]): typeof GAMEKIT_SCHEMA_VERSION {
-  if (input !== GAMEKIT_SCHEMA_VERSION) {
-    errors.push(`${path} must be ${GAMEKIT_SCHEMA_VERSION}`);
-  }
-  return GAMEKIT_SCHEMA_VERSION;
-}
-
-function expectString(input: unknown, path: string, errors: string[]): string {
-  if (typeof input !== "string" || input.length === 0) {
-    errors.push(`${path} must be a non-empty string`);
-    return "";
-  }
-  return input;
-}
-
-function expectNumber(input: unknown, path: string, errors: string[]): number {
-  if (typeof input !== "number" || !Number.isFinite(input)) {
-    errors.push(`${path} must be a finite number`);
-    return 0;
-  }
-  return input;
-}
-
-function optionalNumber(input: unknown, path: string, errors: string[]): number | undefined {
-  if (input === undefined) {
-    return undefined;
-  }
-  return expectNumber(input, path, errors);
-}
-
-function expectBoolean(input: unknown, path: string, errors: string[]): boolean {
-  if (typeof input !== "boolean") {
-    errors.push(`${path} must be a boolean`);
-    return false;
-  }
-  return input;
-}
-
-function expectNumberOrArray(input: unknown, path: string, errors: string[]): number | number[] {
-  if (typeof input === "number") return input;
-  if (Array.isArray(input)) {
-    return input.map((v, idx) => expectNumber(v, `${path}[${idx}]`, errors));
-  }
-  errors.push(`${path} must be a number or array of numbers`);
-  return 0;
-}
-
-function expectEasing(input: unknown, path: string, errors: string[]): "linear" | "easeIn" | "easeOut" | "easeInOut" {
-  if (input === "linear" || input === "easeIn" || input === "easeOut" || input === "easeInOut") return input;
-  errors.push(`${path} must be linear, easeIn, easeOut, or easeInOut`);
-  return "linear";
-}
-
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return typeof input === "object" && input !== null && !Array.isArray(input);
-}
-
-function validateResponsive(input: unknown, viewport: unknown, errors: string[]): ResponsiveConfig {
-  const defaults: ResponsiveConfig = {
-    mode: "scale",
-    referenceWidth: 390,
-    referenceHeight: 844,
-    orientation: "portrait",
-    safeArea: {
-      enabled: true,
-      padding: { top: 0, bottom: 0, left: 0, right: 0 }
-    }
-  };
-
-  if (input === undefined || input === null) {
-    if (isRecord(viewport)) {
-      defaults.referenceWidth = expectNumber(viewport.width, "responsive.referenceWidth (from viewport)", errors);
-      defaults.referenceHeight = expectNumber(viewport.height, "responsive.referenceHeight (from viewport)", errors);
-    }
-    return defaults;
-  }
-
-  if (!isRecord(input)) {
-    errors.push("responsive must be an object");
-    return defaults;
-  }
-
-  const mode = input.mode;
-  if (mode !== "fixed" && mode !== "scale" && mode !== "adaptive") {
-    errors.push('responsive.mode must be "fixed", "scale", or "adaptive"');
-  }
-
-  const orientation = input.orientation;
-  if (orientation !== "portrait" && orientation !== "landscape" && orientation !== "auto") {
-    errors.push('responsive.orientation must be "portrait", "landscape", or "auto"');
-  }
-
-  return {
-    mode: (mode as ResponsiveConfig["mode"]) ?? defaults.mode,
-    referenceWidth: optionalNumber(input.referenceWidth, "responsive.referenceWidth", errors) ?? defaults.referenceWidth,
-    referenceHeight: optionalNumber(input.referenceHeight, "responsive.referenceHeight", errors) ?? defaults.referenceHeight,
-    orientation: (orientation as ResponsiveConfig["orientation"]) ?? defaults.orientation,
-    safeArea: validateSafeArea(input.safeArea, errors)
-  };
-}
-
-function validateSafeArea(input: unknown, errors: string[]): SafeAreaConfig {
-  const defaults: SafeAreaConfig = {
-    enabled: true,
-    padding: { top: 0, bottom: 0, left: 0, right: 0 }
-  };
-
-  if (input === undefined || input === null) {
-    return defaults;
-  }
-
-  if (!isRecord(input)) {
-    errors.push("responsive.safeArea must be an object");
-    return defaults;
-  }
-
-  return {
-    enabled: typeof input.enabled === "boolean" ? input.enabled : defaults.enabled,
-    padding: isRecord(input.padding)
-      ? {
-          top: optionalNumber(input.padding.top, "responsive.safeArea.padding.top", errors) ?? 0,
-          bottom: optionalNumber(input.padding.bottom, "responsive.safeArea.padding.bottom", errors) ?? 0,
-          left: optionalNumber(input.padding.left, "responsive.safeArea.padding.left", errors) ?? 0,
-          right: optionalNumber(input.padding.right, "responsive.safeArea.padding.right", errors) ?? 0
-        }
-      : defaults.padding
-  };
-}
-
-function validateLevels(input: unknown, errors: string[]): GameKitLevel[] {
-  if (input === undefined || input === null) {
-    return [];
-  }
-
-  if (!Array.isArray(input)) {
-    errors.push("levels must be an array");
-    return [];
-  }
-
-  return input.map((level, index) => {
-    const path = `levels[${index}]`;
-    if (!isRecord(level)) {
-      errors.push(`${path} must be an object`);
-      return { id: "", name: "", order: 0, sceneIds: [], unlocked: false };
-    }
-
-    return {
-      id: expectString(level.id, `${path}.id`, errors),
-      name: expectString(level.name, `${path}.name`, errors),
-      order: expectNumber(level.order, `${path}.order`, errors),
-      sceneIds: validateStringArray(level.sceneIds, `${path}.sceneIds`, errors),
-      unlocked: typeof level.unlocked === "boolean" ? level.unlocked : false
-    };
+    
+    return `${pathStr ? pathStr + " " : ""}must be valid: ${err.message}`;
   });
 }
