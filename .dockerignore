@@ -1,0 +1,9 @@
+.git
+.gitignore
+.gitattributes
+node_modules
+**/node_modules
+.pnpm-store
+.next
+.cache
+*.md
