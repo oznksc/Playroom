@@ -1,0 +1,35 @@
+{
+  "id": "checkpoint-flag",
+  "name": "Checkpoint Flag",
+  "category": "mechanic",
+  "description": "Trigger zone tagged checkpoint — updates respawn point when the player enters (RulesEngine).",
+  "tags": ["rules", "checkpoint", "spawn", "respawn"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "width": { "type": "number", "default": 24 },
+    "height": { "type": "number", "default": 48 }
+  },
+  "entityTags": ["checkpoint"],
+  "components": [
+    {
+      "type": "AabbCollider",
+      "offset": { "x": -12, "y": -24 },
+      "size": { "x": "{{width}}", "y": "{{height}}" },
+      "isStatic": true,
+      "isTrigger": true,
+      "layer": 1,
+      "mask": 1
+    },
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [{ "type": "setCheckpoint" }]
+        }
+      ]
+    }
+  ],
+  "notes": "RulesEngine also auto-updates spawn on checkpoint/spawn tags. Script action is a backup for hosts that inject rules hooks."
+}

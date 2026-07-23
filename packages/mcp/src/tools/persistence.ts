@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
-import type { GameSavePayload } from "@gamekit/schema";
+import type { GameSavePayload, ScriptAction } from "@gamekit/schema";
+import { findLevelForScene } from "@gamekit/schema";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -26,12 +27,14 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
   async function buildSavePayload(): Promise<GameSavePayload> {
     const project = await fileIO.readProject();
     const persistentState = await readState();
+    const currentSceneId = project.activeScene ?? null;
+    const currentLevel = findLevelForScene(project.levels ?? [], currentSceneId);
     return {
       version: 1,
       persistentState,
       levels: project.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
-      currentSceneId: project.activeScene ?? null,
-      currentLevelId: null,
+      currentSceneId,
+      currentLevelId: currentLevel?.id ?? null,
     };
   }
 
@@ -185,6 +188,81 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       await fileIO.writeProject(project);
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, unlocked: next.id, name: next.name }) }],
+      };
+    },
+  );
+
+  server.tool(
+    "set_level_on_complete",
+    "Set or clear a level's onComplete action list (runs after scene win / completeLevel)",
+    {
+      levelId: z.string().describe("Level id"),
+      actions: z
+        .array(
+          z
+            .object({ type: z.string().min(1) })
+            .passthrough(),
+        )
+        .describe("Script actions, e.g. [{ type: 'completeLevel' }, { type: 'unlockLevel', levelId: 'boss' }]"),
+    },
+    async ({ levelId, actions }) => {
+      const project = await fileIO.readProject();
+      const level = project.levels.find((l) => l.id === levelId);
+      if (!level) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          isError: true,
+        };
+      }
+      if (actions.length === 0) {
+        delete level.onComplete;
+      } else {
+        level.onComplete = actions as ScriptAction[];
+      }
+      await fileIO.writeProject(project);
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            success: true,
+            levelId,
+            onComplete: level.onComplete ?? [],
+          }),
+        }],
+      };
+    },
+  );
+
+  server.tool(
+    "set_level_rules",
+    "Set partial game rules on a level (merged under scene.gameRules when that level is active)",
+    {
+      levelId: z.string().describe("Level id"),
+      rules: z
+        .record(z.unknown())
+        .describe("Partial GameRulesConfig fields, e.g. { lives: 5, winMessage: 'Stage clear!' }"),
+      clear: z.boolean().optional().describe("If true, remove level.rules entirely"),
+    },
+    async ({ levelId, rules, clear }) => {
+      const project = await fileIO.readProject();
+      const level = project.levels.find((l) => l.id === levelId);
+      if (!level) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          isError: true,
+        };
+      }
+      if (clear) {
+        delete level.rules;
+      } else {
+        level.rules = { ...(level.rules ?? {}), ...rules } as typeof level.rules;
+      }
+      await fileIO.writeProject(project);
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ success: true, levelId, rules: level.rules ?? null }),
+        }],
       };
     },
   );

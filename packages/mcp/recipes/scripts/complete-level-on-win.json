@@ -1,0 +1,13 @@
+{
+  "id": "complete-level-on-win",
+  "name": "Complete Level On Win",
+  "category": "script",
+  "description": "Scene rules: set onWin to completeLevel (unlock next project level).",
+  "tags": ["rules", "level", "progression", "win"],
+  "targets": "scene",
+  "params": {},
+  "gameRules": {
+    "onWin": [{ "type": "completeLevel" }]
+  },
+  "notes": "Use after defining objectives, or with win-collect-all / win-reach-goal (already includes completeLevel)."
+}

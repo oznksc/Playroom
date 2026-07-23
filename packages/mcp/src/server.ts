@@ -23,6 +23,7 @@ import { registerPrefabTools } from "./tools/prefabs.js";
 import { registerBatchTools } from "./tools/batch.js";
 import { registerInputTools } from "./tools/input.js";
 import { registerDoctorTools } from "./tools/doctor.js";
+import { registerGameRulesTools } from "./tools/game-rules.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -59,6 +60,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerBatchTools(server, fileIO);
   registerInputTools(server, fileIO);
   registerDoctorTools(server, fileIO);
+  registerGameRulesTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 
