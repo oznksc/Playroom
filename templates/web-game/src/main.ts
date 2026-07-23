@@ -1,10 +1,82 @@
 import { createGameKitGame } from "@gamekit/runtime-web";
-import sceneJson from "../gamekit/scenes/main.scene.json";
+import { SceneManager, InMemoryStorage, loadScene } from "@gamekit/runtime";
+import type { GameKitScene, GuiComponent } from "@gamekit/schema";
+import projectJson from "../gamekit/project.json";
+import menuJson from "../gamekit/scenes/menu.scene.json";
+import settingsJson from "../gamekit/scenes/settings.scene.json";
+import mainJson from "../gamekit/scenes/main.scene.json";
 import { gamekitAssets } from "../gamekit/generated/assets";
 
-createGameKitGame({
-  scene: sceneJson as Parameters<typeof createGameKitGame>[0]["scene"],
-  assets: gamekitAssets,
-  container: document.getElementById("game")!,
-  pixelArt: false,
-});
+const assets = gamekitAssets as Record<string, string>;
+const guiComponents = (projectJson.guiComponents ?? []) as GuiComponent[];
+
+const scenes: Record<string, ReturnType<typeof loadScene>> = {};
+function register(file: string, raw: unknown) {
+  const loaded = loadScene(raw, assets);
+  const bare = file.replace(/\.scene\.json$/i, "");
+  scenes[file] = loaded;
+  scenes[bare] = loaded;
+  scenes[loaded.scene.id] = loaded;
+}
+
+register("menu.scene.json", menuJson);
+register("settings.scene.json", settingsJson);
+register("main.scene.json", mainJson);
+
+const manager = new SceneManager(
+  { scenes, transition: { type: "fade", duration: 250 } },
+  projectJson.levels ?? [],
+  new InMemoryStorage(),
+);
+
+// Start on activeScene (menu) when present.
+const entryFile =
+  (projectJson as { activeScene?: string }).activeScene ?? "menu.scene.json";
+manager.switchScene(entryFile.replace(/\.scene\.json$/i, "")) ||
+  manager.switchScene("menu") ||
+  manager.switchScene("main");
+
+const container = document.getElementById("game")!;
+let game: ReturnType<typeof createGameKitGame> | null = null;
+
+function mountCurrent() {
+  const current = manager.getCurrentScene();
+  if (!current) return;
+  const scene = current.scene as GameKitScene;
+  if (game) {
+    game.destroy(true);
+    game = null;
+    container.innerHTML = "";
+  }
+  game = createGameKitGame({
+    scene,
+    assets,
+    container,
+    pixelArt: false,
+    guiComponents,
+    sceneManager: {
+      switchScene: (id) => {
+        const ok = manager.switchScene(id);
+        if (ok) mountCurrent();
+        return ok;
+      },
+      nextScene: () => {
+        const ok = manager.nextScene();
+        if (ok) mountCurrent();
+        return ok;
+      },
+      nextLevel: () => {
+        const ok = manager.nextLevel();
+        if (ok) mountCurrent();
+        return ok;
+      },
+      unlockLevel: (id) => manager.unlockLevel(id),
+      completeLevel: (id) => manager.completeLevel(id),
+      getState: () => ({ currentLevelId: manager.getState().currentLevelId }),
+      setPersistentVar: (k, v) => manager.setPersistentVar(k, v),
+      getPersistentVar: (k, d) => manager.getPersistentVar(k, d),
+    },
+  });
+}
+
+mountCurrent();

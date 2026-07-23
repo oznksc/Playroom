@@ -43,6 +43,20 @@ pnpm exec tauri dev
 
 Pick a project folder with a `gamekit/` directory.
 
+## Menu shell (start menu + settings)
+
+`gamekit init` creates a navigable shell by default:
+
+| File | Role |
+|------|------|
+| `scenes/menu.scene.json` | Start menu (Play, Settings) |
+| `scenes/settings.scene.json` | Settings placeholders + Back |
+| `scenes/main.scene.json` | Gameplay starter |
+| `project.json` → `guiComponents` | HUD, Pause, Game Over, You Win library |
+| `project.activeScene` | `menu.scene.json` |
+
+In the editor, open **Play** on the Menu scene and click **Play** / **Settings** to switch scenes. Edit button labels and layout in the GUI inspector.
+
 ## Apply a genre template
 
 In the editor topbar, click **New from template**, or:
@@ -51,6 +65,8 @@ In the editor topbar, click **New from template**, or:
 pnpm gamekit skills list
 pnpm gamekit skills apply platformer
 ```
+
+Genre skills build gameplay scenes; they should not wipe the menu/settings shell.
 
 ## Health check
 

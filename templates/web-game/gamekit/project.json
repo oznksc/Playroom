@@ -2,8 +2,11 @@
   "schemaVersion": 1,
   "name": "Coin Rush",
   "scenes": [
+    "menu.scene.json",
+    "settings.scene.json",
     "main.scene.json"
   ],
+  "activeScene": "menu.scene.json",
   "levels": [
     {
       "id": "level-1",
@@ -52,5 +55,320 @@
       "kind": "image"
     }
   ],
-  "guiComponents": []
+  "guiComponents": [
+    {
+      "id": "hud",
+      "name": "HUD",
+      "nodes": [
+        {
+          "id": "hud-bar",
+          "type": "Button",
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 48,
+          "text": " ",
+          "fontSize": 1,
+          "color": "#0f1520",
+          "backgroundColor": "#121824",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "hud-score",
+          "type": "Text",
+          "x": 16,
+          "y": 12,
+          "width": 160,
+          "height": 28,
+          "text": "Coins: 0",
+          "fontSize": 15,
+          "color": "#ffb300",
+          "align": "left",
+          "visible": true
+        },
+        {
+          "id": "hud-lives",
+          "type": "Text",
+          "x": 270,
+          "y": 12,
+          "width": 104,
+          "height": 28,
+          "text": "Lives: 3",
+          "fontSize": 15,
+          "color": "#f1f5f9",
+          "align": "right",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "pause-menu",
+      "name": "Pause Menu",
+      "nodes": [
+        {
+          "id": "pause-backdrop",
+          "type": "Button",
+          "x": 45,
+          "y": 180,
+          "width": 300,
+          "height": 320,
+          "text": " ",
+          "fontSize": 1,
+          "color": "#0f1520",
+          "backgroundColor": "#0f1520",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "pause-title",
+          "type": "Text",
+          "x": 24,
+          "y": 208,
+          "width": 342,
+          "height": 36,
+          "text": "Paused",
+          "fontSize": 26,
+          "color": "#00f0ff",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "pause-sub",
+          "type": "Text",
+          "x": 24,
+          "y": 250,
+          "width": 342,
+          "height": 22,
+          "text": "Game is frozen — edit this overlay",
+          "fontSize": 12,
+          "color": "#94a3b8",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "btn-resume",
+          "type": "Button",
+          "x": 65,
+          "y": 290,
+          "width": 260,
+          "height": 44,
+          "text": "Resume",
+          "action": "resumeGame",
+          "fontSize": 15,
+          "color": "#00f0ff",
+          "backgroundColor": "#0d3d42",
+          "interactive": true,
+          "visible": true
+        },
+        {
+          "id": "btn-restart",
+          "type": "Button",
+          "x": 65,
+          "y": 346,
+          "width": 260,
+          "height": 44,
+          "text": "Restart",
+          "action": "restartLevel",
+          "fontSize": 15,
+          "color": "#f1f5f9",
+          "backgroundColor": "#1a2332",
+          "interactive": true,
+          "visible": true
+        },
+        {
+          "id": "btn-pause-menu",
+          "type": "Button",
+          "x": 65,
+          "y": 402,
+          "width": 260,
+          "height": 44,
+          "text": "Main Menu",
+          "action": "backToMenu",
+          "fontSize": 15,
+          "color": "#c4b5fd",
+          "backgroundColor": "#1a1f35",
+          "interactive": true,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "game-over",
+      "name": "Game Over",
+      "nodes": [
+        {
+          "id": "gameover-backdrop",
+          "type": "Button",
+          "x": 45,
+          "y": 200,
+          "width": 300,
+          "height": 280,
+          "text": " ",
+          "fontSize": 1,
+          "color": "#0f1520",
+          "backgroundColor": "#0f1520",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "gameover-title",
+          "type": "Text",
+          "x": 24,
+          "y": 228,
+          "width": 342,
+          "height": 36,
+          "text": "Game Over",
+          "fontSize": 26,
+          "color": "#f87171",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "gameover-sub",
+          "type": "Text",
+          "x": 24,
+          "y": 270,
+          "width": 342,
+          "height": 22,
+          "text": "Try again or return to menu",
+          "fontSize": 12,
+          "color": "#94a3b8",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "btn-retry",
+          "type": "Button",
+          "x": 65,
+          "y": 310,
+          "width": 260,
+          "height": 44,
+          "text": "Retry",
+          "action": "retryGame",
+          "fontSize": 15,
+          "color": "#00f0ff",
+          "backgroundColor": "#0d3d42",
+          "interactive": true,
+          "visible": true
+        },
+        {
+          "id": "btn-gameover-menu",
+          "type": "Button",
+          "x": 65,
+          "y": 366,
+          "width": 260,
+          "height": 44,
+          "text": "Main Menu",
+          "action": "backToMenu",
+          "fontSize": 15,
+          "color": "#f1f5f9",
+          "backgroundColor": "#1a2332",
+          "interactive": true,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "you-win",
+      "name": "You Win",
+      "nodes": [
+        {
+          "id": "win-backdrop",
+          "type": "Button",
+          "x": 45,
+          "y": 200,
+          "width": 300,
+          "height": 280,
+          "text": " ",
+          "fontSize": 1,
+          "color": "#0f1520",
+          "backgroundColor": "#0f1520",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "win-title",
+          "type": "Text",
+          "x": 24,
+          "y": 228,
+          "width": 342,
+          "height": 36,
+          "text": "You Win!",
+          "fontSize": 26,
+          "color": "#10b981",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "win-sub",
+          "type": "Text",
+          "x": 24,
+          "y": 270,
+          "width": 342,
+          "height": 22,
+          "text": "Level complete",
+          "fontSize": 12,
+          "color": "#94a3b8",
+          "align": "center",
+          "visible": true
+        },
+        {
+          "id": "btn-next",
+          "type": "Button",
+          "x": 65,
+          "y": 310,
+          "width": 260,
+          "height": 44,
+          "text": "Next Level",
+          "action": "nextLevel",
+          "fontSize": 15,
+          "color": "#00f0ff",
+          "backgroundColor": "#0d3d42",
+          "interactive": true,
+          "visible": true
+        },
+        {
+          "id": "btn-win-menu",
+          "type": "Button",
+          "x": 65,
+          "y": 366,
+          "width": 260,
+          "height": 44,
+          "text": "Main Menu",
+          "action": "backToMenu",
+          "fontSize": 15,
+          "color": "#f1f5f9",
+          "backgroundColor": "#1a2332",
+          "interactive": true,
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "to-main",
+      "name": "Menu → Game",
+      "fromSceneId": "menu",
+      "toSceneId": "main",
+      "type": "fade",
+      "duration": 0.35
+    },
+    {
+      "id": "to-menu",
+      "name": "Back to Menu",
+      "toSceneId": "menu",
+      "type": "fade",
+      "duration": 0.25
+    },
+    {
+      "id": "to-settings",
+      "name": "Open Settings",
+      "fromSceneId": "menu",
+      "toSceneId": "settings",
+      "type": "fade",
+      "duration": 0.25
+    }
+  ]
 }

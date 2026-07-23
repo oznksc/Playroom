@@ -28,6 +28,21 @@ Playroom scenes are JSON validated by `@gamekit/schema`.
 - optional `activeScene`, `transitions[]`
 - `guiComponents[]`
 
+## Starter menu GUI actions
+
+`Button.action` is a **script event name**. Controllers (entities with `Script`) handle:
+
+| Event | Typical action |
+|-------|----------------|
+| `startGame` | `switchScene` → `main` |
+| `openSettings` | `switchScene` → `settings` |
+| `backToMenu` | `switchScene` → `menu` |
+| `resumeGame` | Unpause (host-defined) |
+| `restartLevel` / `retryGame` | Reload main |
+| `nextLevel` | `nextLevel` progression |
+
+Factories: `createMenuScene`, `createSettingsScene`, `createDefaultGuiComponents`, `createStarterGameplayScene`, `createDefaultMenuTransitions` (`@gamekit/schema`).
+
 ## Skills
 
 JSON templates under `packages/mcp/skills/*.json` expand into full scenes via `apply_skill` / `gamekit skills apply`.
