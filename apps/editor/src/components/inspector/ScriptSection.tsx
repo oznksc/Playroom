@@ -54,10 +54,20 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                     <option value="">Add action type…</option>
                     <option value="playSound">playSound</option>
                     <option value="switchScene">switchScene</option>
+                    <option value="nextScene">nextScene</option>
+                    <option value="nextLevel">nextLevel</option>
+                    <option value="completeLevel">completeLevel</option>
+                    <option value="unlockLevel">unlockLevel</option>
                     <option value="destroyEntity">destroyEntity</option>
                     <option value="setVariable">setVariable</option>
+                    <option value="incrementVariable">incrementVariable</option>
                     <option value="applyImpulse">applyImpulse</option>
                     <option value="transitionState">transitionState</option>
+                    <option value="win">win</option>
+                    <option value="lose">lose</option>
+                    <option value="respawn">respawn</option>
+                    <option value="completeObjective">completeObjective</option>
+                    <option value="setCheckpoint">setCheckpoint</option>
                   </Select>
                   <IconButton size="sm" title="Add action" onClick={() => onChange((d) => {
                     findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.push({ type: "setVariable", key: "", value: true });

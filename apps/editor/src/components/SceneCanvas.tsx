@@ -58,6 +58,8 @@ type SceneCanvasProps = {
   ) => void;
   /** Which touch buttons to show (from scene.inputMap). Defaults to jump only. */
   virtualTouchControls?: Array<"jump" | "fire" | "action">;
+  /** Play-mode: GUI Button.action fired on pointer up. */
+  onGuiAction?: (action: string) => void;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
@@ -105,6 +107,7 @@ export function SceneCanvas({
   viewResetKey = 0,
   onVirtualInput,
   virtualTouchControls = ["jump"],
+  onGuiAction,
   onZoomChange,
   onSelect,
   onSelectGuiNode,
@@ -659,7 +662,38 @@ export function SceneCanvas({
                 }
               }
 
-              if (showGuiTools) {
+              // Play mode: fire GUI Button actions (menu shell navigation)
+              if (isPlaying && onGuiAction) {
+                const guiNodes = scene.gui?.nodes ?? [];
+                const hitGui = [...guiNodes].reverse().find((node) => hitGuiNode(node, point));
+                if (hitGui && hitGui.type === "Button" && hitGui.action) {
+                  onGuiAction(hitGui.action);
+                  return;
+                }
+                const instances = scene.gui?.componentInstances ?? [];
+                const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
+                for (const inst of [...instances].reverse()) {
+                  if (inst.visible === false) continue;
+                  const comp = compMap.get(inst.componentId);
+                  if (!comp) continue;
+                  for (const node of [...comp.nodes].reverse()) {
+                    if (node.visible === false || node.type !== "Button" || !node.action) continue;
+                    const ox = node.x + inst.x;
+                    const oy = node.y + inst.y;
+                    if (
+                      point.x >= ox &&
+                      point.x <= ox + node.width &&
+                      point.y >= oy &&
+                      point.y <= oy + node.height
+                    ) {
+                      onGuiAction(node.action);
+                      return;
+                    }
+                  }
+                }
+              }
+
+              if (showGuiTools && !isPlaying) {
                 const instances = scene.gui?.componentInstances ?? [];
                 const compMap = new Map((guiComponents ?? []).map((c) => [c.id, c]));
                 const hitInst = [...instances].reverse().find((inst) => {
