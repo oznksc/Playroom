@@ -44,7 +44,7 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 3. **Color as signal.** Accents indicate state (active, selected, playing, error), not decoration.
 4. **Consistent compactness.** Inspector fields, badges, and controls are uniformly small (22px height inputs, 10px labels). Scale stays tight.
 5. **Glow as feedback.** Neon glows communicate active/running states — not ambient styling.
-6. **Accordion pattern.** Collapsible sections with left accent borders group related controls.
+6. **Accordion pattern.** Collapsible glass sections with uniform low-contrast borders group related controls. Do not rainbow-color left edges.
 7. **Monospace for data.** UUIDs, coordinates, numeric values use monospace for alignment.
 
 ## Anti-References
@@ -66,9 +66,9 @@ Technical, precise, minimal. No marketing copy, no exclamation points. Labels ar
 ## Component Rules
 
 - **Inspector fields**: 22px height, badge + input pattern, monospace for numbers
-- **Accordions**: Left colored border, 38px header, collapsible body
+- **Accordions**: Uniform 1px low-contrast border (no multi-color left stripes), ~36px header, collapsible body
 - **Buttons**: Icon buttons (20–24px), text buttons with 10px font, ghost style default
-- **Panels**: Full-height flex column, header bar (38px), scroll area below
-- **Sidebar activity rail**: 44px wide, icon + micro label, active = cyan left bar + muted fill
+- **Panels**: Full-height flex column, header bar (38px), scroll area below; panel titles are plain text (no colored left bar)
+- **Sidebar activity rail**: 44px wide, icon + micro label, active = muted fill + cyan text/icon (not a rainbow of edge bars)
 - **Bottom drawer tabs**: title case, optional icon, bottom accent underline (not rounded pills)
 - **Status**: Dots (6px) for state, badges for types, monospace for IDs

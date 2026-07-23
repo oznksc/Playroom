@@ -1,8 +1,8 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent } from "@gamekit/schema";
-import { Canvas, Group, Rect, Circle, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont } from "@shopify/react-native-skia";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode } from "@gamekit/schema";
+import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
@@ -210,6 +210,22 @@ export function GameKitView({
             return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;
           })}
         </Group>
+
+        {/* Screen-space GUI / HUD (not affected by camera pan) */}
+        <Group
+          transform={[
+            { translateX: viewportScale.offsetX },
+            { translateY: viewportScale.offsetY },
+            { scale: viewportScale.scale },
+          ]}
+        >
+          {(scene.gui?.nodes ?? [])
+            .filter((node) => node.visible !== false)
+            .map((node) => (
+              <GuiNodeView key={node.id} node={node} assets={assets} />
+            ))}
+        </Group>
+
         {transitionOverlay && transitionOverlay.opacity > 0 && (
           <Rect
             x={0}
@@ -223,6 +239,123 @@ export function GameKitView({
       </Canvas>
     </View>
   );
+}
+
+function GuiNodeView({
+  node,
+  assets,
+}: {
+  node: GuiNode;
+  assets: Record<string, unknown>;
+}): ReactElement | null {
+  const fontFamily = Platform.select({ ios: "Helvetica", default: "sans-serif" });
+  const fontSize =
+    node.type === "Text"
+      ? (node.fontSize ?? 16)
+      : node.type === "Button"
+        ? (node.fontSize ?? 14)
+        : 14;
+
+  // useFont requires a resource; matchFont works for system fonts on Skia
+  let font: ReturnType<typeof matchFont> | null = null;
+  try {
+    font = matchFont({ fontFamily: fontFamily ?? "sans-serif", fontSize });
+  } catch {
+    font = null;
+  }
+
+  if (node.type === "Text") {
+    const color = node.color ?? "#ffffff";
+    const align = node.align ?? "left";
+    const textX =
+      align === "center" ? node.x + node.width / 2 : align === "right" ? node.x + node.width : node.x + 4;
+    return (
+      <Group>
+        {font ? (
+          <SkiaText
+            x={textX}
+            y={node.y + fontSize + 2}
+            text={node.text}
+            font={font}
+            color={Skia.Color(color)}
+          />
+        ) : (
+          <Rect x={node.x} y={node.y} width={node.width} height={node.height} color={Skia.Color(color)} opacity={0.15} />
+        )}
+      </Group>
+    );
+  }
+
+  if (node.type === "Button") {
+    const bg = node.backgroundColor ?? "#333333";
+    const color = node.color ?? "#ffffff";
+    return (
+      <Group>
+        <RoundedRect
+          x={node.x}
+          y={node.y}
+          width={node.width}
+          height={node.height}
+          r={6}
+          color={Skia.Color(bg)}
+        />
+        {font ? (
+          <SkiaText
+            x={node.x + node.width / 2 - (node.text.length * fontSize * 0.28)}
+            y={node.y + node.height / 2 + fontSize / 3}
+            text={node.text}
+            font={font}
+            color={Skia.Color(color)}
+          />
+        ) : null}
+      </Group>
+    );
+  }
+
+  if (node.type === "Image") {
+    return (
+      <GuiImageNode
+        assetId={node.assetId}
+        x={node.x}
+        y={node.y}
+        width={node.width}
+        height={node.height}
+        source={assets[node.assetId]}
+      />
+    );
+  }
+
+  return null;
+}
+
+function GuiImageNode({
+  assetId,
+  x,
+  y,
+  width,
+  height,
+  source,
+}: {
+  assetId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  source: unknown;
+}): ReactElement {
+  const image = useImage(source as Parameters<typeof useImage>[0]);
+  if (!image) {
+    return (
+      <Rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        color={Skia.Color("#444466")}
+      />
+    );
+  }
+  return <SkiaImage image={image} x={x} y={y} width={width} height={height} />;
 }
 
 function SpriteNode({

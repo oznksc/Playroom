@@ -21,7 +21,6 @@ export function PolygonColliderSection({ polygonCollider, onChange, open, onTogg
       onToggle={onToggle}
       removable={!!polygonCollider}
       onRemove={onRemove}
-      accent="green"
     >
       {polygonCollider ? (
         <>

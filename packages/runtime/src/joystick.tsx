@@ -24,12 +24,14 @@ export function VirtualJoystick({
   const [thumb, setThumb] = useState({ x: 0, y: 0 });
   const [active, setActive] = useState(false);
   const centerRef = useRef({ x: 0, y: 0 });
-  const jumpCooldownRef = useRef(false);
 
   const responder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      // Keep stick capture so multi-touch buttons on the other side stay independent
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
       onPanResponderGrant: (_, gesture) => {
         centerRef.current = { x: gesture.x0, y: gesture.y0 };
         setActive(true);

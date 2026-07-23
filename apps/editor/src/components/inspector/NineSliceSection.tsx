@@ -22,7 +22,6 @@ export function NineSliceSection({ nineSlice, assets, onChange, open, onToggle, 
       onToggle={onToggle}
       removable={!!nineSlice}
       onRemove={onRemove}
-      accent="purple"
     >
       {nineSlice ? (
         <>

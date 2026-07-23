@@ -18,7 +18,9 @@ import { evaluateScriptEvent, transitionFsm } from "./script.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
 import { deepClone } from "./clone.js";
-import { VirtualJoystick } from "./joystick.js";
+import { VirtualControls } from "./virtual-controls.js";
+import { pollGamepad } from "./gamepad.js";
+import { mergeGamepadIntoInput } from "./input-map.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -43,7 +45,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const audioRef = useRef<AudioController | null>(null);
   const particleEmittersRef = useRef<Map<string, ParticleEmitterState>>(new Map());
   const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
-  const { inputRef, setLeft, setRight, setJump } = usePlayerInput();
+  const { inputRef, setLeft, setRight, setJump, setFire, setAction } = usePlayerInput();
   const [, setTick] = useState(0);
   const [transitionOverlay, setTransitionOverlay] = useState<TransitionOverlay | null>(null);
   const prevSceneIdRef = useRef<string>(scene.id);
@@ -148,7 +150,11 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
         evaluateScriptEvent("start", script, {
           entityId: entity.id,
           entities: entitiesRef.current,
-          rigidBodies: rigidBodyRefs.current
+          rigidBodies: rigidBodyRefs.current,
+          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id: string) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
         });
       }
     }
@@ -161,7 +167,8 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
 
   useGameLoop((dt) => {
     const entities = entitiesRef.current;
-    const input = inputRef.current;
+    // Merge virtual-control / keyboard state with live gamepad (web / desktop)
+    const input = mergeGamepadIntoInput(inputRef.current, scene.inputMap, pollGamepad());
 
     // Update Tweens and FollowPaths
     for (const entity of entities) {
@@ -367,7 +374,11 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           const context = {
             entityId: entity.id,
             entities: currentEntities,
-            rigidBodies: rigidBodyRefs.current
+            rigidBodies: rigidBodyRefs.current,
+            playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+            destroyEntity: (id: string) => {
+              entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+            },
           };
 
           const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
@@ -380,6 +391,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
 
           const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
           if (script) {
+            evaluateScriptEvent("onTriggerEnter", script, context);
             evaluateScriptEvent("triggerEnter", script, context);
           }
         }
@@ -462,16 +474,14 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
         transitionOverlay={transitionOverlay}
       />
       {showControls && (
-        <VirtualJoystick
-          onMove={(x, y) => {
-            setLeft(x < -0.3);
-            setRight(x > 0.3);
-            setJump(y < -0.5);
-          }}
-          onRelease={() => {
-            setLeft(false);
-            setRight(false);
-            setJump(false);
+        <VirtualControls
+          inputMap={scene.inputMap}
+          actions={{
+            setLeft,
+            setRight,
+            setJump,
+            setFire,
+            setAction,
           }}
         />
       )}

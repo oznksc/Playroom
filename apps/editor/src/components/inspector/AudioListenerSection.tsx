@@ -21,7 +21,6 @@ export function AudioListenerSection({ audioListener, onChange, open, onToggle, 
       onToggle={onToggle}
       removable={!!audioListener}
       onRemove={onRemove}
-      accent="muted"
     >
       {audioListener ? (
         <CheckboxField

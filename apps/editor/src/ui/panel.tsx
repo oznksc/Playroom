@@ -37,31 +37,14 @@ export function PanelHeader({
   );
 }
 
-export type PanelTitleProps = React.HTMLAttributes<HTMLHeadingElement> & {
-  accent?: "cyan" | "purple" | "green" | "gold" | "none";
-};
+export type PanelTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 
-const accentBar: Record<NonNullable<PanelTitleProps["accent"]>, string> = {
-  cyan: "before:bg-accent",
-  purple: "before:bg-accent-purple",
-  green: "before:bg-accent-green",
-  gold: "before:bg-selection",
-  none: "before:hidden",
-};
-
-export function PanelTitle({
-  className,
-  accent = "cyan",
-  children,
-  ...props
-}: PanelTitleProps) {
+export function PanelTitle({ className, children, ...props }: PanelTitleProps) {
   return (
     <h3
       className={cn(
-        "relative m-0 flex items-center gap-1.5 pl-2 text-[12px] font-semibold tracking-[-0.015em] text-[rgba(245,245,247,0.92)]",
-        "before:absolute before:left-0 before:top-1/2 before:h-2.5 before:w-0.5 before:-translate-y-1/2 before:rounded-full",
-        accentBar[accent],
-        className
+        "m-0 flex items-center gap-1.5 text-[12px] font-semibold tracking-[-0.015em] text-[rgba(245,245,247,0.92)]",
+        className,
       )}
       {...props}
     >

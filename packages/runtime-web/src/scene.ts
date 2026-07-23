@@ -17,12 +17,15 @@ import type {
   FollowPathComponent,
   Light2DComponent,
   NineSliceComponent,
+  TweenComponent,
+  StateMachineComponent,
+  GuiNode,
 } from "@gamekit/schema";
 import {
   resolveFallDeathY,
   resolveGameRules,
 } from "@gamekit/schema";
-import { createPlayerController, type PlayerControllerInput } from "@gamekit/runtime/player";
+import { createPlayerController } from "@gamekit/runtime/player";
 import { playTimeline, type TimelineState } from "@gamekit/runtime/timeline";
 import {
   createParticleEmitter,
@@ -32,12 +35,12 @@ import {
   particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
-import { evaluateScriptEvent } from "@gamekit/runtime/script";
-import { updateFollowPath } from "@gamekit/runtime";
+import { evaluateScriptEvent, transitionFsm } from "@gamekit/runtime/script";
+import { updateFollowPath, updateTween, raycast } from "@gamekit/runtime";
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
 import { preloadEntityAssets } from "./asset-loader.js";
-import { configureSceneKeyboard, type SceneInputKeys } from "./scene-input.js";
+import { configureSceneKeyboard, resolveScenePlayerInput, type SceneInputKeys } from "./scene-input.js";
 import { setupTouchJoystick as setupTouchJoystickInput } from "./touch-joystick.js";
 import { refreshSceneHud } from "./scene-hud.js";
 import { showSceneOverlay } from "./scene-overlay.js";
@@ -81,12 +84,14 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private groundedGraceFrames = 0;
   private static readonly GROUND_GRACE = 4;
   private transitionData: SceneTransitionDef | null = null;
-  private joystickBase: Phaser.GameObjects.Graphics | null = null;
-  private joystickThumb: Phaser.GameObjects.Graphics | null = null;
   private joystickActive = false;
   private joystickCenter = { x: 0, y: 0 };
   private joystickDx = 0;
   private joystickDy = 0;
+  private touchJump = false;
+  private touchFire = false;
+  private touchAction = false;
+  private guiObjects: Phaser.GameObjects.GameObject[] = [];
   private loadedFonts = new Map<string, string>();
 
   constructor(sceneData: GameKitScene, assetUrls: Record<string, string>, transition?: SceneTransitionDef) {
@@ -231,6 +236,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     }
 
     this.setupTouchJoystick();
+    this.setupGuiHud();
   }
 
   update(_time: number, delta: number): void {
@@ -246,7 +252,18 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     if (this.playerBinding) {
       const { binding, controller, controllerData } = this.playerBinding;
-      const jumpDown = this.keys.jump.some((k) => k.isDown) || this.joystickDy < -0.5;
+      const input = resolveScenePlayerInput(
+        this.keys,
+        {
+          jump: this.touchJump,
+          fire: this.touchFire,
+          action: this.touchAction,
+          dx: this.joystickDx,
+          dy: this.joystickDy,
+        },
+        this.sceneData.inputMap,
+      );
+      const jumpDown = input.jump;
       // Only jump on the frame the key is pressed — holding must not re-apply impulse
       const jumpPressed = jumpDown && !this.jumpHeldLastFrame;
       this.jumpHeldLastFrame = jumpDown;
@@ -269,20 +286,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
       }
 
       // Horizontal only from controller; Phaser arcade owns gravity/Y.
-      // Slight air control reduction so jumps feel less "floaty / fly away".
-      const keyDirection =
-        Number(this.keys.right.some((k) => k.isDown)) - Number(this.keys.left.some((k) => k.isDown));
-      const joystickDirection = Math.abs(this.joystickDx) > 0.3 ? Math.sign(this.joystickDx) : 0;
-      const direction = keyDirection !== 0 ? keyDirection : joystickDirection;
+      const direction = Number(input.right) - Number(input.left);
       const moveSpeed = touchingGround ? controllerData.speed : controllerData.speed * 0.85;
       body.setVelocityX(direction * moveSpeed);
 
-      // Jump from keyboard OR joystick upward swipe (dy < -0.5)
-      const joystickJump = this.joystickDy < -0.5 && !this.jumpHeldLastFrame;
-      const effectiveJump = jumpPressed || joystickJump;
-
       // Jump only when actually touching ground (not mere grace), edge-triggered
-      if (effectiveJump && touchingGround) {
+      if (jumpPressed && touchingGround) {
         body.setVelocityY(-controllerData.jumpVelocity);
         this.groundedGraceFrames = 0;
         controller.setGrounded(false);
@@ -320,9 +329,21 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const transform = findComponent<TransformComponent>(entity, "Transform");
       if (!transform) continue;
 
+      // Tween parity with mobile runtime
+      const tweens = entity.components.filter((c): c is TweenComponent => c.type === "Tween");
+      for (const tween of tweens) {
+        updateTween(tween, transform, dt);
+      }
+
       const followPath = findComponent<FollowPathComponent>(entity, "FollowPath");
       if (followPath) {
         updateFollowPath(followPath, transform, dt);
+      }
+
+      // Ensure StateMachine has currentState
+      const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
+      if (sm && !sm.currentState) {
+        sm.currentState = sm.initialState;
       }
 
       const go = binding.gameObject;
@@ -404,16 +425,140 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
   private setupTouchJoystick(): void {
     const thisScene = this;
-    setupTouchJoystickInput(this, {
-      get active() { return thisScene.joystickActive; },
-      set active(value: boolean) { thisScene.joystickActive = value; },
-      get center() { return thisScene.joystickCenter; },
-      set center(value: { x: number; y: number }) { thisScene.joystickCenter = value; },
-      get dx() { return thisScene.joystickDx; },
-      set dx(value: number) { thisScene.joystickDx = value; },
-      get dy() { return thisScene.joystickDy; },
-      set dy(value: number) { thisScene.joystickDy = value; },
-    });
+    setupTouchJoystickInput(
+      this,
+      {
+        get active() { return thisScene.joystickActive; },
+        set active(value: boolean) { thisScene.joystickActive = value; },
+        get center() { return thisScene.joystickCenter; },
+        set center(value: { x: number; y: number }) { thisScene.joystickCenter = value; },
+        get dx() { return thisScene.joystickDx; },
+        set dx(value: number) { thisScene.joystickDx = value; },
+        get dy() { return thisScene.joystickDy; },
+        set dy(value: number) { thisScene.joystickDy = value; },
+        get jump() { return thisScene.touchJump; },
+        set jump(value: boolean) { thisScene.touchJump = value; },
+        get fire() { return thisScene.touchFire; },
+        set fire(value: boolean) { thisScene.touchFire = value; },
+        get action() { return thisScene.touchAction; },
+        set action(value: boolean) { thisScene.touchAction = value; },
+      },
+      this.sceneData.inputMap,
+    );
+  }
+
+  /** Screen-space GUI / HUD from scene.gui.nodes */
+  private setupGuiHud(): void {
+    for (const obj of this.guiObjects) obj.destroy();
+    this.guiObjects = [];
+    const nodes = this.sceneData.gui?.nodes ?? [];
+    for (const node of nodes) {
+      if (node.visible === false) continue;
+      this.guiObjects.push(...this.createGuiNodeObjects(node));
+    }
+  }
+
+  private createGuiNodeObjects(node: GuiNode): Phaser.GameObjects.GameObject[] {
+    const created: Phaser.GameObjects.GameObject[] = [];
+    if (node.type === "Text") {
+      const t = this.add
+        .text(node.x, node.y, node.text, {
+          fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+          fontSize: `${node.fontSize ?? 16}px`,
+          color: node.color ?? "#ffffff",
+          align: node.align ?? "left",
+          wordWrap: { width: node.width },
+        })
+        .setOrigin(0, 0)
+        .setScrollFactor(0)
+        .setDepth(1500);
+      created.push(t);
+    } else if (node.type === "Button") {
+      const bg = this.add
+        .rectangle(
+          node.x + node.width / 2,
+          node.y + node.height / 2,
+          node.width,
+          node.height,
+          Phaser.Display.Color.ValueToColor(node.backgroundColor ?? "#333333").color,
+          0.95,
+        )
+        .setScrollFactor(0)
+        .setDepth(1500)
+        .setInteractive({ useHandCursor: true });
+      const label = this.add
+        .text(node.x + node.width / 2, node.y + node.height / 2, node.text, {
+          fontFamily: "IBM Plex Sans, system-ui, sans-serif",
+          fontSize: `${node.fontSize ?? 14}px`,
+          color: node.color ?? "#ffffff",
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(1501);
+      if (node.action) {
+        bg.on("pointerup", () => {
+          // Dispatch as a scene-level script-friendly event name
+          for (const entity of this.activeEntities) {
+            const script = findComponent<ScriptComponent>(entity, "Script");
+            if (script) {
+              evaluateScriptEvent(node.action!, script, {
+                entityId: entity.id,
+                entities: this.activeEntities,
+                destroyEntity: (id) => this.destroyEntityById(id),
+                playSound: (assetId) => {
+                  // Find first entity with this asset and play
+                  for (const [eid, binding] of this.bindings) {
+                    void binding;
+                    void eid;
+                  }
+                  // Best-effort: play by matching AudioSource asset
+                  for (const e of this.activeEntities) {
+                    const audio = e.components.find((c) => c.type === "AudioSource");
+                    if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                      this.playSound(e.id);
+                    }
+                  }
+                },
+              });
+            }
+          }
+        });
+      }
+      created.push(bg, label);
+    } else if (node.type === "Image") {
+      const key = `asset:${node.assetId}`;
+      if (this.textures.exists(key)) {
+        const img = this.add
+          .image(node.x + node.width / 2, node.y + node.height / 2, key)
+          .setDisplaySize(node.width, node.height)
+          .setScrollFactor(0)
+          .setDepth(1500);
+        created.push(img);
+      } else {
+        const placeholder = this.add
+          .rectangle(
+            node.x + node.width / 2,
+            node.y + node.height / 2,
+            node.width,
+            node.height,
+            0x444466,
+            0.8,
+          )
+          .setScrollFactor(0)
+          .setDepth(1500);
+        created.push(placeholder);
+      }
+    }
+    return created;
+  }
+
+  /** Software raycast against active entity colliders (parity with mobile). */
+  raycastScene(
+    origin: { x: number; y: number },
+    direction: { x: number; y: number },
+    maxDistance = 1000,
+  ) {
+    return raycast(origin, direction, this.activeEntities, { maxDistance });
   }
 
   private handleTriggerOverlap(triggerObj: Phaser.GameObjects.GameObject): void {
@@ -442,11 +587,28 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     const script = findComponent<ScriptComponent>(entity, "Script");
     if (script) {
-      evaluateScriptEvent("triggerEnter", script, {
+      const ctx = {
         entityId: entity.id,
         entities: this.activeEntities,
-        destroyEntity: (id) => this.destroyEntityById(id),
-      });
+        destroyEntity: (id: string) => this.destroyEntityById(id),
+        playSound: (assetId: string) => {
+          for (const e of this.activeEntities) {
+            const audio = e.components.find((c) => c.type === "AudioSource");
+            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+              this.playSound(e.id);
+            }
+          }
+        },
+      };
+      const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
+      if (sm && sm.currentState) {
+        const stateObj = sm.states.find((s) => s.name === sm.currentState);
+        if (stateObj?.on?.["triggerEnter"]) {
+          transitionFsm(sm, stateObj.on["triggerEnter"], ctx);
+        }
+      }
+      evaluateScriptEvent("onTriggerEnter", script, ctx);
+      evaluateScriptEvent("triggerEnter", script, ctx);
     }
 
     if (isCoin) {

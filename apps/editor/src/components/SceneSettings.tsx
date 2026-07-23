@@ -14,6 +14,7 @@ import {
   PanelTitle,
   PanelBody,
 } from "@/ui";
+import { InputMapEditor } from "./InputMapEditor.js";
 
 type SceneSettingsProps = {
   scene: GameKitScene;
@@ -38,6 +39,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
     Scene: false,
     Gravity: false,
     GameRules: false,
+    Input: false,
     Responsive: true,
     SafeArea: true,
   });
@@ -67,7 +69,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
   return (
     <Panel>
       <PanelHeader className="h-9">
-        <PanelTitle accent="cyan">
+        <PanelTitle>
           <Globe size={13} className="text-accent" />
           World
         </PanelTitle>
@@ -82,7 +84,6 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           label="Viewport"
           open={!collapsed.Scene}
           onToggle={() => toggleCollapse("Scene")}
-          accent="cyan"
         >
           <label className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold tracking-[-0.01em] text-text-muted">
@@ -133,7 +134,6 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           label="Gravity"
           open={!collapsed.Gravity}
           onToggle={() => toggleCollapse("Gravity")}
-          accent="purple"
         >
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
@@ -162,7 +162,6 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           label="Game rules"
           open={!collapsed.GameRules}
           onToggle={() => toggleCollapse("GameRules")}
-          accent="purple"
         >
           <CheckboxField
             label="Fall death (void)"
@@ -283,12 +282,22 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           </label>
         </AccordionSection>
 
+        <InputMapEditor
+          inputMap={scene.inputMap}
+          open={!collapsed.Input}
+          onToggle={() => toggleCollapse("Input")}
+          onChange={(next) =>
+            onChange((draft) => {
+              draft.inputMap = next;
+            })
+          }
+        />
+
         <AccordionSection
           icon={<Monitor size={12} />}
           label="Responsive"
           open={!collapsed.Responsive}
           onToggle={() => toggleCollapse("Responsive")}
-          accent="cyan"
         >
           <div className="grid grid-cols-2 gap-1.5">
             <label className="flex flex-col gap-1">
@@ -373,7 +382,6 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           label="Safe area"
           open={!collapsed.SafeArea}
           onToggle={() => toggleCollapse("SafeArea")}
-          accent="green"
         >
           <CheckboxField
             label="Enable safe area boundaries"

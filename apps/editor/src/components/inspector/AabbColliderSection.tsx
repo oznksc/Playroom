@@ -23,7 +23,6 @@ export function AabbColliderSection({ collider, onChange, open, onToggle, onRemo
       onToggle={onToggle}
       removable={!!collider}
       onRemove={onRemove}
-      accent="green"
     >
       {collider ? (
         <>

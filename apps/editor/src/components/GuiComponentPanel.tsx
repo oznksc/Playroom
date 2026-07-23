@@ -81,7 +81,7 @@ export function GuiComponentPanel({
             <IconButton size="sm" onClick={onStopEdit} title="Back">
               <ArrowLeft size={13} />
             </IconButton>
-            <PanelTitle accent="purple" className="truncate">
+            <PanelTitle className="truncate">
               {editingComponent.name}
             </PanelTitle>
           </div>
@@ -124,7 +124,7 @@ export function GuiComponentPanel({
   return (
     <Panel>
       <PanelHeader>
-        <PanelTitle accent="purple">GUI Components</PanelTitle>
+        <PanelTitle>GUI Components</PanelTitle>
         <IconButton size="sm" onClick={handleAdd} title="Add component">
           <Plus size={13} />
         </IconButton>

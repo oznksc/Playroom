@@ -33,7 +33,7 @@ export function ScenePanel({
   return (
     <Panel>
       <PanelHeader>
-        <PanelTitle accent="cyan">Scenes</PanelTitle>
+        <PanelTitle>Scenes</PanelTitle>
         <IconButton size="sm" onClick={handleCreate} title="Create scene">
           <Plus size={13} />
         </IconButton>

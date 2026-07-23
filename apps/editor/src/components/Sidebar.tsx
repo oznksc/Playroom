@@ -143,7 +143,7 @@ export function Sidebar({
   return (
     <Panel>
       <PanelHeader className="h-9">
-        <PanelTitle accent="cyan">Hierarchy</PanelTitle>
+        <PanelTitle>Hierarchy</PanelTitle>
         <div className="flex items-center gap-0.5">
           <IconButton size="sm" onClick={onAddEntity} title="Create entity">
             <Plus size={12} />

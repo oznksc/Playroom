@@ -80,7 +80,7 @@ export function GuiInstanceInspector({
       </div>
 
       <div className="min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
-        <AccordionSection label="Instance Position" open staticHeader onToggle={() => {}} accent="purple">
+        <AccordionSection label="Instance Position" open staticHeader onToggle={() => {}}>
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
               label="X"
@@ -109,7 +109,6 @@ export function GuiInstanceInspector({
           label={`Node Overrides (${component.nodes.length})`}
           open
           onToggle={() => {}}
-          accent="cyan"
         >
           {component.nodes.length === 0 ? (
             <p className="py-2 text-center text-[10px] text-text-muted">Component has no nodes</p>
@@ -244,7 +243,7 @@ function OverrideField({
           type="color"
           className={cn(
             "h-7 w-full cursor-pointer rounded border border-border-default bg-transparent",
-            hasOverride && "border-l-2 border-l-accent"
+            hasOverride && "ring-1 ring-inset ring-accent/35"
           )}
           value={hasOverride ? String(override) : fallback}
           onChange={(e) => onChange(e.target.value)}
@@ -252,7 +251,7 @@ function OverrideField({
       ) : (
         <Input
           type="text"
-          className={cn(hasOverride && "border-l-2 border-l-accent")}
+          className={cn(hasOverride && "ring-1 ring-inset ring-accent/35")}
           value={hasOverride ? String(override) : fallback}
           onChange={(e) => onChange(e.target.value)}
         />

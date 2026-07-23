@@ -1,0 +1,481 @@
+{
+  "schemaVersion": 1,
+  "id": "top-down",
+  "name": "Top-Down",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#1a1a2e"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "player-uuk13g",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 420
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 48,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -24
+          },
+          "size": {
+            "x": 48,
+            "y": 48
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 0.2,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 250,
+          "jumpVelocity": 0,
+          "gravity": 0
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player-uuk13g",
+          "smoothing": 0.15
+        }
+      ]
+    },
+    {
+      "id": "walltop-evrtsi",
+      "name": "WallTop",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 10
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -195,
+            "y": -10
+          },
+          "size": {
+            "x": 390,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wallbottom-h2n1e9",
+      "name": "WallBottom",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 834
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -195,
+            "y": -10
+          },
+          "size": {
+            "x": 390,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wallleft-s5xp9o",
+      "name": "WallLeft",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 10,
+            "y": 422
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -10,
+            "y": -422
+          },
+          "size": {
+            "x": 20,
+            "y": 844
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wallright-36y5jy",
+      "name": "WallRight",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 380,
+            "y": 422
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -10,
+            "y": -422
+          },
+          "size": {
+            "x": 20,
+            "y": 844
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "obstacle1-7xyze5",
+      "name": "Obstacle1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 120,
+            "y": 300
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "obstacle",
+          "width": 64,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -32,
+            "y": -32
+          },
+          "size": {
+            "x": 64,
+            "y": 64
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "obstacle2-rmu2yn",
+      "name": "Obstacle2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 270,
+            "y": 550
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "obstacle",
+          "width": 64,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -32,
+            "y": -32
+          },
+          "size": {
+            "x": 64,
+            "y": 64
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "gem-w8oat7",
+      "name": "Gem",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 32,
+          "height": 32,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -16,
+            "y": -16
+          },
+          "size": {
+            "x": 32,
+            "y": 32
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "hud-9dgwrl",
+      "name": "Hud",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 16,
+            "y": 24
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Text",
+          "text": "Find the gem",
+          "fontAssetId": "",
+          "size": 16,
+          "color": "#a78bfa",
+          "align": "left"
+        }
+      ]
+    },
+    {
+      "id": "player-copy-copy-copy-copy-2x9139",
+      "name": "Player (copy) (copy) (copy) (copy)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 156,
+            "y": 143
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -64
+          },
+          "size": {
+            "x": 48,
+            "y": 64
+          },
+          "isStatic": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": true,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!"
+  }
+}

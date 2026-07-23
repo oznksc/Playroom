@@ -33,6 +33,9 @@ import {
   Boxes,
   Map,
   Route,
+  LayoutGrid,
+  Package,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -43,6 +46,9 @@ export type TabBarDestination =
   | "scenes"
   | "prefabs"
   | "levels"
+  | "guis"
+  | "gui-components"
+  | "recipes"
   | "content"
   | "agent"
   | "world";
@@ -59,10 +65,14 @@ type AppTabBarProps = {
   showColliders: boolean;
   zoom: number;
   showLevels?: boolean;
+  showGuiTools?: boolean;
   onHierarchy: () => void;
   onScenes: () => void;
   onPrefabs: () => void;
   onLevels?: () => void;
+  onGuis?: () => void;
+  onGuiComponents?: () => void;
+  onRecipes?: () => void;
   onContent: () => void;
   onAgent: () => void;
   onWorld: () => void;
@@ -137,10 +147,14 @@ export function AppTabBar({
   showColliders,
   zoom,
   showLevels = true,
+  showGuiTools = true,
   onHierarchy,
   onScenes,
   onPrefabs,
   onLevels,
+  onGuis,
+  onGuiComponents,
+  onRecipes,
   onContent,
   onAgent,
   onWorld,
@@ -199,7 +213,10 @@ export function AppTabBar({
     active === "hierarchy" ||
     active === "scenes" ||
     active === "prefabs" ||
-    active === "levels";
+    active === "levels" ||
+    active === "guis" ||
+    active === "gui-components" ||
+    active === "recipes";
 
   const projectFace =
     active === "scenes"
@@ -208,7 +225,13 @@ export function AppTabBar({
         ? { label: "Prefabs", icon: <Boxes size={18} strokeWidth={1.75} /> }
         : active === "levels"
           ? { label: "Levels", icon: <Map size={18} strokeWidth={1.75} /> }
-          : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
+          : active === "guis"
+            ? { label: "GUI", icon: <LayoutGrid size={18} strokeWidth={1.75} /> }
+            : active === "gui-components"
+              ? { label: "GUI Comp", icon: <Package size={18} strokeWidth={1.75} /> }
+              : active === "recipes"
+                ? { label: "Recipes", icon: <Wand2 size={18} strokeWidth={1.75} /> }
+                : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
 
   return (
     <nav ref={barRef} className="app-tabbar" aria-label="Editor">
@@ -255,6 +278,36 @@ export function AppTabBar({
               row
               onClick={() => runAndClose(onLevels)}
               icon={<Map size={16} strokeWidth={1.75} />}
+            />
+          )}
+          {showGuiTools && onGuis && (
+            <TabItem
+              label="GUI"
+              active={active === "guis"}
+              compact
+              row
+              onClick={() => runAndClose(onGuis)}
+              icon={<LayoutGrid size={16} strokeWidth={1.75} />}
+            />
+          )}
+          {showGuiTools && onGuiComponents && (
+            <TabItem
+              label="GUI Components"
+              active={active === "gui-components"}
+              compact
+              row
+              onClick={() => runAndClose(onGuiComponents)}
+              icon={<Package size={16} strokeWidth={1.75} />}
+            />
+          )}
+          {onRecipes && (
+            <TabItem
+              label="Recipes"
+              active={active === "recipes"}
+              compact
+              row
+              onClick={() => runAndClose(onRecipes)}
+              icon={<Wand2 size={16} strokeWidth={1.75} />}
             />
           )}
         </TabGroup>

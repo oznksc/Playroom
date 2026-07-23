@@ -59,7 +59,6 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
           label="Position & Size"
           open={!collapsed.transform}
           onToggle={() => toggleCollapse("transform")}
-          accent="purple"
         >
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField label="X" value={node.x} onChange={(v) => onChange((d) => { d.x = v; })} />
@@ -87,7 +86,6 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             label="Text Content"
             open={!collapsed.content}
             onToggle={() => toggleCollapse("content")}
-            accent="cyan"
           >
             <label className="flex flex-col gap-1">
               <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text</span>
@@ -135,7 +133,6 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             label="Button Content"
             open={!collapsed.content}
             onToggle={() => toggleCollapse("content")}
-            accent="green"
           >
             <label className="flex flex-col gap-1">
               <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text</span>
@@ -186,7 +183,6 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             label="Image Content"
             open={!collapsed.content}
             onToggle={() => toggleCollapse("content")}
-            accent="cyan"
           >
             <label className="flex flex-col gap-1">
               <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset</span>

@@ -152,7 +152,7 @@ export function PrefabPanel({
   return (
     <Panel>
       <PanelHeader className="h-9">
-        <PanelTitle accent="purple">Prefabs</PanelTitle>
+        <PanelTitle>Prefabs</PanelTitle>
         <div className="flex items-center gap-0.5">
           <IconButton
             size="sm"

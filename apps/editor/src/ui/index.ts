@@ -28,7 +28,6 @@ export {
 export {
   AccordionSection,
   type AccordionSectionProps,
-  type AccordionAccent,
 } from "./accordion";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 export {

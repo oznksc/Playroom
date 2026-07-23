@@ -23,7 +23,6 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
       onToggle={onToggle}
       removable={!!sprite}
       onRemove={onRemove}
-      accent="cyan"
     >
       {sprite ? (
         <>

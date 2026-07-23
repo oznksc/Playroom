@@ -3,23 +3,11 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "./cn";
 import { IconButton } from "./icon-button";
 
-export type AccordionAccent = "cyan" | "purple" | "green" | "gold" | "red" | "muted";
-
-const accentBorder: Record<AccordionAccent, string> = {
-  cyan: "border-l-accent",
-  purple: "border-l-accent-purple",
-  green: "border-l-accent-green",
-  gold: "border-l-selection",
-  red: "border-l-error",
-  muted: "border-l-white/15",
-};
-
 export type AccordionSectionProps = {
   icon?: React.ReactNode;
   label: string;
   open: boolean;
   onToggle: () => void;
-  accent?: AccordionAccent;
   removable?: boolean;
   onRemove?: () => void;
   children?: React.ReactNode;
@@ -29,13 +17,15 @@ export type AccordionSectionProps = {
   staticHeader?: boolean;
 };
 
-/** Glass card accordion — matches tab-bar chip language */
+/**
+ * Glass card accordion. Uniform 1px edge — no rainbow left borders.
+ * Open state uses a slightly stronger surface, not a different accent color.
+ */
 export function AccordionSection({
   icon,
   label,
   open,
   onToggle,
-  accent = "cyan",
   removable,
   onRemove,
   children,
@@ -46,9 +36,9 @@ export function AccordionSection({
   return (
     <div
       className={cn(
-        "mb-1.5 overflow-hidden rounded-[12px] border border-white/[0.06] border-l-2 bg-white/[0.05]",
-        accentBorder[accent],
-        className
+        "mb-1.5 overflow-hidden rounded-[10px] border border-white/[0.07] bg-white/[0.03]",
+        open && "bg-white/[0.045] border-white/[0.09]",
+        className,
       )}
     >
       <div className="flex h-9 items-center gap-0.5 px-1">
@@ -57,9 +47,9 @@ export function AccordionSection({
           onClick={staticHeader ? undefined : onToggle}
           disabled={staticHeader}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 rounded-[10px] px-1.5 py-1 text-left text-[12px] font-medium tracking-[-0.01em] text-[rgba(245,245,247,0.9)]",
+            "flex min-w-0 flex-1 items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-left text-[12px] font-medium tracking-[-0.01em] text-[rgba(245,245,247,0.9)]",
             !staticHeader && "hover:bg-white/[0.06]",
-            staticHeader && "cursor-default disabled:opacity-100"
+            staticHeader && "cursor-default disabled:opacity-100",
           )}
         >
           {!staticHeader &&
@@ -69,7 +59,7 @@ export function AccordionSection({
               <ChevronRight size={12} className="shrink-0 text-[rgba(235,235,245,0.4)]" />
             ))}
           {icon && (
-            <span className="shrink-0 text-[rgba(235,235,245,0.55)] [&_svg]:size-3">{icon}</span>
+            <span className="shrink-0 text-[rgba(235,235,245,0.5)] [&_svg]:size-3">{icon}</span>
           )}
           <span className="truncate">{label}</span>
         </button>
@@ -90,7 +80,9 @@ export function AccordionSection({
           )}
         </span>
       </div>
-      {open && <div className="flex flex-col gap-1.5 border-t border-white/[0.05] p-2">{children}</div>}
+      {open && (
+        <div className="flex flex-col gap-1.5 border-t border-white/[0.05] p-2">{children}</div>
+      )}
     </div>
   );
 }

@@ -82,7 +82,7 @@ export function LevelPanel({
   return (
     <Panel>
       <PanelHeader className="h-9">
-        <PanelTitle accent="gold">Levels</PanelTitle>
+        <PanelTitle>Levels</PanelTitle>
         <IconButton
           size="sm"
           onClick={() => {

@@ -21,7 +21,6 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
       onToggle={onToggle}
       removable={!!script}
       onRemove={onRemove}
-      accent="muted"
     >
       {script ? (
         <>

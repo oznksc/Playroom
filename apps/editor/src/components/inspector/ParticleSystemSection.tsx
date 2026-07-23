@@ -21,7 +21,6 @@ export function ParticleSystemSection({ particleSystem, onChange, open, onToggle
       onToggle={onToggle}
       removable={!!particleSystem}
       onRemove={onRemove}
-      accent="gold"
     >
       {particleSystem ? (
         <>

@@ -25,6 +25,18 @@
         "keys": ["ArrowUp", " ", "w", "W"],
         "touchControl": "jump",
         "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": ["j", "J"],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": ["k", "K"],
+        "touchControl": "action",
+        "gamepad": "X"
       }
     ]
   }

@@ -51,7 +51,13 @@ type SceneCanvasProps = {
   paintTileId?: number;
   /** Increment to re-center the scene in the viewport. */
   viewResetKey?: number;
-  onVirtualInput?: (action: "left" | "right" | "jump", pressed: boolean) => void;
+  /** Discrete virtual-pad actions for play mode (maps to scene.inputMap). */
+  onVirtualInput?: (
+    action: "left" | "right" | "jump" | "fire" | "action",
+    pressed: boolean,
+  ) => void;
+  /** Which touch buttons to show (from scene.inputMap). Defaults to jump only. */
+  virtualTouchControls?: Array<"jump" | "fire" | "action">;
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
@@ -98,6 +104,7 @@ export function SceneCanvas({
   paintTileId = 1,
   viewResetKey = 0,
   onVirtualInput,
+  virtualTouchControls = ["jump"],
   onZoomChange,
   onSelect,
   onSelectGuiNode,
@@ -818,7 +825,7 @@ export function SceneCanvas({
 
       {isPlaying && onVirtualInput && (
         <div className="canvas-virtual-pad" aria-label="Virtual game controls">
-          <div className="flex gap-1">
+          <div className="canvas-virtual-pad-move" aria-label="Movement">
             {(
               [
                 ["left", "◀"],
@@ -828,32 +835,64 @@ export function SceneCanvas({
               <button
                 key={action}
                 type="button"
-                className="flex size-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 text-sm text-text-primary shadow-md active:border-accent active:bg-accent-muted"
+                className="canvas-virtual-btn"
                 onPointerDown={(e) => {
                   e.preventDefault();
+                  (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
                   onVirtualInput(action, true);
                 }}
-                onPointerUp={() => onVirtualInput(action, false)}
-                onPointerLeave={() => onVirtualInput(action, false)}
+                onPointerUp={(e) => {
+                  try {
+                    (e.currentTarget as HTMLButtonElement).releasePointerCapture(e.pointerId);
+                  } catch {
+                    /* already released */
+                  }
+                  onVirtualInput(action, false);
+                }}
                 onPointerCancel={() => onVirtualInput(action, false)}
               >
                 {label}
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            className="flex h-11 items-center justify-center rounded-md border border-border-default bg-bg-surface/90 px-4 text-[11px] font-semibold text-text-primary shadow-md active:border-accent-green active:bg-accent-green/15"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              onVirtualInput("jump", true);
-            }}
-            onPointerUp={() => onVirtualInput("jump", false)}
-            onPointerLeave={() => onVirtualInput("jump", false)}
-            onPointerCancel={() => onVirtualInput("jump", false)}
-          >
-            ▲ Jump
-          </button>
+          <div className="canvas-virtual-pad-actions" aria-label="Actions">
+            {(
+              [
+                ["jump", "A", "Jump"],
+                ["fire", "B", "Fire"],
+                ["action", "X", "Action"],
+              ] as const
+            )
+              .filter(([control]) => virtualTouchControls.includes(control))
+              .map(([action, label, title]) => (
+                <button
+                  key={action}
+                  type="button"
+                  title={title}
+                  className={cn(
+                    "canvas-virtual-btn canvas-virtual-btn-action",
+                    action === "jump" && "canvas-virtual-btn-primary",
+                  )}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
+                    onVirtualInput(action, true);
+                  }}
+                  onPointerUp={(e) => {
+                    try {
+                      (e.currentTarget as HTMLButtonElement).releasePointerCapture(e.pointerId);
+                    } catch {
+                      /* already released */
+                    }
+                    onVirtualInput(action, false);
+                  }}
+                  onPointerCancel={() => onVirtualInput(action, false)}
+                >
+                  <span className="canvas-virtual-btn-label">{label}</span>
+                  <span className="canvas-virtual-btn-sub">{title}</span>
+                </button>
+              ))}
+          </div>
         </div>
       )}
     </section>

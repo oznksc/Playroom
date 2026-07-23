@@ -22,7 +22,6 @@ export function AudioSourceSection({ audioSource, assets, onChange, open, onTogg
       onToggle={onToggle}
       removable={!!audioSource}
       onRemove={onRemove}
-      accent="gold"
     >
       {audioSource ? (
         <>
