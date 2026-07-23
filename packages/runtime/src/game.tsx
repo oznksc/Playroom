@@ -1,6 +1,7 @@
-import type { GameKitScene, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent, SceneTransitionDef } from "@gamekit/schema";
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import type { GameKitScene, GameKitLevel, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent, SceneTransitionDef, GuiComponent, GuiNode } from "@gamekit/schema";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GameKitView, type TransitionOverlay } from "./view.js";
 import { useGameLoop } from "./loop.js";
 import { usePlayerInput } from "./input.js";
@@ -14,7 +15,8 @@ import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
 import { updateTween } from "./tween.js";
 import { updateFollowPath } from "./path.js";
-import { evaluateScriptEvent, transitionFsm } from "./script.js";
+import { evaluateScriptEvent, transitionFsm, type ScriptContext } from "./script.js";
+import { RulesEngine } from "./rules-engine.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
 import { deepClone } from "./clone.js";
@@ -30,9 +32,32 @@ export type GameKitGameProps = {
   onTriggerExit?: (event: TriggerEvent) => void;
   onCollisionEnter?: (event: CollisionEvent) => void;
   transition?: SceneTransitionDef;
+  /** Project-level GUI components for componentInstances. */
+  guiComponents?: GuiComponent[];
+  /** Enables switchScene / nextLevel from GUI button Script handlers. */
+  sceneManager?: ScriptContext["sceneManager"];
+  /** Active level for rules merge + onComplete. */
+  level?: GameKitLevel | null;
+  onWin?: (message: string) => void;
+  onLose?: (message: string) => void;
+  onLivesChange?: (lives: number | null) => void;
 };
 
-export function GameKitGame({ scene, assets = {}, showControls = true, onTriggerEnter, onTriggerExit, onCollisionEnter, transition }: GameKitGameProps) {
+export function GameKitGame({
+  scene,
+  assets = {},
+  showControls = true,
+  onTriggerEnter,
+  onTriggerExit,
+  onCollisionEnter,
+  transition,
+  guiComponents = [],
+  sceneManager,
+  level = null,
+  onWin,
+  onLose,
+  onLivesChange,
+}: GameKitGameProps) {
   const entitiesRef = useRef(deepClone(scene.entities));
   const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
   const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
@@ -45,9 +70,14 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   const audioRef = useRef<AudioController | null>(null);
   const particleEmittersRef = useRef<Map<string, ParticleEmitterState>>(new Map());
   const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
+  const rulesEngineRef = useRef<RulesEngine | null>(null);
+  const sceneManagerRef = useRef(sceneManager);
+  sceneManagerRef.current = sceneManager;
   const { inputRef, setLeft, setRight, setJump, setFire, setAction } = usePlayerInput();
   const [, setTick] = useState(0);
   const [transitionOverlay, setTransitionOverlay] = useState<TransitionOverlay | null>(null);
+  const [outcomeOverlay, setOutcomeOverlay] = useState<{ kind: "won" | "lost"; message: string } | null>(null);
+  const [livesHud, setLivesHud] = useState<number | null>(null);
   const prevSceneIdRef = useRef<string>(scene.id);
 
   useEffect(() => {
@@ -93,6 +123,8 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     });
     particleEmittersRef.current.clear();
     particlesByEntityRef.current = {};
+    rulesEngineRef.current = null;
+    setOutcomeOverlay(null);
 
     for (const entity of entitiesRef.current) {
       const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
@@ -136,7 +168,7 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       break;
     }
 
-    // Initialize StateMachine and trigger start event scripts
+    // Initialize StateMachine
     for (const entity of entitiesRef.current) {
       const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
       if (sm && !sm.currentState) {
@@ -144,28 +176,94 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
       }
     }
 
+    // Rules engine (fall, objectives, tagContact, checkpoints)
+    const engine = new RulesEngine(
+      { ...scene, entities: entitiesRef.current },
+      {
+        getEntities: () => entitiesRef.current,
+        destroyEntity: (id) => {
+          entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+        },
+        getPlayerTransforms: () =>
+          entitiesRef.current
+            .filter((e) => e.components.some((c) => c.type === "PlayerController"))
+            .map((e) => {
+              const t = e.components.find((c): c is TransformComponent => c.type === "Transform");
+              return t ? { entityId: e.id, position: { ...t.position } } : null;
+            })
+            .filter((p): p is { entityId: string; position: { x: number; y: number } } => p !== null),
+        setPlayerPosition: (entityId, position) => {
+          const entity = entitiesRef.current.find((e) => e.id === entityId);
+          const t = entity?.components.find((c): c is TransformComponent => c.type === "Transform");
+          if (t) {
+            t.position.x = position.x;
+            t.position.y = position.y;
+          }
+        },
+        resetPlayerMotion: (entityId) => {
+          const controller = controllersRef.current.get(entityId);
+          if (controller) {
+            controller.state.velocity = { x: 0, y: 0 };
+            controller.setGrounded(false);
+          }
+          const rb = rigidBodyRefs.current.get(entityId);
+          if (rb) rb.state.velocity = { x: 0, y: 0 };
+          const entity = entitiesRef.current.find((e) => e.id === entityId);
+          const rbComp = entity?.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+          if (rbComp) rbComp.velocity = { x: 0, y: 0 };
+        },
+        sceneManager: sceneManagerRef.current,
+        playSound: (assetId) => audioRef.current?.playAsset?.(assetId),
+        onOutcome: (kind, message) => {
+          setOutcomeOverlay({ kind, message });
+          if (kind === "won") onWin?.(message);
+          else onLose?.(message);
+        },
+        onLivesChange: (lives) => {
+          setLivesHud(lives);
+          onLivesChange?.(lives);
+        },
+      },
+      { level: level ?? null },
+    );
+    rulesEngineRef.current = engine;
+    engine.start();
+    const st = engine.getState();
+    setLivesHud(st.unlimitedLives ? null : st.livesRemaining);
+
+    // start scripts with rules + sceneManager hooks
     for (const entity of entitiesRef.current) {
       const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
       if (script) {
-        evaluateScriptEvent("start", script, {
-          entityId: entity.id,
-          entities: entitiesRef.current,
-          rigidBodies: rigidBodyRefs.current,
-          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
-          destroyEntity: (id: string) => {
-            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
-          },
-        });
+        evaluateScriptEvent(
+          "start",
+          script,
+          engine.scriptContext(entity.id, {
+            sceneManager: sceneManagerRef.current,
+            rigidBodies: rigidBodyRefs.current,
+            playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+            destroyEntity: (id: string) => {
+              entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+            },
+          }),
+        );
       }
     }
 
     return () => {
       audioRef.current?.dispose();
       audioRef.current = null;
+      rulesEngineRef.current = null;
     };
-  }, [scene, assets]);
+  }, [scene, assets, level, onWin, onLose, onLivesChange]);
 
   useGameLoop((dt) => {
+    const engine = rulesEngineRef.current;
+    if (engine && engine.getState().outcome !== "playing") {
+      setTick((t) => t + 1);
+      return;
+    }
+
     const entities = entitiesRef.current;
     // Merge virtual-control / keyboard state with live gamepad (web / desktop)
     const input = mergeGamepadIntoInput(inputRef.current, scene.inputMap, pollGamepad());
@@ -365,21 +463,31 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
     for (const event of triggerUpdate.events) {
       if (event.type === "enter") {
         onTriggerEnter?.(event);
+        rulesEngineRef.current?.handleTriggerEnter(event.triggerEntityId, event.otherEntityId);
 
         const e1 = currentEntities.find((e) => e.id === event.triggerEntityId);
         const e2 = currentEntities.find((e) => e.id === event.otherEntityId);
 
         for (const entity of [e1, e2]) {
           if (!entity) continue;
-          const context = {
-            entityId: entity.id,
-            entities: currentEntities,
-            rigidBodies: rigidBodyRefs.current,
-            playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
-            destroyEntity: (id: string) => {
-              entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
-            },
-          };
+          const context =
+            rulesEngineRef.current?.scriptContext(entity.id, {
+              sceneManager: sceneManagerRef.current,
+              rigidBodies: rigidBodyRefs.current,
+              playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+              destroyEntity: (id: string) => {
+                entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+              },
+            }) ?? {
+              entityId: entity.id,
+              entities: currentEntities,
+              sceneManager: sceneManagerRef.current,
+              rigidBodies: rigidBodyRefs.current,
+              playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+              destroyEntity: (id: string) => {
+                entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+              },
+            };
 
           const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
           if (sm && sm.currentState) {
@@ -410,11 +518,16 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
 
       for (const entity of [e1, e2]) {
         if (!entity) continue;
-        const context = {
-          entityId: entity.id,
-          entities: currentEntities,
-          rigidBodies: rigidBodyRefs.current
-        };
+        const context =
+          rulesEngineRef.current?.scriptContext(entity.id, {
+            sceneManager: sceneManagerRef.current,
+            rigidBodies: rigidBodyRefs.current,
+          }) ?? {
+            entityId: entity.id,
+            entities: currentEntities,
+            sceneManager: sceneManagerRef.current,
+            rigidBodies: rigidBodyRefs.current,
+          };
 
         const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
         if (sm && sm.currentState) {
@@ -430,6 +543,9 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
         }
       }
     }
+
+    // Fall / survive / objective checks
+    rulesEngineRef.current?.update(dt);
 
     // Particles
     const nextParticles: Record<string, Particle[]> = {};
@@ -459,6 +575,72 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
   }, true, { fixedDt: RIGID_BODY_FIXED_DT });
 
   const currentScene = { ...scene, entities: entitiesRef.current };
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const dispatchGuiAction = useCallback(
+    (action: string) => {
+      const entities = entitiesRef.current;
+      const engine = rulesEngineRef.current;
+      for (const entity of entities) {
+        const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+        if (!script) continue;
+        const context =
+          engine?.scriptContext(entity.id, {
+            sceneManager: sceneManagerRef.current,
+            playSound: (assetId) => audioRef.current?.playAsset?.(assetId),
+            destroyEntity: (id) => {
+              entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+            },
+            rigidBodies: rigidBodyRefs.current,
+          }) ?? {
+            entityId: entity.id,
+            entities,
+            sceneManager: sceneManagerRef.current,
+            playSound: (assetId) => audioRef.current?.playAsset?.(assetId),
+            destroyEntity: (id) => {
+              entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+            },
+            rigidBodies: rigidBodyRefs.current,
+          };
+        evaluateScriptEvent(action, script, context);
+      }
+    },
+    [],
+  );
+
+  const interactiveButtons = useMemo(() => {
+    const buttons: Array<GuiNode & { key: string }> = [];
+    const componentMap = new Map(guiComponents.map((c) => [c.id, c]));
+    for (const instance of scene.gui?.componentInstances ?? []) {
+      if (instance.visible === false) continue;
+      const component = componentMap.get(instance.componentId);
+      if (!component) continue;
+      for (const node of component.nodes) {
+        if (node.visible === false || node.type !== "Button" || !node.action) continue;
+        buttons.push({
+          ...node,
+          x: node.x + instance.x,
+          y: node.y + instance.y,
+          key: `${instance.id}-${node.id}`,
+        });
+      }
+    }
+    for (const node of scene.gui?.nodes ?? []) {
+      if (node.visible === false || node.type !== "Button" || !node.action) continue;
+      buttons.push({ ...node, key: node.id });
+    }
+    return buttons;
+  }, [scene.gui, guiComponents]);
+
+  // Approximate design-space → screen for Pressable hit targets (scale mode min-fit).
+  const refW = scene.responsive?.referenceWidth || scene.viewport.width;
+  const refH = scene.responsive?.referenceHeight || scene.viewport.height;
+  const availW = screenWidth - insets.left - insets.right;
+  const availH = screenHeight - insets.top - insets.bottom;
+  const scale = Math.min(availW / refW, availH / refH);
+  const offsetX = insets.left + (availW - refW * scale) / 2;
+  const offsetY = insets.top + (availH - refH * scale) / 2;
 
   return (
     <View style={styles.container}>
@@ -472,8 +654,31 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
         }}
         particlesByEntity={particlesByEntityRef.current}
         transitionOverlay={transitionOverlay}
+        guiComponents={guiComponents}
       />
-      {showControls && (
+      {interactiveButtons.map((btn) => {
+        const action = btn.type === "Button" ? btn.action : undefined;
+        const label = btn.type === "Button" ? btn.text : btn.id;
+        if (!action) return null;
+        return (
+          <Pressable
+            key={btn.key}
+            onPress={() => dispatchGuiAction(action)}
+            style={{
+              position: "absolute",
+              left: offsetX + btn.x * scale,
+              top: offsetY + btn.y * scale,
+              width: btn.width * scale,
+              height: btn.height * scale,
+              // Transparent hit target over Skia-drawn button
+              backgroundColor: "transparent",
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+          />
+        );
+      })}
+      {showControls && !outcomeOverlay && (
         <VirtualControls
           inputMap={scene.inputMap}
           actions={{
@@ -485,6 +690,23 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
           }}
         />
       )}
+      {livesHud !== null && !outcomeOverlay && (
+        <View style={styles.livesHud} pointerEvents="none">
+          <Text style={styles.livesText}>Lives {livesHud}</Text>
+        </View>
+      )}
+      {outcomeOverlay && (
+        <View style={styles.outcomeOverlay} pointerEvents="none">
+          <Text
+            style={[
+              styles.outcomeMessage,
+              outcomeOverlay.kind === "won" ? styles.outcomeWin : styles.outcomeLose,
+            ]}
+          >
+            {outcomeOverlay.message}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -492,5 +714,36 @@ export function GameKitGame({ scene, assets = {}, showControls = true, onTrigger
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  livesHud: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  livesText: {
+    color: "#f1c40f",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  outcomeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  outcomeMessage: {
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  outcomeWin: {
+    color: "#00f0ff",
+  },
+  outcomeLose: {
+    color: "#ff6b8a",
   },
 });

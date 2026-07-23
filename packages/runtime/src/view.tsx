@@ -1,4 +1,4 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode } from "@gamekit/schema";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
@@ -23,6 +23,8 @@ export type GameKitViewProps = {
   particlesByEntity?: Record<string, Particle[]>;
   /** Full-screen overlay for scene transitions. */
   transitionOverlay?: TransitionOverlay | null;
+  /** Project-level GUI component definitions for componentInstances. */
+  guiComponents?: GuiComponent[];
 };
 
 type ViewportScale = {
@@ -107,6 +109,7 @@ export function GameKitView({
   camera = { x: 0, y: 0, zoom: 1 },
   particlesByEntity = {},
   transitionOverlay = null,
+  guiComponents = [],
 }: GameKitViewProps): ReactElement {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -115,6 +118,28 @@ export function GameKitView({
     () => calculateViewportScale(scene, screenWidth, screenHeight, insets),
     [scene, screenWidth, screenHeight, insets]
   );
+
+  const guiNodes = useMemo(() => {
+    const nodes: Array<{ key: string; node: GuiNode }> = [];
+    const componentMap = new Map(guiComponents.map((c) => [c.id, c]));
+    for (const instance of scene.gui?.componentInstances ?? []) {
+      if (instance.visible === false) continue;
+      const component = componentMap.get(instance.componentId);
+      if (!component) continue;
+      for (const n of component.nodes) {
+        if (n.visible === false) continue;
+        nodes.push({
+          key: `${instance.id}-${n.id}`,
+          node: { ...n, x: n.x + instance.x, y: n.y + instance.y },
+        });
+      }
+    }
+    for (const n of scene.gui?.nodes ?? []) {
+      if (n.visible === false) continue;
+      nodes.push({ key: n.id, node: n });
+    }
+    return nodes;
+  }, [scene.gui, guiComponents]);
 
   return (
     <View style={styles.root}>
@@ -219,11 +244,9 @@ export function GameKitView({
             { scale: viewportScale.scale },
           ]}
         >
-          {(scene.gui?.nodes ?? [])
-            .filter((node) => node.visible !== false)
-            .map((node) => (
-              <GuiNodeView key={node.id} node={node} assets={assets} />
-            ))}
+          {guiNodes.map(({ key, node }) => (
+            <GuiNodeView key={key} node={node} assets={assets} />
+          ))}
         </Group>
 
         {transitionOverlay && transitionOverlay.opacity > 0 && (
