@@ -1,27 +1,27 @@
 {
   "schemaVersion": 1,
-  "id": "top-down",
-  "name": "Top-Down",
+  "id": "physics-puzzle",
+  "name": "Physics Puzzle",
   "viewport": {
-    "width": 390,
-    "height": 844,
-    "background": "#1a1a2e"
+    "width": 844,
+    "height": 390,
+    "background": "#101820"
   },
   "gravity": {
     "x": 0,
-    "y": 0
+    "y": 1600
   },
   "assets": [],
   "entities": [
     {
-      "id": "player-uuk13g",
-      "name": "Player",
+      "id": "ground-33ukyn",
+      "name": "Ground",
       "components": [
         {
           "type": "Transform",
           "position": {
-            "x": 195,
-            "y": 420
+            "x": 422,
+            "y": 370
           },
           "rotation": 0,
           "scale": {
@@ -31,9 +31,9 @@
         },
         {
           "type": "Sprite",
-          "assetId": "player",
-          "width": 48,
-          "height": 48,
+          "assetId": "ground",
+          "width": 844,
+          "height": 40,
           "anchor": {
             "x": 0.5,
             "y": 0.5
@@ -42,12 +42,210 @@
         {
           "type": "AabbCollider",
           "offset": {
-            "x": -24,
-            "y": -24
+            "x": -422,
+            "y": -20
           },
           "size": {
-            "x": 48,
-            "y": 48
+            "x": 844,
+            "y": 40
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform-y70eld",
+      "name": "Platform",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 560,
+            "y": 260
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 200,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -100,
+            "y": -10
+          },
+          "size": {
+            "x": 200,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "blocklow-8yzhad",
+      "name": "BlockLow",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 540,
+            "y": 220
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "crate",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -20,
+            "y": -20
+          },
+          "size": {
+            "x": 40,
+            "y": 40
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1.5,
+          "drag": 0.02,
+          "isKinematic": false,
+          "gravityScale": 1,
+          "useGravity": true
+        }
+      ]
+    },
+    {
+      "id": "blockmid-sddfz3",
+      "name": "BlockMid",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 580,
+            "y": 180
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "crate",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -20,
+            "y": -20
+          },
+          "size": {
+            "x": 40,
+            "y": 40
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1.2,
+          "drag": 0.02,
+          "isKinematic": false,
+          "gravityScale": 1,
+          "useGravity": true
+        }
+      ]
+    },
+    {
+      "id": "blocktop-m6iz43",
+      "name": "BlockTop",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 560,
+            "y": 140
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "crate",
+          "width": 36,
+          "height": 36,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -18,
+            "y": -18
+          },
+          "size": {
+            "x": 36,
+            "y": 36
           },
           "isStatic": false,
           "isTrigger": false,
@@ -62,33 +260,22 @@
           },
           "angularVelocity": 0,
           "mass": 1,
-          "drag": 0.2,
+          "drag": 0.02,
           "isKinematic": false,
-          "gravityScale": 0,
-          "useGravity": false
-        },
-        {
-          "type": "PlayerController",
-          "speed": 250,
-          "jumpVelocity": 0,
-          "gravity": 0
-        },
-        {
-          "type": "CameraFollow",
-          "targetId": "player-uuk13g",
-          "smoothing": 0.15
+          "gravityScale": 1,
+          "useGravity": true
         }
       ]
     },
     {
-      "id": "walltop-evrtsi",
-      "name": "WallTop",
+      "id": "target-lrr26y",
+      "name": "Target",
       "components": [
         {
           "type": "Transform",
           "position": {
-            "x": 195,
-            "y": 10
+            "x": 700,
+            "y": 330
           },
           "rotation": 0,
           "scale": {
@@ -97,124 +284,35 @@
           }
         },
         {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -195,
-            "y": -10
-          },
-          "size": {
-            "x": 390,
-            "y": 20
-          },
-          "isStatic": true,
-          "isTrigger": false,
-          "layer": 1,
-          "mask": 1
-        }
-      ]
-    },
-    {
-      "id": "wallbottom-h2n1e9",
-      "name": "WallBottom",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 195,
-            "y": 834
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 36,
+          "height": 36,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
           }
         },
         {
           "type": "AabbCollider",
           "offset": {
-            "x": -195,
-            "y": -10
+            "x": -18,
+            "y": -18
           },
           "size": {
-            "x": 390,
-            "y": 20
+            "x": 36,
+            "y": 36
           },
           "isStatic": true,
-          "isTrigger": false,
-          "layer": 1,
+          "isTrigger": true,
+          "layer": 2,
           "mask": 1
         }
       ]
     },
     {
-      "id": "wallleft-s5xp9o",
-      "name": "WallLeft",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 10,
-            "y": 422
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -10,
-            "y": -422
-          },
-          "size": {
-            "x": 20,
-            "y": 844
-          },
-          "isStatic": true,
-          "isTrigger": false,
-          "layer": 1,
-          "mask": 1
-        }
-      ]
-    },
-    {
-      "id": "wallright-36y5jy",
-      "name": "WallRight",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 380,
-            "y": 422
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -10,
-            "y": -422
-          },
-          "size": {
-            "x": 20,
-            "y": 844
-          },
-          "isStatic": true,
-          "isTrigger": false,
-          "layer": 1,
-          "mask": 1
-        }
-      ]
-    },
-    {
-      "id": "obstacle1-7xyze5",
-      "name": "Obstacle1",
+      "id": "pusher-3971bj",
+      "name": "Pusher",
       "components": [
         {
           "type": "Transform",
@@ -230,9 +328,9 @@
         },
         {
           "type": "Sprite",
-          "assetId": "obstacle",
-          "width": 64,
-          "height": 64,
+          "assetId": "player",
+          "width": 44,
+          "height": 44,
           "anchor": {
             "x": 0.5,
             "y": 0.5
@@ -241,115 +339,53 @@
         {
           "type": "AabbCollider",
           "offset": {
-            "x": -32,
-            "y": -32
+            "x": -22,
+            "y": -22
           },
           "size": {
-            "x": 64,
-            "y": 64
+            "x": 44,
+            "y": 44
           },
-          "isStatic": true,
+          "isStatic": false,
           "isTrigger": false,
           "layer": 1,
           "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 2,
+          "drag": 0.05,
+          "isKinematic": false,
+          "gravityScale": 1,
+          "useGravity": true
+        },
+        {
+          "type": "PlayerController",
+          "speed": 280,
+          "jumpVelocity": 520,
+          "gravity": 1600
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "pusher-3971bj",
+          "smoothing": 0.1
         }
       ]
     },
     {
-      "id": "obstacle2-rmu2yn",
-      "name": "Obstacle2",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 270,
-            "y": 550
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "obstacle",
-          "width": 64,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -32,
-            "y": -32
-          },
-          "size": {
-            "x": 64,
-            "y": 64
-          },
-          "isStatic": true,
-          "isTrigger": false,
-          "layer": 1,
-          "mask": 1
-        }
-      ]
-    },
-    {
-      "id": "gem-w8oat7",
-      "name": "Gem",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 195,
-            "y": 200
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "target",
-          "width": 32,
-          "height": 32,
-          "anchor": {
-            "x": 0.5,
-            "y": 0.5
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -16,
-            "y": -16
-          },
-          "size": {
-            "x": 32,
-            "y": 32
-          },
-          "isStatic": true,
-          "isTrigger": true,
-          "layer": 2,
-          "mask": 1
-        }
-      ]
-    },
-    {
-      "id": "hud-9dgwrl",
+      "id": "hud-twq2jq",
       "name": "Hud",
       "components": [
         {
           "type": "Transform",
           "position": {
-            "x": 16,
-            "y": 24
+            "x": 20,
+            "y": 18
           },
           "rotation": 0,
           "scale": {
@@ -359,66 +395,20 @@
         },
         {
           "type": "Text",
-          "text": "Find the gem",
+          "text": "Knock blocks · reach the target",
           "fontAssetId": "",
-          "size": 16,
-          "color": "#a78bfa",
+          "size": 15,
+          "color": "#00f0ff",
           "align": "left"
-        }
-      ]
-    },
-    {
-      "id": "player-copy-copy-copy-copy-2x9139",
-      "name": "Player (copy) (copy) (copy) (copy)",
-      "components": [
-        {
-          "type": "Transform",
-          "position": {
-            "x": 156,
-            "y": 143
-          },
-          "rotation": 0,
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        {
-          "type": "Sprite",
-          "assetId": "player",
-          "width": 48,
-          "height": 64,
-          "anchor": {
-            "x": 0.5,
-            "y": 1
-          }
-        },
-        {
-          "type": "AabbCollider",
-          "offset": {
-            "x": -24,
-            "y": -64
-          },
-          "size": {
-            "x": 48,
-            "y": 64
-          },
-          "isStatic": false
-        },
-        {
-          "type": "PlayerController",
-          "speed": 240,
-          "jumpVelocity": 620,
-          "gravity": 1800
         }
       ]
     }
   ],
   "responsive": {
     "mode": "scale",
-    "referenceWidth": 390,
-    "referenceHeight": 844,
-    "orientation": "portrait",
+    "referenceWidth": 844,
+    "referenceHeight": 390,
+    "orientation": "landscape",
     "safeArea": {
       "enabled": true,
       "padding": {
@@ -463,6 +453,7 @@
         "action": "jump",
         "keys": [
           "ArrowUp",
+          " ",
           "w",
           "W"
         ],

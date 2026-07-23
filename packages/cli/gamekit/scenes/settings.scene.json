@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "id": "settings",
+  "name": "Settings",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#101820"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "settings-controller",
+      "name": "Settings Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "backToMenu",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "menu"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [
+      {
+        "id": "title-settings",
+        "type": "Text",
+        "x": 24,
+        "y": 120,
+        "width": 342,
+        "height": 48,
+        "text": "Settings",
+        "fontSize": 28,
+        "color": "#00f0ff",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "label-music",
+        "type": "Text",
+        "x": 24,
+        "y": 220,
+        "width": 342,
+        "height": 28,
+        "text": "Music: On (edit me)",
+        "fontSize": 15,
+        "color": "#f8fafc",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "label-sfx",
+        "type": "Text",
+        "x": 24,
+        "y": 256,
+        "width": 342,
+        "height": 28,
+        "text": "SFX: On (edit me)",
+        "fontSize": 15,
+        "color": "#f8fafc",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "label-controls",
+        "type": "Text",
+        "x": 24,
+        "y": 310,
+        "width": 342,
+        "height": 40,
+        "text": "Controls: A/D or arrows · Space to jump",
+        "fontSize": 13,
+        "color": "#94a3b8",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "btn-back",
+        "type": "Button",
+        "x": 95,
+        "y": 420,
+        "width": 200,
+        "height": 48,
+        "text": "Back",
+        "action": "backToMenu",
+        "fontSize": 16,
+        "color": "#f8fafc",
+        "backgroundColor": "#1e293b",
+        "interactive": true,
+        "visible": true
+      }
+    ],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [],
+    "onLose": []
+  }
+}

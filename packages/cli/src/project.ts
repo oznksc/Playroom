@@ -13,8 +13,11 @@ import {
   createEmptyScene,
   createEntity,
   createId,
+  createMenuScene,
   createPrefab,
   createProject,
+  createSettingsScene,
+  createStarterGameplayScene,
   prefabToJson,
   projectToJson,
   sceneToJson,
@@ -22,12 +25,15 @@ import {
   validatePrefab,
   validateProject,
   validateScene,
+  findLevelForScene,
   type GameSavePayload,
 } from "@gamekit/schema";
 
 export type InitResult = {
   projectPath: string;
   scenePath: string;
+  /** Primary entry scene for the editor (menu when present). */
+  activeScenePath: string;
 };
 
 export async function initProject(root: string, options: { name?: string } = {}): Promise<InitResult> {
@@ -40,19 +46,39 @@ export async function initProject(root: string, options: { name?: string } = {})
   await mkdir(assetsRoot, { recursive: true });
   await mkdir(generatedRoot, { recursive: true });
 
+  const projectName = options.name ?? "Playroom Game";
   const projectPath = join(gamekitRoot, "project.json");
+  const menuPath = join(scenesRoot, "menu.scene.json");
+  const settingsPath = join(scenesRoot, "settings.scene.json");
   const scenePath = join(scenesRoot, "main.scene.json");
 
   if (!await exists(projectPath)) {
-    await writeFile(projectPath, projectToJson(createProject(options.name ?? "Playroom Game")));
+    await writeFile(projectPath, projectToJson(createProject(projectName)));
   }
 
+  // Starter shell: menu + settings + gameplay (idempotent — never overwrite).
+  if (!await exists(menuPath)) {
+    await writeFile(menuPath, sceneToJson(createMenuScene(projectName)));
+  }
+  if (!await exists(settingsPath)) {
+    await writeFile(settingsPath, sceneToJson(createSettingsScene()));
+  }
   if (!await exists(scenePath)) {
-    await writeFile(scenePath, sceneToJson(createStarterScene()));
+    await writeFile(scenePath, sceneToJson(createStarterGameplayScene()));
   }
 
   await generateAssetRegistry(root);
-  return { projectPath, scenePath };
+
+  let activeScenePath = scenePath;
+  try {
+    const project = await readProject(root);
+    const active = project.activeScene ?? project.scenes[0] ?? "main.scene.json";
+    activeScenePath = join(scenesRoot, sanitizeSceneFile(active));
+  } catch {
+    // project may be mid-write or legacy; fall back to main
+  }
+
+  return { projectPath, scenePath, activeScenePath };
 }
 
 export async function readProject(root: string): Promise<GameKitProject> {
@@ -692,12 +718,15 @@ export async function saveGameState(root: string, slotName: string): Promise<voi
     persistentState = JSON.parse(await readFile(join(gamekitRoot, "state.json"), "utf-8"));
   } catch {}
 
+  const activeScene = project.activeScene ?? null;
+  const currentLevel = findLevelForScene(project.levels ?? [], activeScene);
+
   const payload: GameSavePayload = {
     version: 1,
     persistentState,
     levels: project.levels.map((l) => ({ id: l.id, unlocked: l.unlocked })),
-    currentSceneId: project.activeScene ?? null,
-    currentLevelId: null,
+    currentSceneId: activeScene,
+    currentLevelId: currentLevel?.id ?? null,
   };
 
   await writeFile(join(savesDir, `${slotName}.json`), JSON.stringify(payload, null, 2));
@@ -715,6 +744,7 @@ export async function loadGameState(root: string, slotName: string): Promise<voi
     if (saved) level.unlocked = saved.unlocked;
   }
   if (payload.currentSceneId) project.activeScene = payload.currentSceneId;
+  // currentLevelId is derived on save from activeScene; unlock flags carry progress.
   await writeProject(root, project);
 
   await writeFile(join(gamekitRoot, "state.json"), JSON.stringify(payload.persistentState, null, 2));
@@ -752,79 +782,6 @@ export async function listSaveSlots(root: string): Promise<SaveSlotInfo[]> {
     } catch {}
   }
   return slots;
-}
-
-function createStarterScene(): GameKitScene {
-  const scene = createEmptyScene("Main Scene");
-  scene.entities = [
-    {
-      id: "player",
-      name: "Player",
-      components: [
-        {
-          type: "Transform",
-          position: { x: 120, y: 360 },
-          rotation: 0,
-          scale: { x: 1, y: 1 }
-        },
-        {
-          type: "Sprite",
-          assetId: "player",
-          width: 48,
-          height: 64,
-          anchor: { x: 0.5, y: 1 }
-        },
-        {
-          type: "AabbCollider",
-          offset: { x: -24, y: -64 },
-          size: { x: 48, y: 64 },
-          isStatic: false
-        },
-        {
-          type: "PlayerController",
-          speed: 240,
-          jumpVelocity: 620,
-          gravity: 1800
-        }
-      ]
-    },
-    {
-      id: "ground",
-      name: "Ground",
-      components: [
-        {
-          type: "Transform",
-          position: { x: 0, y: 520 },
-          rotation: 0,
-          scale: { x: 1, y: 1 }
-        },
-        {
-          type: "AabbCollider",
-          offset: { x: 0, y: 0 },
-          size: { x: 900, y: 48 },
-          isStatic: true
-        }
-      ]
-    },
-    {
-      id: "camera",
-      name: "Camera",
-      components: [
-        {
-          type: "Transform",
-          position: { x: 0, y: 0 },
-          rotation: 0,
-          scale: { x: 1, y: 1 }
-        },
-        {
-          type: "CameraFollow",
-          targetId: "player",
-          smoothing: 0.18
-        }
-      ]
-    }
-  ];
-  return scene;
 }
 
 function sanitizeSceneFile(file: string): string {
