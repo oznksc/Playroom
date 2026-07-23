@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Coin Jumper",
+    "slug": "coin-jumper",
+    "version": "0.1.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.playroom.coinjumper"
+    },
+    "android": {
+      "package": "com.playroom.coinjumper"
+    }
+  }
+}

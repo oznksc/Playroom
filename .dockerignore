@@ -7,3 +7,14 @@ node_modules
 .next
 .cache
 *.md
+**/dist
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+apps/editor/src-tauri/target
+apps/editor/src-tauri/gen
+**/.playwright-cli
+**/gamekit/saves
+.grok
+.commandcode
+.codegraph

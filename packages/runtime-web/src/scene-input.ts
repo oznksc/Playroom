@@ -1,11 +1,15 @@
 import Phaser from "phaser";
 import type { InputMapConfig } from "@gamekit/schema";
 import { DEFAULT_INPUT_MAP } from "@gamekit/schema";
-import {
-  mergeGamepadIntoInput,
-  type ExtendedPlayerInput,
-} from "@gamekit/runtime";
-import { pollGamepad } from "@gamekit/runtime";
+import type { PlayerControllerInput } from "@gamekit/runtime/player";
+import { mergeGamepadIntoInput } from "@gamekit/runtime/input-map";
+import { pollGamepad } from "@gamekit/runtime/gamepad";
+
+/** Keyboard/gamepad input extended with fire/action (mirrors runtime ExtendedPlayerInput). */
+type ExtendedPlayerInput = PlayerControllerInput & {
+  fire: boolean;
+  action: boolean;
+};
 
 export type SceneInputKeys = {
   left: Phaser.Input.Keyboard.Key[];
