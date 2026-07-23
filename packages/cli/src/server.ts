@@ -23,6 +23,7 @@ import {
 import { runDoctor } from "./doctor.js";
 import { buildProject } from "./build.js";
 import { validateScene } from "@gamekit/schema";
+import { z } from "zod";
 import { handleAgentRoute } from "./agent/routes.js";
 
 export type EditorServerOptions = {
@@ -57,6 +58,27 @@ export async function startEditorServer(options: EditorServerOptions): Promise<v
   });
 }
 
+const BuildRequestSchema = z.object({
+  platform: z.enum(["web", "mobile"]).optional(),
+  outDir: z.string().optional(),
+  skipDoctor: z.boolean().optional(),
+});
+
+const PrefabRequestSchema = z.object({
+  action: z.string().optional(),
+  sceneFile: z.string().optional(),
+  entityId: z.string().optional(),
+  name: z.string().optional(),
+  prefabId: z.string().optional(),
+  x: z.number().optional(),
+  y: z.number().optional(),
+});
+
+const SkillApplySchema = z.object({
+  skillId: z.string().min(1, "skillId is required"),
+  sceneName: z.string().optional(),
+});
+
 async function handleRequest(options: EditorServerOptions, request: IncomingMessage, response: ServerResponse): Promise<void> {
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
@@ -77,13 +99,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/project" && request.method === "POST") {
-    const body = JSON.parse((await readBody(request)).toString("utf8")) as unknown;
-    if (!body || typeof body !== "object") {
-      sendJson(response, 400, { error: "Invalid project data" });
-      return;
-    }
+    const body = z.record(z.unknown()).parse(JSON.parse((await readBody(request)).toString("utf8")));
     const project = await readProject(options.root);
-    const updated = { ...project, ...body as Partial<typeof project> };
+    const updated = { ...project, ...body };
     await writeProject(options.root, updated);
     sendJson(response, 200, await getProjectSnapshot(options.root));
     return;
@@ -111,11 +129,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/build" && request.method === "POST") {
-    const body = JSON.parse((await readBody(request)).toString("utf8") || "{}") as {
-      platform?: "web" | "mobile";
-      outDir?: string;
-      skipDoctor?: boolean;
-    };
+    const body = BuildRequestSchema.parse(JSON.parse((await readBody(request)).toString("utf8") || "{}"));
     try {
       const result = await buildProject(options.root, {
         platform: body.platform ?? "mobile",
@@ -193,15 +207,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/prefabs" && request.method === "POST") {
-    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
-      action?: string;
-      sceneFile?: string;
-      entityId?: string;
-      name?: string;
-      prefabId?: string;
-      x?: number;
-      y?: number;
-    };
+    const body = PrefabRequestSchema.parse(JSON.parse((await readBody(request)).toString("utf8")));
 
     if (body.action === "instantiate") {
       if (!body.sceneFile || !body.prefabId) {
@@ -270,14 +276,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/skills/apply" && request.method === "POST") {
-    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
-      skillId?: string;
-      sceneName?: string;
-    };
-    if (!body.skillId) {
-      sendJson(response, 400, { error: "Missing required field: skillId is required." });
-      return;
-    }
+    const body = SkillApplySchema.parse(JSON.parse((await readBody(request)).toString("utf8")));
     try {
       const result = await applySkill(options.root, body.skillId, body.sceneName);
       sendJson(response, 200, { ok: true, ...result });

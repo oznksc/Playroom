@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ComponentInputSchema } from "../schemas/component.js";
-import type { GameKitComponent, TransformComponent } from "@gamekit/schema";
+import { GameKitComponentSchema } from "@gamekit/schema";
+import type { TransformComponent } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
 
 const BatchOpSchema = z.discriminatedUnion("op", [
@@ -73,12 +74,12 @@ export function registerBatchTools(server: McpServer, fileIO: FileIO): void {
             case "add_component": {
               const entity = scene.entities.find((e) => e.id === op.entityId);
               if (!entity) throw new Error(`Entity not found: ${op.entityId}`);
-              const type = (op.component as GameKitComponent).type;
-              if (entity.components.some((c) => c.type === type)) {
-                throw new Error(`Component already present: ${type}`);
+              const parsed = GameKitComponentSchema.parse(op.component);
+              if (entity.components.some((c) => c.type === parsed.type)) {
+                throw new Error(`Component already present: ${parsed.type}`);
               }
-              entity.components.push(op.component as GameKitComponent);
-              results.push({ index: i, op: op.op, ok: true, detail: type });
+              entity.components.push(parsed);
+              results.push({ index: i, op: op.op, ok: true, detail: parsed.type });
               break;
             }
             case "remove_component": {

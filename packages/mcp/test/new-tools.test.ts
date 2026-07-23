@@ -171,15 +171,16 @@ describe("new validation and search tools", () => {
         maxParticles: 100,
         emissionRate: 20,
         lifetime: 1.5,
-        speedStart: 100,
-        speedEnd: 20,
-        angleStart: 0,
-        angleEnd: 360,
+        speed: 100,
+        gravityScale: 0.5,
         sizeStart: 8,
         sizeEnd: 2,
         colorStart: "#ff0000",
         colorEnd: "#0000ff",
-        blendMode: "add"
+        shape: "point",
+        width: 0,
+        height: 0,
+        active: true,
       }
     });
 
@@ -191,15 +192,14 @@ describe("new validation and search tools", () => {
     expect(particleComp.maxParticles).toBe(100);
     expect(particleComp.emissionRate).toBe(20);
     expect(particleComp.lifetime).toBe(1.5);
-    expect(particleComp.speedStart).toBe(100);
-    expect(particleComp.speedEnd).toBe(20);
-    expect(particleComp.angleStart).toBe(0);
-    expect(particleComp.angleEnd).toBe(360);
+    expect(particleComp.speed).toBe(100);
+    expect(particleComp.gravityScale).toBe(0.5);
     expect(particleComp.sizeStart).toBe(8);
     expect(particleComp.sizeEnd).toBe(2);
     expect(particleComp.colorStart).toBe("#ff0000");
     expect(particleComp.colorEnd).toBe("#0000ff");
-    expect(particleComp.blendMode).toBe("add");
+    expect(particleComp.shape).toBe("point");
+    expect(particleComp.active).toBe(true);
   });
 
   it("adds a Light2D component to an entity using add_light tool", async () => {

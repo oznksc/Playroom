@@ -1,5 +1,6 @@
 import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, CameraFollowComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent, Vector2 } from "@gamekit/schema";
-import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance, resolveGameRules, resolveFallDeathY } from "@gamekit/schema";
+import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance, resolveGameRules, resolveFallDeathY, parseScene, GameKitSceneSchema, GameKitEntitySchema, GameKitComponentSchema } from "@gamekit/schema";
+import { z } from "zod";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   FolderOpen,
@@ -100,6 +101,9 @@ const MVP_SHOW_CONSOLE = false;
 
 type SidebarTab = SidebarTabId;
 type BottomTab = "assets" | "timeline" | "console";
+
+const ApiErrorSchema = z.object({ error: z.string().optional() });
+const SaveErrorSchema = z.object({ error: z.string().optional(), errors: z.array(z.string()).optional() });
 
 export function App() {
   const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
@@ -360,7 +364,7 @@ export function App() {
     }
 
     const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${sceneFile}`));
-    const nextScene = await sceneResponse.json() as GameKitScene;
+    const nextScene = parseScene(await sceneResponse.json());
     setSnapshot(nextSnapshot);
     reset(nextScene);
     setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
@@ -855,7 +859,7 @@ export function App() {
         body: JSON.stringify(nextScene)
       });
       if (!response.ok) {
-        const body = await response.json() as { error?: string; errors?: string[] };
+        const body = SaveErrorSchema.parse(await response.json());
         throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
       }
       setSaveState("saved");
@@ -880,7 +884,7 @@ export function App() {
     setStatus("Deleting");
     const response = await fetch(getApiUrl(`/api/assets?id=${encodeURIComponent(assetId)}`), { method: "DELETE" });
     if (!response.ok) {
-      const body = await response.json() as { error?: string };
+      const body = ApiErrorSchema.parse(await response.json());
       throw new Error(body.error ?? "Delete failed");
     }
     await refresh();
@@ -890,7 +894,7 @@ export function App() {
   async function importAsset(file: File) {
     setStatus("Importing");
     const response = await fetch(getApiUrl(`/api/assets?filename=${encodeURIComponent(file.name)}`), { method: "POST", body: await file.arrayBuffer() });
-    if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? "Import failed");
+    if (!response.ok) throw new Error(ApiErrorSchema.parse(await response.json()).error ?? "Import failed");
     await refresh();
     addConsoleLog("system", `Imported asset from file: ${file.name}`);
   }
@@ -923,17 +927,17 @@ export function App() {
       if (templateType === "sprite" || templateType === "player") {
         const assetId = selectedAssetId ?? snapshot.assets[0]?.id;
         if (assetId) {
-          entity.components.push({ type: "Sprite", assetId, width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } });
+          entity.components.push(GameKitComponentSchema.parse({ type: "Sprite", assetId, width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } }));
         }
       }
       if (templateType === "collider" || templateType === "player") {
-        entity.components.push({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: templateType === "collider" });
+        entity.components.push(GameKitComponentSchema.parse({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: templateType === "collider" }));
       }
       if (templateType === "player") {
-        entity.components.push({ type: "PlayerController", speed: 320, jumpVelocity: 600, gravity: 1800 });
+        entity.components.push(GameKitComponentSchema.parse({ type: "PlayerController", speed: 320, jumpVelocity: 600, gravity: 1800 }));
       }
       if (templateType === "camera") {
-        entity.components.push({ type: "CameraFollow", targetId: entity.id, smoothing: 0.15 });
+        entity.components.push(GameKitComponentSchema.parse({ type: "CameraFollow", targetId: entity.id, smoothing: 0.15 }));
       }
       draft.entities.push(entity);
       setSelectedEntityIds(new Set([entity.id]));
@@ -970,7 +974,7 @@ export function App() {
 
   function pasteEntity(source: GameKitEntity) {
     updateScene((draft) => {
-      const clone = structuredClone(source) as GameKitEntity;
+      const clone = GameKitEntitySchema.parse(structuredClone(source));
       clone.id = crypto.randomUUID();
       clone.name = `${source.name} (copy)`;
       const transform = findComponent<TransformComponent>(clone, "Transform");
@@ -980,7 +984,7 @@ export function App() {
       }
       const sourceIndex = draft.entities.findIndex((e) => e.id === source.id);
       draft.entities.splice(sourceIndex + 1, 0, clone);
-      clipboardRef.current = structuredClone(clone) as GameKitEntity;
+      clipboardRef.current = GameKitEntitySchema.parse(structuredClone(clone));
       setSelectedEntityIds(new Set([clone.id]));
       addConsoleLog("system", `Duplicated entity to ${clone.name}`);
     });
@@ -1232,7 +1236,7 @@ export function App() {
   // Play controls
   function handlePlayToggle() {
     if (!isPlaying) {
-      preSimulationSceneRef.current = structuredClone(scene) as GameKitScene;
+      preSimulationSceneRef.current = GameKitSceneSchema.parse(structuredClone(scene));
 
       // Initialize all simulation states
       controllersRef.current.clear();
@@ -1962,12 +1966,12 @@ export function App() {
           }}
           onCopyEntity={(id) => {
             const entity = scene?.entities.find((e) => e.id === id);
-            if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
+            if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
           }}
           onCutEntity={(id) => {
             const entity = scene?.entities.find((e) => e.id === id);
             if (entity) {
-              clipboardRef.current = structuredClone(entity) as GameKitEntity;
+              clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
               deleteEntity(id);
             }
           }}
@@ -2157,12 +2161,12 @@ export function App() {
               onDeleteEntity={(id) => deleteEntity(id)}
               onCopyEntity={(id) => {
                 const entity = scene?.entities.find((e) => e.id === id);
-                if (entity) clipboardRef.current = structuredClone(entity) as GameKitEntity;
+                if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
               }}
               onCutEntity={(id) => {
                 const entity = scene?.entities.find((e) => e.id === id);
                 if (entity) {
-                  clipboardRef.current = structuredClone(entity) as GameKitEntity;
+                  clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
                   deleteEntity(id);
                 }
               }}

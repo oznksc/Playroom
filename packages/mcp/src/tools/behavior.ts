@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { GameKitComponent } from "@gamekit/schema";
+import { GameKitComponentSchema } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
 import {
   TweenInputSchema,
@@ -36,7 +36,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Tween" as const, ...tween };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -66,7 +66,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "FollowPath" as const, ...followPath };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -96,7 +96,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "StateMachine" as const, ...stateMachine };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -126,7 +126,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Script" as const, ...script };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -156,7 +156,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Text" as const, ...text };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -186,7 +186,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "AudioSource" as const, ...audioSource };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -216,7 +216,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "ParticleSystem" as const, ...particleSystem };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -246,7 +246,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "Light2D" as const, ...light };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -276,7 +276,7 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       }
 
       const component = { type: "NineSlice" as const, ...nineSlice };
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {

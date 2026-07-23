@@ -5,8 +5,7 @@ import {
   createId,
   createPrefab,
   slugify,
-  type GameKitComponent,
-  type TransformComponent,
+  GameKitComponentSchema,
 } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
 
@@ -133,30 +132,29 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
       });
 
       // Replace default Transform components with prefab components, then apply position override
-      const components = structuredClone(prefab.components) as GameKitComponent[];
+      const components = structuredClone(prefab.components).map((c: unknown) => GameKitComponentSchema.parse(c));
       const hasTransform = components.some((c) => c.type === "Transform");
       if (!hasTransform) {
         entity.components = components;
-        entity.components.unshift({
+        entity.components.unshift(GameKitComponentSchema.parse({
           type: "Transform",
           position: { x: x ?? 0, y: y ?? 0 },
           rotation: 0,
           scale: { x: 1, y: 1 },
-        });
+        }));
       } else {
         entity.components = components.map((c) => {
           if (c.type !== "Transform") return c;
-          const t = c as TransformComponent;
           if (x !== undefined || y !== undefined) {
-            return {
-              ...t,
+            return GameKitComponentSchema.parse({
+              ...c,
               position: {
-                x: x ?? t.position.x,
-                y: y ?? t.position.y,
+                x: x ?? c.position.x,
+                y: y ?? c.position.y,
               },
-            };
+            });
           }
-          return t;
+          return c;
         });
       }
 

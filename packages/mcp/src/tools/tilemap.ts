@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
-import type { GameKitComponent, TilemapComponent } from "@gamekit/schema";
+import { GameKitComponentSchema } from "@gamekit/schema";
+import type { TilemapComponent } from "@gamekit/schema";
 
 export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
@@ -29,7 +30,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
         };
       }
 
-      const existing = entity.components.find((c: any) => c.type === "Tilemap");
+      const existing = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (existing) {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: "Entity already has a Tilemap component" }) }],
@@ -48,7 +49,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
         tiles: [],
       };
 
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {
@@ -79,7 +80,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
         };
       }
 
-      const tilemap = entity.components.find((c: any): c is TilemapComponent => c.type === "Tilemap");
+      const tilemap = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (!tilemap) {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) }],
