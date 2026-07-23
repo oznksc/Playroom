@@ -21,10 +21,11 @@ node packages/cli/dist/index.js <command>
 | `import <file>` | Import image/audio/font asset |
 | `remove <asset-id>` | Remove asset from project |
 | `generate [--platform web\|mobile]` | Regenerate `gamekit/generated/assets.ts` |
-| `export [path] [--platform]` | Copy Expo or web starter + gamekit data |
+| `export [path] [--platform]` | Export runnable app: template shell + gamekit data + **generated** multi-scene entry (`App.tsx` / `src/main.ts`) |
+| `create <skill-id> [--name] [--platform]` | **One-command playable game** (menu shell + skill scene + assets + recipe pack + registry). See [shipping guide](./shipping-a-game.md). |
 | `mcp [project-path]` | Start MCP server over stdio |
 | `skills list` | List genre skill templates |
-| `skills apply <name>` | Create scene from skill |
+| `skills apply <id> [--wire-shell]` | Add skill scene (+ assets); `--wire-shell` wires menu/levels/recipes |
 | `recipes list [--category] [--tag] [--query]` | List ready-made effect/mechanic/script/animation/gesture recipes |
 | `recipes describe <id>` | Show full recipe definition and params |
 | `recipes apply <id> --scene <file> [--entity <id>] [--param k=v]` | Apply a recipe to an entity or scene input map |

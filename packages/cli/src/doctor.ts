@@ -263,8 +263,26 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
 
   // Transition target validation
   if (project.transitions) {
+    const sceneKeys = new Set<string>();
+    for (const file of project.scenes) {
+      sceneKeys.add(file);
+      sceneKeys.add(file.replace(/\.scene\.json$/i, ""));
+    }
+    for (const file of sceneFiles) {
+      sceneKeys.add(file);
+      sceneKeys.add(file.replace(/\.scene\.json$/i, ""));
+    }
+    // Also accept scene.id from disk (switchScene targets).
+    for (const file of sceneFiles) {
+      try {
+        const raw = JSON.parse(await readFile(join(scenesDir, file), "utf8")) as { id?: string };
+        if (raw.id) sceneKeys.add(raw.id);
+      } catch {
+        // ignore
+      }
+    }
     for (const transition of project.transitions) {
-      if (transition.toSceneId && !project.scenes.includes(transition.toSceneId)) {
+      if (transition.toSceneId && !sceneKeys.has(transition.toSceneId)) {
         issues.push({
           level: "warn",
           code: "TRANSITION_TARGET_MISSING",

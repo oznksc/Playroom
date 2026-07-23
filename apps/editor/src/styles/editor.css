@@ -39,6 +39,59 @@
 }
 
 /* Full-bleed canvas stage — always the base layer */
+/* Phaser play-in-editor host — covers the canvas stage while running */
+.play-runtime-host {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0c121c 0%, #06090e 70%);
+  pointer-events: auto;
+}
+
+.play-runtime-frame {
+  position: relative;
+  width: min(96%, 1100px);
+  max-height: min(88%, 720px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-runtime-canvas {
+  width: 100%;
+  max-height: min(88vh, 720px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0, 240, 255, 0.18),
+    0 24px 80px rgba(0, 0, 0, 0.55);
+  background: #000;
+}
+
+.play-runtime-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.play-runtime-badge {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  color: #00f0ff;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
 .canvas-stage {
   position: absolute;
   inset: 0;

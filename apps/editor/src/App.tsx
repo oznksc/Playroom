@@ -46,6 +46,7 @@ import { CommandPalette, type CommandItem } from "./components/CommandPalette.js
 import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
+import { PlayRuntimeHost } from "./components/PlayRuntimeHost.js";
 import { Inspector } from "./components/Inspector.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { LevelPanel } from "./components/LevelPanel.js";
@@ -111,6 +112,8 @@ const MVP_SHOW_GUI_TOOLS = true;
 const MVP_SHOW_LEVELS = true;
 const MVP_SHOW_TIMELINE = true;
 const MVP_SHOW_CONSOLE = true;
+/** Use real Phaser (`@gamekit/runtime-web`) for play-in-editor instead of the canvas sim loop. */
+const USE_PHASER_PLAY_HOST = true;
 
 type SidebarTab = SidebarTabId;
 type BottomTab = "assets" | "timeline" | "console";
@@ -131,7 +134,8 @@ export function App() {
   });
 
   const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [], guiComponents: [] });
-  const [currentSceneFile, setCurrentSceneFile] = useState<string>("main.scene.json");
+  /** Empty until /api/project resolves activeScene (create/skills may have no main.scene.json). */
+  const [currentSceneFile, setCurrentSceneFile] = useState<string>("");
   const {
     current: scene,
     setCurrent: setScene,
@@ -192,6 +196,9 @@ export function App() {
     livesLeft?: number;
   }>(null);
   const [playLives, setPlayLives] = useState<number | null>(null);
+  /** Active scene for Phaser play host (null when not using host / not playing). */
+  const [playHostScene, setPlayHostScene] = useState<GameKitScene | null>(null);
+  const [playHostKey, setPlayHostKey] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [showColliders, setShowColliders] = useState(true);
   const sceneMtimeRef = useRef<number | null>(null);
@@ -374,18 +381,24 @@ export function App() {
       guiComponents: rawSnapshot.guiComponents ?? []
     };
 
-    // Honor agent/editor load_scene activations
+    // Honor project.activeScene, then current file if still listed, else first scene.
     const activeFromProject = rawSnapshot.project?.activeScene;
     const sceneFile =
-      activeFromProject && nextSnapshot.scenes.includes(activeFromProject)
+      (activeFromProject && nextSnapshot.scenes.includes(activeFromProject)
         ? activeFromProject
-        : currentSceneFile;
+        : null) ??
+      (currentSceneFile && nextSnapshot.scenes.includes(currentSceneFile)
+        ? currentSceneFile
+        : null) ??
+      nextSnapshot.scenes[0] ??
+      "menu.scene.json";
 
-    if (sceneFile !== currentSceneFile) {
-      setCurrentSceneFile(sceneFile);
+    setCurrentSceneFile(sceneFile);
+
+    const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(sceneFile)}`));
+    if (!sceneResponse.ok) {
+      throw new Error(`Failed to load scene ${sceneFile} (${sceneResponse.status})`);
     }
-
-    const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${sceneFile}`));
     const nextScene = parseScene(await sceneResponse.json());
     setSnapshot(nextSnapshot);
     reset(nextScene);
@@ -406,10 +419,23 @@ export function App() {
 
   useEffect(() => {
     if (isTauri && !projectPath) return;
+    if (!currentSceneFile) return;
 
-    fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`))
-      .then((r) => r.json())
-      .then((nextScene: GameKitScene) => {
+    let cancelled = false;
+    fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(currentSceneFile)}`))
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          throw new Error(
+            typeof (body as { error?: string }).error === "string"
+              ? (body as { error: string }).error
+              : `Failed to load ${currentSceneFile}`,
+          );
+        }
+        return r.json() as Promise<GameKitScene>;
+      })
+      .then((nextScene) => {
+        if (cancelled) return;
         reset(nextScene);
         setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
         setSelectedGuiNodeId(null);
@@ -418,7 +444,12 @@ export function App() {
         setLastSaved(new Date());
         setStatus("Ready");
       })
-      .catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
+      .catch((e) => {
+        if (!cancelled) setStatus(e instanceof Error ? e.message : "Load failed");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [currentSceneFile, projectPath]);
 
   // Keyboard shortcuts — command palette hotkey & editor gizmo/nudge shortcuts
@@ -486,8 +517,9 @@ export function App() {
     sceneMtimeRef.current = null;
   }, [currentSceneFile]);
 
-  // Real-time physics engine loop for playmode
+  // Legacy canvas physics loop (kept as fallback when Phaser host is disabled)
   useEffect(() => {
+    if (USE_PHASER_PLAY_HOST) return;
     if (!isPlaying || isPaused) return;
 
     let frameId: number;
@@ -1545,40 +1577,76 @@ export function App() {
           addConsoleLog("warn", `switchScene → ${sceneId} (no scene data cached)`);
           return false;
         }
-        applyPlaySceneRuntime(resolved, manager);
+        if (USE_PHASER_PLAY_HOST) {
+          playOutcomeRef.current = "none";
+          setPlayOutcome(null);
+          setIsPaused(false);
+          const rules = resolveGameRules(resolved.gameRules);
+          playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
+          setPlayLives(rules.lives > 0 ? rules.lives : null);
+          playEntitiesRef.current = structuredClone(resolved.entities);
+          setPlayHostScene(GameKitSceneSchema.parse(structuredClone(resolved)));
+          setPlayHostKey((k) => k + 1);
+        } else {
+          applyPlaySceneRuntime(resolved, manager);
+        }
         addConsoleLog("system", `switchScene → ${resolved.id} (${resolved.name})`);
         return true;
       };
 
-      applyPlaySceneRuntime(scene, manager);
-
-      const engine = rulesEngineRef.current as RulesEngine | null;
-      const engineRules = engine?.rules ?? resolveGameRules(scene.gameRules);
-      const objCount = engineRules.objectives?.length ?? 0;
-      addConsoleLog(
-        "system",
-        `Game rules: onFall=${engineRules.onFall}, fallY≈${Math.round(engine?.getFallY() ?? 0)}` +
-          (engineRules.onFall === "respawn" ? `, lives=${engineRules.lives || "∞"}` : "") +
-          (objCount > 0 ? `, objectives=${objCount} (${engineRules.objectiveMode})` : "") +
-          (currentLevel ? `, level=${currentLevel.name}` : ", level=none"),
-      );
-      if (currentLevel?.onComplete?.length) {
+      if (USE_PHASER_PLAY_HOST) {
+        const rules = resolveGameRules(scene.gameRules);
+        playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
+        setPlayLives(rules.lives > 0 ? rules.lives : null);
+        playOutcomeRef.current = "none";
+        setPlayOutcome(null);
+        playEntitiesRef.current = structuredClone(scene.entities);
+        setPlayHostScene(GameKitSceneSchema.parse(structuredClone(scene)));
+        setPlayHostKey((k) => k + 1);
+        const objCount = rules.objectives?.length ?? 0;
         addConsoleLog(
           "system",
-          `Level onComplete: ${currentLevel.onComplete.map((a) => a.type).join(", ")}`,
+          `Game rules: onFall=${rules.onFall}` +
+            (rules.onFall === "respawn" ? `, lives=${rules.lives || "∞"}` : "") +
+            (objCount > 0 ? `, objectives=${objCount} (${rules.objectiveMode})` : "") +
+            (currentLevel ? `, level=${currentLevel.name}` : ", level=none"),
         );
+      } else {
+        applyPlaySceneRuntime(scene, manager);
+        const engine = rulesEngineRef.current as RulesEngine | null;
+        const engineRules = engine?.rules ?? resolveGameRules(scene.gameRules);
+        const objCount = engineRules.objectives?.length ?? 0;
+        addConsoleLog(
+          "system",
+          `Game rules: onFall=${engineRules.onFall}, fallY≈${Math.round(engine?.getFallY() ?? 0)}` +
+            (engineRules.onFall === "respawn" ? `, lives=${engineRules.lives || "∞"}` : "") +
+            (objCount > 0 ? `, objectives=${objCount} (${engineRules.objectiveMode})` : "") +
+            (currentLevel ? `, level=${currentLevel.name}` : ", level=none"),
+        );
+        if (currentLevel?.onComplete?.length) {
+          addConsoleLog(
+            "system",
+            `Level onComplete: ${currentLevel.onComplete.map((a) => a.type).join(", ")}`,
+          );
+        }
       }
 
       setIsPlaying(true);
       setIsPaused(false);
       setPlayFps(0);
       setPlayFrameMs(0);
-      addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
-      addConsoleLog("physics", "Real-time physics engine loop initialized.");
-      addConsoleLog("system", "Camera follows player inside the game screen only (canvas pan locked).");
-      addConsoleLog("system", "Menu shell: GUI buttons can switchScene during play.");
-      if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
-        addConsoleLog("system", `Audio: ${audioControllerRef.current!.sources.length} source(s) armed.`);
+      if (USE_PHASER_PLAY_HOST) {
+        addConsoleLog("system", "PLAY HOST: Phaser runtime-web started (export parity).");
+        addConsoleLog("physics", "Arcade physics + RulesEngine via @gamekit/runtime-web.");
+        addConsoleLog("system", "Menu shell: GUI buttons switchScene (remounts play host).");
+      } else {
+        addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
+        addConsoleLog("physics", "Real-time physics engine loop initialized.");
+        addConsoleLog("system", "Camera follows player inside the game screen only (canvas pan locked).");
+        addConsoleLog("system", "Menu shell: GUI buttons can switchScene during play.");
+        if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
+          addConsoleLog("system", `Audio: ${audioControllerRef.current!.sources.length} source(s) armed.`);
+        }
       }
     } else {
       setIsPaused((p) => {
@@ -1593,12 +1661,18 @@ export function App() {
     if (isPlaying) {
       setIsPlaying(false);
       setIsPaused(false);
+      setPlayHostScene(null);
       rulesEngineRef.current = null;
       playSceneManagerRef.current = null;
       playEntitiesRef.current = [];
       playVarsRef.current = {};
       reset(preSimulationSceneRef.current);
-      addConsoleLog("system", "IGNITE SIMULATOR: Sandbox execution stopped. Viewport reverted.");
+      addConsoleLog(
+        "system",
+        USE_PHASER_PLAY_HOST
+          ? "PLAY HOST: Stopped. Editor viewport restored."
+          : "IGNITE SIMULATOR: Sandbox execution stopped. Viewport reverted.",
+      );
       resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
     }
   }
@@ -1608,6 +1682,7 @@ export function App() {
     const snapshot = structuredClone(preSimulationSceneRef.current);
     setIsPlaying(false);
     setIsPaused(false);
+    setPlayHostScene(null);
     reset(snapshot);
     resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
     // Fresh play after state settles
@@ -1616,6 +1691,23 @@ export function App() {
       handlePlayToggle();
     }, 0);
   }
+
+  const playAssetUrls = useMemo(() => {
+    const urls: Record<string, string> = {};
+    for (const asset of snapshot.assets) {
+      urls[asset.id] = getApiUrl(`/gamekit/assets/${asset.file}`);
+    }
+    return urls;
+  }, [snapshot.assets]);
+
+  const playHostLevel = useMemo(() => {
+    if (!playHostScene) return null;
+    return (
+      findLevelForScene(snapshot.levels, playHostScene.id) ??
+      findLevelForScene(snapshot.levels, `${playHostScene.id}.scene.json`) ??
+      null
+    );
+  }, [playHostScene, snapshot.levels]);
 
   // Terminal slash commands
   function executeConsoleCommand(cmdStr: string) {
@@ -2355,6 +2447,96 @@ export function App() {
           onDeleteEntity={(id) => deleteEntity(id)}
           onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
         />
+
+        {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && (
+          <PlayRuntimeHost
+            remountKey={playHostKey}
+            scene={playHostScene}
+            assetUrls={playAssetUrls}
+            guiComponents={snapshot.guiComponents}
+            level={playHostLevel}
+            paused={isPaused || playOutcome !== null}
+            sceneManager={{
+              switchScene: (sceneId) => playHotSwapRef.current(sceneId),
+              nextScene: () => {
+                const manager = playSceneManagerRef.current;
+                const ok = manager?.nextScene() ?? false;
+                if (ok && manager) {
+                  const id = manager.getState().currentSceneId;
+                  if (id) playHotSwapRef.current(id);
+                }
+                return ok;
+              },
+              nextLevel: () => {
+                const manager = playSceneManagerRef.current;
+                const ok = manager?.nextLevel() ?? false;
+                if (ok) {
+                  syncPlayLevelUnlocksFromManager();
+                  const id = manager?.getState().currentSceneId;
+                  if (id) playHotSwapRef.current(id);
+                }
+                return ok;
+              },
+              unlockLevel: (levelId) => {
+                const ok = playSceneManagerRef.current?.unlockLevel(levelId) ?? false;
+                if (ok) syncPlayLevelUnlocksFromManager();
+                return ok;
+              },
+              completeLevel: (levelId) => {
+                const unlocked = playSceneManagerRef.current?.completeLevel(levelId) ?? null;
+                if (unlocked) {
+                  addConsoleLog("system", `completeLevel("${levelId}") → unlocked "${unlocked}"`);
+                  syncPlayLevelUnlocksFromManager();
+                }
+                return unlocked;
+              },
+              getState: () => ({
+                currentLevelId: playSceneManagerRef.current?.getState().currentLevelId ?? null,
+              }),
+              setPersistentVar: (key, value) => {
+                playSceneManagerRef.current?.setPersistentVar(key, value);
+                playVarsRef.current[key] = value;
+              },
+              getPersistentVar: (key, defaultValue) =>
+                playSceneManagerRef.current?.getPersistentVar(key, defaultValue) ??
+                playVarsRef.current[key] ??
+                defaultValue,
+            }}
+            onOutcome={(kind, message) => {
+              if (kind === "won") {
+                playOutcomeRef.current = "win";
+                setPlayOutcome({ kind: "win", message, livesLeft: playLivesRef.current });
+                setIsPaused(true);
+                addConsoleLog("system", `WIN — ${message}`);
+                syncPlayLevelUnlocksFromManager();
+              } else {
+                playOutcomeRef.current = "gameOver";
+                setPlayOutcome({ kind: "gameOver", message, livesLeft: playLivesRef.current });
+                setIsPaused(true);
+                addConsoleLog("system", `GAME OVER — ${message}`);
+              }
+            }}
+            onLivesChange={(lives) => {
+              if (lives === null) {
+                setPlayLives(null);
+              } else {
+                playLivesRef.current = lives;
+                setPlayLives(lives);
+              }
+            }}
+            onCollectProgress={(tag, collected, target) => {
+              addConsoleLog("system", `Collect ${tag}: ${collected}/${target}`);
+            }}
+            onGuiAction={(action) => {
+              // Phaser scene already evaluates Script handlers; log for editor console.
+              addConsoleLog("system", `GUI action: ${action}`);
+            }}
+            onMetrics={(fps, frameMs) => {
+              setPlayFps(fps);
+              setPlayFrameMs(frameMs);
+            }}
+          />
+        )}
 
         {isPlaying && playLives !== null && !playOutcome && (
           <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-md border border-white/10 bg-black/55 px-2.5 py-1 font-mono text-[11px] text-accent backdrop-blur-sm">

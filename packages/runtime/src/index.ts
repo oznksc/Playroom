@@ -65,7 +65,8 @@ export {
 export {
   type PlayerControllerInput,
   type PlayerControllerState,
-  createPlayerController
+  createPlayerController,
+  isTopDownController,
 } from "./player.js";
 export { useGameLoop } from "./loop.js";
 export type { GameLoopCallback, FixedTimestepOptions } from "./loop.js";

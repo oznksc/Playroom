@@ -22,7 +22,7 @@ import { createParticleEmitter, updateParticleEmitter, type Particle, type Parti
 import { deepClone } from "./clone.js";
 import { VirtualControls } from "./virtual-controls.js";
 import { pollGamepad } from "./gamepad.js";
-import { mergeGamepadIntoInput } from "./input-map.js";
+import { extendedInputFromPressedKeys, mergeGamepadIntoInput } from "./input-map.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -73,12 +73,30 @@ export function GameKitGame({
   const rulesEngineRef = useRef<RulesEngine | null>(null);
   const sceneManagerRef = useRef(sceneManager);
   sceneManagerRef.current = sceneManager;
-  const { inputRef, setLeft, setRight, setJump, setFire, setAction } = usePlayerInput();
+  const { inputRef, setLeft, setRight, setJump, setUp, setDown, setFire, setAction } = usePlayerInput();
   const [, setTick] = useState(0);
   const [transitionOverlay, setTransitionOverlay] = useState<TransitionOverlay | null>(null);
   const [outcomeOverlay, setOutcomeOverlay] = useState<{ kind: "won" | "lost"; message: string } | null>(null);
   const [livesHud, setLivesHud] = useState<number | null>(null);
   const prevSceneIdRef = useRef<string>(scene.id);
+  const pressedKeysRef = useRef<Set<string>>(new Set());
+
+  // Desktop / Expo web: track keyboard; merged with virtual controls each frame.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
+    const onDown = (e: KeyboardEvent) => {
+      pressedKeysRef.current.add(e.key);
+    };
+    const onUp = (e: KeyboardEvent) => {
+      pressedKeysRef.current.delete(e.key);
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (prevSceneIdRef.current !== scene.id) {
@@ -265,8 +283,22 @@ export function GameKitGame({
     }
 
     const entities = entitiesRef.current;
-    // Merge virtual-control / keyboard state with live gamepad (web / desktop)
-    const input = mergeGamepadIntoInput(inputRef.current, scene.inputMap, pollGamepad());
+    // Merge virtual controls + keyboard + gamepad
+    const kb = extendedInputFromPressedKeys(pressedKeysRef.current, scene.inputMap);
+    const touch = inputRef.current;
+    const input = mergeGamepadIntoInput(
+      {
+        left: touch.left || kb.left,
+        right: touch.right || kb.right,
+        jump: touch.jump || kb.jump,
+        up: Boolean(touch.up) || Boolean(kb.up),
+        down: Boolean(touch.down) || Boolean(kb.down),
+        fire: touch.fire || kb.fire,
+        action: touch.action || kb.action,
+      },
+      scene.inputMap,
+      pollGamepad(),
+    );
 
     // Update Tweens and FollowPaths
     for (const entity of entities) {
@@ -312,7 +344,12 @@ export function GameKitGame({
       if (!transform) continue;
 
       const controller = controllersRef.current.get(entity.id);
-      if (controller && (input.left || input.right || input.jump)) rb.wake();
+      if (
+        controller &&
+        (input.left || input.right || input.jump || input.up || input.down)
+      ) {
+        rb.wake();
+      }
       if (rb.state.sleeping) continue;
 
       if (controller) {
@@ -685,6 +722,8 @@ export function GameKitGame({
             setLeft,
             setRight,
             setJump,
+            setUp,
+            setDown,
             setFire,
             setAction,
           }}

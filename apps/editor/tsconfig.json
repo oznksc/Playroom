@@ -11,7 +11,9 @@
       "@gamekit/schema": ["../../packages/schema/src/index.ts"],
       "@gamekit/schema/*": ["../../packages/schema/src/*"],
       "@gamekit/runtime": ["../../packages/runtime/src/index.ts"],
-      "@gamekit/runtime/*": ["../../packages/runtime/src/*"]
+      "@gamekit/runtime/*": ["../../packages/runtime/src/*"],
+      "@gamekit/runtime-web": ["../../packages/runtime-web/src/index.ts"],
+      "@gamekit/runtime-web/*": ["../../packages/runtime-web/src/*"]
     }
   },
   "include": ["src", "vite.config.ts"]

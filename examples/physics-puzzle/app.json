@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Physics Puzzle",
+    "slug": "physics-puzzle",
+    "version": "0.1.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.playroom.physicspuzzle"
+    },
+    "android": {
+      "package": "com.playroom.physicspuzzle"
+    }
+  }
+}

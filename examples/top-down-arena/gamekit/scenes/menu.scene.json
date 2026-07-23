@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "id": "menu",
+  "name": "Menu",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#06090e"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "menu-controller",
+      "name": "Menu Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "startGame",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "arena"
+                }
+              ]
+            },
+            {
+              "event": "openSettings",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "settings"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [
+      {
+        "id": "menu-top-bar",
+        "type": "Button",
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 56,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#121824",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "menu-brand",
+        "type": "Text",
+        "x": 24,
+        "y": 16,
+        "width": 342,
+        "height": 24,
+        "text": "PLAYROOM",
+        "fontSize": 12,
+        "color": "#00f0ff",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-version",
+        "type": "Text",
+        "x": 24,
+        "y": 16,
+        "width": 342,
+        "height": 24,
+        "text": "v0.1 demo",
+        "fontSize": 11,
+        "color": "#64748b",
+        "align": "right",
+        "visible": true
+      },
+      {
+        "id": "menu-hero-panel",
+        "type": "Button",
+        "x": 24,
+        "y": 88,
+        "width": 342,
+        "height": 200,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#0f1520",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "menu-hero-kicker",
+        "type": "Text",
+        "x": 24,
+        "y": 104,
+        "width": 342,
+        "height": 20,
+        "text": "START SCREEN",
+        "fontSize": 11,
+        "color": "#8b5cf6",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "title-game",
+        "type": "Text",
+        "x": 24,
+        "y": 132,
+        "width": 342,
+        "height": 44,
+        "text": "Top-Down Arena",
+        "fontSize": 30,
+        "color": "#00f0ff",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "subtitle-tagline",
+        "type": "Text",
+        "x": 24,
+        "y": 180,
+        "width": 342,
+        "height": 24,
+        "text": "Build · Play · Ship",
+        "fontSize": 15,
+        "color": "#94a3b8",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "subtitle-hint",
+        "type": "Text",
+        "x": 24,
+        "y": 212,
+        "width": 342,
+        "height": 22,
+        "text": "Edit this layout in the GUI panel",
+        "fontSize": 12,
+        "color": "#64748b",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "menu-progress",
+        "type": "Text",
+        "x": 24,
+        "y": 244,
+        "width": 342,
+        "height": 22,
+        "text": "Progress  ·  Level 1 unlocked",
+        "fontSize": 12,
+        "color": "#ffb300",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "btn-play",
+        "type": "Button",
+        "x": 55,
+        "y": 316,
+        "width": 280,
+        "height": 56,
+        "text": "▶  Play",
+        "action": "startGame",
+        "fontSize": 18,
+        "color": "#00f0ff",
+        "backgroundColor": "#0d3d42",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "btn-settings",
+        "type": "Button",
+        "x": 55,
+        "y": 384,
+        "width": 280,
+        "height": 48,
+        "text": "⚙  Settings",
+        "action": "openSettings",
+        "fontSize": 15,
+        "color": "#c4b5fd",
+        "backgroundColor": "#1a1f35",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "menu-howto-panel",
+        "type": "Button",
+        "x": 24,
+        "y": 456,
+        "width": 342,
+        "height": 168,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#0f1520",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "menu-howto-title",
+        "type": "Text",
+        "x": 40,
+        "y": 472,
+        "width": 310,
+        "height": 20,
+        "text": "HOW TO PLAY",
+        "fontSize": 11,
+        "color": "#00f0ff",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-howto-move",
+        "type": "Text",
+        "x": 40,
+        "y": 500,
+        "width": 310,
+        "height": 22,
+        "text": "Move     A / D  or  ← →",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-howto-jump",
+        "type": "Text",
+        "x": 40,
+        "y": 528,
+        "width": 310,
+        "height": 22,
+        "text": "Jump     Space  /  W  /  ↑",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-howto-fire",
+        "type": "Text",
+        "x": 40,
+        "y": 556,
+        "width": 310,
+        "height": 22,
+        "text": "Fire      J     ·  Action  K",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-howto-touch",
+        "type": "Text",
+        "x": 40,
+        "y": 584,
+        "width": 310,
+        "height": 22,
+        "text": "Touch    left stick  ·  right buttons",
+        "fontSize": 12,
+        "color": "#94a3b8",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "menu-footer",
+        "type": "Button",
+        "x": 0,
+        "y": 780,
+        "width": 390,
+        "height": 64,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#121824",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "menu-footer-credits",
+        "type": "Text",
+        "x": 24,
+        "y": 800,
+        "width": 342,
+        "height": 24,
+        "text": "Made with Playroom  ·  Double-click labels to edit",
+        "fontSize": 11,
+        "color": "#64748b",
+        "align": "center",
+        "visible": true
+      }
+    ],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [],
+    "onLose": []
+  }
+}

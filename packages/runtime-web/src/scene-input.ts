@@ -14,6 +14,8 @@ type ExtendedPlayerInput = PlayerControllerInput & {
 export type SceneInputKeys = {
   left: Phaser.Input.Keyboard.Key[];
   right: Phaser.Input.Keyboard.Key[];
+  up: Phaser.Input.Keyboard.Key[];
+  down: Phaser.Input.Keyboard.Key[];
   jump: Phaser.Input.Keyboard.Key[];
   fire: Phaser.Input.Keyboard.Key[];
   action: Phaser.Input.Keyboard.Key[];
@@ -46,16 +48,22 @@ export function configureSceneKeyboard(
   keyboard: Phaser.Input.Keyboard.KeyboardPlugin | null,
   inputMap?: InputMapConfig,
 ): SceneInputKeys {
-  if (!keyboard) return { left: [], right: [], jump: [], fire: [], action: [] };
+  if (!keyboard) {
+    return { left: [], right: [], up: [], down: [], jump: [], fire: [], action: [] };
+  }
   const map = inputMap ?? DEFAULT_INPUT_MAP;
   const left = byAction(map, "move_left").length ? byAction(map, "move_left") : ["ArrowLeft", "a", "A"];
   const right = byAction(map, "move_right").length ? byAction(map, "move_right") : ["ArrowRight", "d", "D"];
+  const up = byAction(map, "move_up");
+  const down = byAction(map, "move_down");
   const jump = byAction(map, "jump").length ? byAction(map, "jump") : ["ArrowUp", " ", "w", "W"];
   const fire = byAction(map, "fire");
   const action = byAction(map, "action");
   return {
     left: toCodes(left).map((code) => keyboard.addKey(code)),
     right: toCodes(right).map((code) => keyboard.addKey(code)),
+    up: toCodes(up).map((code) => keyboard.addKey(code)),
+    down: toCodes(down).map((code) => keyboard.addKey(code)),
     jump: toCodes(jump).map((code) => keyboard.addKey(code)),
     fire: toCodes(fire).map((code) => keyboard.addKey(code)),
     action: toCodes(action).map((code) => keyboard.addKey(code)),
@@ -79,6 +87,8 @@ export function resolveScenePlayerInput(
   const base: ExtendedPlayerInput = {
     left: keys.left.some((k) => k.isDown) || touch.dx < -0.3,
     right: keys.right.some((k) => k.isDown) || touch.dx > 0.3,
+    up: keys.up.some((k) => k.isDown) || touch.dy < -0.3,
+    down: keys.down.some((k) => k.isDown) || touch.dy > 0.3,
     jump: keys.jump.some((k) => k.isDown) || touch.jump || touch.dy < -0.5,
     fire: keys.fire.some((k) => k.isDown) || touch.fire,
     action: keys.action.some((k) => k.isDown) || touch.action,

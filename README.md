@@ -13,8 +13,12 @@ Playroom is a 2D game editor and runtime for mobile (Expo/Skia) and web (Phaser)
 pnpm install
 pnpm build
 
-# Create a new game project
+# Create a new game project (blank shell)
 pnpm gamekit init --name "My Game"
+
+# Or one-command playable game from a genre skill + recipe pack
+pnpm gamekit create platformer --name "Jump Quest"
+# skills: platformer | topdown | physics-puzzle | topdown-shooter | puzzle | …
 
 # Start the editor
 pnpm gamekit editor
@@ -23,6 +27,9 @@ pnpm gamekit editor
 # Run tests
 pnpm test
 pnpm typecheck
+
+# Browser E2E (editor Play host) — once: pnpm test:e2e:install
+pnpm test:e2e
 ```
 
 ## Creating a Project
@@ -76,10 +83,19 @@ pnpm gamekit export ./build --platform web
 pnpm gamekit export ./build --platform mobile
 ```
 
+Export copies `gamekit/` (scenes, assets, prefabs) and **generates** the runnable
+entrypoint from `project.json` + every `*.scene.json` file:
+
+- Web → `src/main.ts` (Phaser + `SceneManager`, all scenes registered)
+- Mobile → `App.tsx` (Expo/Skia + virtual controls on PlayerController scenes)
+
+Adding a scene under `gamekit/scenes/` and listing it in `project.scenes` is
+enough — re-export; no hand-wired imports.
+
 The web export produces a standalone Vite project. Run it with:
 
 ```bash
-cd ./build/web-game
+cd ./build
 pnpm install
 pnpm dev     # → http://127.0.0.1:5174
 ```
@@ -110,6 +126,22 @@ docker compose down -v
 
 On first startup, the editor service creates a demo project at `/demo` with the Coin Rush scene and assets — ready to edit and play immediately.
 
+## Sample games
+
+Full multi-scene examples under `examples/` (menu → gameplay → win/lose):
+
+| Example | Genre | Notes |
+|---|---|---|
+| `examples/simple-coin-jumper` | Platformer | Collect coins, lives, pause/win overlays |
+| `examples/top-down-arena` | Top-down | 4-way movement, gems + hazard, portrait |
+| `examples/physics-puzzle` | Physics | Knock crates, reach goal, landscape |
+
+```bash
+cd examples/top-down-arena   # or physics-puzzle / simple-coin-jumper
+pnpm install && pnpm start
+# web pack: node ../../packages/cli/dist/index.js export ./build-web --platform web
+```
+
 ## What is included
 
 | Package | Description |
@@ -136,31 +168,33 @@ templates            Starter projects for web and mobile export
 scripts              Utility scripts (Docker entrypoint, etc.)
 ```
 
-## MVP Scope
+## E2E Ready scope
 
-In scope:
+In scope (ship a small game end-to-end):
 
-- Project initialization and local editor server
+- `gamekit create <skill>` — menu shell + gameplay + assets + recipe pack
+- Project init, local editor, multi-scene export bootstrap
 - JSON scene/project files with Zod validation
-- Canvas editing for entities and components
-- Image asset import/remove/generate
-- Scene file management
-- Expo/Skia and Phaser runtimes
-- MCP tooling as an integration surface
-- Physics simulation (AABB, circle, polygon collision, rigid body)
-- Particle systems, lights, 9-slice sprites, tilemaps, animations
-- Tween, follow-path, state machine, script components
+- Canvas editing + **Phaser play-in-editor** (export parity)
+- Image/audio/font import + generated asset registry
+- Expo/Skia and Phaser runtimes; game rules, levels, GUI overlays
+- MCP tooling + in-editor agent (BYOK)
+- Physics, particles, lights, tilemaps, animations, tweens, paths, scripts
+- Sample games under `examples/`
 
 Still evolving (see `ROADMAP.md`):
 
-- Full Skia/Phaser play host inside the editor
-- Production cross-runtime parity budgets
-- Deeper GUI editing and advanced VFX
-- E2E tests with Playwright
+- Cross-runtime parity budgets and Playwright E2E
+- Schema `migrate`, asset atlas packer
+- Deeper agent plan/undo/vision polish
 
 ## Documentation
 
-See [`docs/`](./docs/index.md) for getting started, CLI reference, editor/agent, and schema guides.
+See [`docs/`](./docs/index.md):
+
+- [How to ship a game](./docs/guide/shipping-a-game.md)
+- [Getting started](./docs/guide/getting-started.md)
+- [CLI](./docs/guide/cli.md) · [Editor & agent](./docs/guide/editor-agent.md) · [Schema](./docs/guide/schema.md)
 
 ## Contributing
 

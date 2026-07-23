@@ -18,6 +18,8 @@
     "build": "pnpm -r --filter './packages/**' build && pnpm --filter @gamekit/editor build",
     "typecheck": "pnpm --filter @gamekit/schema build && pnpm -r --filter './packages/**' --filter './apps/**' typecheck",
     "test": "pnpm --filter @gamekit/schema build && pnpm --filter @gamekit/runtime build && vitest run",
+    "test:e2e": "pnpm --filter @gamekit/schema build && pnpm --filter @gamekit/runtime build && pnpm --filter @gamekit/cli build && pnpm --filter @gamekit/editor build && playwright test",
+    "test:e2e:install": "playwright install chromium",
     "dev:editor": "pnpm --filter @gamekit/editor dev",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -25,6 +27,7 @@
     "gamekit": "pnpm --filter @gamekit/cli gamekit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.0",
     "@types/node": "^22.10.2",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",

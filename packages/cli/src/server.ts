@@ -36,8 +36,19 @@ export type EditorServerOptions = {
   editorDist?: string;
 };
 
-export async function startEditorServer(options: EditorServerOptions): Promise<void> {
-  const port = options.port ?? 4177;
+export type EditorServerHandle = {
+  host: string;
+  port: number;
+  url: string;
+  close: () => Promise<void>;
+};
+
+/**
+ * Start the editor HTTP server. Returns a handle so tests/CI can shut it down.
+ * Pass `port: 0` to bind an ephemeral free port.
+ */
+export async function startEditorServer(options: EditorServerOptions): Promise<EditorServerHandle> {
+  const preferredPort = options.port ?? 4177;
   const host = options.host ?? "127.0.0.1";
   await initProject(options.root);
 
@@ -51,14 +62,29 @@ export async function startEditorServer(options: EditorServerOptions): Promise<v
     }
   });
 
-  await new Promise<void>((resolve, reject) => {
+  const port = await new Promise<number>((resolve, reject) => {
     server.once("error", reject);
-    server.listen(port, host, () => {
+    server.listen(preferredPort, host, () => {
       server.off("error", reject);
-      console.log(`Playroom editor: http://${host}:${port}`);
-      resolve();
+      const addr = server.address();
+      const bound =
+        typeof addr === "object" && addr && typeof addr.port === "number"
+          ? addr.port
+          : preferredPort;
+      console.log(`Playroom editor: http://${host}:${bound}`);
+      resolve(bound);
     });
   });
+
+  return {
+    host,
+    port,
+    url: `http://${host}:${port}`,
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((err) => (err ? reject(err) : resolve()));
+      }),
+  };
 }
 
 const BuildRequestSchema = z.object({
@@ -118,7 +144,14 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/scene" && request.method === "GET") {
-    sendJson(response, 200, await readScene(options.root, url.searchParams.get("file") ?? "main.scene.json"));
+    const file = url.searchParams.get("file") ?? "main.scene.json";
+    try {
+      sendJson(response, 200, await readScene(options.root, file));
+    } catch (error) {
+      sendJson(response, 404, {
+        error: error instanceof Error ? error.message : `Scene not found: ${file}`,
+      });
+    }
     return;
   }
 

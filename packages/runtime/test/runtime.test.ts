@@ -51,6 +51,21 @@ describe("player and camera helpers", () => {
     expect(player.update({ left: false, right: true, jump: false }, 1 / 60).velocity.x).toBe(240);
   });
 
+  it("uses 4-way movement when gravity is zero", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 200,
+      jumpVelocity: 0,
+      gravity: 0,
+    });
+    const moved = player.update(
+      { left: false, right: true, jump: false, up: true, down: false },
+      1 / 60,
+    );
+    expect(moved.velocity.x).toBeCloseTo(200 / Math.SQRT2, 5);
+    expect(moved.velocity.y).toBeCloseTo(-200 / Math.SQRT2, 5);
+  });
+
   it("follows a target with smoothing", () => {
     const camera = createCameraFollow({ viewport: { x: 100, y: 100 }, smoothing: 1 });
 

@@ -1,6 +1,10 @@
 # Playroom — Detailed Development Roadmap (Master Roadmap)
 
-This document tracks the tasks required to evolve Playroom from its MVP 0.1 state (6 basic component types, no play-in-editor, and zero tests) into a production-ready, cross-platform, AI-native 2D game engine and editor.
+> **Status source of truth:** root [`ROADMAP.md`](./ROADMAP.md) (E2E Ready baseline, English).
+> This file is a historical design deep-dive; many tasks below are already shipped.
+> Prefer `ROADMAP.md` for checkboxes and next priorities.
+
+This document tracked the tasks required to evolve Playroom from its MVP 0.1 state into a production-ready, cross-platform, AI-native 2D game engine and editor.
 
 ---
 
