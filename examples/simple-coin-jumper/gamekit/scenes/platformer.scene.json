@@ -1,0 +1,583 @@
+{
+  "schemaVersion": 1,
+  "id": "platformer",
+  "name": "Coin Jumper",
+  "viewport": {
+    "width": 844,
+    "height": 390,
+    "background": "#0a1628"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 1800
+  },
+  "assets": [
+    "player",
+    "ground",
+    "platform",
+    "target",
+    "goal"
+  ],
+  "entities": [
+    {
+      "id": "player-ssgdwz",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 100,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 48,
+          "height": 48,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -24
+          },
+          "size": {
+            "x": 48,
+            "y": 48
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 0.05,
+          "isKinematic": false,
+          "gravityScale": 1,
+          "useGravity": true
+        },
+        {
+          "type": "PlayerController",
+          "speed": 300,
+          "jumpVelocity": 620,
+          "gravity": 1800
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player-ssgdwz",
+          "smoothing": 0.12
+        }
+      ]
+    },
+    {
+      "id": "ground-8fuily",
+      "name": "Ground",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 422,
+            "y": 370
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "ground",
+          "width": 844,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -422,
+            "y": -20
+          },
+          "size": {
+            "x": 844,
+            "y": 40
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform1-e0pi9f",
+      "name": "Platform1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 300,
+            "y": 260
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform2-j0wyxh",
+      "name": "Platform2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 550,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 150,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -75,
+            "y": -10
+          },
+          "size": {
+            "x": 150,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "platform3-9ugsgl",
+      "name": "Platform3",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 720,
+            "y": 140
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "platform",
+          "width": 120,
+          "height": 20,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -60,
+            "y": -10
+          },
+          "size": {
+            "x": 120,
+            "y": 20
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "coin1-hz3nfo",
+      "name": "Coin1",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 300,
+            "y": 220
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 28,
+          "height": 28,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ],
+      "tags": [
+        "coin"
+      ]
+    },
+    {
+      "id": "coin2-gnra58",
+      "name": "Coin2",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 550,
+            "y": 160
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 28,
+          "height": 28,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ],
+      "tags": [
+        "coin"
+      ]
+    },
+    {
+      "id": "scorelabel-kpyyq7",
+      "name": "ScoreLabel",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 24,
+            "y": 16
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Text",
+          "text": "Coins: 0",
+          "fontAssetId": "",
+          "size": 18,
+          "color": "#00f0ff",
+          "align": "left"
+        }
+      ]
+    },
+    {
+      "id": "coin3-top",
+      "name": "Coin3",
+      "tags": [
+        "coin"
+      ],
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 720,
+            "y": 100
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 28,
+          "height": 28,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -14,
+            "y": -14
+          },
+          "size": {
+            "x": 28,
+            "y": 28
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "goal-flag",
+      "name": "Goal",
+      "tags": [
+        "goal"
+      ],
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 800,
+            "y": 100
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "goal",
+          "width": 36,
+          "height": 48,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -18,
+            "y": -24
+          },
+          "size": {
+            "x": 36,
+            "y": 48
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "landscape",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [],
+    "componentInstances": [
+      {
+        "id": "hud-inst",
+        "componentId": "hud",
+        "x": 0,
+        "y": 0,
+        "visible": true
+      }
+    ]
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": true,
+    "fallMargin": 120,
+    "onFall": "respawn",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You collected them all!",
+    "hazards": [],
+    "objectives": [
+      {
+        "id": "collect-coins",
+        "type": "collect",
+        "tag": "coin",
+        "count": 3
+      }
+    ],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [
+      {
+        "type": "completeLevel"
+      }
+    ],
+    "onLose": []
+  }
+}

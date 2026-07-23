@@ -1,5 +1,7 @@
 import { createGameKitGame } from "@gamekit/runtime-web";
-import { SceneManager, InMemoryStorage, loadScene } from "@gamekit/runtime";
+// Subpath imports avoid pulling React Native entry points into the browser bundle.
+import { SceneManager, InMemoryStorage } from "@gamekit/runtime/manager";
+import { loadScene } from "@gamekit/runtime/scene";
 import type { GameKitScene, GuiComponent } from "@gamekit/schema";
 import projectJson from "../gamekit/project.json";
 import menuJson from "../gamekit/scenes/menu.scene.json";

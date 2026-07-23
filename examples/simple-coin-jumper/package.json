@@ -1,0 +1,31 @@
+{
+  "name": "coin-jumper",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start -c",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "start:go": "expo start -c --ios",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gamekit/runtime": "workspace:*",
+    "@gamekit/schema": "workspace:*",
+    "@shopify/react-native-skia": "^2.6.2",
+    "expo": "^57.0.8",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-worklets": "0.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@types/react": "^19.2.17",
+    "typescript": "^6.0.3"
+  }
+}

@@ -36,7 +36,9 @@ import {
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent, transitionFsm, type ScriptContext } from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
-import { updateFollowPath, updateTween, raycast } from "@gamekit/runtime";
+import { updateFollowPath } from "@gamekit/runtime/path";
+import { updateTween } from "@gamekit/runtime/tween";
+import { raycast } from "@gamekit/runtime/collision";
 
 export type GameKitPhaserSceneOptions = {
   guiComponents?: GuiComponent[];

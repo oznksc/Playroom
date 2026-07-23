@@ -5,16 +5,6 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5174,
   },
-  build: {
-    target: "esnext",
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          phaser: ["phaser"],
-        },
-      },
-    },
-  },
   // Runtime-web only needs pure JS subpaths from @gamekit/runtime.
   // Never pull the React Native entry (view/game) into the browser bundle.
   optimizeDeps: {
@@ -27,5 +17,15 @@ export default defineConfig({
   },
   resolve: {
     conditions: ["import", "module", "browser", "default"],
+  },
+  build: {
+    target: "esnext",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ["phaser"],
+        },
+      },
+    },
   },
 });

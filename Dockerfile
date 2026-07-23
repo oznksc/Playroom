@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@11.3.0 --activate
 COPY . .
 RUN pnpm install --frozen-lockfile && \
     pnpm build && \
-    cd templates/web-game && pnpm build
+    pnpm --filter create-web-game-template build
 
 FROM node:22-slim
 WORKDIR /app

@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@gamekit/runtime": "workspace:*",
     "@gamekit/runtime-web": "workspace:*",
+    "@gamekit/schema": "workspace:*",
     "phaser": "^3.87.0"
   },
   "devDependencies": {
