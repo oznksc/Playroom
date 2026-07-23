@@ -7,9 +7,9 @@ import {
   createEmptyScene,
   slugify,
   createId,
+  GameKitComponentSchema,
   type GameKitScene,
   type GameKitEntity,
-  type GameKitComponent,
 } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
 
@@ -76,7 +76,7 @@ function buildSceneFromSkill(skill: SkillTemplate, sceneName?: string): GameKitS
     idMap.set(skillEntity.name, entity.id);
 
     for (const comp of skillEntity.components) {
-      entity.components.push(comp as unknown as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(comp));
     }
 
     scene.entities.push(entity);

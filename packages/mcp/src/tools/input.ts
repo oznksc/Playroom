@@ -1,7 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
-import { InputActionBindingSchema } from "../schemas/input.js";
 import { DEFAULT_INPUT_MAP } from "@gamekit/schema";
 
 export function registerInputTools(server: McpServer, fileIO: FileIO): void {

@@ -156,7 +156,7 @@ export function Inspector({
       } else if (val === "AudioListener") {
         draft.components.push({ type: "AudioListener", enabled: true });
       } else if (val === "Tween") {
-        draft.components.push({ type: "Tween", property: "position.x", startValue: 0, endValue: 100, duration: 1.0, easing: "linear", loop: true, pingPong: true });
+        draft.components.push({ type: "Tween", property: "position.x", startValue: 0, endValue: 100, duration: 1.0, easing: "linear", loop: true, pingPong: true, active: true });
       } else if (val === "FollowPath") {
         draft.components.push({ type: "FollowPath", points: [], speed: 100, loop: true });
       } else if (val === "StateMachine") {

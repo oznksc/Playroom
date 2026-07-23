@@ -1,5 +1,5 @@
 import type { FallDeathAction, GameKitScene, GameRulesConfig, Orientation, ResponsiveConfig } from "@gamekit/schema";
-import { DEFAULT_GAME_RULES } from "@gamekit/schema";
+import { resolveGameRules } from "@gamekit/schema";
 import { Settings, Monitor, Shield, Gauge, Globe, Skull } from "lucide-react";
 import { useState } from "react";
 import {
@@ -22,14 +22,7 @@ type SceneSettingsProps = {
 
 function ensureGameRules(draft: GameKitScene): GameRulesConfig {
   if (!draft.gameRules) {
-    draft.gameRules = {
-      fallDeathEnabled: DEFAULT_GAME_RULES.fallDeathEnabled,
-      fallMargin: DEFAULT_GAME_RULES.fallMargin,
-      onFall: DEFAULT_GAME_RULES.onFall,
-      lives: DEFAULT_GAME_RULES.lives,
-      gameOverMessage: DEFAULT_GAME_RULES.gameOverMessage,
-      winMessage: DEFAULT_GAME_RULES.winMessage,
-    };
+    draft.gameRules = resolveGameRules();
   }
   return draft.gameRules;
 }
@@ -40,7 +33,7 @@ function ensureGameRules(draft: GameKitScene): GameRulesConfig {
  */
 export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
   const responsive = scene.responsive;
-  const rules = scene.gameRules ?? {};
+  const rules = resolveGameRules(scene.gameRules);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
     Scene: false,
     Gravity: false,
@@ -201,7 +194,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
             />
             <NumberField
               label="Margin"
-              value={rules.fallMargin ?? DEFAULT_GAME_RULES.fallMargin}
+              value={rules.fallMargin}
               onChange={(value) =>
                 onChange((draft) => {
                   ensureGameRules(draft).fallMargin = value;
@@ -214,7 +207,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
               On fall
             </span>
             <Select
-              value={rules.onFall ?? DEFAULT_GAME_RULES.onFall}
+              value={rules.onFall}
               onChange={(event) =>
                 onChange((draft) => {
                   ensureGameRules(draft).onFall = event.target.value as FallDeathAction;
@@ -227,7 +220,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
           </label>
           <NumberField
             label="Lives (0 = unlimited)"
-            value={rules.lives ?? DEFAULT_GAME_RULES.lives}
+            value={rules.lives}
             onChange={(value) =>
               onChange((draft) => {
                 ensureGameRules(draft).lives = Math.max(0, Math.floor(value));
@@ -267,7 +260,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
               Game over message
             </span>
             <Input
-              value={rules.gameOverMessage ?? DEFAULT_GAME_RULES.gameOverMessage}
+              value={rules.gameOverMessage}
               onChange={(event) =>
                 onChange((draft) => {
                   ensureGameRules(draft).gameOverMessage = event.target.value;
@@ -280,7 +273,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
               Win message
             </span>
             <Input
-              value={rules.winMessage ?? DEFAULT_GAME_RULES.winMessage}
+              value={rules.winMessage}
               onChange={(event) =>
                 onChange((draft) => {
                   ensureGameRules(draft).winMessage = event.target.value;

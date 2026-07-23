@@ -52,8 +52,8 @@ export type GameSavePayload = z.infer<typeof GameSavePayloadSchema>;
 export const TransformComponentSchema = z.object({
   type: z.literal("Transform"),
   position: Vector2Schema,
-  rotation: z.number(),
-  scale: Vector2Schema,
+  rotation: z.number().default(0),
+  scale: Vector2Schema.default({ x: 1, y: 1 }),
 });
 export type TransformComponent = z.infer<typeof TransformComponentSchema>;
 
@@ -62,15 +62,15 @@ export const SpriteComponentSchema = z.object({
   assetId: z.string().min(1),
   width: z.number(),
   height: z.number(),
-  anchor: Vector2Schema,
+  anchor: Vector2Schema.default({ x: 0.5, y: 0.5 }),
 });
 export type SpriteComponent = z.infer<typeof SpriteComponentSchema>;
 
 export const AabbColliderComponentSchema = z.object({
   type: z.literal("AabbCollider"),
-  offset: Vector2Schema,
+  offset: Vector2Schema.default({ x: 0, y: 0 }),
   size: Vector2Schema,
-  isStatic: z.boolean(),
+  isStatic: z.boolean().default(false),
   isTrigger: z.boolean().optional(),
   layer: z.number().optional(),
   mask: z.number().optional(),
@@ -99,28 +99,28 @@ export const AnimationComponentSchema = z.object({
   frameHeight: z.number(),
   totalFrames: z.number(),
   framesPerSecond: z.number(),
-  loop: z.boolean(),
+  loop: z.boolean().default(true),
   currentFrame: z.number().optional(),
 });
 export type AnimationComponent = z.infer<typeof AnimationComponentSchema>;
 
 export const RigidBodyComponentSchema = z.object({
   type: z.literal("RigidBody"),
-  velocity: Vector2Schema,
-  angularVelocity: z.number(),
-  mass: z.number(),
-  drag: z.number(),
-  isKinematic: z.boolean(),
-  gravityScale: z.number(),
-  useGravity: z.boolean(),
+  velocity: Vector2Schema.default({ x: 0, y: 0 }),
+  angularVelocity: z.number().default(0),
+  mass: z.number().default(1),
+  drag: z.number().default(0),
+  isKinematic: z.boolean().default(false),
+  gravityScale: z.number().default(1),
+  useGravity: z.boolean().default(true),
 });
 export type RigidBodyComponent = z.infer<typeof RigidBodyComponentSchema>;
 
 export const CircleColliderComponentSchema = z.object({
   type: z.literal("CircleCollider"),
-  offset: Vector2Schema,
+  offset: Vector2Schema.default({ x: 0, y: 0 }),
   radius: z.number(),
-  isStatic: z.boolean(),
+  isStatic: z.boolean().default(false),
   isTrigger: z.boolean(),
   layer: z.number().optional(),
   mask: z.number().optional(),
@@ -129,7 +129,7 @@ export type CircleColliderComponent = z.infer<typeof CircleColliderComponentSche
 
 export const PolygonColliderComponentSchema = z.object({
   type: z.literal("PolygonCollider"),
-  offset: Vector2Schema,
+  offset: Vector2Schema.default({ x: 0, y: 0 }),
   points: z.array(Vector2Schema),
   isStatic: z.boolean(),
   isTrigger: z.boolean().optional(),
@@ -146,7 +146,7 @@ export const TilemapComponentSchema = z.object({
   columns: z.number(),
   gridWidth: z.number(),
   gridHeight: z.number(),
-  tiles: z.array(z.number()),
+  tiles: z.array(z.number()).default([]),
 });
 export type TilemapComponent = z.infer<typeof TilemapComponentSchema>;
 
@@ -154,24 +154,24 @@ export const TextComponentSchema = z.object({
   type: z.literal("Text"),
   text: z.string(),
   fontAssetId: z.string(), // Can be empty
-  size: z.number(),
-  color: z.string().min(1),
-  align: z.enum(["left", "center", "right"]),
+  size: z.number().default(16),
+  color: z.string().default("#ffffff"),
+  align: z.enum(["left", "center", "right"]).default("left"),
 });
 export type TextComponent = z.infer<typeof TextComponentSchema>;
 
 export const AudioSourceComponentSchema = z.object({
   type: z.literal("AudioSource"),
   assetId: z.string().min(1),
-  volume: z.number(),
-  loop: z.boolean(),
-  playOnStart: z.boolean(),
+  volume: z.number().default(1),
+  loop: z.boolean().default(false),
+  playOnStart: z.boolean().default(true),
 });
 export type AudioSourceComponent = z.infer<typeof AudioSourceComponentSchema>;
 
 export const AudioListenerComponentSchema = z.object({
   type: z.literal("AudioListener"),
-  enabled: z.boolean(),
+  enabled: z.boolean().default(true),
 });
 export type AudioListenerComponent = z.infer<typeof AudioListenerComponentSchema>;
 
@@ -181,11 +181,11 @@ export const TweenComponentSchema = z.object({
   startValue: z.number(),
   endValue: z.number(),
   duration: z.number(),
-  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]),
-  loop: z.boolean(),
-  pingPong: z.boolean(),
+  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]).default("linear"),
+  loop: z.boolean().default(false),
+  pingPong: z.boolean().default(false),
   elapsed: z.number().optional(),
-  active: z.boolean().optional(),
+  active: z.boolean().optional().default(true),
 });
 export type TweenComponent = z.infer<typeof TweenComponentSchema>;
 
@@ -193,7 +193,7 @@ export const FollowPathComponentSchema = z.object({
   type: z.literal("FollowPath"),
   points: z.array(Vector2Schema),
   speed: z.number(),
-  loop: z.boolean(),
+  loop: z.boolean().default(true),
   currentPointIndex: z.number().optional(),
   targetPointIndex: z.number().optional(),
 });
@@ -232,40 +232,40 @@ export type ScriptComponent = z.infer<typeof ScriptComponentSchema>;
 
 export const ParticleSystemComponentSchema = z.object({
   type: z.literal("ParticleSystem"),
-  maxParticles: z.number(),
-  emissionRate: z.number(),
-  lifetime: z.number(),
-  speed: z.number(),
-  gravityScale: z.number(),
-  colorStart: z.string().min(1),
-  colorEnd: z.string().min(1),
-  sizeStart: z.number(),
-  sizeEnd: z.number(),
-  shape: z.enum(["point", "box"]),
-  width: z.number(),
-  height: z.number(),
-  active: z.boolean(),
+  maxParticles: z.number().default(32),
+  emissionRate: z.number().default(12),
+  lifetime: z.number().default(0.8),
+  speed: z.number().default(60),
+  gravityScale: z.number().default(0.4),
+  colorStart: z.string().default("#00f0ff"),
+  colorEnd: z.string().default("#8b5cf6"),
+  sizeStart: z.number().default(4),
+  sizeEnd: z.number().default(0),
+  shape: z.enum(["point", "box"]).default("point"),
+  width: z.number().default(0),
+  height: z.number().default(0),
+  active: z.boolean().default(true),
 });
 export type ParticleSystemComponent = z.infer<typeof ParticleSystemComponentSchema>;
 
 export const Light2DComponentSchema = z.object({
   type: z.literal("Light2D"),
-  kind: z.enum(["point", "spot"]),
-  range: z.number(),
-  intensity: z.number(),
-  color: z.string().min(1),
+  kind: z.enum(["point", "spot"]).default("point"),
+  range: z.number().default(200),
+  intensity: z.number().default(1),
+  color: z.string().default("#ffffff"),
 });
 export type Light2DComponent = z.infer<typeof Light2DComponentSchema>;
 
 export const NineSliceComponentSchema = z.object({
   type: z.literal("NineSlice"),
   assetId: z.string().min(1),
-  width: z.number(),
-  height: z.number(),
-  leftWidth: z.number(),
-  rightWidth: z.number(),
-  topHeight: z.number(),
-  bottomHeight: z.number(),
+  width: z.number().default(100),
+  height: z.number().default(100),
+  leftWidth: z.number().default(10),
+  rightWidth: z.number().default(10),
+  topHeight: z.number().default(10),
+  bottomHeight: z.number().default(10),
 });
 export type NineSliceComponent = z.infer<typeof NineSliceComponentSchema>;
 
@@ -292,6 +292,29 @@ export const GameKitComponentSchema = z.discriminatedUnion("type", [
   NineSliceComponentSchema,
 ]);
 export type GameKitComponent = z.infer<typeof GameKitComponentSchema>;
+
+export const ComponentTypeSchema = z.enum([
+  "Transform",
+  "Sprite",
+  "AabbCollider",
+  "CircleCollider",
+  "PolygonCollider",
+  "PlayerController",
+  "RigidBody",
+  "CameraFollow",
+  "Animation",
+  "Tilemap",
+  "Text",
+  "AudioSource",
+  "AudioListener",
+  "Tween",
+  "FollowPath",
+  "StateMachine",
+  "Script",
+  "ParticleSystem",
+  "Light2D",
+  "NineSlice",
+]);
 
 export const GameKitEntitySchema = z.object({
   id: z.string().min(1),
@@ -403,14 +426,14 @@ export const FallDeathActionSchema = z.enum(["gameOver", "respawn"]);
 export type FallDeathAction = z.infer<typeof FallDeathActionSchema>;
 
 export const GameRulesConfigSchema = z.object({
-  fallDeathEnabled: z.boolean().optional(),
+  fallDeathEnabled: z.boolean().default(true),
   fallY: z.number().optional(),
-  fallMargin: z.number().optional(),
-  onFall: FallDeathActionSchema.optional(),
-  lives: z.number().optional(),
+  fallMargin: z.number().default(120),
+  onFall: FallDeathActionSchema.default("gameOver"),
+  lives: z.number().default(3).transform((v) => Math.max(0, Math.floor(v))),
   spawnPoint: Vector2Schema.optional(),
-  gameOverMessage: z.string().optional(),
-  winMessage: z.string().optional(),
+  gameOverMessage: z.string().default("Game Over").transform((v) => v.trim() || "Game Over"),
+  winMessage: z.string().default("You win!").transform((v) => v.trim() || "You win!"),
 });
 export type GameRulesConfig = z.infer<typeof GameRulesConfigSchema>;
 
@@ -437,28 +460,8 @@ export const DEFAULT_GAME_RULES: Required<
   winMessage: "You win!",
 };
 
-export function resolveGameRules(rules?: GameRulesConfig | null): GameRulesConfig & {
-  fallDeathEnabled: boolean;
-  fallMargin: number;
-  onFall: FallDeathAction;
-  lives: number;
-  gameOverMessage: string;
-  winMessage: string;
-} {
-  return {
-    fallDeathEnabled: rules?.fallDeathEnabled ?? DEFAULT_GAME_RULES.fallDeathEnabled,
-    fallMargin: rules?.fallMargin ?? DEFAULT_GAME_RULES.fallMargin,
-    onFall: rules?.onFall === "respawn" ? "respawn" : "gameOver",
-    lives: typeof rules?.lives === "number" && Number.isFinite(rules.lives) ? Math.max(0, Math.floor(rules.lives)) : DEFAULT_GAME_RULES.lives,
-    gameOverMessage: rules?.gameOverMessage?.trim() || DEFAULT_GAME_RULES.gameOverMessage,
-    winMessage: rules?.winMessage?.trim() || DEFAULT_GAME_RULES.winMessage,
-    ...(typeof rules?.fallY === "number" && Number.isFinite(rules.fallY) ? { fallY: rules.fallY } : {}),
-    ...(rules?.spawnPoint &&
-    typeof rules.spawnPoint.x === "number" &&
-    typeof rules.spawnPoint.y === "number"
-      ? { spawnPoint: { x: rules.spawnPoint.x, y: rules.spawnPoint.y } }
-      : {}),
-  };
+export function resolveGameRules(rules?: GameRulesConfig | null): GameRulesConfig {
+  return GameRulesConfigSchema.parse(rules ?? {});
 }
 
 export function resolveFallDeathY(

@@ -1,95 +1,88 @@
 import { z } from "zod";
+import {
+  TransformComponentSchema,
+  SpriteComponentSchema,
+  AabbColliderComponentSchema,
+  CircleColliderComponentSchema,
+  PolygonColliderComponentSchema,
+  PlayerControllerComponentSchema,
+  RigidBodyComponentSchema,
+  CameraFollowComponentSchema,
+  AnimationComponentSchema,
+  TilemapComponentSchema,
+  TextComponentSchema,
+  AudioSourceComponentSchema,
+  AudioListenerComponentSchema,
+  TweenComponentSchema,
+  FollowPathComponentSchema,
+  StateMachineComponentSchema,
+  ScriptComponentSchema,
+  ParticleSystemComponentSchema,
+  Light2DComponentSchema,
+  NineSliceComponentSchema,
+  GameKitComponentSchema,
+  ComponentTypeSchema,
+} from "@gamekit/schema";
 
-export const Vector2Schema = z.object({
-  x: z.number(),
-  y: z.number(),
-});
+export { ComponentTypeSchema } from "@gamekit/schema";
 
-export const TransformInputSchema = z.object({
-  type: z.literal("Transform"),
-  position: Vector2Schema.default({ x: 0, y: 0 }),
-  rotation: z.number().default(0),
-  scale: Vector2Schema.default({ x: 1, y: 1 }),
-});
+// Input schemas derive from core component schemas with stricter input validation.
+// Core schemas provide defaults; these add .positive()/.int()/.min() constraints.
 
-export const SpriteInputSchema = z.object({
-  type: z.literal("Sprite"),
-  assetId: z.string().min(1),
+export const TransformInputSchema = TransformComponentSchema;
+
+export const SpriteInputSchema = SpriteComponentSchema.extend({
   width: z.number().positive(),
   height: z.number().positive(),
-  anchor: Vector2Schema.default({ x: 0.5, y: 0.5 }),
 });
 
-export const AabbColliderInputSchema = z.object({
-  type: z.literal("AabbCollider"),
-  offset: Vector2Schema.default({ x: 0, y: 0 }),
-  size: Vector2Schema.refine((v) => v.x > 0 && v.y > 0, {
-    message: "Size must be positive",
-  }),
-  isStatic: z.boolean().default(false),
-  isTrigger: z.boolean().optional(),
+export const AabbColliderInputSchema = AabbColliderComponentSchema.extend({
+  size: z.object({ x: z.number(), y: z.number() }).refine(
+    (v) => v.x > 0 && v.y > 0,
+    { message: "Size must be positive" },
+  ),
   layer: z.number().int().optional(),
   mask: z.number().int().optional(),
 });
 
-export const PlayerControllerInputSchema = z.object({
-  type: z.literal("PlayerController"),
+export const PlayerControllerInputSchema = PlayerControllerComponentSchema.extend({
   speed: z.number().positive(),
   jumpVelocity: z.number().positive(),
   gravity: z.number().positive(),
 });
 
-export const CameraFollowInputSchema = z.object({
-  type: z.literal("CameraFollow"),
-  targetId: z.string().min(1),
+export const CameraFollowInputSchema = CameraFollowComponentSchema.extend({
   smoothing: z.number().min(0).max(1),
 });
 
-export const AnimationInputSchema = z.object({
-  type: z.literal("Animation"),
-  assetId: z.string().min(1),
+export const AnimationInputSchema = AnimationComponentSchema.extend({
   frameWidth: z.number().positive(),
   frameHeight: z.number().positive(),
   totalFrames: z.number().int().positive(),
   framesPerSecond: z.number().positive(),
-  loop: z.boolean().default(true),
-  currentFrame: z.number().int().optional(),
 });
 
-export const RigidBodyInputSchema = z.object({
-  type: z.literal("RigidBody"),
-  velocity: Vector2Schema.default({ x: 0, y: 0 }),
-  angularVelocity: z.number().default(0),
-  mass: z.number().positive().default(1),
-  drag: z.number().min(0).max(1).default(0),
-  isKinematic: z.boolean().default(false),
-  gravityScale: z.number().default(1),
-  useGravity: z.boolean().default(true),
+export const RigidBodyInputSchema = RigidBodyComponentSchema.extend({
+  mass: z.number().positive(),
+  drag: z.number().min(0).max(1),
 });
 
-export const CircleColliderInputSchema = z.object({
-  type: z.literal("CircleCollider"),
-  offset: Vector2Schema.default({ x: 0, y: 0 }),
+export const CircleColliderInputSchema = CircleColliderComponentSchema.extend({
   radius: z.number().positive(),
-  isStatic: z.boolean().default(false),
-  isTrigger: z.boolean().default(false),
   layer: z.number().int().optional(),
   mask: z.number().int().optional(),
 });
 
-export const PolygonColliderInputSchema = z.object({
-  type: z.literal("PolygonCollider"),
+export const PolygonColliderInputSchema = PolygonColliderComponentSchema.extend({
   offset: z.object({ x: z.number(), y: z.number() }).optional().default({ x: 0, y: 0 }),
-  points: z.array(z.object({ x: z.number(), y: z.number() })).min(3).describe("At least 3 vertices in local coordinates"),
+  points: z.array(z.object({ x: z.number(), y: z.number() })).min(3),
   isStatic: z.boolean().optional().default(false),
   isTrigger: z.boolean().optional().default(false),
   layer: z.number().int().optional(),
   mask: z.number().int().optional(),
 });
 
-export const TilemapInputSchema = z.object({
-  type: z.literal("Tilemap"),
-  tilesetId: z.string().min(1),
+export const TilemapInputSchema = TilemapComponentSchema.extend({
   tileWidth: z.number().positive(),
   tileHeight: z.number().positive(),
   columns: z.number().int().positive(),
@@ -98,154 +91,53 @@ export const TilemapInputSchema = z.object({
   tiles: z.array(z.number().int().min(0)).default([]),
 });
 
-export const TextInputSchema = z.object({
-  type: z.literal("Text"),
-  text: z.string(),
+export const TextInputSchema = TextComponentSchema.extend({
   fontAssetId: z.string().min(1),
-  size: z.number().positive().default(16),
-  color: z.string().default("#ffffff"),
-  align: z.enum(["left", "center", "right"]).default("left"),
+  size: z.number().positive(),
 });
 
-export const AudioSourceInputSchema = z.object({
-  type: z.literal("AudioSource"),
-  assetId: z.string().min(1),
-  volume: z.number().min(0).max(1).default(1),
-  loop: z.boolean().default(false),
-  playOnStart: z.boolean().default(true),
+export const AudioSourceInputSchema = AudioSourceComponentSchema.extend({
+  volume: z.number().min(0).max(1),
 });
 
-export const AudioListenerInputSchema = z.object({
-  type: z.literal("AudioListener"),
-  enabled: z.boolean().default(true),
-});
+export const AudioListenerInputSchema = AudioListenerComponentSchema;
 
-export const TweenInputSchema = z.object({
-  type: z.literal("Tween"),
-  property: z.enum(["position.x", "position.y", "rotation", "scale.x", "scale.y"]),
-  startValue: z.number(),
-  endValue: z.number(),
+export const TweenInputSchema = TweenComponentSchema.extend({
   duration: z.number().positive(),
-  easing: z.enum(["linear", "easeIn", "easeOut", "easeInOut"]).default("linear"),
-  loop: z.boolean().default(false),
-  pingPong: z.boolean().default(false),
-  elapsed: z.number().optional(),
-  active: z.boolean().optional().default(true),
 });
 
-export const FollowPathInputSchema = z.object({
-  type: z.literal("FollowPath"),
-  points: z.array(Vector2Schema),
+export const FollowPathInputSchema = FollowPathComponentSchema.extend({
   speed: z.number().nonnegative(),
-  loop: z.boolean().default(true),
-  currentPointIndex: z.number().int().optional(),
-  targetPointIndex: z.number().int().optional(),
 });
 
-export const StateMachineStateSchema = z.object({
-  name: z.string().min(1),
-  on: z.record(z.string()).optional(),
+export const StateMachineInputSchema = StateMachineComponentSchema;
+
+export const ScriptInputSchema = ScriptComponentSchema;
+
+export const ParticleSystemInputSchema = ParticleSystemComponentSchema.extend({
+  maxParticles: z.number().int().positive(),
+  emissionRate: z.number().nonnegative(),
+  lifetime: z.number().positive(),
+  speed: z.number().nonnegative(),
+  sizeStart: z.number().positive(),
+  sizeEnd: z.number().nonnegative(),
+  width: z.number().nonnegative(),
+  height: z.number().nonnegative(),
 });
 
-export const StateMachineInputSchema = z.object({
-  type: z.literal("StateMachine"),
-  initialState: z.string().min(1),
-  currentState: z.string().optional(),
-  states: z.array(StateMachineStateSchema),
+export const Light2DInputSchema = Light2DComponentSchema.extend({
+  range: z.number().positive(),
+  intensity: z.number().positive(),
 });
 
-export const ScriptActionSchema = z.object({
-  type: z.string().min(1),
-}).catchall(z.unknown());
-
-export const ScriptHandlerSchema = z.object({
-  event: z.string().min(1),
-  actions: z.array(ScriptActionSchema),
+export const NineSliceInputSchema = NineSliceComponentSchema.extend({
+  width: z.number().positive(),
+  height: z.number().positive(),
+  leftWidth: z.number().nonnegative(),
+  rightWidth: z.number().nonnegative(),
+  topHeight: z.number().nonnegative(),
+  bottomHeight: z.number().nonnegative(),
 });
 
-export const ScriptInputSchema = z.object({
-  type: z.literal("Script"),
-  handlers: z.array(ScriptHandlerSchema),
-});
-
-export const ParticleSystemInputSchema = z.object({
-  type: z.literal("ParticleSystem"),
-  maxParticles: z.number().int().positive().default(32),
-  emissionRate: z.number().nonnegative().default(12),
-  lifetime: z.number().positive().default(0.8),
-  speed: z.number().nonnegative().default(60),
-  gravityScale: z.number().default(0.4),
-  colorStart: z.string().default("#00f0ff"),
-  colorEnd: z.string().default("#8b5cf6"),
-  sizeStart: z.number().positive().default(4),
-  sizeEnd: z.number().nonnegative().default(0),
-  shape: z.enum(["point", "box"]).default("point"),
-  width: z.number().nonnegative().default(0),
-  height: z.number().nonnegative().default(0),
-  active: z.boolean().default(true),
-});
-
-export const Light2DInputSchema = z.object({
-  type: z.literal("Light2D"),
-  kind: z.enum(["point", "spot"]).default("point"),
-  range: z.number().positive().default(200),
-  intensity: z.number().positive().default(1.0),
-  color: z.string().default("#ffffff"),
-});
-
-export const NineSliceInputSchema = z.object({
-  type: z.literal("NineSlice"),
-  assetId: z.string().describe("Image asset ID for the 9-slice texture"),
-  width: z.number().positive().default(100),
-  height: z.number().positive().default(100),
-  leftWidth: z.number().nonnegative().default(10),
-  rightWidth: z.number().nonnegative().default(10),
-  topHeight: z.number().nonnegative().default(10),
-  bottomHeight: z.number().nonnegative().default(10),
-});
-
-export const ComponentInputSchema = z.discriminatedUnion("type", [
-  TransformInputSchema,
-  SpriteInputSchema,
-  AabbColliderInputSchema,
-  CircleColliderInputSchema,
-  PolygonColliderInputSchema,
-  PlayerControllerInputSchema,
-  RigidBodyInputSchema,
-  CameraFollowInputSchema,
-  AnimationInputSchema,
-  TilemapInputSchema,
-  TextInputSchema,
-  AudioSourceInputSchema,
-  AudioListenerInputSchema,
-  TweenInputSchema,
-  FollowPathInputSchema,
-  StateMachineInputSchema,
-  ScriptInputSchema,
-  ParticleSystemInputSchema,
-  Light2DInputSchema,
-  NineSliceInputSchema,
-]);
-
-export const ComponentTypeSchema = z.enum([
-  "Transform",
-  "Sprite",
-  "AabbCollider",
-  "CircleCollider",
-  "PolygonCollider",
-  "PlayerController",
-  "RigidBody",
-  "CameraFollow",
-  "Animation",
-  "Tilemap",
-  "Text",
-  "AudioSource",
-  "AudioListener",
-  "Tween",
-  "FollowPath",
-  "StateMachine",
-  "Script",
-  "ParticleSystem",
-  "Light2D",
-  "NineSlice",
-]);
+// Generic component input union (for add_component / batch tools)
+export const ComponentInputSchema = GameKitComponentSchema;

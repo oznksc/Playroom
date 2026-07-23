@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { createEntity, createId, type GameKitComponent } from "@gamekit/schema";
+import { createEntity, createId, GameKitComponentSchema } from "@gamekit/schema";
 import { ComponentInputSchema, ComponentTypeSchema } from "../schemas/component.js";
 import type { FileIO } from "../utils/file-io.js";
 
@@ -19,7 +19,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
 
       const entity = createEntity(name);
       if (components && components.length > 0) {
-        entity.components = components as GameKitComponent[];
+        entity.components = components.map((c) => GameKitComponentSchema.parse(c));
       }
 
       scene.entities.push(entity);
@@ -118,7 +118,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
         };
       }
 
-      entity.components.push(component as GameKitComponent);
+      entity.components.push(GameKitComponentSchema.parse(component));
       await fileIO.writeScene(filename, scene);
 
       return {

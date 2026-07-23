@@ -2,7 +2,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
 import { CircleColliderInputSchema, RigidBodyInputSchema } from "../schemas/component.js";
-import type { AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, GameKitComponent } from "@gamekit/schema";
+import type { AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, TransformComponent } from "@gamekit/schema";
+import { GameKitComponentSchema } from "@gamekit/schema";
 import { raycast } from "@gamekit/runtime/collision";
 
 export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
@@ -59,7 +60,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
           ...(layer !== undefined ? { layer } : {}),
           ...(mask !== undefined ? { mask } : {}),
         };
-        entity.components.push(component as GameKitComponent);
+        entity.components.push(GameKitComponentSchema.parse(component));
       } else if (type === "CircleCollider") {
         if (!radius) {
           return {
@@ -76,7 +77,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
           ...(layer !== undefined ? { layer } : {}),
           ...(mask !== undefined ? { mask } : {}),
         };
-        entity.components.push(component as GameKitComponent);
+        entity.components.push(GameKitComponentSchema.parse(component));
       } else if (type === "PolygonCollider") {
         if (!points) {
           return {
@@ -93,7 +94,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
           ...(layer !== undefined ? { layer } : {}),
           ...(mask !== undefined ? { mask } : {}),
         };
-        entity.components.push(component as GameKitComponent);
+        entity.components.push(GameKitComponentSchema.parse(component));
       }
 
       await fileIO.writeScene(filename, scene);
@@ -136,7 +137,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
         };
       }
 
-      entity.components.push({
+      entity.components.push(GameKitComponentSchema.parse({
         type: "RigidBody",
         velocity: initialVelocity ?? { x: 0, y: 0 },
         angularVelocity: 0,
@@ -145,7 +146,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
         isKinematic,
         gravityScale,
         useGravity,
-      } as GameKitComponent);
+      }));
 
       await fileIO.writeScene(filename, scene);
       return {
@@ -187,8 +188,8 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
         };
       }
 
-      if (layer !== undefined) (collider as Record<string, unknown>).layer = layer;
-      if (mask !== undefined) (collider as Record<string, unknown>).mask = mask;
+      if (layer !== undefined) collider.layer = layer;
+      if (mask !== undefined) collider.mask = mask;
 
       await fileIO.writeScene(filename, scene);
       return {
@@ -304,7 +305,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const overlaps: { entityId: string; colliderType: string }[] = [];
 
       for (const entity of scene.entities) {
-        const transform = entity.components.find((c: any) => c.type === "Transform") as any;
+        const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
         if (!transform) continue;
 
         const aabbComp = entity.components.find((c: any): c is AabbColliderComponent => c.type === "AabbCollider");
