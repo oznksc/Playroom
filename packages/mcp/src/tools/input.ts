@@ -11,7 +11,10 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename (e.g., 'main.scene.json')"),
       action: z.string().min(1).describe("Action name (e.g., 'move_left', 'jump', 'fire')"),
       keys: z.array(z.string()).optional().describe("Keyboard keys (e.g., ['Space', 'w', 'W'])"),
-      touchControl: z.enum(["left", "right", "jump"]).optional().describe("Virtual touch button"),
+      touchControl: z
+        .enum(["left", "right", "jump", "fire", "action"])
+        .optional()
+        .describe("Virtual touch control: left/right for stick, jump/fire/action for on-screen buttons"),
       gamepad: z.string().optional().describe("Gamepad binding (e.g., 'A', 'LEFT_STICK_X')"),
     },
     async ({ scenePath, action, keys, touchControl, gamepad }) => {

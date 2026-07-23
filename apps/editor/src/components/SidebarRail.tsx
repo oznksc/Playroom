@@ -18,7 +18,8 @@ export type SidebarTabId =
   | "world"
   | "levels"
   | "guis"
-  | "components";
+  | "components"
+  | "recipes";
 
 export type SidebarRailItem = {
   id: SidebarTabId;
@@ -36,6 +37,7 @@ const ICONS: Record<SidebarTabId, React.ReactNode> = {
   levels: <Map size={15} strokeWidth={1.75} />,
   guis: <LayoutGrid size={15} strokeWidth={1.75} />,
   components: <Package size={15} strokeWidth={1.75} />,
+  recipes: <Sparkles size={15} strokeWidth={1.75} />,
 };
 
 type SidebarRailProps = {

@@ -21,7 +21,6 @@ export function TweenSection({ tween, onChange, open, onToggle, onRemove }: Prop
       onToggle={onToggle}
       removable={!!tween}
       onRemove={onRemove}
-      accent="cyan"
     >
       {tween ? (
         <>

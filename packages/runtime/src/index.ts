@@ -78,6 +78,7 @@ export {
   RIGID_BODY_SLEEP_ANGULAR_THRESHOLD
 } from "./rigid-body.js";
 export { usePlayerInput } from "./input.js";
+export type { ExtendedPlayerInput } from "./input.js";
 export { updateTween } from "./tween.js";
 export { updateFollowPath } from "./path.js";
 export { executeActions, transitionFsm, evaluateScriptEvent, type ScriptContext } from "./script.js";
@@ -89,8 +90,12 @@ export {
 } from "./audio.js";
 export {
   resolveActionKeys,
+  resolveGamepadBindings,
   playerInputFromPressedKeys,
+  extendedInputFromPressedKeys,
+  mergeGamepadIntoInput,
   type ResolvedActionKeys,
+  type ResolvedGamepadBindings,
 } from "./input-map.js";
 export {
   simulateSceneSteps,
@@ -99,6 +104,25 @@ export {
 } from "./simulate.js";
 export { VirtualJoystick } from "./joystick.js";
 export type { VirtualJoystickProps } from "./joystick.js";
+export { VirtualButton } from "./virtual-button.js";
+export type { VirtualButtonProps } from "./virtual-button.js";
+export { VirtualControls } from "./virtual-controls.js";
+export type { VirtualControlsProps, VirtualControlActions } from "./virtual-controls.js";
+export {
+  createGestureRecognizer,
+  gestureToJumpImpulse,
+  type GestureRecognizer,
+  type GestureRecognizerOptions,
+  type RecognizedGesture,
+  type GestureKind,
+  type SwipeDirection,
+} from "./gestures.js";
+export {
+  pollGamepad,
+  isGamepadApiAvailable,
+  isGamepadBindingActive,
+  type GamepadSnapshot,
+} from "./gamepad.js";
 export {
   createParticleEmitter,
   updateParticleEmitter,

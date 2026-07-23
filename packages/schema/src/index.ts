@@ -409,10 +409,14 @@ export const TimelineDataSchema = z.object({
 });
 export type TimelineData = z.infer<typeof TimelineDataSchema>;
 
+/** On-screen touch controls. left/right feed the joystick axis; jump/fire/action are discrete buttons. */
+export const TouchControlSchema = z.enum(["left", "right", "jump", "fire", "action"]);
+export type TouchControl = z.infer<typeof TouchControlSchema>;
+
 export const InputActionBindingSchema = z.object({
   action: z.string().min(1),
   keys: z.array(z.string().min(1)),
-  touchControl: z.enum(["left", "right", "jump"]).optional(),
+  touchControl: TouchControlSchema.optional(),
   gamepad: z.string().min(1).optional(),
 });
 export type InputActionBinding = z.infer<typeof InputActionBindingSchema>;
@@ -439,9 +443,11 @@ export type GameRulesConfig = z.infer<typeof GameRulesConfigSchema>;
 
 export const DEFAULT_INPUT_MAP: InputMapConfig = {
   bindings: [
-    { action: "move_left", keys: ["ArrowLeft", "a", "A"], touchControl: "left" },
-    { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right" },
-    { action: "jump", keys: ["ArrowUp", " ", "w", "W"], touchControl: "jump" },
+    { action: "move_left", keys: ["ArrowLeft", "a", "A"], touchControl: "left", gamepad: "LEFT_STICK_X_NEG" },
+    { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right", gamepad: "LEFT_STICK_X_POS" },
+    { action: "jump", keys: ["ArrowUp", " ", "w", "W"], touchControl: "jump", gamepad: "A" },
+    { action: "fire", keys: ["j", "J"], touchControl: "fire", gamepad: "B" },
+    { action: "action", keys: ["k", "K"], touchControl: "action", gamepad: "X" },
   ],
 };
 

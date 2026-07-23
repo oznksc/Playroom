@@ -51,7 +51,7 @@ export function GuiPanel({
   return (
     <Panel>
       <PanelHeader>
-        <PanelTitle accent="purple">GUI Nodes</PanelTitle>
+        <PanelTitle>GUI Nodes</PanelTitle>
         <div className="flex items-center gap-0.5">
           <IconButton size="sm" title="Add Text" onClick={() => onAddNode("Text")}>
             <Type size={12} />

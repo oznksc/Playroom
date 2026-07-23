@@ -109,7 +109,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
     <Panel className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
       <PanelHeader className="h-auto min-h-[38px] flex-wrap gap-2 py-1.5">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-          <PanelTitle accent="purple" className="mr-1">
+          <PanelTitle className="mr-1">
             <Sparkles size={12} className="text-accent-purple" /> Agent
           </PanelTitle>
           <Select

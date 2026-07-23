@@ -21,7 +21,6 @@ export function CircleColliderSection({ circleCollider, onChange, open, onToggle
       onToggle={onToggle}
       removable={!!circleCollider}
       onRemove={onRemove}
-      accent="green"
     >
       {circleCollider ? (
         <>

@@ -22,7 +22,6 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
       onToggle={onToggle}
       removable={!!tilemap}
       onRemove={onRemove}
-      accent="green"
     >
       {tilemap ? (
         <>

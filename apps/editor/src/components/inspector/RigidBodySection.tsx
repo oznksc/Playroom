@@ -21,7 +21,6 @@ export function RigidBodySection({ rigidBody, onChange, open, onToggle, onRemove
       onToggle={onToggle}
       removable={!!rigidBody}
       onRemove={onRemove}
-      accent="gold"
     >
       {rigidBody ? (
         <>

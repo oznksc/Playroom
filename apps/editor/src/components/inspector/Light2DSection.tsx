@@ -21,7 +21,6 @@ export function Light2DSection({ light2D, onChange, open, onToggle, onRemove }: 
       onToggle={onToggle}
       removable={!!light2D}
       onRemove={onRemove}
-      accent="gold"
     >
       {light2D ? (
         <>

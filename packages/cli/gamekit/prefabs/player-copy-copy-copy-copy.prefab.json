@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "player-copy-copy-copy-copy",
+  "name": "Player (copy) (copy) (copy) (copy)",
+  "sourceEntityName": "Player (copy) (copy) (copy) (copy)",
+  "components": [
+    {
+      "type": "Transform",
+      "position": {
+        "x": 187,
+        "y": 639
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 1,
+        "y": 1
+      }
+    },
+    {
+      "type": "Sprite",
+      "assetId": "player",
+      "width": 48,
+      "height": 64,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    {
+      "type": "AabbCollider",
+      "offset": {
+        "x": -24,
+        "y": -64
+      },
+      "size": {
+        "x": 48,
+        "y": 64
+      },
+      "isStatic": false
+    },
+    {
+      "type": "PlayerController",
+      "speed": 240,
+      "jumpVelocity": 620,
+      "gravity": 1800
+    }
+  ],
+  "createdAt": "2026-07-23T13:41:37.062Z"
+}

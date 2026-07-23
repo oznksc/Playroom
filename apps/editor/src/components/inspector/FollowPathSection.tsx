@@ -21,7 +21,6 @@ export function FollowPathSection({ followPath, onChange, open, onToggle, onRemo
       onToggle={onToggle}
       removable={!!followPath}
       onRemove={onRemove}
-      accent="green"
     >
       {followPath ? (
         <>

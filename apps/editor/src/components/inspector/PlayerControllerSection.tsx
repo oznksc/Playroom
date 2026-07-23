@@ -21,7 +21,6 @@ export function PlayerControllerSection({ player, onChange, open, onToggle, onRe
       onToggle={onToggle}
       removable={!!player}
       onRemove={onRemove}
-      accent="gold"
     >
       {player ? (
         <>

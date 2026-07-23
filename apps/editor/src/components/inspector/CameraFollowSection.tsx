@@ -23,7 +23,6 @@ export function CameraFollowSection({ camera, entityIds, currentEntityId, onChan
       onToggle={onToggle}
       removable={!!camera}
       onRemove={onRemove}
-      accent="cyan"
     >
       {camera ? (
         <>

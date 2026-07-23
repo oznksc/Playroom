@@ -18,7 +18,6 @@ export function TransformSection({ transform, onChange, open, onToggle }: Props)
       label="Transform"
       open={open}
       onToggle={onToggle}
-      accent="purple"
     >
       <div className="grid grid-cols-2 gap-1.5">
         <NumberField

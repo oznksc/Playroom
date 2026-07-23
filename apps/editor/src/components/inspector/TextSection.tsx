@@ -22,7 +22,6 @@ export function TextSection({ textComp, assets, onChange, open, onToggle, onRemo
       onToggle={onToggle}
       removable={!!textComp}
       onRemove={onRemove}
-      accent="purple"
     >
       {textComp ? (
         <>

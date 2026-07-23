@@ -76,7 +76,6 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
       onToggle={onToggle}
       removable={!!stateMachine}
       onRemove={onRemove}
-      accent="purple"
     >
       {stateMachine ? (
         <>
@@ -129,7 +128,7 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                     <Trash2 size={11} />
                   </IconButton>
                 </div>
-                <div className="space-y-1.5 pl-2 border-l-2 border-purple-500/20">
+                <div className="space-y-1.5 border-l border-white/[0.08] pl-2">
                   <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Transitions</span>
                   {Object.entries(st.on || {}).map(([evt, target]) => (
                     <div key={evt} className="flex items-center gap-1.5 text-[11px]">

@@ -1,4 +1,5 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, CameraFollowComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent, Vector2 } from "@gamekit/schema";
+import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, CameraFollowComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent, Vector2, TweenComponent, FollowPathComponent, ScriptComponent, StateMachineComponent } from "@gamekit/schema";
+import { DEFAULT_INPUT_MAP } from "@gamekit/schema";
 import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance, resolveGameRules, resolveFallDeathY, parseScene, GameKitSceneSchema, GameKitEntitySchema, GameKitComponentSchema } from "@gamekit/schema";
 import { z } from "zod";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -60,6 +61,7 @@ import { ProjectWizard } from "./components/ProjectWizard.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
 import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
+import { RecipesPanel } from "./components/RecipesPanel.js";
 import type { ProjectSnapshot, SaveState } from "./types.js";
 import { findComponent } from "./lib/components.js";
 import { useUndo } from "./hooks/useUndo.js";
@@ -90,14 +92,22 @@ import { updateAnimation } from "@gamekit/runtime/animate";
 import { playTimeline } from "@gamekit/runtime/timeline";
 import type { TimelineState } from "@gamekit/runtime/timeline";
 import { createAudioController, type AudioController } from "@gamekit/runtime/audio";
-import { playerInputFromPressedKeys } from "@gamekit/runtime/input-map";
+import {
+  resolveActionKeys,
+  extendedInputFromPressedKeys,
+  mergeGamepadIntoInput,
+} from "@gamekit/runtime/input-map";
+import { pollGamepad } from "@gamekit/runtime";
+import { updateTween } from "@gamekit/runtime";
+import { updateFollowPath } from "@gamekit/runtime";
+import { evaluateScriptEvent, transitionFsm } from "@gamekit/runtime/script";
 import { createCameraFollow } from "@gamekit/runtime/camera";
 
 const AUTO_SAVE_DELAY_MS = 1500;
-const MVP_SHOW_GUI_TOOLS = false;
+const MVP_SHOW_GUI_TOOLS = true;
 const MVP_SHOW_LEVELS = true;
-const MVP_SHOW_TIMELINE = false;
-const MVP_SHOW_CONSOLE = false;
+const MVP_SHOW_TIMELINE = true;
+const MVP_SHOW_CONSOLE = true;
 
 type SidebarTab = SidebarTabId;
 type BottomTab = "assets" | "timeline" | "console";
@@ -503,9 +513,14 @@ export function App() {
       }
       let workingScene: GameKitScene = sceneRef.current;
 
-      const input = playerInputFromPressedKeys(
+      const baseInput = extendedInputFromPressedKeys(
         pressedKeysRef.current,
         sceneRef.current?.inputMap,
+      );
+      const input = mergeGamepadIntoInput(
+        baseInput,
+        sceneRef.current?.inputMap,
+        pollGamepad(),
       );
 
       let changed = false;
@@ -683,6 +698,16 @@ export function App() {
             }
           }
 
+          // Tweens + FollowPath (parity with mobile/web runtimes)
+          const tweens = ent.components.filter((c): c is TweenComponent => c.type === "Tween");
+          for (const tween of tweens) {
+            updateTween(tween, transform, dt);
+          }
+          const followPath = ent.components.find((c): c is FollowPathComponent => c.type === "FollowPath");
+          if (followPath) {
+            updateFollowPath(followPath, transform, dt);
+          }
+
           // Update animations
           const anim = ent.components.find((c): c is AnimationComponent => c.type === "Animation");
           if (anim) {
@@ -697,11 +722,40 @@ export function App() {
           return ent;
         });
 
-        // Trigger enter/exit
+        // Trigger enter/exit + script/FSM parity
         const triggerUpdate = updateTriggerEvents(nextEntities, triggerStateRef.current);
         triggerStateRef.current = triggerUpdate.active;
         for (const event of triggerUpdate.events) {
           addConsoleLog("physics", `Trigger ${event.type}: ${event.triggerEntityId} with ${event.otherEntityId}`);
+          if (event.type === "enter") {
+            for (const entityId of [event.triggerEntityId, event.otherEntityId]) {
+              const entity = nextEntities.find((e) => e.id === entityId);
+              if (!entity) continue;
+              const context = {
+                entityId: entity.id,
+                entities: nextEntities,
+                rigidBodies: rigidBodyRefs.current,
+                playSound: (assetId: string) => audioControllerRef.current?.playAsset?.(assetId),
+                destroyEntity: (id: string) => {
+                  const idx = nextEntities.findIndex((e) => e.id === id);
+                  if (idx >= 0) nextEntities.splice(idx, 1);
+                },
+              };
+              const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+              if (sm) {
+                if (!sm.currentState) sm.currentState = sm.initialState;
+                const stateObj = sm.states.find((s) => s.name === sm.currentState);
+                if (stateObj?.on?.["triggerEnter"]) {
+                  transitionFsm(sm, stateObj.on["triggerEnter"], context);
+                }
+              }
+              const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+              if (script) {
+                evaluateScriptEvent("onTriggerEnter", script, context);
+                evaluateScriptEvent("triggerEnter", script, context);
+              }
+            }
+          }
         }
 
         // Collision enter/exit
@@ -1383,6 +1437,21 @@ export function App() {
   const openLevels = useCallback(() => openLeftPanel("levels"), [openLeftPanel]);
   const openAgent = useCallback(() => openLeftPanel("agent"), [openLeftPanel]);
   const openWorld = useCallback(() => openLeftPanel("world"), [openLeftPanel]);
+  const openGuis = useCallback(() => openLeftPanel("guis"), [openLeftPanel]);
+  const openGuiComponents = useCallback(() => openLeftPanel("components"), [openLeftPanel]);
+  const openRecipes = useCallback(() => openLeftPanel("recipes"), [openLeftPanel]);
+
+  const virtualTouchControls = useMemo(() => {
+    const map = scene?.inputMap?.bindings?.length ? scene.inputMap : DEFAULT_INPUT_MAP;
+    const set = new Set<"jump" | "fire" | "action">();
+    for (const b of map.bindings) {
+      if (b.touchControl === "jump" || b.touchControl === "fire" || b.touchControl === "action") {
+        set.add(b.touchControl);
+      }
+    }
+    if (set.size === 0) set.add("jump");
+    return [...set];
+  }, [scene?.inputMap]);
 
   const openContent = useCallback((tab: BottomTab = "assets") => {
     setActiveBottomTab(tab);
@@ -1490,9 +1559,37 @@ export function App() {
         id: "nav-world",
         label: "Open World Settings",
         section: "Navigate",
-        keywords: ["viewport", "gravity", "responsive", "scene"],
+        keywords: ["viewport", "gravity", "responsive", "scene", "input", "controls"],
         icon: ic(<Settings size={14} strokeWidth={1.75} />),
         run: openWorld,
+      },
+      ...(MVP_SHOW_GUI_TOOLS
+        ? ([
+            {
+              id: "nav-guis",
+              label: "Open GUI nodes",
+              section: "Navigate",
+              keywords: ["gui", "hud", "text", "button", "overlay"],
+              icon: ic(<LayoutTemplate size={14} strokeWidth={1.75} />),
+              run: openGuis,
+            },
+            {
+              id: "nav-gui-components",
+              label: "Open GUI components",
+              section: "Navigate",
+              keywords: ["gui", "component", "prefab", "widget"],
+              icon: ic(<Box size={14} strokeWidth={1.75} />),
+              run: openGuiComponents,
+            },
+          ] satisfies CommandItem[])
+        : []),
+      {
+        id: "nav-recipes",
+        label: "Open Recipes",
+        section: "Navigate",
+        keywords: ["recipe", "effect", "mechanic", "script", "animation", "gesture"],
+        icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
+        run: openRecipes,
       },
       {
         id: "tool-select",
@@ -1882,10 +1979,21 @@ export function App() {
           playViewPan={playViewPan}
           paintTileId={paintTileId}
           viewResetKey={viewResetKey}
+          virtualTouchControls={virtualTouchControls}
           onVirtualInput={(action, pressed) => {
-            const key = action === "left" ? "ArrowLeft" : action === "right" ? "ArrowRight" : " ";
-            if (pressed) pressedKeysRef.current.add(key);
-            else pressedKeysRef.current.delete(key);
+            const keys = resolveActionKeys(sceneRef.current?.inputMap);
+            const map: Record<typeof action, string[]> = {
+              left: keys.left,
+              right: keys.right,
+              jump: keys.jump,
+              fire: keys.fire.length ? keys.fire : ["__fire__"],
+              action: keys.action.length ? keys.action : ["__action__"],
+            };
+            const list = map[action] ?? [];
+            for (const key of list) {
+              if (pressed) pressedKeysRef.current.add(key);
+              else pressedKeysRef.current.delete(key);
+            }
           }}
           onZoomChange={setZoom}
           onSnapToggle={setSnap}
@@ -2075,13 +2183,20 @@ export function App() {
                     ? "prefabs"
                     : sidebarOpen && activeTab === "levels"
                       ? "levels"
-                      : sidebarOpen
-                        ? "hierarchy"
-                        : null
+                      : sidebarOpen && activeTab === "guis"
+                        ? "guis"
+                        : sidebarOpen && activeTab === "components"
+                          ? "gui-components"
+                          : sidebarOpen && activeTab === "recipes"
+                            ? "recipes"
+                            : sidebarOpen
+                              ? "hierarchy"
+                              : null
         }
         saveState={saveState}
         projectPath={isTauri ? projectPath : null}
         showLevels={MVP_SHOW_LEVELS}
+        showGuiTools={MVP_SHOW_GUI_TOOLS}
         onHierarchy={() => {
           if (sidebarOpen && activeTab === "entities") setSidebarOpen(false);
           else openHierarchy();
@@ -2102,6 +2217,26 @@ export function App() {
               }
             : undefined
         }
+        onGuis={
+          MVP_SHOW_GUI_TOOLS
+            ? () => {
+                if (sidebarOpen && activeTab === "guis") setSidebarOpen(false);
+                else openGuis();
+              }
+            : undefined
+        }
+        onGuiComponents={
+          MVP_SHOW_GUI_TOOLS
+            ? () => {
+                if (sidebarOpen && activeTab === "components") setSidebarOpen(false);
+                else openGuiComponents();
+              }
+            : undefined
+        }
+        onRecipes={() => {
+          if (sidebarOpen && activeTab === "recipes") setSidebarOpen(false);
+          else openRecipes();
+        }}
         onContent={() => {
           if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
             setBottomDrawerCollapsed(true);
@@ -2291,6 +2426,20 @@ export function App() {
               onAddNodeToComponent={addNodeToEditingComponent}
               onDeleteNodeFromComponent={deleteNodeFromEditingComponent}
               onPlaceInstance={addGuiComponentInstance}
+            />
+          )}
+          {activeTab === "recipes" && (
+            <RecipesPanel
+              scenePath={currentSceneFile}
+              selectedEntityId={selectedEntityId}
+              selectedEntityName={selectedEntity?.name}
+              onApplied={() => {
+                refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+              }}
+              onStatus={(message) => {
+                setStatus(message);
+                addConsoleLog("system", message);
+              }}
             />
           )}
         </div>
