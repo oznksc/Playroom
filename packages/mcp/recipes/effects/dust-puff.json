@@ -1,0 +1,31 @@
+{
+  "id": "dust-puff",
+  "name": "Dust Puff",
+  "category": "effect",
+  "description": "Low brown dust burst for landings, footsteps, or scrapes.",
+  "tags": ["particles", "vfx", "landing", "dust"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "emissionRate": { "type": "number", "default": 24 },
+    "maxParticles": { "type": "number", "default": 28 }
+  },
+  "components": [
+    {
+      "type": "ParticleSystem",
+      "maxParticles": "{{maxParticles}}",
+      "emissionRate": "{{emissionRate}}",
+      "lifetime": 0.45,
+      "speed": 80,
+      "gravityScale": 0.9,
+      "colorStart": "#c4a574",
+      "colorEnd": "#6b5b4a",
+      "sizeStart": 5,
+      "sizeEnd": 1,
+      "shape": "box",
+      "width": 24,
+      "height": 4,
+      "active": true
+    }
+  ]
+}

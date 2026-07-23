@@ -7,6 +7,8 @@ import type { ApprovalMode } from "../lib/approval-mode.js";
 
 const READ_ONLY_TOOLS = new Set([
   "list_skills",
+  "list_recipes",
+  "describe_recipe",
   "list_assets",
   "list_scenes",
   "list_entities",

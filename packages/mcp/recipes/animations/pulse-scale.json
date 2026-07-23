@@ -1,0 +1,27 @@
+{
+  "id": "pulse-scale",
+  "name": "Pulse Scale",
+  "category": "animation",
+  "description": "Scale pulse loop to draw attention to interactive objects.",
+  "tags": ["tween", "scale", "attention", "ui"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "minScale": { "type": "number", "default": 0.9 },
+    "maxScale": { "type": "number", "default": 1.1 },
+    "duration": { "type": "number", "default": 0.8 }
+  },
+  "components": [
+    {
+      "type": "Tween",
+      "property": "scale.x",
+      "startValue": "{{minScale}}",
+      "endValue": "{{maxScale}}",
+      "duration": "{{duration}}",
+      "easing": "easeInOut",
+      "loop": true,
+      "pingPong": true,
+      "active": true
+    }
+  ]
+}

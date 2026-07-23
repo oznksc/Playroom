@@ -1,0 +1,24 @@
+{
+  "id": "camera-follow-player",
+  "name": "Camera Follow Player",
+  "category": "mechanic",
+  "description": "Attach CameraFollow so the camera tracks this entity (or a given targetId).",
+  "tags": ["camera", "player", "follow"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "targetId": {
+      "type": "string",
+      "optional": true,
+      "description": "Entity id to follow; defaults to the entity the recipe is applied to"
+    },
+    "smoothing": { "type": "number", "default": 0.12 }
+  },
+  "components": [
+    {
+      "type": "CameraFollow",
+      "targetId": "{{targetId}}",
+      "smoothing": "{{smoothing}}"
+    }
+  ]
+}

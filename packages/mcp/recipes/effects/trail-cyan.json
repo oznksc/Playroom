@@ -1,0 +1,31 @@
+{
+  "id": "trail-cyan",
+  "name": "Cyan Trail",
+  "category": "effect",
+  "description": "Continuous cyan motion trail for dashes, projectiles, or speed power-ups.",
+  "tags": ["particles", "vfx", "trail", "dash"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "emissionRate": { "type": "number", "default": 28 },
+    "maxParticles": { "type": "number", "default": 36 }
+  },
+  "components": [
+    {
+      "type": "ParticleSystem",
+      "maxParticles": "{{maxParticles}}",
+      "emissionRate": "{{emissionRate}}",
+      "lifetime": 0.35,
+      "speed": 20,
+      "gravityScale": 0,
+      "colorStart": "#00f0ff",
+      "colorEnd": "#003344",
+      "sizeStart": 4,
+      "sizeEnd": 0,
+      "shape": "point",
+      "width": 0,
+      "height": 0,
+      "active": true
+    }
+  ]
+}

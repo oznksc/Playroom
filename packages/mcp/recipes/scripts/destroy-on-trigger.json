@@ -1,0 +1,22 @@
+{
+  "id": "destroy-on-trigger",
+  "name": "Destroy on Trigger",
+  "category": "script",
+  "description": "Destroy this entity when something enters its trigger collider.",
+  "tags": ["script", "trigger", "destroy", "pickup"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {},
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [{ "type": "destroyEntity" }]
+        }
+      ]
+    }
+  ],
+  "notes": "Entity needs an isTrigger collider for this to fire."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "switch-scene-on-trigger",
+  "name": "Switch Scene on Trigger",
+  "category": "script",
+  "description": "Load another scene when the player enters this trigger (door / exit).",
+  "tags": ["script", "trigger", "scene", "level", "door"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "sceneId": {
+      "type": "string",
+      "description": "Target scene id or filename (e.g. level-2)"
+    }
+  },
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [{ "type": "switchScene", "sceneId": "{{sceneId}}" }]
+        }
+      ]
+    }
+  ]
+}

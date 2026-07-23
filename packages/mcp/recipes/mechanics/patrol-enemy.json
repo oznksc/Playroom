@@ -1,0 +1,47 @@
+{
+  "id": "patrol-enemy",
+  "name": "Patrol Enemy",
+  "category": "mechanic",
+  "description": "Kinematic rigid body + path patrol + collider for a basic walking enemy.",
+  "tags": ["enemy", "patrol", "ai", "path"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "x1": { "type": "number", "default": 300 },
+    "y1": { "type": "number", "default": 300 },
+    "x2": { "type": "number", "default": 500 },
+    "y2": { "type": "number", "default": 300 },
+    "speed": { "type": "number", "default": 60 },
+    "size": { "type": "number", "default": 40 }
+  },
+  "components": [
+    {
+      "type": "AabbCollider",
+      "offset": { "x": -20, "y": -20 },
+      "size": { "x": "{{size}}", "y": "{{size}}" },
+      "isStatic": false,
+      "isTrigger": false,
+      "layer": 1,
+      "mask": 1
+    },
+    {
+      "type": "RigidBody",
+      "velocity": { "x": 0, "y": 0 },
+      "angularVelocity": 0,
+      "mass": 1,
+      "drag": 0,
+      "isKinematic": true,
+      "gravityScale": 0,
+      "useGravity": false
+    },
+    {
+      "type": "FollowPath",
+      "points": [
+        { "x": "{{x1}}", "y": "{{y1}}" },
+        { "x": "{{x2}}", "y": "{{y2}}" }
+      ],
+      "speed": "{{speed}}",
+      "loop": true
+    }
+  ]
+}

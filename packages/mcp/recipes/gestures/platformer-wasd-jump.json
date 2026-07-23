@@ -1,0 +1,31 @@
+{
+  "id": "platformer-wasd-jump",
+  "name": "Platformer WASD + Jump",
+  "category": "gesture",
+  "description": "Scene input map for left/right/jump with keyboard, touch buttons, and gamepad.",
+  "tags": ["input", "platformer", "keyboard", "touch", "gamepad"],
+  "targets": "scene",
+  "params": {},
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": ["ArrowLeft", "a", "A"],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": ["ArrowRight", "d", "D"],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": ["ArrowUp", " ", "w", "W"],
+        "touchControl": "jump",
+        "gamepad": "A"
+      }
+    ]
+  }
+}

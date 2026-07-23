@@ -31,3 +31,5 @@ Playroom scenes are JSON validated by `@gamekit/schema`.
 ## Skills
 
 JSON templates under `packages/mcp/skills/*.json` expand into full scenes via `apply_skill` / `gamekit skills apply`.
+
+Composable recipes under `packages/mcp/recipes/{effects,mechanics,scripts,animations,gestures}/` patch entities or scene input maps via `apply_recipe` / `gamekit recipes apply`.

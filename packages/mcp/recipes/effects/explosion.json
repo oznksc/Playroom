@@ -1,0 +1,32 @@
+{
+  "id": "explosion",
+  "name": "Explosion",
+  "category": "effect",
+  "description": "Fast orange/red radial burst for hits, barrels, or deaths.",
+  "tags": ["particles", "vfx", "hit", "explosion"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "emissionRate": { "type": "number", "default": 60 },
+    "maxParticles": { "type": "number", "default": 48 },
+    "speed": { "type": "number", "default": 160 }
+  },
+  "components": [
+    {
+      "type": "ParticleSystem",
+      "maxParticles": "{{maxParticles}}",
+      "emissionRate": "{{emissionRate}}",
+      "lifetime": 0.55,
+      "speed": "{{speed}}",
+      "gravityScale": 0.3,
+      "colorStart": "#ff6b35",
+      "colorEnd": "#ffd166",
+      "sizeStart": 8,
+      "sizeEnd": 0,
+      "shape": "point",
+      "width": 0,
+      "height": 0,
+      "active": true
+    }
+  ]
+}

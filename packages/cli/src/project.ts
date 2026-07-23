@@ -451,6 +451,85 @@ export async function listSkills(): Promise<SkillSummary[]> {
   }
 }
 
+// ── Recipes (effects / mechanics / scripts / animations / gestures) ──────────
+
+export type RecipeSummary = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  tags: string[];
+  targets: string;
+  paramKeys: string[];
+};
+
+export async function listRecipes(options?: {
+  category?: string;
+  tags?: string[];
+  query?: string;
+}): Promise<RecipeSummary[]> {
+  const { listRecipes: list } = await import("@gamekit/mcp/recipes");
+  return list({
+    category: options?.category as
+      | "effect"
+      | "mechanic"
+      | "script"
+      | "animation"
+      | "gesture"
+      | undefined,
+    tags: options?.tags,
+    query: options?.query,
+  });
+}
+
+export async function describeRecipe(recipeId: string) {
+  const { loadRecipe } = await import("@gamekit/mcp/recipes");
+  const recipe = await loadRecipe(recipeId);
+  if (!recipe) {
+    throw new Error(`Recipe not found: ${recipeId}`);
+  }
+  return recipe;
+}
+
+export async function applyRecipe(
+  root: string,
+  recipeId: string,
+  options: {
+    scenePath: string;
+    entityId?: string;
+    params?: Record<string, string | number | boolean>;
+  },
+): Promise<{
+  recipeId: string;
+  scenePath: string;
+  entityId?: string;
+  appliedComponents: string[];
+  appliedInputActions: string[];
+  skippedComponents: string[];
+  warnings: string[];
+}> {
+  const { loadRecipe, applyRecipeToScene } = await import("@gamekit/mcp/recipes");
+  const recipe = await loadRecipe(recipeId);
+  if (!recipe) {
+    throw new Error(`Recipe not found: ${recipeId}`);
+  }
+  if (recipe.targets === "entity" && !options.entityId) {
+    throw new Error(`Recipe "${recipeId}" targets an entity — provide --entity <id>`);
+  }
+
+  const sceneFile = options.scenePath.endsWith(".scene.json")
+    ? options.scenePath
+    : `${options.scenePath}.scene.json`;
+  const scene = await readScene(root, sceneFile);
+  const result = applyRecipeToScene(scene, recipe, {
+    entityId: options.entityId,
+    params: options.params,
+  });
+  result.scenePath = sceneFile;
+  await writeScene(root, scene, sceneFile);
+  return result;
+}
+
 export async function applySkill(
   root: string,
   skillId: string,

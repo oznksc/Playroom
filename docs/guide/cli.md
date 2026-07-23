@@ -25,6 +25,9 @@ node packages/cli/dist/index.js <command>
 | `mcp [project-path]` | Start MCP server over stdio |
 | `skills list` | List genre skill templates |
 | `skills apply <name>` | Create scene from skill |
+| `recipes list [--category] [--tag] [--query]` | List ready-made effect/mechanic/script/animation/gesture recipes |
+| `recipes describe <id>` | Show full recipe definition and params |
+| `recipes apply <id> --scene <file> [--entity <id>] [--param k=v]` | Apply a recipe to an entity or scene input map |
 | `search <query>` | Search project text |
 | `validate` | Schema-validate project + scenes |
 | `doctor` | Health report (assets, orphans, levels) |
@@ -42,5 +45,8 @@ node packages/cli/dist/index.js <command>
 | POST | `/api/build` | Trigger production pack |
 | GET | `/api/skills` | List skills |
 | POST | `/api/skills/apply` | Apply skill |
+| GET | `/api/recipes` | List recipes (`?category=&tag=&query=`) |
+| GET | `/api/recipes/:id` | Describe recipe |
+| POST | `/api/recipes/apply` | Apply recipe (`recipeId`, `scenePath`, `entityId?`, `params?`) |
 | GET/POST/DELETE | `/api/prefabs` | Prefab CRUD |
 | `/api/agent/*` | Agent chat, keys, history | BYOK agent |

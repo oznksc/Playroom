@@ -1,0 +1,37 @@
+{
+  "id": "hazard-on-contact",
+  "name": "Hazard on Contact",
+  "category": "mechanic",
+  "description": "Solid hazard collider + flag variable set on contact (spikes, lava, enemies).",
+  "tags": ["hazard", "damage", "spike", "enemy"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "width": { "type": "number", "default": 32 },
+    "height": { "type": "number", "default": 32 },
+    "damageKey": { "type": "string", "default": "hit" },
+    "damageValue": { "type": "number", "default": 1 }
+  },
+  "components": [
+    {
+      "type": "AabbCollider",
+      "offset": { "x": -16, "y": -16 },
+      "size": { "x": "{{width}}", "y": "{{height}}" },
+      "isStatic": true,
+      "isTrigger": true,
+      "layer": 1,
+      "mask": 1
+    },
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [
+            { "type": "setVariable", "key": "{{damageKey}}", "value": "{{damageValue}}" }
+          ]
+        }
+      ]
+    }
+  ]
+}

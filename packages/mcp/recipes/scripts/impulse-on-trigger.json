@@ -1,0 +1,30 @@
+{
+  "id": "impulse-on-trigger",
+  "name": "Impulse on Trigger",
+  "category": "script",
+  "description": "Apply a physics impulse to this entity when triggered (springs, launch pads).",
+  "tags": ["script", "trigger", "physics", "impulse", "spring"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "forceX": { "type": "number", "default": 0 },
+    "forceY": { "type": "number", "default": -800, "description": "Upward launch force" }
+  },
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [
+            {
+              "type": "applyImpulse",
+              "force": { "x": "{{forceX}}", "y": "{{forceY}}" }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": "Entity needs a RigidBody for applyImpulse to take effect."
+}

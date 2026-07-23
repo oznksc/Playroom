@@ -1,0 +1,24 @@
+{
+  "id": "score-label",
+  "name": "Score Label",
+  "category": "mechanic",
+  "description": "World-space Text label for HUD-style score or status display.",
+  "tags": ["ui", "text", "score", "hud"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "text": { "type": "string", "default": "Score: 0" },
+    "size": { "type": "number", "default": 20 },
+    "color": { "type": "string", "default": "#ffffff" }
+  },
+  "components": [
+    {
+      "type": "Text",
+      "text": "{{text}}",
+      "fontAssetId": "",
+      "size": "{{size}}",
+      "color": "{{color}}",
+      "align": "left"
+    }
+  ]
+}
