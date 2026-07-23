@@ -24,6 +24,9 @@ describe("MCP tool registration", () => {
       "simulate_runtime_step",
       "suggest_components",
       "apply_skill",
+      "list_recipes",
+      "describe_recipe",
+      "apply_recipe",
     ]));
   });
 });

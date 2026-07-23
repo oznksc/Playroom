@@ -1,0 +1,19 @@
+{
+  "id": "swipe-jump-hint",
+  "name": "Swipe Jump Hint",
+  "category": "gesture",
+  "description": "Documents upward-swipe jump intent by binding jump to touch jump control (runtime maps upward joystick swipe to jump).",
+  "tags": ["input", "touch", "swipe", "mobile", "jump"],
+  "targets": "scene",
+  "params": {},
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "jump",
+        "keys": [" "],
+        "touchControl": "jump"
+      }
+    ]
+  },
+  "notes": "Full swipe/pinch/hold recognizers are roadmap. Web runtime already maps strong upward joystick motion to jump."
+}

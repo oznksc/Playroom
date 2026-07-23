@@ -1,0 +1,40 @@
+{
+  "id": "bob-idle",
+  "name": "Bob Idle",
+  "category": "animation",
+  "description": "Gentle vertical bob loop for coins, power-ups, and floating props.",
+  "tags": ["tween", "idle", "pickup", "float"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "startY": {
+      "type": "number",
+      "default": 150,
+      "description": "Lower Y of the bob (set to entity Transform.position.y)"
+    },
+    "endY": {
+      "type": "number",
+      "default": 158,
+      "description": "Upper Y of the bob (typically startY + 8)"
+    },
+    "duration": {
+      "type": "number",
+      "default": 1.2,
+      "description": "Seconds for one half-cycle"
+    }
+  },
+  "components": [
+    {
+      "type": "Tween",
+      "property": "position.y",
+      "startValue": "{{startY}}",
+      "endValue": "{{endY}}",
+      "duration": "{{duration}}",
+      "easing": "easeInOut",
+      "loop": true,
+      "pingPong": true,
+      "active": true
+    }
+  ],
+  "notes": "Pass startY=entity.position.y and endY=entity.position.y+8 for a natural bob."
+}

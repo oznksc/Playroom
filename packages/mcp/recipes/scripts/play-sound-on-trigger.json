@@ -1,0 +1,27 @@
+{
+  "id": "play-sound-on-trigger",
+  "name": "Play Sound on Trigger",
+  "category": "script",
+  "description": "Play an audio asset when a trigger is entered.",
+  "tags": ["script", "trigger", "audio", "sfx"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "soundAssetId": {
+      "type": "string",
+      "default": "sfx-collect",
+      "description": "Audio asset id already imported into the project"
+    }
+  },
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [{ "type": "playSound", "assetId": "{{soundAssetId}}" }]
+        }
+      ]
+    }
+  ]
+}

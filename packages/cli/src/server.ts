@@ -18,6 +18,9 @@ import {
   removePrefab,
   listSkills,
   applySkill,
+  listRecipes,
+  describeRecipe,
+  applyRecipe,
   getSceneMtime,
 } from "./project.js";
 import { runDoctor } from "./doctor.js";
@@ -77,6 +80,13 @@ const PrefabRequestSchema = z.object({
 const SkillApplySchema = z.object({
   skillId: z.string().min(1, "skillId is required"),
   sceneName: z.string().optional(),
+});
+
+const RecipeApplySchema = z.object({
+  recipeId: z.string().min(1, "recipeId is required"),
+  scenePath: z.string().min(1, "scenePath is required"),
+  entityId: z.string().optional(),
+  params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
 async function handleRequest(options: EditorServerOptions, request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -283,6 +293,51 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     } catch (error) {
       sendJson(response, 400, {
         error: error instanceof Error ? error.message : "Apply skill failed",
+      });
+    }
+    return;
+  }
+
+  // Recipes (effects / mechanics / scripts / animations / gestures)
+  if (url.pathname === "/api/recipes" && request.method === "GET") {
+    const category = url.searchParams.get("category") ?? undefined;
+    const query = url.searchParams.get("query") ?? undefined;
+    const tags = url.searchParams.get("tag")
+      ? url.searchParams.get("tag")!.split(",").map((t) => t.trim()).filter(Boolean)
+      : undefined;
+    sendJson(response, 200, { recipes: await listRecipes({ category, query, tags }) });
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/recipes/") && request.method === "GET") {
+    const recipeId = decodeURIComponent(url.pathname.replace("/api/recipes/", ""));
+    if (!recipeId || recipeId.includes("/")) {
+      sendJson(response, 400, { error: "Invalid recipe id" });
+      return;
+    }
+    try {
+      const recipe = await describeRecipe(recipeId);
+      sendJson(response, 200, { recipe });
+    } catch (error) {
+      sendJson(response, 404, {
+        error: error instanceof Error ? error.message : "Recipe not found",
+      });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/recipes/apply" && request.method === "POST") {
+    const body = RecipeApplySchema.parse(JSON.parse((await readBody(request)).toString("utf8")));
+    try {
+      const result = await applyRecipe(options.root, body.recipeId, {
+        scenePath: body.scenePath,
+        entityId: body.entityId,
+        params: body.params,
+      });
+      sendJson(response, 200, { ok: true, ...result });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Apply recipe failed",
       });
     }
     return;

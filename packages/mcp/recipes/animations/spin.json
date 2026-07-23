@@ -1,0 +1,25 @@
+{
+  "id": "spin",
+  "name": "Spin",
+  "category": "animation",
+  "description": "Continuous 360° rotation for coins, saws, or loading props.",
+  "tags": ["tween", "rotation", "coin"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "duration": { "type": "number", "default": 2, "description": "Seconds per full spin" }
+  },
+  "components": [
+    {
+      "type": "Tween",
+      "property": "rotation",
+      "startValue": 0,
+      "endValue": 360,
+      "duration": "{{duration}}",
+      "easing": "linear",
+      "loop": true,
+      "pingPong": false,
+      "active": true
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "collect-on-touch",
+  "name": "Collect on Touch",
+  "category": "mechanic",
+  "description": "Trigger collider + optional score variable + optional sound + destroy self on pickup.",
+  "tags": ["pickup", "coin", "collectible", "score", "trigger"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "colliderSize": { "type": "number", "default": 24 },
+    "scoreKey": { "type": "string", "default": "score" },
+    "scoreValue": { "type": "number", "default": 1 },
+    "soundAssetId": {
+      "type": "string",
+      "optional": true,
+      "description": "Optional audio asset id; omitted action if empty"
+    }
+  },
+  "components": [
+    {
+      "type": "AabbCollider",
+      "offset": { "x": -12, "y": -12 },
+      "size": { "x": "{{colliderSize}}", "y": "{{colliderSize}}" },
+      "isStatic": true,
+      "isTrigger": true,
+      "layer": 1,
+      "mask": 1
+    },
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [
+            { "type": "setVariable", "key": "{{scoreKey}}", "value": "{{scoreValue}}" },
+            { "type": "playSound", "assetId": "{{soundAssetId}}" },
+            { "type": "destroyEntity" }
+          ]
+        }
+      ]
+    }
+  ]
+}

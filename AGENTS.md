@@ -18,12 +18,15 @@ server (`packages/mcp`) talk to it. Two runtimes consume the produced JSON:
 - `packages/cli` — `gamekit` binary. Subcommands: `init`, `import <file>`,
   `remove <id>`, `generate [--platform web|mobile]`, `editor [--port]`,
   `export [path] [--platform web|mobile]`, `mcp [project-path]`,
-  `skills list|apply <name>`. Source is TS, run via `tsx src/index.ts` in
-  dev (the `gamekit` script); the bin resolves to `dist/index.js` after build.
-- `packages/mcp` — `@modelcontextprotocol/sdk` server, 34 tools grouped by
-  scenes/entities/assets/project/skills/gui/gui-components, plus resources
-  and prompts. Skill templates live in `packages/mcp/skills/*.json`
-  (platformer, topdown, puzzle).
+  `skills list|apply <name>`, `recipes list|describe|apply`. Source is TS,
+  run via `tsx src/index.ts` in dev (the `gamekit` script); the bin
+  resolves to `dist/index.js` after build.
+- `packages/mcp` — `@modelcontextprotocol/sdk` server, tools grouped by
+  scenes/entities/assets/project/skills/recipes/gui/gui-components, plus
+  resources and prompts. Genre skill templates live in
+  `packages/mcp/skills/*.json` (platformer, topdown, puzzle). Composable
+  recipes (effects, mechanics, scripts, animations, gestures) live in
+  `packages/mcp/recipes/{effects,mechanics,scripts,animations,gestures}/`.
 - `apps/editor` — Vite/React (port 5173). Has a Tauri shell under
   `src-tauri/` that spawns `node packages/cli/dist/index.js editor` against
   the chosen project folder. `lib/api.ts` resolves endpoints to

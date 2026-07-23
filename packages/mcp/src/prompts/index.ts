@@ -118,13 +118,21 @@ export function registerPrompts(server: McpServer): void {
 GameKit uses an Entity-Component-System architecture. Here's how to get started:
 
 1. First, check the current project state using get_project
-2. List available skills using list_skills — these are ready-made game templates
+2. List available skills using list_skills — these are ready-made full game templates
 3. Apply a skill template using apply_skill to get a head start, OR create a scene manually:
    - Use create_scene to create a new scene
    - Use add_entity to add game objects
-   - Use add_component to add behavior (Transform, Sprite, AabbCollider, PlayerController, CameraFollow, Animation)
+   - Use apply_recipe for ready-made effects/mechanics/scripts/animations/input packs
+   - Use add_component only when no recipe fits
 4. Add game assets using add_asset and place image files in gamekit/assets/
 5. Use regenerate_manifest to update the asset registry
+
+Recipes (list_recipes / apply_recipe):
+- effects: sparkle, dust-puff, explosion, trail-cyan, heal-glow
+- animations: bob-idle, spin, pulse-scale, platform-float
+- scripts: destroy-on-trigger, play-sound-on-trigger, impulse-on-trigger, ...
+- mechanics: collect-on-touch, hazard-on-contact, patrol-enemy, moving-platform, ...
+- gestures: platformer-wasd-jump, topdown-wasd, virtual-joystick-move
 
 Available component types:
 - Transform: position, rotation, scale (required for all entities)
@@ -133,6 +141,7 @@ Available component types:
 - PlayerController: keyboard-controlled movement (speed, jumpVelocity, gravity)
 - CameraFollow: smooth camera tracking (targetId, smoothing)
 - Animation: frame-based sprite animation (assetId, frameWidth, frameHeight, totalFrames, framesPerSecond, loop)
+- Tween, FollowPath, Script, ParticleSystem, RigidBody, Text, and more
 
 What kind of game would you like to create?`,
           },

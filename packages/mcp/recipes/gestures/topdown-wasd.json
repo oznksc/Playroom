@@ -1,0 +1,31 @@
+{
+  "id": "topdown-wasd",
+  "name": "Top-down WASD",
+  "category": "gesture",
+  "description": "Four-direction movement input map for top-down games.",
+  "tags": ["input", "topdown", "keyboard", "touch"],
+  "targets": "scene",
+  "params": {},
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": ["ArrowLeft", "a", "A"],
+        "touchControl": "left"
+      },
+      {
+        "action": "move_right",
+        "keys": ["ArrowRight", "d", "D"],
+        "touchControl": "right"
+      },
+      {
+        "action": "move_up",
+        "keys": ["ArrowUp", "w", "W"]
+      },
+      {
+        "action": "move_down",
+        "keys": ["ArrowDown", "s", "S"]
+      }
+    ]
+  }
+}

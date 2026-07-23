@@ -1,0 +1,27 @@
+{
+  "id": "platform-float",
+  "name": "Platform Float",
+  "category": "animation",
+  "description": "Horizontal FollowPath patrol for moving platforms.",
+  "tags": ["path", "platform", "patrol", "movement"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "x1": { "type": "number", "default": 200, "description": "Path start X" },
+    "y1": { "type": "number", "default": 260, "description": "Path start Y" },
+    "x2": { "type": "number", "default": 400, "description": "Path end X" },
+    "y2": { "type": "number", "default": 260, "description": "Path end Y" },
+    "speed": { "type": "number", "default": 80 }
+  },
+  "components": [
+    {
+      "type": "FollowPath",
+      "points": [
+        { "x": "{{x1}}", "y": "{{y1}}" },
+        { "x": "{{x2}}", "y": "{{y2}}" }
+      ],
+      "speed": "{{speed}}",
+      "loop": true
+    }
+  ]
+}

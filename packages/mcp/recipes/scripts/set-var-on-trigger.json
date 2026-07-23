@@ -1,0 +1,27 @@
+{
+  "id": "set-var-on-trigger",
+  "name": "Set Variable on Trigger",
+  "category": "script",
+  "description": "Write a persistent game variable when a trigger is entered (flags, score, unlocks).",
+  "tags": ["script", "trigger", "state", "score", "flag"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "key": { "type": "string", "default": "score", "description": "Persistent variable key" },
+    "value": { "type": "number", "default": 1, "description": "Value to assign (not increment)" }
+  },
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "onTriggerEnter",
+          "actions": [
+            { "type": "setVariable", "key": "{{key}}", "value": "{{value}}" }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": "setVariable assigns absolute value; it does not increment."
+}

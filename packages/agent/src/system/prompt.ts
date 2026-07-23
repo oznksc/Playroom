@@ -26,6 +26,7 @@ const COMPONENT_CHEATSHEET = `
 Safety tools: snapshot_undo_point, restore_snapshot, diff_scene_versions, validate_scene, explain_scene
 Simulation: simulate_runtime_step — headless N-frame physics to verify player/platform setups
 Prefabs: create_prefab, instantiate_prefab, list_prefabs, remove_prefab
+Recipes: list_recipes, describe_recipe, apply_recipe — ready-made effects, mechanics, scripts, animations, input packs
 Bulk: batch_apply_edit — atomic multi-entity edits
 Scenes: load_scene, get_active_scene, define_scene_transition
 `.trim();
@@ -61,12 +62,23 @@ ${ctx.skills.map((s) => `- ${s.name}: ${s.description}`).join("\n")}
 To apply a skill, call the apply_skill tool with its name.`);
   }
 
+  sections.push(`## Recipes
+Prefer list_recipes / apply_recipe for ready-made building blocks instead of hand-assembling components:
+- effects: sparkle, dust-puff, explosion, trail-cyan, heal-glow
+- animations: bob-idle, spin, pulse-scale, platform-float
+- scripts: destroy-on-trigger, play-sound-on-trigger, impulse-on-trigger, switch-scene-on-trigger, set-var-on-trigger
+- mechanics: collect-on-touch, hazard-on-contact, patrol-enemy, moving-platform, camera-follow-player, score-label
+- gestures/input: platformer-wasd-jump, topdown-wasd, swipe-jump-hint, virtual-joystick-move
+
+Call describe_recipe when you need params. Entity recipes require entityId; scene recipes update inputMap.`);
+
   sections.push(`## Workspace
 Viewport: ${ctx.viewport.width}×${ctx.viewport.height} (${ctx.orientation})
 Gravity: (${ctx.gravity.x}, ${ctx.gravity.y})`);
 
   sections.push(`## Rules
 - Use the tools provided. Do not invent component types.
+- Prefer apply_recipe over manually stacking Tween/Script/ParticleSystem when a recipe exists.
 - Validate the scene with validate_scene after structural changes.
 - Prefer minimal, targeted edits over broad rewrites.
 - If a tool returns an error, read the message and adapt.

@@ -2,11 +2,35 @@
 import { basename, join, resolve } from "node:path";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
-import { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject, saveGameState, loadGameState, listSaveSlots } from "./project.js";
+import {
+  initProject,
+  importAsset,
+  removeAsset,
+  generateAssetRegistry,
+  exportProject,
+  saveGameState,
+  loadGameState,
+  listSaveSlots,
+  listRecipes,
+  describeRecipe,
+  applyRecipe,
+} from "./project.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
 
-export { initProject, importAsset, removeAsset, generateAssetRegistry, exportProject, saveGameState, loadGameState, listSaveSlots } from "./project.js";
+export {
+  initProject,
+  importAsset,
+  removeAsset,
+  generateAssetRegistry,
+  exportProject,
+  saveGameState,
+  loadGameState,
+  listSaveSlots,
+  listRecipes,
+  describeRecipe,
+  applyRecipe,
+} from "./project.js";
 export { startEditorServer } from "./server.js";
 
 async function main(argv: string[]): Promise<void> {
@@ -160,6 +184,75 @@ async function main(argv: string[]): Promise<void> {
         return;
       }
       throw new Error("Usage: gamekit skills <list|apply> [name]");
+    }
+    case "recipes": {
+      const subcommand = args[0];
+
+      if (subcommand === "list") {
+        const category = readOption(args, "--category");
+        const query = readOption(args, "--query");
+        const tagRaw = readOption(args, "--tag");
+        const tags = tagRaw ? tagRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined;
+        const recipes = await listRecipes({ category, query, tags });
+        if (recipes.length === 0) {
+          console.log("No recipes found.");
+          return;
+        }
+        for (const recipe of recipes) {
+          console.log(`  ${recipe.id} [${recipe.category}] — ${recipe.name}`);
+          console.log(`    ${recipe.description}`);
+          if (recipe.tags.length) {
+            console.log(`    tags: ${recipe.tags.join(", ")}`);
+          }
+          console.log("");
+        }
+        console.log(`${recipes.length} recipe(s)`);
+        return;
+      }
+
+      if (subcommand === "describe") {
+        const recipeId = args[1];
+        if (!recipeId) {
+          throw new Error("Usage: gamekit recipes describe <recipe-id>");
+        }
+        const recipe = await describeRecipe(recipeId);
+        console.log(JSON.stringify(recipe, null, 2));
+        return;
+      }
+
+      if (subcommand === "apply") {
+        const recipeId = args[1];
+        if (!recipeId) {
+          throw new Error(
+            "Usage: gamekit recipes apply <recipe-id> --scene <file> [--entity <id>] [--param key=value]...",
+          );
+        }
+        const scenePath = readOption(args, "--scene") ?? "main.scene.json";
+        const entityId = readOption(args, "--entity");
+        const params = parseParamFlags(args);
+        const result = await applyRecipe(cwd, recipeId, {
+          scenePath,
+          entityId,
+          params,
+        });
+        console.log(`Applied recipe "${result.recipeId}" → ${result.scenePath}`);
+        if (result.entityId) console.log(`  Entity: ${result.entityId}`);
+        if (result.appliedComponents.length) {
+          console.log(`  Components: ${result.appliedComponents.join(", ")}`);
+        }
+        if (result.appliedInputActions.length) {
+          console.log(`  Input actions: ${result.appliedInputActions.join(", ")}`);
+        }
+        if (result.skippedComponents.length) {
+          console.log(`  Skipped: ${result.skippedComponents.join(", ")}`);
+        }
+        for (const w of result.warnings) {
+          console.log(`  warning: ${w}`);
+        }
+        return;
+      }
+
+      throw new Error("Usage: gamekit recipes <list|describe|apply> ...");
     }
     case "search": {
       const query = args[0];
@@ -329,6 +422,28 @@ function readOption(args: string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
+/** Parse repeated `--param key=value` flags into a record. */
+function parseParamFlags(args: string[]): Record<string, string | number | boolean> {
+  const params: Record<string, string | number | boolean> = {};
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] !== "--param") continue;
+    const raw = args[i + 1];
+    if (!raw) continue;
+    const eq = raw.indexOf("=");
+    if (eq <= 0) continue;
+    const key = raw.slice(0, eq);
+    const value = raw.slice(eq + 1);
+    if (value === "true" || value === "false") {
+      params[key] = value === "true";
+    } else if (value !== "" && !Number.isNaN(Number(value)) && /^-?\d+(\.\d+)?$/.test(value)) {
+      params[key] = Number(value);
+    } else {
+      params[key] = value;
+    }
+  }
+  return params;
+}
+
 function printHelp(): void {
   console.log(`Playroom CLI
 
@@ -342,6 +457,9 @@ Usage:
   gamekit mcp [project-path]
   gamekit skills list
   gamekit skills apply <name>
+  gamekit recipes list [--category effect|mechanic|script|animation|gesture] [--tag pickup] [--query bob]
+  gamekit recipes describe <recipe-id>
+  gamekit recipes apply <recipe-id> --scene <file> [--entity <id>] [--param key=value]...
   gamekit search <query>
   gamekit validate
   gamekit doctor

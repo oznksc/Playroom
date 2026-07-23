@@ -1,0 +1,31 @@
+{
+  "id": "heal-glow",
+  "name": "Heal Glow",
+  "category": "effect",
+  "description": "Soft green rising particles for healing pickups or regen auras.",
+  "tags": ["particles", "vfx", "heal", "buff"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "emissionRate": { "type": "number", "default": 14 },
+    "maxParticles": { "type": "number", "default": 32 }
+  },
+  "components": [
+    {
+      "type": "ParticleSystem",
+      "maxParticles": "{{maxParticles}}",
+      "emissionRate": "{{emissionRate}}",
+      "lifetime": 0.9,
+      "speed": 30,
+      "gravityScale": -0.4,
+      "colorStart": "#4ade80",
+      "colorEnd": "#166534",
+      "sizeStart": 4,
+      "sizeEnd": 0,
+      "shape": "box",
+      "width": 20,
+      "height": 8,
+      "active": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "virtual-joystick-move",
+  "name": "Virtual Joystick Move",
+  "category": "gesture",
+  "description": "Touch left/right bindings for on-screen virtual joystick movement.",
+  "tags": ["input", "touch", "joystick", "mobile"],
+  "targets": "scene",
+  "params": {},
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": ["ArrowLeft"],
+        "touchControl": "left"
+      },
+      {
+        "action": "move_right",
+        "keys": ["ArrowRight"],
+        "touchControl": "right"
+      }
+    ]
+  }
+}

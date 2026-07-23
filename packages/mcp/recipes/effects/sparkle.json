@@ -1,0 +1,33 @@
+{
+  "id": "sparkle",
+  "name": "Sparkle",
+  "category": "effect",
+  "description": "Cyan/violet sparkle particle emitter for collectibles and magic highlights.",
+  "tags": ["particles", "vfx", "pickup", "magic"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "colorStart": { "type": "string", "default": "#00f0ff", "description": "Particle start color" },
+    "colorEnd": { "type": "string", "default": "#8b5cf6", "description": "Particle end color" },
+    "emissionRate": { "type": "number", "default": 18, "description": "Particles per second" },
+    "maxParticles": { "type": "number", "default": 40 }
+  },
+  "components": [
+    {
+      "type": "ParticleSystem",
+      "maxParticles": "{{maxParticles}}",
+      "emissionRate": "{{emissionRate}}",
+      "lifetime": 0.7,
+      "speed": 40,
+      "gravityScale": -0.15,
+      "colorStart": "{{colorStart}}",
+      "colorEnd": "{{colorEnd}}",
+      "sizeStart": 3,
+      "sizeEnd": 0,
+      "shape": "point",
+      "width": 0,
+      "height": 0,
+      "active": true
+    }
+  ]
+}
