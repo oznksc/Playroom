@@ -48,7 +48,8 @@ async function main(argv: string[]): Promise<void> {
     }
     case "editor": {
       const port = Number(readOption(args, "--port") ?? process.env.GAMEKIT_EDITOR_PORT ?? 4177);
-      await startEditorServer({ root: cwd, port });
+      const host = readOption(args, "--host") ?? process.env.GAMEKIT_EDITOR_HOST ?? "127.0.0.1";
+      await startEditorServer({ root: cwd, port, host });
       return;
     }
     case "export": {
@@ -333,7 +334,7 @@ function printHelp(): void {
 
 Usage:
   gamekit init [--name MyGame]
-  gamekit editor [--port 4177]
+  gamekit editor [--port 4177] [--host 127.0.0.1]
   gamekit import <file>
   gamekit remove <asset-id>
   gamekit export [path] [--platform web|mobile]

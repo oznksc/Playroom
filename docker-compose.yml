@@ -1,0 +1,19 @@
+services:
+  editor:
+    build: .
+    ports:
+      - "4177:4177"
+    environment:
+      - SERVICE=editor
+    volumes:
+      - demo-data:/demo
+
+  web-demo:
+    build: .
+    ports:
+      - "5174:5174"
+    environment:
+      - SERVICE=web-demo
+
+volumes:
+  demo-data:
