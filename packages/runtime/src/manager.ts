@@ -117,14 +117,28 @@ export class SceneManager {
     for (const file of project.scenes) {
       try {
         const json = sceneJsonLoader(file);
-        scenes[file] = loadScene(json, assets);
+        const loaded = loadScene(json, assets);
+        // Index by scene.id (script switchScene targets) and by filename for loaders.
+        scenes[loaded.scene.id] = loaded;
+        scenes[file] = loaded;
+        const bare = file.replace(/\.scene\.json$/i, "");
+        if (bare && bare !== loaded.scene.id) {
+          scenes[bare] = loaded;
+        }
       } catch {
         // Skip invalid scenes
       }
     }
 
     const sortedLevels = [...project.levels].sort((a, b) => a.order - b.order);
-    const firstSceneId = sortedLevels[0]?.sceneIds[0] ?? Object.keys(scenes)[0] ?? null;
+    const activeFile = project.activeScene;
+    const activeLoaded = activeFile ? scenes[activeFile] : undefined;
+    const firstSceneId =
+      activeLoaded?.scene.id ??
+      (activeFile && scenes[activeFile] ? activeFile : null) ??
+      sortedLevels[0]?.sceneIds[0] ??
+      Object.keys(scenes)[0] ??
+      null;
 
     this.state = {
       ...this.state,
@@ -138,13 +152,33 @@ export class SceneManager {
     this.notify();
   }
 
+  /** Resolve script/file/id aliases to a key present in `state.scenes`. */
+  resolveSceneKey(sceneId: string): string | null {
+    if (this.state.scenes[sceneId]) return sceneId;
+    const asFile = sceneId.endsWith(".scene.json") ? sceneId : `${sceneId}.scene.json`;
+    if (this.state.scenes[asFile]) return asFile;
+    for (const [key, loaded] of Object.entries(this.state.scenes)) {
+      if (loaded.scene.id === sceneId) return key;
+    }
+    return null;
+  }
+
   switchScene(sceneId: string): boolean {
-    if (!this.state.scenes[sceneId]) return false;
-    if (this.state.currentSceneId === sceneId) return false;
+    const resolved = this.resolveSceneKey(sceneId);
+    if (!resolved) return false;
+    const loaded = this.state.scenes[resolved];
+    const canonical = loaded?.scene.id ?? resolved;
+
+    const currentKey = this.state.currentSceneId;
+    if (currentKey) {
+      const current = this.state.scenes[currentKey];
+      if (current && current.scene.id === canonical) return false;
+      if (currentKey === canonical || currentKey === resolved) return false;
+    }
 
     this.state = {
       ...this.state,
-      currentSceneId: sceneId,
+      currentSceneId: canonical,
       isTransitioning: this.state.transition.type !== "none"
     };
 
@@ -249,6 +283,43 @@ export class SceneManager {
 
     this.notify();
     return true;
+  }
+
+  /**
+   * Point the manager at a level (and optional scene) without requiring unlock.
+   * Used by the editor play loop and hosts that already validated access.
+   */
+  setActiveLevel(levelId: string, sceneId?: string | null): boolean {
+    const level = this.state.levels.find((l) => l.id === levelId);
+    if (!level) return false;
+
+    const preferred = sceneId ?? level.sceneIds[0] ?? null;
+    const resolvedScene =
+      preferred && this.state.scenes[preferred]
+        ? preferred
+        : level.sceneIds.find((id) => this.state.scenes[id]) ?? this.state.currentSceneId;
+
+    this.state = {
+      ...this.state,
+      currentLevelId: levelId,
+      currentLevelIndex: this.state.levels.indexOf(level),
+      currentSceneId: resolvedScene,
+      isTransitioning: false,
+    };
+    this.notify();
+    return true;
+  }
+
+  /** Replace level unlock flags (e.g. after loading a save into a live manager). */
+  applyLevelUnlocks(unlocks: Array<{ id: string; unlocked: boolean }>): void {
+    const map = new Map(unlocks.map((u) => [u.id, u.unlocked]));
+    this.state = {
+      ...this.state,
+      levels: this.state.levels.map((l) =>
+        map.has(l.id) ? { ...l, unlocked: map.get(l.id)! } : l
+      ),
+    };
+    this.notify();
   }
 
   /** Unlock the next level after the given one (by order). Returns unlocked id or null. */

@@ -83,6 +83,12 @@ export { updateTween } from "./tween.js";
 export { updateFollowPath } from "./path.js";
 export { executeActions, transitionFsm, evaluateScriptEvent, type ScriptContext } from "./script.js";
 export {
+  RulesEngine,
+  type RulesEngineHost,
+  type RulesEngineState,
+  type RulesOutcomeKind,
+} from "./rules-engine.js";
+export {
   createAudioController,
   collectAudioSources,
   type AudioController,

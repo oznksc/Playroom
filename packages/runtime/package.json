@@ -60,6 +60,10 @@
     "./script": {
       "types": "./dist/script.d.ts",
       "import": "./dist/script.js"
+    },
+    "./rules-engine": {
+      "types": "./dist/rules-engine.d.ts",
+      "import": "./dist/rules-engine.js"
     }
   },
   "scripts": {

@@ -110,6 +110,14 @@ describe("SceneManager levels + save", () => {
     expect(manager.isLevelUnlocked("level-2")).toBe(false);
     expect(manager.switchLevel("level-2")).toBe(false);
 
+    // setActiveLevel ignores unlock (editor play / host override)
+    expect(manager.setActiveLevel("level-2", "b.scene.json")).toBe(true);
+    expect(manager.getState().currentLevelId).toBe("level-2");
+    expect(manager.getState().currentSceneId).toBe("b.scene.json");
+    // Still locked for switchLevel
+    manager.setActiveLevel("level-1", "a.scene.json");
+    expect(manager.switchLevel("level-2")).toBe(false);
+
     const unlocked = manager.completeLevel("level-1");
     expect(unlocked).toBe("level-2");
     expect(manager.isLevelUnlocked("level-2")).toBe(true);
