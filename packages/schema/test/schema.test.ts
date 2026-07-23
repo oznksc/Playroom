@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  createDefaultGuiComponents,
+  createDefaultMenuTransitions,
   createEmptyScene,
   createEntity,
   createLevel,
+  createMenuScene,
   createPrefab,
   createProject,
+  createSettingsScene,
+  createStarterGameplayScene,
+  findLevelForScene,
+  GUI_MENU_EVENTS,
   parsePrefab,
   parseScene,
   prefabToJson,
@@ -207,6 +214,42 @@ describe("level schema", () => {
     expect(level.order).toBe(2);
     expect(level.unlocked).toBe(false);
   });
+
+  it("finds level for scene by bare id or file name", () => {
+    const levels = [
+      createLevel("One", 1, ["main"]),
+      createLevel("Two", 2, ["cave.scene.json"]),
+    ];
+    expect(findLevelForScene(levels, "main.scene.json")?.id).toBe("one");
+    expect(findLevelForScene(levels, "main")?.id).toBe("one");
+    expect(findLevelForScene(levels, "cave.scene.json")?.id).toBe("two");
+    expect(findLevelForScene(levels, "missing")).toBeNull();
+  });
+
+  it("validates level onComplete and partial rules", () => {
+    const result = validateProject({
+      schemaVersion: 1,
+      name: "Progression",
+      scenes: ["main.scene.json"],
+      levels: [
+        {
+          id: "level-1",
+          name: "Level 1",
+          order: 1,
+          sceneIds: ["main.scene.json"],
+          unlocked: true,
+          onComplete: [{ type: "completeLevel" }, { type: "setVariable", key: "stage", value: 1 }],
+          rules: { lives: 5 },
+        },
+      ],
+      assets: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.levels[0].onComplete).toHaveLength(2);
+      expect(result.value.levels[0].rules?.lives).toBe(5);
+    }
+  });
 });
 
 describe("project schema", () => {
@@ -341,6 +384,79 @@ describe("prefabs and project transitions", () => {
       },
     ];
     expect(validateProject(project).ok).toBe(true);
+  });
+});
+
+describe("starter menu shell factories", () => {
+  it("createProject includes menu scenes, activeScene, guiComponents, transitions", () => {
+    const project = createProject("My Game");
+    expect(validateProject(project).ok).toBe(true);
+    expect(project.scenes).toEqual([
+      "menu.scene.json",
+      "settings.scene.json",
+      "main.scene.json",
+    ]);
+    expect(project.activeScene).toBe("menu.scene.json");
+    expect(project.guiComponents.length).toBeGreaterThanOrEqual(4);
+    expect(project.guiComponents.map((c) => c.id).sort()).toEqual(
+      ["game-over", "hud", "pause-menu", "you-win"].sort(),
+    );
+    expect(project.transitions?.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("createMenuScene has a filled example UI and switchScene handlers", () => {
+    const scene = createMenuScene("Coin Rush");
+    expect(validateScene(scene).ok).toBe(true);
+    expect(scene.id).toBe("menu");
+    // Rich layout: hero, actions, how-to, footer
+    expect(scene.gui.nodes.length).toBeGreaterThanOrEqual(12);
+    expect(scene.gui.nodes.some((n) => n.id === "menu-hero-panel")).toBe(true);
+    expect(scene.gui.nodes.some((n) => n.id === "menu-howto-panel")).toBe(true);
+    const play = scene.gui.nodes.find((n) => n.id === "btn-play");
+    const settings = scene.gui.nodes.find((n) => n.id === "btn-settings");
+    expect(play?.type).toBe("Button");
+    if (play?.type === "Button") expect(play.action).toBe(GUI_MENU_EVENTS.startGame);
+    if (settings?.type === "Button") expect(settings.action).toBe(GUI_MENU_EVENTS.openSettings);
+    const controller = scene.entities.find((e) => e.id === "menu-controller");
+    const script = controller?.components.find((c) => c.type === "Script");
+    expect(script?.type).toBe("Script");
+    if (script?.type === "Script") {
+      expect(script.handlers.some((h) => h.event === GUI_MENU_EVENTS.startGame)).toBe(true);
+      expect(script.handlers.some((h) => h.event === GUI_MENU_EVENTS.openSettings)).toBe(true);
+    }
+    const title = scene.gui.nodes.find((n) => n.id === "title-game");
+    if (title?.type === "Text") expect(title.text).toBe("Coin Rush");
+  });
+
+  it("createSettingsScene has filled Audio/Display/Controls sections", () => {
+    const scene = createSettingsScene();
+    expect(validateScene(scene).ok).toBe(true);
+    expect(scene.id).toBe("settings");
+    expect(scene.gui.nodes.length).toBeGreaterThanOrEqual(14);
+    expect(scene.gui.nodes.some((n) => n.id === "settings-audio-panel")).toBe(true);
+    expect(scene.gui.nodes.some((n) => n.id === "settings-display-panel")).toBe(true);
+    expect(scene.gui.nodes.some((n) => n.id === "settings-controls-panel")).toBe(true);
+    expect(scene.gui.nodes.some((n) => n.id === "btn-music")).toBe(true);
+    expect(scene.gui.nodes.some((n) => n.id === "btn-sfx")).toBe(true);
+    const back = scene.gui.nodes.find((n) => n.id === "btn-back");
+    if (back?.type === "Button") expect(back.action).toBe(GUI_MENU_EVENTS.backToMenu);
+  });
+
+  it("createStarterGameplayScene includes HUD instance and game controller", () => {
+    const scene = createStarterGameplayScene();
+    expect(validateScene(scene).ok).toBe(true);
+    expect(scene.id).toBe("main");
+    expect(scene.entities.some((e) => e.id === "player")).toBe(true);
+    expect(scene.gui.componentInstances.some((i) => i.componentId === "hud")).toBe(true);
+    expect(scene.entities.some((e) => e.id === "game-controller")).toBe(true);
+  });
+
+  it("default GUI components and transitions validate", () => {
+    for (const c of createDefaultGuiComponents()) {
+      expect(c.nodes.length).toBeGreaterThan(0);
+    }
+    const transitions = createDefaultMenuTransitions();
+    expect(transitions.every((t) => t.toSceneId && t.type)).toBe(true);
   });
 });
 
