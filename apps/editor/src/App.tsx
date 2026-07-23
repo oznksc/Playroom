@@ -97,9 +97,10 @@ import {
   extendedInputFromPressedKeys,
   mergeGamepadIntoInput,
 } from "@gamekit/runtime/input-map";
-import { pollGamepad, SceneManager, InMemoryStorage } from "@gamekit/runtime";
-import { updateTween } from "@gamekit/runtime";
-import { updateFollowPath } from "@gamekit/runtime";
+import { SceneManager, InMemoryStorage } from "@gamekit/runtime/manager";
+import { pollGamepad } from "@gamekit/runtime/gamepad";
+import { updateTween } from "@gamekit/runtime/tween";
+import { updateFollowPath } from "@gamekit/runtime/path";
 import { evaluateScriptEvent, transitionFsm } from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
 import { loadScene } from "@gamekit/runtime/scene";

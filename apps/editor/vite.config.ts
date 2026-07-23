@@ -11,6 +11,17 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // Prefer live schema source so touchControl (fire/action) stays in sync during dev.
+      "@gamekit/schema": path.resolve(__dirname, "../../packages/schema/src/index.ts"),
+    },
+  },
+  // Keep React Native out of the web editor bundle (runtime subpaths only).
+  optimizeDeps: {
+    exclude: ["react-native", "react-native-safe-area-context", "@shopify/react-native-skia"],
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
     },
   },
   server: {
