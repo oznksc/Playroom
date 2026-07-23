@@ -64,6 +64,18 @@
     "./rules-engine": {
       "types": "./dist/rules-engine.d.ts",
       "import": "./dist/rules-engine.js"
+    },
+    "./gamepad": {
+      "types": "./dist/gamepad.d.ts",
+      "import": "./dist/gamepad.js"
+    },
+    "./tween": {
+      "types": "./dist/tween.d.ts",
+      "import": "./dist/tween.js"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "import": "./dist/path.js"
     }
   },
   "scripts": {
