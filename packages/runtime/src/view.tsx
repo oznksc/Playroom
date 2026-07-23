@@ -1,11 +1,15 @@
 import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent } from "@gamekit/schema";
 import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont } from "@shopify/react-native-skia";
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
+
+// Skia packages may resolve a different @types/react (e.g. 19 vs 18) in monorepos;
+// cast Canvas so tsc accepts it without forcing a monorepo-wide React types upgrade.
+const SkiaCanvas = Canvas as unknown as ComponentType<{ style?: object; children?: ReactNode }>;
 export type TransitionOverlay = {
   opacity: number;
   color?: string;
@@ -143,7 +147,7 @@ export function GameKitView({
 
   return (
     <View style={styles.root}>
-      <Canvas style={styles.canvas}>
+      <SkiaCanvas style={styles.canvas}>
         <Group
           transform={[
             { translateX: viewportScale.offsetX },
@@ -259,7 +263,7 @@ export function GameKitView({
             opacity={transitionOverlay.opacity}
           />
         )}
-      </Canvas>
+      </SkiaCanvas>
     </View>
   );
 }
@@ -526,13 +530,26 @@ function TextNode({
   transform: TransformComponent;
   source: unknown;
 }): ReactElement | null {
-  const font = useFont(source as string, textComponent.size);
+  const assetFont = useFont(
+    textComponent.fontAssetId && source ? (source as string) : null,
+    textComponent.size,
+  );
+  const systemFontFamily = Platform.select({ ios: "Helvetica", default: "sans-serif" });
+  let systemFont: ReturnType<typeof matchFont> | null = null;
+  try {
+    systemFont = matchFont({
+      fontFamily: systemFontFamily ?? "sans-serif",
+      fontSize: textComponent.size,
+    });
+  } catch {
+    systemFont = null;
+  }
+  const font = assetFont ?? systemFont;
   if (!font) {
-    if (__DEV__) {
-      const msg = textComponent.fontAssetId
-        ? `[GameKit] Font asset "${textComponent.fontAssetId}" not loaded — text "${textComponent.text.slice(0, 20)}" hidden`
-        : `[GameKit] No fontAssetId — text "${textComponent.text.slice(0, 20)}" hidden (set fontAssetId to a loaded font)`;
-      console.warn(msg);
+    if (__DEV__ && textComponent.fontAssetId) {
+      console.warn(
+        `[GameKit] Font asset "${textComponent.fontAssetId}" not loaded — text "${textComponent.text.slice(0, 20)}" hidden`,
+      );
     }
     return null;
   }
