@@ -1,8 +1,10 @@
 import {
   GameKitComponentSchema,
+  resolveGameRules,
   type GameKitComponent,
   type GameKitEntity,
   type GameKitScene,
+  type GameRulesConfig,
   type ScriptComponent,
 } from "@gamekit/schema";
 import type {
@@ -183,7 +185,7 @@ function mergeInputMap(
   bindings: Array<{
     action: string;
     keys?: string[];
-    touchControl?: "left" | "right" | "jump";
+    touchControl?: "left" | "right" | "jump" | "fire" | "action";
     gamepad?: string;
   }>,
 ): string[] {
@@ -224,6 +226,8 @@ export function applyRecipeToScene(
   const warnings: string[] = [];
   const appliedComponents: string[] = [];
   const skippedComponents: string[] = [];
+  const appliedGameRulesKeys: string[] = [];
+  const appliedEntityTags: string[] = [];
   let appliedInputActions: string[] = [];
 
   const { values, warnings: paramWarnings } = resolveParams(recipe, options.params ?? {});
@@ -277,16 +281,51 @@ export function applyRecipeToScene(
       bindings: Array<{
         action: string;
         keys?: string[];
-        touchControl?: "left" | "right" | "jump";
+        touchControl?: "left" | "right" | "jump" | "fire" | "action";
         gamepad?: string;
       }>;
     };
     appliedInputActions = mergeInputMap(scene, substituted.bindings);
-  } else if (recipe.targets === "scene" && recipe.components.length === 0) {
-    // scene-only without inputMap is a no-op warn
-    if (!recipe.inputMap) {
-      warnings.push(`Recipe "${recipe.id}" has no scene-level mutations`);
+  }
+
+  if (recipe.gameRules && Object.keys(recipe.gameRules).length > 0) {
+    const patch = substituteParams(recipe.gameRules, values) as Record<string, unknown>;
+    const current = resolveGameRules(scene.gameRules);
+    const next: Record<string, unknown> = { ...current };
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined) continue;
+      const existing = next[key];
+      if (Array.isArray(existing) && Array.isArray(value)) {
+        next[key] = [...existing, ...value];
+      } else {
+        next[key] = value;
+      }
+      appliedGameRulesKeys.push(key);
     }
+    scene.gameRules = resolveGameRules(next as GameRulesConfig);
+  }
+
+  if (recipe.entityTags?.length && options.entityId) {
+    const entity = scene.entities.find((e) => e.id === options.entityId);
+    if (entity) {
+      const tags = new Set(entity.tags ?? []);
+      for (const t of recipe.entityTags) {
+        if (!tags.has(t)) {
+          tags.add(t);
+          appliedEntityTags.push(t);
+        }
+      }
+      entity.tags = [...tags];
+    }
+  }
+
+  if (
+    recipe.targets === "scene" &&
+    recipe.components.length === 0 &&
+    !recipe.inputMap &&
+    !recipe.gameRules
+  ) {
+    warnings.push(`Recipe "${recipe.id}" has no scene-level mutations`);
   }
 
   // Scene-target recipes may also attach components when entityId is provided
@@ -320,6 +359,8 @@ export function applyRecipeToScene(
     entityId: options.entityId,
     appliedComponents,
     appliedInputActions,
+    appliedGameRulesKeys,
+    appliedEntityTags,
     skippedComponents,
     warnings,
   };

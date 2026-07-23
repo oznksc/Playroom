@@ -3,7 +3,17 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createPrefab, createProject, projectToJson, sceneToJson, prefabToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createMenuScene,
+  createPrefab,
+  createProject,
+  createSettingsScene,
+  createStarterGameplayScene,
+  projectToJson,
+  sceneToJson,
+  prefabToJson,
+} from "@gamekit/schema";
 import { runDoctor } from "../src/doctor.js";
 
 let root: string;
@@ -15,7 +25,9 @@ beforeEach(async () => {
   await mkdir(join(gk, "assets"), { recursive: true });
   const project = createProject("Doctor");
   await writeFile(join(gk, "project.json"), projectToJson(project));
-  await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createEmptyScene("Main")));
+  await writeFile(join(gk, "scenes", "menu.scene.json"), sceneToJson(createMenuScene("Doctor")));
+  await writeFile(join(gk, "scenes", "settings.scene.json"), sceneToJson(createSettingsScene()));
+  await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createStarterGameplayScene()));
 });
 
 afterEach(async () => {
@@ -27,7 +39,7 @@ describe("runDoctor", () => {
     const report = await runDoctor(root);
     expect(report.ok).toBe(true);
     expect(report.summary.errors).toBe(0);
-    expect(report.summary.scenes).toBe(1);
+    expect(report.summary.scenes).toBe(3);
   });
 
   it("flags missing asset files", async () => {

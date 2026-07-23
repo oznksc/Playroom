@@ -27,6 +27,11 @@ describe("MCP tool registration", () => {
       "list_recipes",
       "describe_recipe",
       "apply_recipe",
+      "set_game_rules",
+      "add_objective",
+      "add_hazard",
+      "set_entity_tags",
+      "set_level_on_complete",
     ]));
   });
 });

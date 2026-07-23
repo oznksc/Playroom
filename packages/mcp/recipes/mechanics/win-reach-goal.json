@@ -1,0 +1,20 @@
+{
+  "id": "win-reach-goal",
+  "name": "Win: Reach Goal Tag",
+  "category": "mechanic",
+  "description": "Scene rules: win when the player touches an entity tagged goal (or custom tag). Unlocks next level by default.",
+  "tags": ["rules", "win", "goal", "reach", "objective"],
+  "targets": "scene",
+  "params": {
+    "tag": { "type": "string", "default": "goal", "description": "Goal entity tag" },
+    "objectiveId": { "type": "string", "default": "reach-goal", "description": "Objective id" }
+  },
+  "gameRules": {
+    "objectives": [
+      { "id": "{{objectiveId}}", "type": "reach", "tag": "{{tag}}" }
+    ],
+    "objectiveMode": "all",
+    "onWin": [{ "type": "completeLevel" }]
+  },
+  "notes": "Tag the flag/exit entity with goal (or use entity name containing goal/flag/finish)."
+}

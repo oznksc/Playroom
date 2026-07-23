@@ -34,6 +34,7 @@ import {
   Button,
   EmptyState,
   IconButton,
+  Input,
 } from "@/ui";
 
 // Section components
@@ -237,6 +238,27 @@ export function Inspector({
           </div>
 
           <div className="min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
+            <label className="flex flex-col gap-0.5 px-0.5">
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Tags
+              </span>
+              <Input
+                className="h-7 text-[10px] font-mono"
+                value={(entity.tags ?? []).join(", ")}
+                placeholder="coin, goal, hazard"
+                title="Comma-separated tags for game rules (collect/reach/hazard)"
+                onChange={(e) =>
+                  onChange((draft) => {
+                    const raw = e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean);
+                    draft.tags = raw.length > 0 ? raw : undefined;
+                  })
+                }
+              />
+            </label>
+
             {/* Transform — Always Present */}
             <TransformSection
               transform={transform}

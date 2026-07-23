@@ -13,18 +13,23 @@ export function registerSimulateTools(server: McpServer, fileIO: FileIO): void {
       left: z.boolean().optional().describe("Hold move_left for all steps"),
       right: z.boolean().optional().describe("Hold move_right for all steps"),
       jump: z.boolean().optional().describe("Hold jump for all steps"),
+      runRules: z
+        .boolean()
+        .optional()
+        .describe("Evaluate game rules + triggers each step (default true)"),
       writeBack: z
         .boolean()
         .optional()
         .describe("If true, write the simulated scene back to disk (default false)"),
     },
-    async ({ scenePath, steps, left, right, jump, writeBack }) => {
+    async ({ scenePath, steps, left, right, jump, runRules, writeBack }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
       const result = simulateSceneSteps(scene, {
         steps,
         input: { left: left ?? false, right: right ?? false, jump: jump ?? false },
+        runRules: runRules !== false,
       });
 
       if (writeBack) {
@@ -41,6 +46,10 @@ export function registerSimulateTools(server: McpServer, fileIO: FileIO): void {
                 scenePath: filename,
                 steps: result.steps,
                 writeBack: writeBack === true,
+                rulesOutcome: result.rulesOutcome,
+                rulesMessage: result.rulesMessage,
+                livesRemaining: result.livesRemaining,
+                collectProgress: result.collectProgress,
                 entities: result.entitySummaries,
               },
               null,

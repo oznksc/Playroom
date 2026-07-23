@@ -20,11 +20,10 @@ import type {
   TweenComponent,
   StateMachineComponent,
   GuiNode,
+  GuiComponent,
+  GuiComponentInstance,
 } from "@gamekit/schema";
-import {
-  resolveFallDeathY,
-  resolveGameRules,
-} from "@gamekit/schema";
+import { resolveGameRules } from "@gamekit/schema";
 import { createPlayerController } from "@gamekit/runtime/player";
 import { playTimeline, type TimelineState } from "@gamekit/runtime/timeline";
 import {
@@ -35,8 +34,15 @@ import {
   particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
-import { evaluateScriptEvent, transitionFsm } from "@gamekit/runtime/script";
+import { evaluateScriptEvent, transitionFsm, type ScriptContext } from "@gamekit/runtime/script";
+import { RulesEngine } from "@gamekit/runtime/rules-engine";
 import { updateFollowPath, updateTween, raycast } from "@gamekit/runtime";
+
+export type GameKitPhaserSceneOptions = {
+  guiComponents?: GuiComponent[];
+  sceneManager?: ScriptContext["sceneManager"];
+  onGuiAction?: (action: string) => void;
+};
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
 import { preloadEntityAssets } from "./asset-loader.js";
@@ -73,10 +79,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private won = false;
   private gameOver = false;
   private gameRules: ReturnType<typeof resolveGameRules> = resolveGameRules();
-  private fallY = 99999;
+  private rulesEngine: RulesEngine | null = null;
   private spawnPoint = { x: 80, y: 300 };
   private livesRemaining = 3;
-  private fallCooldown = 0;
   private livesText: Phaser.GameObjects.Text | null = null;
   /** Previous-frame jump key state for edge-triggered jumps (prevents rocket while held). */
   private jumpHeldLastFrame = false;
@@ -93,16 +98,26 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private touchAction = false;
   private guiObjects: Phaser.GameObjects.GameObject[] = [];
   private loadedFonts = new Map<string, string>();
+  private guiComponents: GuiComponent[] = [];
+  private sceneManager: ScriptContext["sceneManager"] | undefined;
+  private onGuiAction: ((action: string) => void) | undefined;
 
-  constructor(sceneData: GameKitScene, assetUrls: Record<string, string>, transition?: SceneTransitionDef) {
+  constructor(
+    sceneData: GameKitScene,
+    assetUrls: Record<string, string>,
+    transition?: SceneTransitionDef,
+    options?: GameKitPhaserSceneOptions,
+  ) {
     super("GameKitScene");
     this.sceneData = sceneData;
     this.assetUrls = assetUrls;
     this.activeEntities = structuredClone(sceneData.entities);
     this.gameRules = resolveGameRules(sceneData.gameRules);
-    this.fallY = resolveFallDeathY(sceneData, this.gameRules);
     this.livesRemaining = this.gameRules.lives > 0 ? this.gameRules.lives : 0;
     this.transitionData = transition ?? null;
+    this.guiComponents = options?.guiComponents ?? [];
+    this.sceneManager = options?.sceneManager;
+    this.onGuiAction = options?.onGuiAction;
     const player = sceneData.entities.find((e) =>
       e.components.some((c) => c.type === "PlayerController"),
     );
@@ -114,6 +129,78 @@ export class GameKitPhaserScene extends Phaser.Scene {
       : pt
         ? { ...pt.position }
         : { x: 80, y: 300 };
+  }
+
+  private ensureRulesEngine(): RulesEngine {
+    if (this.rulesEngine) return this.rulesEngine;
+    this.rulesEngine = new RulesEngine(
+      { ...this.sceneData, entities: this.activeEntities, gameRules: this.gameRules },
+      {
+        getEntities: () => this.activeEntities,
+        destroyEntity: (id) => this.destroyEntityById(id),
+        getPlayerTransforms: () => {
+          const out: Array<{ entityId: string; position: { x: number; y: number } }> = [];
+          for (const entity of this.activeEntities) {
+            if (!entity.components.some((c) => c.type === "PlayerController")) continue;
+            const binding = this.bindings.get(entity.id);
+            const transform = findComponent<TransformComponent>(entity, "Transform");
+            if (binding?.gameObject && typeof binding.gameObject.x === "number") {
+              out.push({
+                entityId: entity.id,
+                position: {
+                  x: binding.gameObject.x,
+                  y: (binding.gameObject as { y?: number }).y ?? transform?.position.y ?? 0,
+                },
+              });
+            } else if (transform) {
+              out.push({ entityId: entity.id, position: { ...transform.position } });
+            }
+          }
+          return out;
+        },
+        setPlayerPosition: (entityId, position) => {
+          const binding = this.bindings.get(entityId);
+          if (binding?.body) {
+            binding.body.reset(position.x, position.y);
+            binding.body.setVelocity(0, 0);
+          } else if (binding?.gameObject) {
+            (binding.gameObject as { x: number; y: number }).x = position.x;
+            (binding.gameObject as { x: number; y: number }).y = position.y;
+          }
+          const entity = this.activeEntities.find((e) => e.id === entityId);
+          const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+          if (transform) {
+            transform.position.x = position.x;
+            transform.position.y = position.y;
+          }
+        },
+        resetPlayerMotion: (entityId) => {
+          const binding = this.bindings.get(entityId);
+          if (binding?.body) binding.body.setVelocity(0, 0);
+          this.groundedGraceFrames = 0;
+          this.jumpHeldLastFrame = false;
+        },
+        playSound: (assetId) => {
+          for (const e of this.activeEntities) {
+            const audio = e.components.find((c) => c.type === "AudioSource");
+            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+              this.playSound(e.id);
+            }
+          }
+        },
+        onOutcome: (kind, message) => {
+          if (kind === "won") this.showWin(message);
+          else this.triggerGameOver(message);
+        },
+        onLivesChange: (lives) => {
+          if (lives === null) return;
+          this.livesRemaining = lives;
+          if (this.livesText) this.livesText.setText(`Lives: ${lives}`);
+        },
+      },
+      { initialSpawn: this.spawnPoint },
+    );
+    return this.rulesEngine;
   }
 
   preload(): void {
@@ -204,15 +291,24 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     this.setupAudio();
 
-    // Run onStart scripts
+    const engine = this.ensureRulesEngine();
+    engine.start();
+
+    // Run onStart scripts (with rules hooks)
     for (const entity of this.activeEntities) {
       const script = findComponent<ScriptComponent>(entity, "Script");
       if (script) {
-        evaluateScriptEvent("start", script, {
-          entityId: entity.id,
-          entities: this.activeEntities,
+        evaluateScriptEvent("start", script, engine.scriptContext(entity.id, {
           destroyEntity: (id) => this.destroyEntityById(id),
-        });
+          playSound: (assetId) => {
+            for (const e of this.activeEntities) {
+              const audio = e.components.find((c) => c.type === "AudioSource");
+              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                this.playSound(e.id);
+              }
+            }
+          },
+        }));
       }
     }
 
@@ -246,9 +342,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       return;
     }
 
-    if (this.fallCooldown > 0) {
-      this.fallCooldown = Math.max(0, this.fallCooldown - dt);
-    }
+    this.ensureRulesEngine().update(dt);
 
     if (this.playerBinding) {
       const { binding, controller, controllerData } = this.playerBinding;
@@ -303,11 +397,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         body.setVelocityY(-maxUp);
       }
 
-      // Fall death from scene.gameRules
-      const spriteY = (binding.gameObject as { y?: number }).y ?? body.center?.y ?? body.y;
-      if (this.gameRules.fallDeathEnabled && this.fallCooldown <= 0 && spriteY >= this.fallY) {
-        this.handleFallDeath(body);
-      }
+      // Fall / hazards evaluated in RulesEngine.update (uses player transforms from bindings)
 
       controller.state.velocity.x = body.velocity.x;
       controller.state.velocity.y = body.velocity.y;
@@ -447,15 +537,55 @@ export class GameKitPhaserScene extends Phaser.Scene {
     );
   }
 
-  /** Screen-space GUI / HUD from scene.gui.nodes */
+  /** Screen-space GUI / HUD from scene.gui.nodes + componentInstances */
   private setupGuiHud(): void {
     for (const obj of this.guiObjects) obj.destroy();
     this.guiObjects = [];
+
+    const componentMap = new Map(this.guiComponents.map((c) => [c.id, c]));
+    for (const instance of this.sceneData.gui?.componentInstances ?? []) {
+      if (instance.visible === false) continue;
+      const component = componentMap.get(instance.componentId);
+      if (!component) continue;
+      for (const node of component.nodes) {
+        if (node.visible === false) continue;
+        const offsetNode = offsetGuiNode(node, instance);
+        this.guiObjects.push(...this.createGuiNodeObjects(offsetNode));
+      }
+    }
+
     const nodes = this.sceneData.gui?.nodes ?? [];
     for (const node of nodes) {
       if (node.visible === false) continue;
       this.guiObjects.push(...this.createGuiNodeObjects(node));
     }
+  }
+
+  private buildGuiScriptContext(entityId: string): ScriptContext {
+    return {
+      entityId,
+      entities: this.activeEntities,
+      sceneManager: this.sceneManager,
+      destroyEntity: (id) => this.destroyEntityById(id),
+      playSound: (assetId) => {
+        for (const e of this.activeEntities) {
+          const audio = e.components.find((c) => c.type === "AudioSource");
+          if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+            this.playSound(e.id);
+          }
+        }
+      },
+    };
+  }
+
+  private dispatchGuiAction(action: string): void {
+    for (const entity of this.activeEntities) {
+      const script = findComponent<ScriptComponent>(entity, "Script");
+      if (script) {
+        evaluateScriptEvent(action, script, this.buildGuiScriptContext(entity.id));
+      }
+    }
+    this.onGuiAction?.(action);
   }
 
   private createGuiNodeObjects(node: GuiNode): Phaser.GameObjects.GameObject[] {
@@ -497,31 +627,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setDepth(1501);
       if (node.action) {
         bg.on("pointerup", () => {
-          // Dispatch as a scene-level script-friendly event name
-          for (const entity of this.activeEntities) {
-            const script = findComponent<ScriptComponent>(entity, "Script");
-            if (script) {
-              evaluateScriptEvent(node.action!, script, {
-                entityId: entity.id,
-                entities: this.activeEntities,
-                destroyEntity: (id) => this.destroyEntityById(id),
-                playSound: (assetId) => {
-                  // Find first entity with this asset and play
-                  for (const [eid, binding] of this.bindings) {
-                    void binding;
-                    void eid;
-                  }
-                  // Best-effort: play by matching AudioSource asset
-                  for (const e of this.activeEntities) {
-                    const audio = e.components.find((c) => c.type === "AudioSource");
-                    if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
-                      this.playSound(e.id);
-                    }
-                  }
-                },
-              });
-            }
-          }
+          this.dispatchGuiAction(node.action!);
         });
       }
       created.push(bg, label);
@@ -574,22 +680,15 @@ export class GameKitPhaserScene extends Phaser.Scene {
     const entity = this.activeEntities.find((e) => e.id === matchedId);
     if (!entity) return;
 
-    const name = entity.name.toLowerCase();
-    const isCoin =
-      name.includes("coin") ||
-      name.includes("pickup") ||
-      name.includes("gem") ||
-      name.includes("target");
-    const isGoal = name.includes("goal") || name.includes("flag") || name.includes("finish");
-
     // Detach immediately so the same overlap cannot fire twice in one frame
     this.bindings.delete(matchedId);
 
+    const engine = this.ensureRulesEngine();
+    const playerId = this.playerBinding?.binding.entity.id;
+
     const script = findComponent<ScriptComponent>(entity, "Script");
     if (script) {
-      const ctx = {
-        entityId: entity.id,
-        entities: this.activeEntities,
+      const ctx = engine.scriptContext(entity.id, {
         destroyEntity: (id: string) => this.destroyEntityById(id),
         playSound: (assetId: string) => {
           for (const e of this.activeEntities) {
@@ -599,7 +698,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
             }
           }
         },
-      };
+      });
       const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
       if (sm && sm.currentState) {
         const stateObj = sm.states.find((s) => s.name === sm.currentState);
@@ -611,22 +710,15 @@ export class GameKitPhaserScene extends Phaser.Scene {
       evaluateScriptEvent("triggerEnter", script, ctx);
     }
 
-    if (isCoin) {
+    // Rules engine: collect / reach / tagContact (replaces name heuristics)
+    const beforeDestroyed = !this.activeEntities.some((e) => e.id === matchedId);
+    engine.handleTriggerEnter(matchedId, playerId);
+    if (!beforeDestroyed && !this.activeEntities.some((e) => e.id === matchedId)) {
+      // Entity was collected — count for HUD coin display
       this.coinsCollected += 1;
-      this.destroyEntityById(entity.id);
       this.refreshHud();
-      if (this.totalCoins > 0 && this.coinsCollected >= this.totalCoins && !this.won) {
-        this.showWin("All coins collected! You win!");
-      }
-      return;
-    }
-
-    if (isGoal && !this.won) {
-      this.showWin(
-        this.totalCoins > 0
-          ? `Goal reached! Coins: ${this.coinsCollected}/${this.totalCoins}`
-          : "Goal reached! You win!",
-      );
+    } else if (this.bindings.has(matchedId) === false && this.activeEntities.some((e) => e.id === matchedId)) {
+      // Trigger handled but entity kept (e.g. goal) — leave entity without re-binding
     }
   }
 
@@ -651,7 +743,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private showWin(message: string): void {
-    if (this.gameOver) return;
+    if (this.gameOver || this.won) return;
     this.won = true;
     if (this.playerBinding?.binding.body) {
       this.playerBinding.binding.body.setVelocity(0, 0);
@@ -660,39 +752,14 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.showOverlay(message || this.gameRules.winMessage, "#00f0ff");
   }
 
-  private handleFallDeath(body: Phaser.Physics.Arcade.Body): void {
+  private triggerGameOver(message?: string): void {
     if (this.won || this.gameOver) return;
-
-    if (this.gameRules.onFall === "respawn") {
-      const unlimited = this.gameRules.lives <= 0;
-      if (!unlimited) {
-        this.livesRemaining = Math.max(0, this.livesRemaining - 1);
-        if (this.livesText) {
-          this.livesText.setText(`Lives: ${this.livesRemaining}`);
-        }
-      }
-      if (!unlimited && this.livesRemaining <= 0) {
-        this.triggerGameOver();
-        return;
-      }
-      body.reset(this.spawnPoint.x, this.spawnPoint.y);
-      body.setVelocity(0, 0);
-      this.groundedGraceFrames = 0;
-      this.fallCooldown = 0.45;
-      this.jumpHeldLastFrame = false;
-      return;
-    }
-
-    this.triggerGameOver();
-  }
-
-  private triggerGameOver(): void {
     this.gameOver = true;
     if (this.playerBinding?.binding.body) {
       this.playerBinding.binding.body.setVelocity(0, 0);
       this.playerBinding.binding.body.moves = false;
     }
-    this.showOverlay(this.gameRules.gameOverMessage, "#ff6b8a");
+    this.showOverlay(message || this.gameRules.gameOverMessage, "#ff6b8a");
   }
 
   private showOverlay(message: string, color: string): void {
@@ -993,4 +1060,16 @@ export class GameKitPhaserScene extends Phaser.Scene {
       }
     }
   }
+}
+
+function offsetGuiNode(node: GuiNode, instance: GuiComponentInstance): GuiNode {
+  const overrides = instance.nodeOverrides?.[node.id] as Record<string, unknown> | undefined;
+  const base = {
+    ...node,
+    x: node.x + instance.x,
+    y: node.y + instance.y,
+  };
+  if (!overrides) return base as GuiNode;
+  const { id: _id, type: _type, ...safe } = overrides;
+  return { ...base, ...safe } as GuiNode;
 }

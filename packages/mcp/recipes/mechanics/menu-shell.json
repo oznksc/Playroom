@@ -1,0 +1,12 @@
+{
+  "id": "menu-shell",
+  "name": "Menu Shell (docs)",
+  "category": "mechanic",
+  "description": "Documents the starter menu shell: menu + settings scenes, HUD/pause/game-over/you-win guiComponents, and button actions (startGame, openSettings, backToMenu). Shipped by gamekit init; this recipe is a discoverable agent hint (no-op merge).",
+  "tags": ["menu", "gui", "settings", "hud", "pause", "navigation"],
+  "targets": "scene",
+  "merge": "require-missing",
+  "params": {},
+  "components": [],
+  "notes": "Prefer gamekit init for full shell (menu.scene.json, settings.scene.json, activeScene, transitions). Button actions: startGame→main, openSettings→settings, backToMenu→menu, resumeGame, restartLevel, retryGame, nextLevel."
+}

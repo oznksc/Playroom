@@ -4,7 +4,8 @@
   "scenes": [
     "main.scene.json",
     "top-down.scene.json",
-    "top-down-shooter.scene.json"
+    "top-down-shooter.scene.json",
+    "physics-puzzle.scene.json"
   ],
   "levels": [
     {
@@ -15,9 +16,16 @@
         "main"
       ],
       "unlocked": true
+    },
+    {
+      "id": "deneme",
+      "name": "deneme",
+      "order": 2,
+      "sceneIds": [],
+      "unlocked": false
     }
   ],
   "assets": [],
   "guiComponents": [],
-  "activeScene": "top-down-shooter.scene.json"
+  "activeScene": "physics-puzzle.scene.json"
 }

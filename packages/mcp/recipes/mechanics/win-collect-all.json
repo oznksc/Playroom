@@ -1,0 +1,20 @@
+{
+  "id": "win-collect-all",
+  "name": "Win: Collect All Tagged",
+  "category": "mechanic",
+  "description": "Scene rules: win when all entities with the given tag are collected (default coin). Sets completeLevel on win.",
+  "tags": ["rules", "win", "collect", "coin", "objective"],
+  "targets": "scene",
+  "params": {
+    "tag": { "type": "string", "default": "coin", "description": "Entity tag to collect" },
+    "objectiveId": { "type": "string", "default": "collect-all", "description": "Objective id" }
+  },
+  "gameRules": {
+    "objectives": [
+      { "id": "{{objectiveId}}", "type": "collect", "tag": "{{tag}}", "count": 0 }
+    ],
+    "objectiveMode": "all",
+    "onWin": [{ "type": "completeLevel" }]
+  },
+  "notes": "Tag collectibles with the same tag (entity.tags or name containing coin/pickup/gem)."
+}

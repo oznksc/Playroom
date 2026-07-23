@@ -3,7 +3,14 @@ import { mkdir, writeFile, rm, readFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createMenuScene,
+  createProject,
+  createSettingsScene,
+  createStarterGameplayScene,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { buildProject } from "../src/build.js";
 
 let root: string;
@@ -15,7 +22,9 @@ beforeEach(async () => {
   await mkdir(join(gk, "assets"), { recursive: true });
   await mkdir(join(gk, "generated"), { recursive: true });
   await writeFile(join(gk, "project.json"), projectToJson(createProject("BuildTest")));
-  await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createEmptyScene("Main")));
+  await writeFile(join(gk, "scenes", "menu.scene.json"), sceneToJson(createMenuScene("BuildTest")));
+  await writeFile(join(gk, "scenes", "settings.scene.json"), sceneToJson(createSettingsScene()));
+  await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createStarterGameplayScene()));
   await writeFile(join(gk, "generated", "assets.ts"), "export const gamekitAssets = {} as const;\n");
 });
 

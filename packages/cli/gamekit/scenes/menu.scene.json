@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "id": "menu",
+  "name": "Menu",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#101820"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "menu-controller",
+      "name": "Menu Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "startGame",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "main"
+                }
+              ]
+            },
+            {
+              "event": "openSettings",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "settings"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [
+      {
+        "id": "title-game",
+        "type": "Text",
+        "x": 24,
+        "y": 180,
+        "width": 342,
+        "height": 48,
+        "text": "Playroom Game",
+        "fontSize": 28,
+        "color": "#00f0ff",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "subtitle-hint",
+        "type": "Text",
+        "x": 24,
+        "y": 240,
+        "width": 342,
+        "height": 28,
+        "text": "Tap Play to start",
+        "fontSize": 14,
+        "color": "#94a3b8",
+        "align": "center",
+        "visible": true
+      },
+      {
+        "id": "btn-play",
+        "type": "Button",
+        "x": 95,
+        "y": 340,
+        "width": 200,
+        "height": 48,
+        "text": "Play",
+        "action": "startGame",
+        "fontSize": 16,
+        "color": "#f8fafc",
+        "backgroundColor": "#1e293b",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "btn-settings",
+        "type": "Button",
+        "x": 95,
+        "y": 404,
+        "width": 200,
+        "height": 48,
+        "text": "Settings",
+        "action": "openSettings",
+        "fontSize": 16,
+        "color": "#f8fafc",
+        "backgroundColor": "#1e293b",
+        "interactive": true,
+        "visible": true
+      }
+    ],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [],
+    "onLose": []
+  }
+}

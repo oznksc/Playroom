@@ -1,5 +1,17 @@
-import type { GameKitLevel } from "@gamekit/schema";
-import { Plus, Trash2, Lock, Unlock, GripVertical, FileCode, Check, X } from "lucide-react";
+import type { GameKitLevel, ScriptAction } from "@gamekit/schema";
+import {
+  Plus,
+  Trash2,
+  Lock,
+  Unlock,
+  GripVertical,
+  FileCode,
+  Check,
+  X,
+  Trophy,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { useState } from "react";
 import {
   Panel,
@@ -15,6 +27,16 @@ import {
   cn,
 } from "@/ui";
 
+const ON_COMPLETE_ACTIONS = [
+  "completeLevel",
+  "nextLevel",
+  "nextScene",
+  "unlockLevel",
+  "setVariable",
+  "incrementVariable",
+  "switchScene",
+] as const;
+
 type LevelPanelProps = {
   levels: GameKitLevel[];
   scenes: string[];
@@ -26,6 +48,8 @@ type LevelPanelProps = {
   onReorderLevels: (levels: GameKitLevel[]) => void;
   onAssignScene: (levelId: string, sceneId: string) => void;
   onRemoveScene: (levelId: string, sceneId: string) => void;
+  /** Replace a level (onComplete, rules, etc.) while preserving id. */
+  onUpdateLevel: (levelId: string, patch: Partial<GameKitLevel>) => void;
 };
 
 function sceneLabel(sceneId: string) {
@@ -43,9 +67,11 @@ export function LevelPanel({
   onReorderLevels,
   onAssignScene,
   onRemoveScene,
+  onUpdateLevel,
 }: LevelPanelProps) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
 
   function handleCreateSubmit() {
     const name = newName.trim();
@@ -141,6 +167,9 @@ export function LevelPanel({
         ) : (
           sortedLevels.map((level) => {
             const active = level.id === currentLevelId;
+            const rulesOpen = expandedRules[level.id] ?? active;
+            const onComplete = level.onComplete ?? [];
+            const nextLevel = sortedLevels.find((l) => l.order > level.order);
             return (
               <div
                 key={level.id}
@@ -157,7 +186,7 @@ export function LevelPanel({
                   "rounded-[12px] border p-2 transition-colors",
                   active
                     ? "border-accent/40 bg-[rgba(0,240,255,0.1)]"
-                    : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]"
+                    : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]",
                 )}
               >
                 <div className="mb-1.5 flex items-center gap-1.5">
@@ -166,6 +195,11 @@ export function LevelPanel({
                   <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-text-primary">
                     {level.name}
                   </span>
+                  {!level.unlocked && (
+                    <Badge variant="muted" className="text-[9px]">
+                      locked
+                    </Badge>
+                  )}
                   <IconButton
                     size="sm"
                     title="Move up"
@@ -243,8 +277,8 @@ export function LevelPanel({
                       .filter(
                         (s) =>
                           !level.sceneIds.some(
-                            (id) => sceneLabel(id) === sceneLabel(s) || id === s
-                          )
+                            (id) => sceneLabel(id) === sceneLabel(s) || id === s,
+                          ),
                       )
                       .map((sceneId) => (
                         <option key={sceneId} value={sceneId}>
@@ -252,6 +286,163 @@ export function LevelPanel({
                         </option>
                       ))}
                   </Select>
+
+                  <button
+                    type="button"
+                    className="mt-1.5 flex w-full items-center gap-1 rounded-[8px] border border-white/[0.06] bg-black/20 px-1.5 py-1 text-left text-[10px] text-text-muted hover:bg-white/[0.04]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedRules((prev) => ({ ...prev, [level.id]: !rulesOpen }));
+                    }}
+                  >
+                    {rulesOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                    <Trophy size={10} className="text-accent" />
+                    <span className="font-semibold uppercase tracking-wide">On complete</span>
+                    <span className="ml-auto font-mono text-[9px]">
+                      {onComplete.length > 0
+                        ? `${onComplete.length} action(s)`
+                        : nextLevel
+                          ? `default → unlock ${nextLevel.name}`
+                          : "default (last level)"}
+                    </span>
+                  </button>
+
+                  {rulesOpen && (
+                    <div
+                      className="space-y-1 rounded-[8px] border border-white/[0.06] bg-black/25 p-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-[10px] leading-snug text-text-muted">
+                        Runs after scene win (after scene <span className="font-mono">onWin</span>
+                        ). Empty list still unlocks the next level via default{" "}
+                        <span className="font-mono">completeLevel</span> when the scene has no
+                        custom onWin.
+                      </p>
+                      {onComplete.map((action, index) => (
+                        <div key={index} className="flex items-center gap-1">
+                          <Select
+                            className="h-7 flex-1 text-[10px]"
+                            value={action.type}
+                            onChange={(e) => {
+                              const next = [...onComplete];
+                              const type = e.target.value;
+                              const updated: ScriptAction =
+                                type === "unlockLevel"
+                                  ? {
+                                      type,
+                                      levelId:
+                                        typeof action.levelId === "string"
+                                          ? action.levelId
+                                          : nextLevel?.id ?? "",
+                                    }
+                                  : type === "switchScene"
+                                    ? {
+                                        type,
+                                        sceneId:
+                                          typeof action.sceneId === "string"
+                                            ? action.sceneId
+                                            : level.sceneIds[0] ?? "",
+                                      }
+                                    : type === "setVariable" || type === "incrementVariable"
+                                      ? {
+                                          type,
+                                          key:
+                                            typeof action.key === "string" ? action.key : "score",
+                                          value:
+                                            type === "setVariable"
+                                              ? (action.value ?? true)
+                                              : undefined,
+                                          by:
+                                            type === "incrementVariable"
+                                              ? typeof action.by === "number"
+                                                ? action.by
+                                                : 1
+                                              : undefined,
+                                        }
+                                      : { type };
+                              next[index] = updated;
+                              onUpdateLevel(level.id, { onComplete: next });
+                            }}
+                          >
+                            {ON_COMPLETE_ACTIONS.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </Select>
+                          {action.type === "unlockLevel" && (
+                            <Select
+                              className="h-7 w-[90px] text-[10px]"
+                              value={typeof action.levelId === "string" ? action.levelId : ""}
+                              onChange={(e) => {
+                                const next = [...onComplete];
+                                next[index] = { type: "unlockLevel", levelId: e.target.value };
+                                onUpdateLevel(level.id, { onComplete: next });
+                              }}
+                            >
+                              <option value="">level…</option>
+                              {sortedLevels
+                                .filter((l) => l.id !== level.id)
+                                .map((l) => (
+                                  <option key={l.id} value={l.id}>
+                                    {l.name}
+                                  </option>
+                                ))}
+                            </Select>
+                          )}
+                          {action.type === "switchScene" && (
+                            <Select
+                              className="h-7 w-[90px] text-[10px]"
+                              value={typeof action.sceneId === "string" ? action.sceneId : ""}
+                              onChange={(e) => {
+                                const next = [...onComplete];
+                                next[index] = { type: "switchScene", sceneId: e.target.value };
+                                onUpdateLevel(level.id, { onComplete: next });
+                              }}
+                            >
+                              <option value="">scene…</option>
+                              {scenes.map((s) => (
+                                <option key={s} value={s}>
+                                  {sceneLabel(s)}
+                                </option>
+                              ))}
+                            </Select>
+                          )}
+                          <IconButton
+                            size="sm"
+                            variant="danger"
+                            title="Remove action"
+                            onClick={() => {
+                              const next = onComplete.filter((_, i) => i !== index);
+                              onUpdateLevel(level.id, {
+                                onComplete: next.length > 0 ? next : undefined,
+                              });
+                            }}
+                          >
+                            <Trash2 size={10} />
+                          </IconButton>
+                        </div>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-full text-[10px]"
+                        onClick={() => {
+                          onUpdateLevel(level.id, {
+                            onComplete: [...onComplete, { type: "completeLevel" }],
+                          });
+                        }}
+                      >
+                        <Plus size={11} /> Add onComplete action
+                      </Button>
+                      {level.rules && Object.keys(level.rules).length > 0 && (
+                        <p className="text-[9px] text-text-muted">
+                          Level rules override present (
+                          {Object.keys(level.rules).join(", ")}). Edit via project JSON for now.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

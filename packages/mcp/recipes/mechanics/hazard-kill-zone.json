@@ -1,0 +1,43 @@
+{
+  "id": "hazard-kill-zone",
+  "name": "Hazard Kill Zone (tagContact)",
+  "category": "mechanic",
+  "description": "Marks the entity as a hazard (tag + trigger collider) and adds a scene tagContact hazard that respawns or game-overs on touch.",
+  "tags": ["rules", "hazard", "damage", "spike", "lava"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "width": { "type": "number", "default": 32 },
+    "height": { "type": "number", "default": 32 },
+    "onTrigger": {
+      "type": "string",
+      "default": "respawn",
+      "description": "respawn | gameOver | actions"
+    },
+    "tag": { "type": "string", "default": "hazard" }
+  },
+  "entityTags": ["hazard"],
+  "components": [
+    {
+      "type": "AabbCollider",
+      "offset": { "x": -16, "y": -16 },
+      "size": { "x": "{{width}}", "y": "{{height}}" },
+      "isStatic": true,
+      "isTrigger": true,
+      "layer": 1,
+      "mask": 1
+    }
+  ],
+  "gameRules": {
+    "hazards": [
+      {
+        "id": "tag-hazard",
+        "type": "tagContact",
+        "tag": "{{tag}}",
+        "onTrigger": "{{onTrigger}}",
+        "cooldown": 0.45
+      }
+    ]
+  },
+  "notes": "Prefer onTrigger=respawn with lives > 0. Combine with World → Game rules lives."
+}

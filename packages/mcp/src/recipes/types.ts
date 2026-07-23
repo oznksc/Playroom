@@ -30,7 +30,7 @@ export type RecipeParamDef = z.infer<typeof RecipeParamDefSchema>;
 export const RecipeInputBindingSchema = z.object({
   action: z.string().min(1),
   keys: z.array(z.string()).optional(),
-  touchControl: z.enum(["left", "right", "jump"]).optional(),
+  touchControl: z.enum(["left", "right", "jump", "fire", "action"]).optional(),
   gamepad: z.string().optional(),
 });
 
@@ -49,6 +49,13 @@ export const RecipeSchema = z.object({
       bindings: z.array(RecipeInputBindingSchema),
     })
     .optional(),
+  /**
+   * Partial gameRules merged onto the scene (scene-level recipes).
+   * Arrays (objectives, hazards, onWin, …) are concatenated; scalars overwrite.
+   */
+  gameRules: z.record(z.unknown()).optional(),
+  /** Tags appended to the target entity when targets=entity. */
+  entityTags: z.array(z.string().min(1)).optional(),
   notes: z.string().optional(),
 });
 export type Recipe = z.infer<typeof RecipeSchema>;
@@ -71,6 +78,8 @@ export type RecipeApplyResult = {
   entityId?: string;
   appliedComponents: string[];
   appliedInputActions: string[];
+  appliedGameRulesKeys: string[];
+  appliedEntityTags: string[];
   skippedComponents: string[];
   warnings: string[];
 };

@@ -2,7 +2,7 @@
   "id": "hazard-on-contact",
   "name": "Hazard on Contact",
   "category": "mechanic",
-  "description": "Solid hazard collider + flag variable set on contact (spikes, lava, enemies).",
+  "description": "Trigger hazard with entity tag + optional damage variable. Prefer hazard-kill-zone for rules-driven respawn/gameOver.",
   "tags": ["hazard", "damage", "spike", "enemy"],
   "targets": "entity",
   "merge": "upsert-by-type",
@@ -12,6 +12,7 @@
     "damageKey": { "type": "string", "default": "hit" },
     "damageValue": { "type": "number", "default": 1 }
   },
+  "entityTags": ["hazard"],
   "components": [
     {
       "type": "AabbCollider",
@@ -33,5 +34,6 @@
         }
       ]
     }
-  ]
+  ],
+  "notes": "Tag alone enables auto tagContact when no explicit hazard is configured. Use hazard-kill-zone for explicit onTrigger."
 }
