@@ -9,6 +9,8 @@ export type VirtualControlActions = {
   setLeft: (pressed: boolean) => void;
   setRight: (pressed: boolean) => void;
   setJump: (pressed: boolean) => void;
+  setUp?: (pressed: boolean) => void;
+  setDown?: (pressed: boolean) => void;
   setFire?: (pressed: boolean) => void;
   setAction?: (pressed: boolean) => void;
 };
@@ -64,6 +66,8 @@ export function VirtualControls({
         onMove={(x, y) => {
           actions.setLeft(x < -0.3);
           actions.setRight(x > 0.3);
+          actions.setUp?.(y < -0.3);
+          actions.setDown?.(y > 0.3);
           if (joystickJump) {
             actions.setJump(y < -0.5);
           }
@@ -71,6 +75,8 @@ export function VirtualControls({
         onRelease={() => {
           actions.setLeft(false);
           actions.setRight(false);
+          actions.setUp?.(false);
+          actions.setDown?.(false);
           if (joystickJump) {
             actions.setJump(false);
           }

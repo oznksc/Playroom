@@ -15,12 +15,15 @@ server (`packages/mcp`) talk to it. Two runtimes consume the produced JSON:
   Sub-paths exposed: `./collision`, `./camera`, `./player`, `./animate`,
   `./timeline`, `./scene`, `./manager`.
 - `packages/runtime-web` — Phaser runtime. Exports `createGameKitGame`.
-- `packages/cli` — `gamekit` binary. Subcommands: `init`, `import <file>`,
-  `remove <id>`, `generate [--platform web|mobile]`, `editor [--port]`,
-  `export [path] [--platform web|mobile]`, `mcp [project-path]`,
-  `skills list|apply <name>`, `recipes list|describe|apply`. Source is TS,
-  run via `tsx src/index.ts` in dev (the `gamekit` script); the bin
-  resolves to `dist/index.js` after build.
+- `packages/cli` — `gamekit` binary. Subcommands: `init`, `create <skill>`,
+  `import <file>`, `remove <id>`, `generate [--platform web|mobile]`,
+  `editor [--port]`, `export [path] [--platform web|mobile]`, `doctor`,
+  `validate`, `build`, `dev`, `mcp [project-path]`,
+  `skills list|apply <name>`, `recipes list|describe|apply`,
+  `save`/`load`/`list-saves`. Source is TS, run via `tsx src/index.ts` in
+  dev (the `gamekit` script); the bin resolves to `dist/index.js` after build.
+  Genre skill packs: `packages/cli/src/skill-packs.ts`. Export bootstrap:
+  `packages/cli/src/export-bootstrap.ts`.
 - `packages/mcp` — `@modelcontextprotocol/sdk` server, tools grouped by
   scenes/entities/assets/project/skills/recipes/gui/gui-components, plus
   resources and prompts. Genre skill templates live in
@@ -106,13 +109,14 @@ first if you intend to use the desktop shell.
 - Entrypoints: `packages/cli/src/index.ts`, `packages/runtime/src/index.ts`,
   `apps/editor/src/main.tsx` → `App.tsx`, `packages/mcp/src/server.ts`.
 - Project file I/O: `packages/cli/src/project.ts` (and `server.ts` for
-  HTTP).
+  HTTP). One-command games: `createGameFromSkill` in `project.ts`.
 - Scene/game loop wiring: `packages/runtime/src/game.tsx`,
   `packages/runtime/src/manager.ts`.
 - Editor canvas + selection: `apps/editor/src/components/SceneCanvas.tsx`,
-  `apps/editor/src/lib/canvas.ts`.
+  `apps/editor/src/lib/canvas.ts`. Play host: `PlayRuntimeHost.tsx` (Phaser).
 - MCP tool surface: `packages/mcp/src/tools/*.ts`; matching zod schemas in
   `packages/mcp/src/schemas/`.
+- Shipping guide: `docs/guide/shipping-a-game.md`. Status: `ROADMAP.md`.
 
 ## Gotchas
 

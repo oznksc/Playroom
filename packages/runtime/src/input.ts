@@ -11,6 +11,8 @@ export function usePlayerInput(): {
   setLeft: (pressed: boolean) => void;
   setRight: (pressed: boolean) => void;
   setJump: (pressed: boolean) => void;
+  setUp: (pressed: boolean) => void;
+  setDown: (pressed: boolean) => void;
   setFire: (pressed: boolean) => void;
   setAction: (pressed: boolean) => void;
 } {
@@ -18,6 +20,8 @@ export function usePlayerInput(): {
     left: false,
     right: false,
     jump: false,
+    up: false,
+    down: false,
     fire: false,
     action: false,
   });
@@ -34,6 +38,14 @@ export function usePlayerInput(): {
     inputRef.current.jump = pressed;
   }, []);
 
+  const setUp = useCallback((pressed: boolean) => {
+    inputRef.current.up = pressed;
+  }, []);
+
+  const setDown = useCallback((pressed: boolean) => {
+    inputRef.current.down = pressed;
+  }, []);
+
   const setFire = useCallback((pressed: boolean) => {
     inputRef.current.fire = pressed;
   }, []);
@@ -42,5 +54,5 @@ export function usePlayerInput(): {
     inputRef.current.action = pressed;
   }, []);
 
-  return { inputRef, setLeft, setRight, setJump, setFire, setAction };
+  return { inputRef, setLeft, setRight, setJump, setUp, setDown, setFire, setAction };
 }

@@ -130,6 +130,6 @@ describe("input map", () => {
         { action: "jump", keys: [" "], touchControl: "jump" },
       ],
     });
-    expect(input).toEqual({ left: false, right: true, jump: true });
+    expect(input).toEqual({ left: false, right: true, jump: true, up: false, down: false });
   });
 });

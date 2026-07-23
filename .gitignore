@@ -10,3 +10,8 @@ coverage/
 gamekit/generated/assets.ts
 !templates/expo-game/gamekit/generated/assets.ts
 !examples/**/gamekit/generated/assets.ts
+examples/**/build/
+examples/**/build-web/
+playwright-report/
+test-results/
+blob-report/

@@ -49,18 +49,22 @@ describe("CLI skills", () => {
     expect(skills.some((s) => s.id === "platformer")).toBe(true);
   });
 
-  it("applies platformer skill and sets activeScene", async () => {
+  it("applies platformer skill with assets and stable scene id", async () => {
     const result = await applySkill(root, "platformer");
     expect(result.entityCount).toBeGreaterThan(0);
-    expect(result.filename).toMatch(/\.scene\.json$/);
+    expect(result.filename).toBe("platformer.scene.json");
+    expect(result.sceneId).toBe("platformer");
+    expect(result.assetsCopied.length).toBeGreaterThan(0);
 
     const scene = JSON.parse(
       await readFile(join(root, "gamekit", "scenes", result.filename), "utf8"),
     );
+    expect(scene.id).toBe("platformer");
     expect(scene.entities.length).toBe(result.entityCount);
+    expect(scene.entities.some((e: { id: string }) => e.id === "game-controller")).toBe(true);
 
     const project = JSON.parse(await readFile(join(root, "gamekit", "project.json"), "utf8"));
-    expect(project.activeScene).toBe(result.filename);
     expect(project.scenes).toContain(result.filename);
+    expect(project.assets.some((a: { id: string }) => a.id === "player")).toBe(true);
   });
 });

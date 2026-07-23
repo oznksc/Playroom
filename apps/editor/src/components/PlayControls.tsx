@@ -30,6 +30,7 @@ export function PlayControls({
     <div className="play-controls" role="toolbar" aria-label="Simulation">
       <button
         type="button"
+        data-testid="play-toggle"
         className={cn("play-controls-btn play", live && "live", isPaused && "paused")}
         title={live ? "Pause" : isPlaying ? "Resume" : "Play"}
         aria-label={live ? "Pause" : "Play"}
@@ -44,6 +45,7 @@ export function PlayControls({
 
       <button
         type="button"
+        data-testid="play-stop"
         className="play-controls-btn stop"
         title="Stop"
         aria-label="Stop simulation"

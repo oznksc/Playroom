@@ -14,6 +14,11 @@ import {
   listRecipes,
   describeRecipe,
   applyRecipe,
+  listSkills,
+  applySkill,
+  createGameFromSkill,
+  wireShellToGameplay,
+  applySkillPackRecipes,
 } from "./project.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
@@ -24,13 +29,27 @@ export {
   removeAsset,
   generateAssetRegistry,
   exportProject,
+  buildExportBootstrapInput,
   saveGameState,
   loadGameState,
   listSaveSlots,
   listRecipes,
   describeRecipe,
   applyRecipe,
+  listSkills,
+  applySkill,
+  createGameFromSkill,
+  wireShellToGameplay,
+  applySkillPackRecipes,
 } from "./project.js";
+export { getSkillPack, SKILL_PACKS } from "./skill-packs.js";
+export {
+  generateWebMain,
+  generateMobileApp,
+  orderSceneFiles,
+  resolveTransitionMs,
+  sceneFileToImportVar,
+} from "./export-bootstrap.js";
 export { startEditorServer } from "./server.js";
 
 async function main(argv: string[]): Promise<void> {
@@ -41,6 +60,46 @@ async function main(argv: string[]): Promise<void> {
     case "init": {
       const project = await initProject(cwd, { name: readOption(args, "--name") ?? basename(cwd) });
       console.log(`Created Playroom project: ${project.projectPath}`);
+      return;
+    }
+    case "create": {
+      // One-command playable game from a genre skill + recipe pack.
+      // Usage: gamekit create <skill-id> [--name "My Game"] [--platform web|mobile]
+      const skillId = args.find((arg) => !arg.startsWith("--"));
+      if (!skillId) {
+        const skills = await listSkills();
+        throw new Error(
+          `Usage: gamekit create <skill-id> [--name "..."] [--platform web|mobile]\n` +
+            `Available skills: ${skills.map((s) => s.id).join(", ")}`,
+        );
+      }
+      const platform =
+        (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile") {
+        throw new Error("--platform must be 'web' or 'mobile'");
+      }
+      const result = await createGameFromSkill(cwd, skillId, {
+        name: readOption(args, "--name") ?? basename(cwd),
+        platform,
+      });
+      console.log(`Created playable game from skill "${result.skillId}" (${result.skillName})`);
+      console.log(`  Project:   ${result.projectPath}`);
+      console.log(`  Gameplay:  gamekit/scenes/${result.gameplayFile} (id=${result.sceneId})`);
+      console.log(`  Entities:  ${result.entityCount}`);
+      if (result.assetsCopied.length) {
+        console.log(`  Assets:    ${result.assetsCopied.join(", ")}`);
+      }
+      if (result.recipesApplied.length) {
+        console.log(`  Recipes:   ${result.recipesApplied.join(", ")}`);
+      }
+      for (const w of result.warnings) {
+        console.log(`  warning:   ${w}`);
+      }
+      console.log(`  Registry:  ${result.registryPath}`);
+      console.log("");
+      console.log("Next:");
+      console.log("  pnpm gamekit editor");
+      console.log(`  pnpm gamekit export ./build --platform ${platform}`);
       return;
     }
     case "import": {
@@ -126,61 +185,41 @@ async function main(argv: string[]): Promise<void> {
     }
     case "skills": {
       const subcommand = args[0];
-      const skillsDir = new URL("../../mcp/skills/", import.meta.url).pathname;
       if (subcommand === "list") {
-        const files = await readdir(skillsDir);
-        const skills = [];
-        for (const file of files.filter((f) => f.endsWith(".json"))) {
-          const raw = JSON.parse(await readFile(join(skillsDir, file), "utf8"));
-          skills.push({ id: file.replace(".json", ""), name: raw.name, description: raw.description });
-        }
+        const skills = await listSkills();
         for (const skill of skills) {
-          console.log(`  ${skill.id} — ${skill.name}`);
+          console.log(`  ${skill.id} — ${skill.name} (${skill.entityCount} entities)`);
           console.log(`    ${skill.description}\n`);
         }
+        console.log(`${skills.length} skill(s). Create a full game: gamekit create <skill-id>`);
         return;
       }
       if (subcommand === "apply") {
         const skillName = args[1];
         if (!skillName) {
-          throw new Error("Usage: gamekit skills apply <skill-name>");
+          throw new Error(
+            "Usage: gamekit skills apply <skill-id> [--name SceneName] [--wire-shell]",
+          );
         }
-        const { createEmptyScene, slugify, createId, sceneToJson, projectToJson, validateProject } = await import("@gamekit/schema");
-        const skillPath = join(skillsDir, `${skillName}.json`);
-        const skill = JSON.parse(await readFile(skillPath, "utf8"));
-        const name = skill.name;
-        const scene = createEmptyScene(name);
-        const idMap = new Map<string, string>();
-        for (const se of skill.entities) {
-          const entity = { id: createId(se.name), name: se.name, components: se.components };
-          idMap.set(se.name, entity.id);
-          scene.entities.push(entity);
+        const sceneName = readOption(args, "--name");
+        const wireShell = args.includes("--wire-shell");
+        const result = await applySkill(cwd, skillName, sceneName);
+        if (wireShell) {
+          await wireShellToGameplay(cwd, result.sceneId, result.filename);
+          const pack = await applySkillPackRecipes(cwd, skillName, result.filename);
+          await generateAssetRegistry(cwd, "mobile");
+          console.log(`Applied skill "${skillName}" → ${result.filename} (shell wired)`);
+          if (pack.applied.length) console.log(`  Recipes: ${pack.applied.join(", ")}`);
+          for (const w of pack.warnings) console.log(`  warning: ${w}`);
+        } else {
+          console.log(`Applied skill "${skillName}" → ${result.filename}`);
         }
-        for (const entity of scene.entities) {
-          for (const comp of entity.components) {
-            if (comp.type === "CameraFollow") {
-              const resolvedId = idMap.get(comp.targetId);
-              if (resolvedId) comp.targetId = resolvedId;
-            }
-          }
+        console.log(`  Scene id: ${result.sceneId}`);
+        console.log(`  Entities: ${result.entityCount}`);
+        if (result.assetsCopied.length) {
+          console.log(`  Assets:   ${result.assetsCopied.join(", ")}`);
         }
-        if (skill.viewport) scene.viewport = skill.viewport;
-        if (skill.gravity) scene.gravity = skill.gravity;
-        if (skill.orientation) scene.responsive.orientation = skill.orientation;
-        const filename = `${slugify(name)}.scene.json`;
-        const gamekitDir = join(cwd, "gamekit");
-        await writeFile(join(gamekitDir, "scenes", filename), sceneToJson(scene));
-        const projectRaw = JSON.parse(await readFile(join(gamekitDir, "project.json"), "utf-8"));
-        const projectResult = validateProject(projectRaw);
-        if (projectResult.ok) {
-          const project = projectResult.value;
-          if (!project.scenes.includes(filename)) {
-            project.scenes.push(filename);
-          }
-          await writeFile(join(gamekitDir, "project.json"), projectToJson(project));
-        }
-        console.log(`Applied skill "${skillName}" → ${filename}`);
-        console.log(`  Entities: ${scene.entities.map((e) => e.name).join(", ")}`);
+        console.log(`  Tip: gamekit create ${skillName} for a full menu→play project.`);
         return;
       }
       throw new Error("Usage: gamekit skills <list|apply> [name]");

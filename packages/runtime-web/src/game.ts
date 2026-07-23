@@ -16,10 +16,28 @@ export type GameKitGameOptions = {
   sceneManager?: ScriptContext["sceneManager"];
   /** Fired after a GUI button action is dispatched (for hosts that reload scenes). */
   onGuiAction?: (action: string) => void;
+  onOutcome?: GameKitPhaserSceneOptions["onOutcome"];
+  onLivesChange?: GameKitPhaserSceneOptions["onLivesChange"];
+  onCollectProgress?: GameKitPhaserSceneOptions["onCollectProgress"];
+  suppressOutcomeOverlay?: boolean;
+  level?: GameKitPhaserSceneOptions["level"];
 };
 
 export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
-  const { scene, assets, container, transition, guiComponents, sceneManager, onGuiAction } = options;
+  const {
+    scene,
+    assets,
+    container,
+    transition,
+    guiComponents,
+    sceneManager,
+    onGuiAction,
+    onOutcome,
+    onLivesChange,
+    onCollectProgress,
+    suppressOutcomeOverlay,
+    level,
+  } = options;
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -62,6 +80,11 @@ export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
     guiComponents,
     sceneManager,
     onGuiAction,
+    onOutcome,
+    onLivesChange,
+    onCollectProgress,
+    suppressOutcomeOverlay,
+    level,
   };
   game.scene.add("gamekit", new GameKitPhaserScene(scene, assets, transition, sceneOpts), true);
 

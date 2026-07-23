@@ -40,11 +40,6 @@ import { updateFollowPath } from "@gamekit/runtime/path";
 import { updateTween } from "@gamekit/runtime/tween";
 import { raycast } from "@gamekit/runtime/collision";
 
-export type GameKitPhaserSceneOptions = {
-  guiComponents?: GuiComponent[];
-  sceneManager?: ScriptContext["sceneManager"];
-  onGuiAction?: (action: string) => void;
-};
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
 import { preloadEntityAssets } from "./asset-loader.js";
@@ -59,6 +54,20 @@ import {
   stopSceneSound,
   type SceneSoundMap,
 } from "./scene-audio.js";
+
+export type GameKitPhaserSceneOptions = {
+  guiComponents?: GuiComponent[];
+  sceneManager?: ScriptContext["sceneManager"];
+  onGuiAction?: (action: string) => void;
+  /** Editor / host callbacks (optional). */
+  onOutcome?: (kind: "won" | "lost", message: string) => void;
+  onLivesChange?: (lives: number | null) => void;
+  onCollectProgress?: (tag: string, collected: number, target: number) => void;
+  /** When true, skip Phaser text overlay (host paints its own). */
+  suppressOutcomeOverlay?: boolean;
+  /** Active level for rules merge / onComplete. */
+  level?: import("@gamekit/schema").GameKitLevel | null;
+};
 
 export class GameKitPhaserScene extends Phaser.Scene {
   private sceneData: GameKitScene;
@@ -103,6 +112,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private guiComponents: GuiComponent[] = [];
   private sceneManager: ScriptContext["sceneManager"] | undefined;
   private onGuiAction: ((action: string) => void) | undefined;
+  private hostOptions: GameKitPhaserSceneOptions = {};
 
   constructor(
     sceneData: GameKitScene,
@@ -117,6 +127,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.gameRules = resolveGameRules(sceneData.gameRules);
     this.livesRemaining = this.gameRules.lives > 0 ? this.gameRules.lives : 0;
     this.transitionData = transition ?? null;
+    this.hostOptions = options ?? {};
     this.guiComponents = options?.guiComponents ?? [];
     this.sceneManager = options?.sceneManager;
     this.onGuiAction = options?.onGuiAction;
@@ -190,17 +201,29 @@ export class GameKitPhaserScene extends Phaser.Scene {
             }
           }
         },
+        sceneManager: this.sceneManager,
         onOutcome: (kind, message) => {
           if (kind === "won") this.showWin(message);
           else this.triggerGameOver(message);
+          this.hostOptions.onOutcome?.(kind, message);
         },
         onLivesChange: (lives) => {
-          if (lives === null) return;
+          if (lives === null) {
+            this.hostOptions.onLivesChange?.(null);
+            return;
+          }
           this.livesRemaining = lives;
           if (this.livesText) this.livesText.setText(`Lives: ${lives}`);
+          this.hostOptions.onLivesChange?.(lives);
+        },
+        onCollectProgress: (tag, collected, target) => {
+          this.hostOptions.onCollectProgress?.(tag, collected, target);
         },
       },
-      { initialSpawn: this.spawnPoint },
+      {
+        initialSpawn: this.spawnPoint,
+        level: this.hostOptions.level ?? null,
+      },
     );
     return this.rulesEngine;
   }
@@ -381,22 +404,40 @@ export class GameKitPhaserScene extends Phaser.Scene {
         body.setVelocityY(0);
       }
 
-      // Horizontal only from controller; Phaser arcade owns gravity/Y.
-      const direction = Number(input.right) - Number(input.left);
-      const moveSpeed = touchingGround ? controllerData.speed : controllerData.speed * 0.85;
-      body.setVelocityX(direction * moveSpeed);
+      const isTopDown = controllerData.gravity === 0;
+      if (isTopDown) {
+        // Free 4-way movement when player gravity is zero.
+        const dx = Number(input.right) - Number(input.left);
+        const up =
+          Boolean(input.up) || (controllerData.jumpVelocity === 0 && input.jump);
+        const dy = Number(Boolean(input.down)) - Number(up);
+        let vx = dx * controllerData.speed;
+        let vy = dy * controllerData.speed;
+        if (dx !== 0 && dy !== 0) {
+          const inv = 1 / Math.SQRT2;
+          vx *= inv;
+          vy *= inv;
+        }
+        body.setVelocity(vx, vy);
+        body.setAllowGravity(false);
+      } else {
+        // Horizontal only from controller; Phaser arcade owns gravity/Y.
+        const direction = Number(input.right) - Number(input.left);
+        const moveSpeed = touchingGround ? controllerData.speed : controllerData.speed * 0.85;
+        body.setVelocityX(direction * moveSpeed);
 
-      // Jump only when actually touching ground (not mere grace), edge-triggered
-      if (jumpPressed && touchingGround) {
-        body.setVelocityY(-controllerData.jumpVelocity);
-        this.groundedGraceFrames = 0;
-        controller.setGrounded(false);
-      }
+        // Jump only when actually touching ground (not mere grace), edge-triggered
+        if (jumpPressed && touchingGround) {
+          body.setVelocityY(-controllerData.jumpVelocity);
+          this.groundedGraceFrames = 0;
+          controller.setGrounded(false);
+        }
 
-      // Cap upward speed so a bad impulse can never fling the player off-screen
-      const maxUp = Math.max(controllerData.jumpVelocity, 200);
-      if (body.velocity.y < -maxUp) {
-        body.setVelocityY(-maxUp);
+        // Cap upward speed so a bad impulse can never fling the player off-screen
+        const maxUp = Math.max(controllerData.jumpVelocity, 200);
+        if (body.velocity.y < -maxUp) {
+          body.setVelocityY(-maxUp);
+        }
       }
 
       // Fall / hazards evaluated in RulesEngine.update (uses player transforms from bindings)
@@ -765,6 +806,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private showOverlay(message: string, color: string): void {
+    if (this.hostOptions.suppressOutcomeOverlay) return;
     this.winText = showSceneOverlay(this, this.winText, message, color);
   }
 

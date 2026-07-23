@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Top-Down Arena",
+    "slug": "top-down-arena",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.playroom.topdownarena"
+    },
+    "android": {
+      "package": "com.playroom.topdownarena"
+    }
+  }
+}
