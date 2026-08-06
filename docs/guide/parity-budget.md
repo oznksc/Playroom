@@ -26,7 +26,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 
 | Component | Skia (`@gamekit/runtime`) | Phaser (`@gamekit/runtime-web`) | Delta notes |
 |---|---|---|---|
-| Transform | ⚠️ | ✅ | Skia applies `rotation`/`scale` to collider geometry only — **sprites/tilemaps/text never rotate or scale visually**. Phaser honors position, rotation, scale fully. |
+| Transform | ✅ | ✅ | Both runtimes apply position, `rotation` (degrees), and `scale` to sprites/tilemaps/text/animation nodes. Skia rotates/scales around the entity origin (the anchor point for sprites), matching Phaser. Tilemap solids stay axis-aligned at base scale — keep solid tilemaps at rotation 0 / scale 1. |
 | Sprite | ✅ | ✅ | `assetId`, `width`, `height`, `anchor` on both. Missing-texture placeholder differs (Skia `#7dd3fc` rect vs Phaser colored rect). |
 | Animation | ⚠️ | ⚠️ | Single-row spritesheets only on both; multi-row frame grids render garbage. `currentFrame` honored on Skia, ignored on Phaser (always restarts at frame 0). |
 | Tilemap | ✅ | ✅ | Both render (single/multi-row atlas, tile `0` = empty) anchored at the entity's Transform. When `solid` is true, every non-empty tile is a static AABB (tile layer 1) and dynamic bodies collide with it on both runtimes. `solid` defaults to false. |
@@ -37,7 +37,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | NineSlice | ❌ | ✅ | Phaser uses built-in nineslice. Skia has no stretch-9 rendering. |
 | AabbCollider | ✅ | ✅ | Full field support. layer/mask honored on both: solid collision uses the dynamic body's mask vs the solid's layer; trigger overlap requires both masks to accept the other's layer. |
 | CircleCollider | ✅ | ✅ | Same as AabbCollider; layer/mask filtering on Phaser matches Skia. |
-| PolygonCollider | ⚠️ | ❌ | Skia: SAT convex-only; `rotation` never applied to points; concave shapes ghost; no dynamic-vs-dynamic. Phaser: **no polygon collider at all** — entity gets a default rect with no physics. |
+| PolygonCollider | ⚠️ | ❌ | Skia: SAT convex-only; rotation (degrees) and scale are applied to points; concave shapes ghost; no dynamic-vs-dynamic. Phaser: **no polygon collider at all** — entity gets a default rect with no physics. |
 | RigidBody | ⚠️ | ⚠️ | Both honor `velocity`, `mass`, `angularVelocity`, `isKinematic`, `gravityScale`, `drag`, `useGravity`. `applyImpulse` script actions work on both (impulse ÷ mass; no-op on kinematic). Skia simulates body sleeping; Phaser does not, and Phaser maps `drag` to an approximate px/s² value. |
 | PlayerController | ⚠️ | ✅ | Both: `speed`/`jumpVelocity`/`gravity`, top-down 4-way when `gravity === 0`. Phaser adds coyote grace window, air damping, velocity caps. Skia is bare — no coyote time, no jump buffering, no air control. |
 | CameraFollow | ⚠️ | ✅ | Both follow `targetId` + `smoothing`. 🔶 Phaser remaps smoothing to a different curve and hard-codes a deadzone + `(0,20)` offset; Skia is pure exponential lerp, no bounds/deadzone. |
@@ -75,23 +75,19 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 
 These are the "same scene, different feel" traps:
 
-1. **Transform scale/rotation visuals.** Skia ignores them at render time; a rotating
-   gem or a scaled sprite will look static on mobile but correct on web. Polygon
-   colliders also ignore rotation on Skia, so a rotated polygon behaves differently
-   from its visual.
-2. **Player feel.** Phaser adds coyote-time grace, air damping, and velocity caps;
+1. **Player feel.** Phaser adds coyote-time grace, air damping, and velocity caps;
    Skia is instant-velocity. Platformers will feel tighter on web unless the Skia
    controller is brought up to parity.
-3. **Camera.** Phaser remaps `smoothing` and adds a deadzone; Skia is a pure lerp.
+2. **Camera.** Phaser remaps `smoothing` and adds a deadzone; Skia is a pure lerp.
    Same `smoothing` value will not produce the same camera motion.
-4. **Collision layer/mask.** Matched on both runtimes: solid collision uses the dynamic
+3. **Collision layer/mask.** Matched on both runtimes: solid collision uses the dynamic
    body's mask vs the solid's layer; trigger overlap requires both masks to accept the
    other's layer.
-5. **RigidBody.** Field support is matched on both runtimes (`velocity`, `mass`,
+4. **RigidBody.** Field support is matched on both runtimes (`velocity`, `mass`,
    `angularVelocity`, `isKinematic`, `gravityScale`, `drag`, `useGravity`);
    `applyImpulse` scripts work on both. Remaining differences: Skia sleeps idle
    bodies; Phaser does not, and Phaser maps `drag` to an approximate px/s² value.
-6. **HUD text.** Entity `Text` components with `{coins}`/`Coins:` patterns are
+5. **HUD text.** Entity `Text` components with `{coins}`/`Coins:` patterns are
    live-updated on Phaser but are static on Skia (and on Phaser, only those two
    patterns). Use GUI text if you need a live HUD you can rely on.
 
@@ -107,7 +103,7 @@ Ordered by product impact (games shipping to both targets), not effort.
 | ~~2~~ | ~~Tilemap renders but no collision on either~~ | Both | M | **Fixed** — Tilemap now renders on Phaser and `Tilemap.solid` derives static tile bodies on both runtimes (tile id ≠ 0 → AABB on layer 1). |
 | ~~3~~ | ~~RigidBody parity (velocity/mass/isKinematic/gravityScale)~~ | Phaser | M | **Fixed** — Phaser honors `velocity`/`mass`/`angularVelocity`/`isKinematic`/`gravityScale`/`drag`/`useGravity` via Arcade and `applyImpulse` scripts work (impulse ÷ mass; no-op on kinematic). |
 | ~~4~~ | ~~Collision `layer`/`mask` on Phaser~~ | Phaser | M | **Fixed** — Phaser collider/overlap process callbacks apply the Skia layer/mask rule (solid: dynamic mask & static layer; trigger: both masks must accept the other's layer; tile solids are layer 1). |
-| 5 | Transform scale/rotation rendering on Skia | Skia | M | Apply Skia `rotate`/`scale` to sprite/tilemap/text/animation nodes; apply rotation to polygon points. |
+| ~~5~~ | ~~Transform scale/rotation rendering on Skia~~ | Skia | M | **Fixed** — Skia applies `rotate`/`scale` (rotation in degrees, pivoted at the entity origin/anchor) to sprite/tilemap/text/animation nodes, and applies rotation + scale to polygon points. Tilemap solids stay axis-aligned (keep solid tilemaps at rotation 0 / scale 1). |
 | 6 | PlayerController feel parity | Skia | M | Add coyote time, jump buffering, air damping; match Phaser velocity model. |
 | 7 | PolygonCollider on Phaser | Phaser | L | Convex SAT via Phaser `Geom`; needs per-entity bodies. |
 | 8 | Gestures wired on both | Both | M | Feed the shared recognizer from pointer events; dispatch script events. |

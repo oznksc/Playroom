@@ -99,6 +99,35 @@ describe("polygon collision", () => {
     expect(poly.points[3]).toEqual({ x: 78, y: 220 });
   });
 
+  it("getEntityPolygon applies rotation and scale to points", () => {
+    const entity = createEntity("Shield", { x: 100, y: 200 });
+    const transform = entity.components.find((c) => c.type === "Transform")!;
+    transform.rotation = 90;
+    transform.scale = { x: 2, y: 1 };
+    entity.components.push({
+      type: "PolygonCollider",
+      offset: { x: 10, y: 20 },
+      points: [
+        { x: 0, y: -32 },
+        { x: 32, y: 0 },
+        { x: 0, y: 32 },
+        { x: -32, y: 0 },
+      ],
+      isStatic: false,
+    });
+
+    const poly = getEntityPolygon(entity)!;
+    expect(poly.points[0].x).toBeCloseTo(142, 5);
+    expect(poly.points[0].y).toBeCloseTo(220, 5);
+    expect(poly.points[1].x).toBeCloseTo(110, 5);
+    expect(poly.points[1].y).toBeCloseTo(284, 5);
+    expect(poly.points[2].x).toBeCloseTo(78, 5);
+    expect(poly.points[2].y).toBeCloseTo(220, 5);
+    expect(poly.points[3].x).toBeCloseTo(110, 5);
+    expect(poly.points[3].y).toBeCloseTo(156, 5);
+  });
+
+
   it("intersectsPolygonAabb returns true for overlapping polygon and AABB", () => {
     const poly = {
       x: 100,

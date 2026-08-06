@@ -159,6 +159,9 @@ Ordered for product impact, not exhaustive:
      scripts work (impulse ÷ mass; no-op on kinematic).
    - **gap closed:** Collision `layer`/`mask` on Phaser — collider/overlap process callbacks
      apply the Skia rule (solid: dynamic mask & static layer; trigger: both masks).
+   - **gap closed:** Transform `rotation`/`scale` rendering on Skia — sprite/tilemap/text/
+     animation nodes now rotate/scale around the entity origin (rotation in degrees, matching
+     Phaser) and polygon points get rotation + scale applied.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

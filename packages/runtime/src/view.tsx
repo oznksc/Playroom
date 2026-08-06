@@ -6,6 +6,7 @@ import { StyleSheet, useWindowDimensions, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
+import { pivotTransform } from "./transform.js";
 
 // Skia packages may resolve a different @types/react (e.g. 19 vs 18) in monorepos;
 // cast Canvas so tsc accepts it without forcing a monorepo-wide React types upgrade.
@@ -398,26 +399,28 @@ function SpriteNode({
   const x = transform.position.x - sprite.width * sprite.anchor.x;
   const y = transform.position.y - sprite.height * sprite.anchor.y;
 
-  if (!image) {
-    return (
-      <Rect
-        x={x}
-        y={y}
-        width={sprite.width}
-        height={sprite.height}
-        color={Skia.Color("#7dd3fc")}
-      />
-    );
-  }
-
   return (
-    <SkiaImage
-      image={image}
-      x={x}
-      y={y}
-      width={sprite.width}
-      height={sprite.height}
-    />
+    <Group
+      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
+    >
+      {image ? (
+        <SkiaImage
+          image={image}
+          x={x}
+          y={y}
+          width={sprite.width}
+          height={sprite.height}
+        />
+      ) : (
+        <Rect
+          x={x}
+          y={y}
+          width={sprite.width}
+          height={sprite.height}
+          color={Skia.Color("#7dd3fc")}
+        />
+      )}
+    </Group>
   );
 }
 
@@ -476,7 +479,13 @@ function TilemapNode({
     }
   }
 
-  return tiles.length > 0 ? <>{tiles}</> : null;
+  return tiles.length > 0 ? (
+    <Group
+      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
+    >
+      {tiles}
+    </Group>
+  ) : null;
 }
 
 function AnimatedSpriteNode({
@@ -494,29 +503,31 @@ function AnimatedSpriteNode({
   const frame = anim.currentFrame ?? 0;
   const srcX = frame * anim.frameWidth;
 
-  if (!image) {
-    return (
-      <Rect
-        x={x}
-        y={y}
-        width={anim.frameWidth}
-        height={anim.frameHeight}
-        color={Skia.Color("#fbbf24")}
-      />
-    );
-  }
-
   return (
     <Group
-      clip={Skia.RRectXY(Skia.XYWHRect(x, y, anim.frameWidth, anim.frameHeight), 0, 0)}
+      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
     >
-      <SkiaImage
-        image={image}
-        x={x - srcX}
-        y={y}
-        width={anim.frameWidth * (anim.totalFrames || 1)}
-        height={anim.frameHeight}
-      />
+      {image ? (
+        <Group
+          clip={Skia.RRectXY(Skia.XYWHRect(x, y, anim.frameWidth, anim.frameHeight), 0, 0)}
+        >
+          <SkiaImage
+            image={image}
+            x={x - srcX}
+            y={y}
+            width={anim.frameWidth * (anim.totalFrames || 1)}
+            height={anim.frameHeight}
+          />
+        </Group>
+      ) : (
+        <Rect
+          x={x}
+          y={y}
+          width={anim.frameWidth}
+          height={anim.frameHeight}
+          color={Skia.Color("#fbbf24")}
+        />
+      )}
     </Group>
   );
 }
@@ -567,13 +578,17 @@ function TextNode({
   }
 
   return (
-    <SkiaText
-      font={font}
-      text={textComponent.text}
-      x={x}
-      y={y}
-      color={Skia.Color(textComponent.color)}
-    />
+    <Group
+      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
+    >
+      <SkiaText
+        font={font}
+        text={textComponent.text}
+        x={x}
+        y={y}
+        color={Skia.Color(textComponent.color)}
+      />
+    </Group>
   );
 }
 
