@@ -146,7 +146,12 @@ Workstreams that closed the “can we make end-to-end games?” gap:
 
 Ordered for product impact, not exhaustive:
 
-1. **Cross-runtime parity budget** — shared reference scenes; document Skia vs Phaser deltas  
+1. **Cross-runtime parity budget** — shared reference scenes; document Skia vs Phaser deltas
+   - **done:** `docs/guide/parity-budget.md` matrix, `examples/parity-budget/` probe lab,
+     Phaser play-host e2e (`e2e/parity-lab.spec.ts`).
+   - **gap closed:** GUI Image asset-key bug on Phaser (GUI-only asset preload + bare-key
+     lookup; doctor counts GUI Image refs). Open: remaining gaps (see the "Parity budget"
+     table in the doc).
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

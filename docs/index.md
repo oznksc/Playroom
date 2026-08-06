@@ -9,6 +9,7 @@ Playroom is a local, JSON-first 2D game editor and runtime for Expo (Skia) and w
 - [CLI reference](./guide/cli.md)
 - [Editor & agent](./guide/editor-agent.md)
 - [Schema & components](./guide/schema.md)
+- [**Cross-runtime parity budget**](./guide/parity-budget.md) — Skia vs Phaser support matrix + deltas
 
 ## Quick start
 
@@ -32,6 +33,7 @@ Open `http://127.0.0.1:4177` for the editor (or Tauri desktop after `pnpm build`
 | `examples/simple-coin-jumper` | Platformer |
 | `examples/top-down-arena` | Top-down |
 | `examples/physics-puzzle` | Physics puzzle |
+| `examples/parity-budget` | Parity probe lab (every schema component, both runtimes) |
 
 ## Status
 

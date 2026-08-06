@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "id": "settings",
+  "name": "Settings",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#06090e"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "settings-controller",
+      "name": "Settings Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "backToMenu",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "menu"
+                }
+              ]
+            },
+            {
+              "event": "toggleMusic",
+              "actions": [
+                {
+                  "type": "setVariable",
+                  "key": "musicOn",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "event": "toggleSfx",
+              "actions": [
+                {
+                  "type": "setVariable",
+                  "key": "sfxOn",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "event": "cycleQuality",
+              "actions": [
+                {
+                  "type": "setVariable",
+                  "key": "quality",
+                  "value": "high"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [
+      {
+        "id": "settings-header",
+        "type": "Button",
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 72,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#121824",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "title-settings",
+        "type": "Text",
+        "x": 24,
+        "y": 22,
+        "width": 342,
+        "height": 36,
+        "text": "Settings",
+        "fontSize": 24,
+        "color": "#00f0ff",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "settings-audio-panel",
+        "type": "Button",
+        "x": 24,
+        "y": 96,
+        "width": 342,
+        "height": 168,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#0f1520",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "settings-audio-title",
+        "type": "Text",
+        "x": 40,
+        "y": 112,
+        "width": 310,
+        "height": 18,
+        "text": "AUDIO",
+        "fontSize": 11,
+        "color": "#8b5cf6",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-music",
+        "type": "Text",
+        "x": 40,
+        "y": 148,
+        "width": 160,
+        "height": 44,
+        "text": "Music",
+        "fontSize": 15,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "value-music",
+        "type": "Text",
+        "x": 40,
+        "y": 148,
+        "width": 226,
+        "height": 44,
+        "text": "On",
+        "fontSize": 13,
+        "color": "#94a3b8",
+        "align": "right",
+        "visible": true
+      },
+      {
+        "id": "btn-music",
+        "type": "Button",
+        "x": 294,
+        "y": 152,
+        "width": 72,
+        "height": 36,
+        "text": "On",
+        "action": "toggleMusic",
+        "fontSize": 13,
+        "color": "#10b981",
+        "backgroundColor": "#0f2a22",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "label-sfx",
+        "type": "Text",
+        "x": 40,
+        "y": 200,
+        "width": 160,
+        "height": 44,
+        "text": "Sound FX",
+        "fontSize": 15,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "value-sfx",
+        "type": "Text",
+        "x": 40,
+        "y": 200,
+        "width": 226,
+        "height": 44,
+        "text": "On",
+        "fontSize": 13,
+        "color": "#94a3b8",
+        "align": "right",
+        "visible": true
+      },
+      {
+        "id": "btn-sfx",
+        "type": "Button",
+        "x": 294,
+        "y": 204,
+        "width": 72,
+        "height": 36,
+        "text": "On",
+        "action": "toggleSfx",
+        "fontSize": 13,
+        "color": "#10b981",
+        "backgroundColor": "#0f2a22",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "settings-display-panel",
+        "type": "Button",
+        "x": 24,
+        "y": 288,
+        "width": 342,
+        "height": 148,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#0f1520",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "settings-display-title",
+        "type": "Text",
+        "x": 40,
+        "y": 304,
+        "width": 310,
+        "height": 18,
+        "text": "DISPLAY",
+        "fontSize": 11,
+        "color": "#8b5cf6",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-quality",
+        "type": "Text",
+        "x": 40,
+        "y": 340,
+        "width": 140,
+        "height": 44,
+        "text": "Quality",
+        "fontSize": 15,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "value-quality",
+        "type": "Text",
+        "x": 40,
+        "y": 340,
+        "width": 202,
+        "height": 44,
+        "text": "High",
+        "fontSize": 13,
+        "color": "#94a3b8",
+        "align": "right",
+        "visible": true
+      },
+      {
+        "id": "btn-quality",
+        "type": "Button",
+        "x": 270,
+        "y": 344,
+        "width": 96,
+        "height": 36,
+        "text": "High",
+        "action": "cycleQuality",
+        "fontSize": 13,
+        "color": "#00f0ff",
+        "backgroundColor": "#0d3d42",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "label-safe-area",
+        "type": "Text",
+        "x": 40,
+        "y": 392,
+        "width": 310,
+        "height": 22,
+        "text": "Safe area padding enabled",
+        "fontSize": 12,
+        "color": "#64748b",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "settings-controls-panel",
+        "type": "Button",
+        "x": 24,
+        "y": 460,
+        "width": 342,
+        "height": 200,
+        "text": " ",
+        "fontSize": 1,
+        "color": "#0f1520",
+        "backgroundColor": "#0f1520",
+        "interactive": false,
+        "visible": true
+      },
+      {
+        "id": "settings-controls-title",
+        "type": "Text",
+        "x": 40,
+        "y": 476,
+        "width": 310,
+        "height": 18,
+        "text": "CONTROLS",
+        "fontSize": 11,
+        "color": "#8b5cf6",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-controls-move",
+        "type": "Text",
+        "x": 40,
+        "y": 508,
+        "width": 310,
+        "height": 22,
+        "text": "Move     A D  ·  Arrow keys",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-controls-jump",
+        "type": "Text",
+        "x": 40,
+        "y": 536,
+        "width": 310,
+        "height": 22,
+        "text": "Jump     Space  ·  W  ·  ↑",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-controls-fire",
+        "type": "Text",
+        "x": 40,
+        "y": 564,
+        "width": 310,
+        "height": 22,
+        "text": "Fire      J  ·  Gamepad B",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-controls-action",
+        "type": "Text",
+        "x": 40,
+        "y": 592,
+        "width": 310,
+        "height": 22,
+        "text": "Action   K  ·  Gamepad X",
+        "fontSize": 13,
+        "color": "#f1f5f9",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "label-controls-hint",
+        "type": "Text",
+        "x": 40,
+        "y": 624,
+        "width": 310,
+        "height": 20,
+        "text": "Edit bindings in Scene Settings → Input Map",
+        "fontSize": 11,
+        "color": "#64748b",
+        "align": "left",
+        "visible": true
+      },
+      {
+        "id": "btn-back",
+        "type": "Button",
+        "x": 55,
+        "y": 700,
+        "width": 280,
+        "height": 52,
+        "text": "←  Back to Menu",
+        "action": "backToMenu",
+        "fontSize": 16,
+        "color": "#f1f5f9",
+        "backgroundColor": "#1a2332",
+        "interactive": true,
+        "visible": true
+      },
+      {
+        "id": "settings-footer",
+        "type": "Text",
+        "x": 24,
+        "y": 768,
+        "width": 342,
+        "height": 36,
+        "text": "Toggles store vars (musicOn, sfxOn, quality) — wire audio later",
+        "fontSize": 10,
+        "color": "#64748b",
+        "align": "center",
+        "visible": true
+      }
+    ],
+    "componentInstances": []
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [],
+    "onLose": []
+  }
+}

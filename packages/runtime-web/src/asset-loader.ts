@@ -3,6 +3,8 @@ import type { GameKitEntity } from "@gamekit/schema";
 import {
   type AnimationComponent,
   type AudioSourceComponent,
+  type GuiComponent,
+  type GuiNode,
   type NineSliceComponent,
   type SpriteComponent,
   type TextComponent,
@@ -24,9 +26,8 @@ export function preloadEntityAssets(
   entities: GameKitEntity[],
   assetUrls: Record<string, string>,
   loadedFonts: FontRegistry,
-): void {
+): Set<string> {
   const loadedKeys = new Set<string>();
-
   for (const entity of entities) {
     const sprite = findComponent<SpriteComponent>(entity, "Sprite");
     const animation = findComponent<AnimationComponent>(entity, "Animation");
@@ -65,5 +66,33 @@ export function preloadEntityAssets(
       (document.fonts as unknown as { add(font: FontFace): void }).add(loaded);
       loadedFonts.set(text.fontAssetId, family);
     }).catch(() => undefined);
+  }
+  return loadedKeys;
+}
+
+/**
+ * Preload assets referenced only by GUI Image nodes (scene.gui.nodes plus the
+ * project-level guiComponents used by scene.gui.componentInstances). GUI images
+ * are looked up by their bare assetId, same key the entity preload registers.
+ */
+export function preloadGuiImageAssets(
+  loader: Phaser.Loader.LoaderPlugin,
+  sceneGui: { nodes?: GuiNode[] } | undefined,
+  guiComponents: GuiComponent[],
+  assetUrls: Record<string, string>,
+  loadedKeys: Set<string>,
+): void {
+  const assetIds = new Set<string>();
+  const collect = (nodes: GuiNode[] | undefined) => {
+    for (const node of nodes ?? []) {
+      if (node.type === "Image" && assetUrls[node.assetId]) assetIds.add(node.assetId);
+    }
+  };
+  collect(sceneGui?.nodes);
+  for (const component of guiComponents) collect(component.nodes);
+  for (const assetId of assetIds) {
+    if (loadedKeys.has(assetId)) continue;
+    loader.image(assetId, assetUrls[assetId]);
+    loadedKeys.add(assetId);
   }
 }

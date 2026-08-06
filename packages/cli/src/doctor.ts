@@ -135,6 +135,14 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     }
   }
 
+  // Project-level GUI components can reference assets (GUI Image nodes) even
+  // when no scene entity uses them — count them as used.
+  for (const component of project.guiComponents) {
+    for (const node of component.nodes) {
+      if (node.type === "Image") usedAssetIds.add(node.assetId);
+    }
+  }
+
   // Assets on disk vs project
   const projectAssetIds = new Set(project.assets.map((a) => a.id));
   for (const asset of project.assets) {
@@ -308,6 +316,9 @@ function collectAssetRefs(scene: GameKitScene, out: Set<string>): void {
         out.add((comp as { tilesetId: string }).tilesetId);
       }
     }
+  }
+  for (const node of scene.gui?.nodes ?? []) {
+    if (node.type === "Image") out.add(node.assetId);
   }
 }
 

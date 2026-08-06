@@ -1,0 +1,778 @@
+{
+  "schemaVersion": 1,
+  "id": "parity-lab",
+  "name": "Parity Lab",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "background": "#0b1020"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [
+    "player",
+    "obstacle",
+    "target",
+    "panel",
+    "tileset",
+    "hero"
+  ],
+  "entities": [
+    {
+      "id": "player",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 740
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 44,
+          "height": 44,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -22,
+            "y": -22
+          },
+          "size": {
+            "x": 44,
+            "y": 44
+          },
+          "isStatic": false,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 0.25,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 240,
+          "jumpVelocity": 0,
+          "gravity": 0
+        },
+        {
+          "type": "CameraFollow",
+          "targetId": "player",
+          "smoothing": 0.12
+        }
+      ]
+    },
+    {
+      "id": "wall-top",
+      "name": "Wall Top",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 12
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -195,
+            "y": -12
+          },
+          "size": {
+            "x": 390,
+            "y": 24
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wall-bottom",
+      "name": "Wall Bottom",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 832
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -195,
+            "y": -12
+          },
+          "size": {
+            "x": 390,
+            "y": 24
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wall-left",
+      "name": "Wall Left",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 12,
+            "y": 422
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -12,
+            "y": -422
+          },
+          "size": {
+            "x": 24,
+            "y": 844
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "wall-right",
+      "name": "Wall Right",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 378,
+            "y": 422
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -12,
+            "y": -422
+          },
+          "size": {
+            "x": 24,
+            "y": 844
+          },
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "anim-runner",
+      "name": "Animation Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 90,
+            "y": 150
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Animation",
+          "assetId": "hero",
+          "frameWidth": 24,
+          "frameHeight": 24,
+          "totalFrames": 4,
+          "framesPerSecond": 8,
+          "loop": true,
+          "currentFrame": 0
+        }
+      ]
+    },
+    {
+      "id": "pulsing-gem",
+      "name": "Tween Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 150
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "Tween",
+          "property": "scale.x",
+          "startValue": 1,
+          "endValue": 1.6,
+          "duration": 0.6,
+          "easing": "easeInOut",
+          "loop": true,
+          "pingPong": true,
+          "active": true
+        },
+        {
+          "type": "Tween",
+          "property": "scale.y",
+          "startValue": 1,
+          "endValue": 1.6,
+          "duration": 0.6,
+          "easing": "easeInOut",
+          "loop": true,
+          "pingPong": true,
+          "active": true
+        }
+      ]
+    },
+    {
+      "id": "nineslice-panel",
+      "name": "NineSlice Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 300,
+            "y": 130
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "NineSlice",
+          "assetId": "panel",
+          "width": 130,
+          "height": 84,
+          "leftWidth": 16,
+          "rightWidth": 16,
+          "topHeight": 16,
+          "bottomHeight": 16
+        }
+      ]
+    },
+    {
+      "id": "circle-orb",
+      "name": "Circle Collider Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 80,
+            "y": 300
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 52,
+          "height": 52,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "CircleCollider",
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "radius": 26,
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "poly-ramp",
+      "name": "Polygon Collider Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 310,
+            "y": 320
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "obstacle",
+          "width": 64,
+          "height": 64,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "PolygonCollider",
+          "offset": {
+            "x": -32,
+            "y": -32
+          },
+          "points": [
+            {
+              "x": 0,
+              "y": 64
+            },
+            {
+              "x": 64,
+              "y": 64
+            },
+            {
+              "x": 32,
+              "y": 8
+            }
+          ],
+          "isStatic": true,
+          "isTrigger": false,
+          "layer": 1,
+          "mask": 1
+        }
+      ]
+    },
+    {
+      "id": "light-2d",
+      "name": "Light2D Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 420
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Light2D",
+          "kind": "point",
+          "range": 280,
+          "intensity": 1.2,
+          "color": "#00f0ff"
+        }
+      ]
+    },
+    {
+      "id": "trigger-switch",
+      "name": "StateMachine + Script Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 520
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -24,
+            "y": -24
+          },
+          "size": {
+            "x": 48,
+            "y": 48
+          },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        },
+        {
+          "type": "StateMachine",
+          "initialState": "idle",
+          "currentState": "idle",
+          "states": [
+            {
+              "name": "idle",
+              "on": {
+                "triggerEnter": "touched"
+              }
+            },
+            {
+              "name": "touched"
+            }
+          ]
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "triggerEnter",
+              "actions": [
+                {
+                  "type": "setVariable",
+                  "key": "probeTouched",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patroller",
+      "name": "FollowPath Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 60,
+            "y": 620
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "obstacle",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "FollowPath",
+          "points": [
+            {
+              "x": 60,
+              "y": 620
+            },
+            {
+              "x": 330,
+              "y": 620
+            },
+            {
+              "x": 330,
+              "y": 660
+            },
+            {
+              "x": 60,
+              "y": 660
+            }
+          ],
+          "speed": 70,
+          "loop": true,
+          "currentPointIndex": 0,
+          "targetPointIndex": 1
+        }
+      ]
+    },
+    {
+      "id": "particle-fountain",
+      "name": "Particle Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 200
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "ParticleSystem",
+          "maxParticles": 40,
+          "emissionRate": 24,
+          "lifetime": 1.1,
+          "speed": 50,
+          "gravityScale": 0.4,
+          "colorStart": "#00f0ff",
+          "colorEnd": "#8b5cf6",
+          "sizeStart": 4,
+          "sizeEnd": 0,
+          "shape": "point",
+          "active": true
+        }
+      ]
+    },
+    {
+      "id": "world-label",
+      "name": "World Text Probe",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 195,
+            "y": 60
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Text",
+          "text": "Parity Budget Lab",
+          "fontAssetId": "",
+          "size": 18,
+          "color": "#00f0ff",
+          "align": "center"
+        }
+      ]
+    },
+    {
+      "id": "tilemap-floor",
+      "name": "Tilemap Probe (no collision)",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 3,
+            "y": 790
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Tilemap",
+          "tilesetId": "tileset",
+          "tileWidth": 16,
+          "tileHeight": 16,
+          "columns": 4,
+          "gridWidth": 24,
+          "gridHeight": 2,
+          "tiles": [
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "game-controller",
+      "name": "Game Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "restartLevel",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "parity-lab"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 390,
+    "referenceHeight": 844,
+    "orientation": "portrait",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [],
+    "componentInstances": [
+      {
+        "id": "inst-hud",
+        "componentId": "hud",
+        "x": 0,
+        "y": 0,
+        "visible": true
+      }
+    ]
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "move_up",
+        "keys": [
+          "ArrowUp",
+          "w",
+          "W"
+        ],
+        "gamepad": "LEFT_STICK_Y_NEG"
+      },
+      {
+        "action": "move_down",
+        "keys": [
+          "ArrowDown",
+          "s",
+          "S"
+        ],
+        "gamepad": "LEFT_STICK_Y_POS"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "gameOver",
+    "lives": 0,
+    "gameOverMessage": "Parity probe ended",
+    "winMessage": "All probes green",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [],
+    "onLose": [],
+    "spawnPoint": {
+      "x": 195,
+      "y": 740
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "name": "Parity Budget Lab",
+  "scenes": [
+    "menu.scene.json",
+    "settings.scene.json",
+    "parity-lab.scene.json"
+  ],
+  "activeScene": "parity-lab.scene.json",
+  "levels": [
+    {
+      "id": "level-1",
+      "name": "Parity Lab",
+      "order": 1,
+      "sceneIds": [
+        "parity-lab"
+      ],
+      "unlocked": true
+    }
+  ],
+  "assets": [
+    {
+      "id": "player",
+      "file": "player.svg",
+      "kind": "image"
+    },
+    {
+      "id": "obstacle",
+      "file": "obstacle.svg",
+      "kind": "image"
+    },
+    {
+      "id": "target",
+      "file": "target.svg",
+      "kind": "image"
+    },
+    {
+      "id": "panel",
+      "file": "panel.svg",
+      "kind": "image"
+    },
+    {
+      "id": "tileset",
+      "file": "tileset.png",
+      "kind": "image",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "hero",
+      "file": "hero.png",
+      "kind": "image",
+      "width": 96,
+      "height": 24
+    },
+    {
+      "id": "badge",
+      "file": "badge.svg",
+      "kind": "image"
+    }
+  ],
+  "guiComponents": [
+    {
+      "id": "hud",
+      "name": "Parity HUD",
+      "nodes": [
+        {
+          "id": "hud-title",
+          "type": "Text",
+          "x": 12,
+          "y": 8,
+          "width": 366,
+          "height": 28,
+          "text": "Parity Lab — WASD/arrows to move",
+          "fontSize": 14,
+          "color": "#00f0ff",
+          "align": "center",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "hud-gui-image",
+          "type": "Image",
+          "x": 12,
+          "y": 44,
+          "width": 32,
+          "height": 32,
+          "assetId": "player",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "hud-gui-badge",
+          "type": "Image",
+          "x": 50,
+          "y": 44,
+          "width": 32,
+          "height": 32,
+          "assetId": "badge",
+          "interactive": false,
+          "visible": true
+        },
+        {
+          "id": "btn-restart",
+          "type": "Button",
+          "x": 310,
+          "y": 790,
+          "width": 70,
+          "height": 40,
+          "text": "Reset",
+          "action": "restartLevel",
+          "fontSize": 14,
+          "color": "#f1f5f9",
+          "backgroundColor": "#1a2332",
+          "interactive": true,
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "transitions": []
+}
