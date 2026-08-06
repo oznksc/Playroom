@@ -147,7 +147,7 @@ export function Inspector({
         draft.components.push({ type: "CameraFollow", targetId: draft.id, smoothing: 0.18 });
       } else if (val === "Tilemap") {
         const tilesetId = assets.find((a) => a.kind === "image")?.id ?? "";
-        draft.components.push({ type: "Tilemap", tilesetId, tileWidth: 32, tileHeight: 32, columns: 8, gridWidth: 10, gridHeight: 10, tiles: new Array(100).fill(0) });
+        draft.components.push({ type: "Tilemap", tilesetId, tileWidth: 32, tileHeight: 32, columns: 8, gridWidth: 10, gridHeight: 10, tiles: new Array(100).fill(0), solid: false });
       } else if (val === "Text") {
         const fontAssetId = assets.find((a) => a.kind === "font")?.id ?? "default";
         draft.components.push({ type: "Text", text: "Hello World", fontAssetId, size: 24, color: "#ffffff", align: "left" });

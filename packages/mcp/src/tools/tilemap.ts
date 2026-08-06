@@ -17,8 +17,9 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       columns: z.number().int().positive().describe("Tiles per row in the tileset image"),
       gridWidth: z.number().int().positive().describe("Map width in tiles"),
       gridHeight: z.number().int().positive().describe("Map height in tiles"),
+      solid: z.boolean().optional().describe("When true, every non-empty tile collides as a static solid"),
     },
-    async ({ scenePath, entityId, tilesetId, tileWidth, tileHeight, columns, gridWidth, gridHeight }) => {
+    async ({ scenePath, entityId, tilesetId, tileWidth, tileHeight, columns, gridWidth, gridHeight, solid }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
@@ -47,6 +48,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
         gridWidth,
         gridHeight,
         tiles: [],
+        solid: solid ?? false,
       };
 
       entity.components.push(GameKitComponentSchema.parse(component));

@@ -620,7 +620,7 @@
     },
     {
       "id": "tilemap-floor",
-      "name": "Tilemap Probe (no collision)",
+      "name": "Tilemap Probe (solid floor)",
       "components": [
         {
           "type": "Transform",
@@ -645,7 +645,8 @@
           "tiles": [
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
-          ]
+          ],
+          "solid": true
         }
       ]
     },

@@ -152,6 +152,13 @@ Ordered for product impact, not exhaustive:
    - **gap closed:** GUI Image asset-key bug on Phaser (GUI-only asset preload + bare-key
      lookup; doctor counts GUI Image refs). Open: remaining gaps (see the "Parity budget"
      table in the doc).
+   - **gap closed:** Tilemap now renders on Phaser and `Tilemap.solid` derives static tile
+     bodies on both runtimes (tile id ≠ 0 → AABB on layer 1, masks filter tiles).
+   - **gap closed:** RigidBody parity on Phaser — `velocity`/`mass`/`angularVelocity`/
+     `isKinematic`/`gravityScale`/`drag`/`useGravity` honored via Arcade and `applyImpulse`
+     scripts work (impulse ÷ mass; no-op on kinematic).
+   - **gap closed:** Collision `layer`/`mask` on Phaser — collider/overlap process callbacks
+     apply the Skia rule (solid: dynamic mask & static layer; trigger: both masks).
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

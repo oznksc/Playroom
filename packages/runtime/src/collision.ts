@@ -1,4 +1,4 @@
-import type { AabbColliderComponent, CircleColliderComponent, GameKitEntity, PolygonColliderComponent, TransformComponent, RigidBodyComponent, Vector2 } from "@gamekit/schema";
+import type { AabbColliderComponent, CircleColliderComponent, GameKitEntity, PolygonColliderComponent, TransformComponent, RigidBodyComponent, Vector2, TilemapComponent } from "@gamekit/schema";
 
 export type Aabb = {
   x: number;
@@ -127,6 +127,35 @@ export function getEntityPolygon(entity: GameKitEntity): Polygon | undefined {
       y: oy + p.y,
     })),
   };
+}
+
+/**
+ * Build static AABB solids for every non-empty tile of a Tilemap component
+ * marked `solid`. Tiles start at the entity's Transform position and extend
+ * row-major to the right/down, matching the renderer (tile id 0 = empty).
+ * Tiles are placed on collision layer 1 (the default layer).
+ */
+export function getTilemapSolids(entity: GameKitEntity): CollisionSolid[] {
+  const transform = findComponent<TransformComponent>(entity, "Transform");
+  const tilemap = findComponent<TilemapComponent>(entity, "Tilemap");
+  if (!transform || !tilemap?.solid) return [];
+
+  const solids: CollisionSolid[] = [];
+  for (let i = 0; i < tilemap.tiles.length; i++) {
+    const tileId = tilemap.tiles[i];
+    if (tileId === 0) continue;
+    const gx = i % tilemap.gridWidth;
+    const gy = Math.floor(i / tilemap.gridWidth);
+    solids.push({
+      x: transform.position.x + gx * tilemap.tileWidth,
+      y: transform.position.y + gy * tilemap.tileHeight,
+      width: tilemap.tileWidth,
+      height: tilemap.tileHeight,
+      layer: 1,
+      entityId: entity.id,
+    });
+  }
+  return solids;
 }
 
 export function intersectsPolygonAabb(poly: Polygon, aabb: Aabb): boolean {
