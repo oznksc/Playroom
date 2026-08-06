@@ -42,7 +42,7 @@ import { raycast } from "@gamekit/runtime/collision";
 
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
-import { preloadEntityAssets } from "./asset-loader.js";
+import { preloadEntityAssets, preloadGuiImageAssets } from "./asset-loader.js";
 import { configureSceneKeyboard, resolveScenePlayerInput, type SceneInputKeys } from "./scene-input.js";
 import { setupTouchJoystick as setupTouchJoystickInput } from "./touch-joystick.js";
 import { refreshSceneHud } from "./scene-hud.js";
@@ -229,7 +229,19 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   preload(): void {
-    preloadEntityAssets(this.load, this.activeEntities, this.assetUrls, this.loadedFonts);
+    const loadedKeys = preloadEntityAssets(
+      this.load,
+      this.activeEntities,
+      this.assetUrls,
+      this.loadedFonts,
+    );
+    preloadGuiImageAssets(
+      this.load,
+      this.sceneData.gui,
+      this.guiComponents,
+      this.assetUrls,
+      loadedKeys,
+    );
   }
 
   create(): void {
@@ -675,7 +687,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       }
       created.push(bg, label);
     } else if (node.type === "Image") {
-      const key = `asset:${node.assetId}`;
+      const key = node.assetId;
       if (this.textures.exists(key)) {
         const img = this.add
           .image(node.x + node.width / 2, node.y + node.height / 2, key)
