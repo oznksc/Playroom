@@ -151,6 +151,11 @@ export const TilemapComponentSchema = z.object({
   gridWidth: z.number(),
   gridHeight: z.number(),
   tiles: z.array(z.number()).default([]),
+  /**
+   * When true, every non-empty tile (tile id !== 0) is a static solid of
+   * `tileWidth x tileHeight` at its grid position on both runtimes.
+   */
+  solid: z.boolean().default(false),
 });
 export type TilemapComponent = z.infer<typeof TilemapComponentSchema>;
 

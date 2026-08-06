@@ -18,6 +18,7 @@ import {
   getEntityAabb,
   getEntityCircle,
   getEntityPolygon,
+  getTilemapSolids,
   updateTriggerEvents,
   type CollisionSolid,
   type TriggerState,
@@ -162,6 +163,7 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         const polygon = getEntityPolygon(entity);
         if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
       }
+      solids.push(...getTilemapSolids(entity));
     }
 
     for (const entity of working.entities) {

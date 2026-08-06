@@ -17,6 +17,7 @@ import type {
   FollowPathComponent,
   Light2DComponent,
   NineSliceComponent,
+  TilemapComponent,
   TweenComponent,
   StateMachineComponent,
   GuiNode,
@@ -43,6 +44,8 @@ import { raycast } from "@gamekit/runtime/collision";
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
 import { preloadEntityAssets, preloadGuiImageAssets } from "./asset-loader.js";
+import { createPhaserRigidBody, type PhaserRigidBody } from "./rigid-body-web.js";
+import { colliderLayerMask, solidCollides, triggerOverlaps } from "./collision-filter.js";
 import { configureSceneKeyboard, resolveScenePlayerInput, type SceneInputKeys } from "./scene-input.js";
 import { setupTouchJoystick as setupTouchJoystickInput } from "./touch-joystick.js";
 import { refreshSceneHud } from "./scene-hud.js";
@@ -113,6 +116,13 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private sceneManager: ScriptContext["sceneManager"] | undefined;
   private onGuiAction: ((action: string) => void) | undefined;
   private hostOptions: GameKitPhaserSceneOptions = {};
+  /** Solid tilemap layers; dynamic bodies collide against them. */
+  private tileLayers: Phaser.Tilemaps.TilemapLayer[] = [];
+  private tileLayerByEntity = new Map<string, Phaser.Tilemaps.TilemapLayer>();
+  /** RigidBody adapters for script actions (applyImpulse) on dynamic bodies. */
+  private rigidBodies = new Map<string, PhaserRigidBody>();
+  /** GameObject → binding for collision layer/mask filtering. */
+  private objectBindings = new Map<Phaser.GameObjects.GameObject, EntityBinding>();
 
   constructor(
     sceneData: GameKitScene,
@@ -278,16 +288,37 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     for (const [, binding] of this.bindings) {
       if (binding.body && !binding.isStatic && !binding.isTrigger) {
-        this.physics.add.collider(binding.gameObject, staticGroup);
+        // Match Skia's solid-collision rule: a dynamic body only collides with
+        // static bodies whose layer is in the dynamic body's mask.
+        this.physics.add.collider(binding.gameObject, staticGroup, undefined, (_dyn, stat) => {
+          const dynFilter = colliderLayerMask(binding.entity);
+          const statBinding = this.objectBindings.get(stat as Phaser.GameObjects.GameObject);
+          const statLayer = statBinding ? colliderLayerMask(statBinding.entity).layer : 1;
+          return solidCollides(dynFilter.mask, statLayer);
+        });
+        if (this.tileLayers.length > 0) {
+          // Tile solids live on layer 1.
+          this.physics.add.collider(binding.gameObject, this.tileLayers, undefined, (_dyn, _tile) => {
+            const dynFilter = colliderLayerMask(binding.entity);
+            return solidCollides(dynFilter.mask, 1);
+          });
+        }
       }
     }
 
     if (this.playerBinding) {
+      const playerFilter = colliderLayerMask(this.playerBinding.binding.entity);
       this.physics.add.overlap(
         this.playerBinding.binding.gameObject,
         triggerGroup,
         (_player, triggerObj) => {
           this.handleTriggerOverlap(triggerObj as Phaser.GameObjects.GameObject);
+        },
+        (_player, triggerObj) => {
+          // Match Skia's trigger rule: both masks must accept the other's layer.
+          const triggerBinding = this.objectBindings.get(triggerObj as Phaser.GameObjects.GameObject);
+          if (!triggerBinding) return true;
+          return triggerOverlaps(playerFilter, colliderLayerMask(triggerBinding.entity));
         },
       );
     }
@@ -337,6 +368,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       if (script) {
         evaluateScriptEvent("start", script, engine.scriptContext(entity.id, {
           destroyEntity: (id) => this.destroyEntityById(id),
+          rigidBodies: this.rigidBodies,
           playSound: (assetId) => {
             for (const e of this.activeEntities) {
               const audio = e.components.find((c) => c.type === "AudioSource");
@@ -745,6 +777,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     if (script) {
       const ctx = engine.scriptContext(entity.id, {
         destroyEntity: (id: string) => this.destroyEntityById(id),
+        rigidBodies: this.rigidBodies,
         playSound: (assetId: string) => {
           for (const e of this.activeEntities) {
             const audio = e.components.find((c) => c.type === "AudioSource");
@@ -778,13 +811,21 @@ export class GameKitPhaserScene extends Phaser.Scene {
   }
 
   private destroyEntityById(entityId: string): void {
+    const tileLayer = this.tileLayerByEntity.get(entityId);
+    if (tileLayer) {
+      tileLayer.destroy();
+      this.tileLayers = this.tileLayers.filter((l) => l !== tileLayer);
+      this.tileLayerByEntity.delete(entityId);
+    }
     const binding = this.bindings.get(entityId);
     if (binding) {
       binding.gameObject.destroy();
       this.bindings.delete(entityId);
+      this.objectBindings.delete(binding.gameObject);
     }
     this.activeEntities = this.activeEntities.filter((e) => e.id !== entityId);
     this.particleEmitters.delete(entityId);
+    this.rigidBodies.delete(entityId);
 
     const light = this.lightSources.get(entityId);
     if (light) {
@@ -822,6 +863,52 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.winText = showSceneOverlay(this, this.winText, message, color);
   }
 
+  /**
+   * Renders a Tilemap as a Phaser tilemap layer anchored at the entity's
+   * Transform position. Tile ids are 1-based (0 = empty) in the schema;
+   * Phaser uses -1 for empty and 0 for the first tileset frame. When the
+   * tilemap is `solid`, every placed tile becomes a static collision body.
+   */
+  private createTilemapLayer(
+    entityId: string,
+    transform: TransformComponent,
+    tilemap: TilemapComponent,
+  ): void {
+    if (!this.textures.exists(tilemap.tilesetId)) return;
+
+    const data: number[][] = [];
+    for (let gy = 0; gy < tilemap.gridHeight; gy++) {
+      const row: number[] = [];
+      for (let gx = 0; gx < tilemap.gridWidth; gx++) {
+        const tileId = tilemap.tiles[gy * tilemap.gridWidth + gx] ?? 0;
+        row.push(tileId === 0 ? -1 : tileId - 1);
+      }
+      data.push(row);
+    }
+
+    const map = this.make.tilemap({
+      data,
+      tileWidth: tilemap.tileWidth,
+      tileHeight: tilemap.tileHeight,
+    });
+    const tileset = map.addTilesetImage(
+      tilemap.tilesetId,
+      undefined,
+      tilemap.tileWidth,
+      tilemap.tileHeight,
+    );
+    if (!tileset) return;
+
+    const layer = map.createLayer(0, tileset, transform.position.x, transform.position.y);
+    if (!layer) return;
+
+    if (tilemap.solid) {
+      layer.setCollisionByExclusion([-1]);
+      this.tileLayers.push(layer);
+      this.tileLayerByEntity.set(entityId, layer);
+    }
+  }
+
   private createEntity(
     entity: GameKitEntity,
     staticGroup: Phaser.Physics.Arcade.StaticGroup,
@@ -829,6 +916,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
   ): void {
     const transform = findComponent<TransformComponent>(entity, "Transform");
     if (!transform) return;
+
+    const tilemapComp = findComponent<TilemapComponent>(entity, "Tilemap");
+    if (tilemapComp) {
+      this.createTilemapLayer(entity.id, transform, tilemapComp);
+      return;
+    }
 
     const spriteComp = findComponent<SpriteComponent>(entity, "Sprite");
     const animComp = findComponent<AnimationComponent>(entity, "Animation");
@@ -1050,12 +1143,36 @@ export class GameKitPhaserScene extends Phaser.Scene {
     }
 
     if (rigidBodyComp && body && !isStatic && !isTrigger) {
-      // World gravity already applied via game config; drag only on X
-      body.setDragX(Math.min(1000, rigidBodyComp.drag * 1000));
+      // RigidBody parity: honor the shared schema fields on the Arcade body.
       body.setBounce(0);
-      if (!rigidBodyComp.useGravity) {
+      if (rigidBodyComp.isKinematic) {
+        // Kinematic: moves at its own velocity but is not affected by forces
+        // and never gets pushed by other bodies.
+        body.setImmovable(true);
         body.setAllowGravity(false);
+        body.setDrag(0, 0);
+      } else {
+        if (rigidBodyComp.useGravity) {
+          // Arcade adds body gravity to world gravity, so scale the world value
+          // to make effective gravity = world * gravityScale.
+          const worldGravityY = this.physics.world.gravity.y;
+          const scale = (rigidBodyComp.gravityScale ?? 1) - 1;
+          if (scale !== 0) body.setGravityY(worldGravityY * scale);
+        } else {
+          body.setAllowGravity(false);
+        }
+        if (rigidBodyComp.drag > 0) {
+          // World gravity already applied via game config; drag only on X
+          body.setDragX(Math.min(1000, rigidBodyComp.drag * 1000));
+        }
       }
+      // Initial velocity + mass + angular velocity from the shared fields.
+      body.setMass(Math.max(0.001, rigidBodyComp.mass));
+      body.setVelocity(rigidBodyComp.velocity.x, rigidBodyComp.velocity.y);
+      if (rigidBodyComp.angularVelocity !== 0) {
+        body.setAngularVelocity(rigidBodyComp.angularVelocity);
+      }
+      this.rigidBodies.set(entity.id, createPhaserRigidBody(body, rigidBodyComp));
     }
 
     // Player: disable default drag fight with controller horizontal velocity
@@ -1075,6 +1192,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       isTrigger,
     };
     this.bindings.set(entity.id, binding);
+    this.objectBindings.set(gameObject as Phaser.GameObjects.GameObject, binding);
 
     if (playerComp) {
       this.playerBinding = {

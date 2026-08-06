@@ -8,6 +8,7 @@ import {
   type NineSliceComponent,
   type SpriteComponent,
   type TextComponent,
+  type TilemapComponent,
 } from "@gamekit/schema";
 import { findComponent } from "./scene-helpers.js";
 
@@ -52,6 +53,12 @@ export function preloadEntityAssets(
     if (nineSlice && !loadedKeys.has(nineSlice.assetId) && assetUrls[nineSlice.assetId]) {
       loader.image(nineSlice.assetId, assetUrls[nineSlice.assetId]);
       loadedKeys.add(nineSlice.assetId);
+    }
+
+    const tilemap = findComponent<TilemapComponent>(entity, "Tilemap");
+    if (tilemap && !loadedKeys.has(tilemap.tilesetId) && assetUrls[tilemap.tilesetId]) {
+      loader.image(tilemap.tilesetId, assetUrls[tilemap.tilesetId]);
+      loadedKeys.add(tilemap.tilesetId);
     }
 
     const text = findComponent<TextComponent>(entity, "Text");

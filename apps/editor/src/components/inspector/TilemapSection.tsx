@@ -1,6 +1,6 @@
 import type { TilemapComponent, GameKitAsset } from "@gamekit/schema";
 import { Grid3x3 } from "lucide-react";
-import { NumberField, AccordionSection, Select } from "@/ui";
+import { NumberField, AccordionSection, Select, CheckboxField } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import type { OnChange } from "./types.js";
 
@@ -82,6 +82,9 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
               })}
             />
           </div>
+          <CheckboxField label="Solid tiles (tile id ≠ 0 collides)" checked={tilemap.solid === true}
+            onChange={(checked) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.solid = checked; })}
+          />
           <p className="m-0 font-mono text-[10px] text-text-muted">
             {tilemap.tiles.length} cells · paint on canvas with brush tools
           </p>

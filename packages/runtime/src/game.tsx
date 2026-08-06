@@ -8,7 +8,7 @@ import { usePlayerInput } from "./input.js";
 import { createPlayerController } from "./player.js";
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { createCameraFollow, type CameraState } from "./camera.js";
-import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, updateCollisionEvents, updateTriggerEvents, type CollisionEvent, type CollisionSolid, type CollisionState, type TriggerEvent, type TriggerState } from "./collision.js";
+import { applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, getEntityAabb, getEntityCircle, getEntityPolygon, getTilemapSolids, updateCollisionEvents, updateTriggerEvents, type CollisionEvent, type CollisionSolid, type CollisionState, type TriggerEvent, type TriggerState } from "./collision.js";
 import { updateAnimation } from "./animate.js";
 import { playTimeline, type TimelineState } from "./timeline.js";
 import type { AnimationComponent } from "@gamekit/schema";
@@ -334,6 +334,7 @@ export function GameKitGame({
         const polygon = getEntityPolygon(entity);
         if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
       }
+      solids.push(...getTilemapSolids(entity));
     }
 
     for (const entity of entities) {

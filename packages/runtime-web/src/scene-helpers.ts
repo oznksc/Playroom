@@ -16,8 +16,29 @@ export function computeWorldBounds(scene: GameKitScene): { width: number; height
     if (!transform) continue;
     const sprite = findComponent<{ type: "Sprite"; width: number; height: number }>(entity, "Sprite");
     const collider = findComponent<{ type: "AabbCollider"; size: { x: number; y: number } }>(entity, "AabbCollider");
-    const halfW = sprite ? sprite.width / 2 : collider ? collider.size.x / 2 : 0;
-    const halfH = sprite ? sprite.height / 2 : collider ? collider.size.y / 2 : 0;
+    const tilemap = findComponent<{
+      type: "Tilemap";
+      gridWidth: number;
+      gridHeight: number;
+      tileWidth: number;
+      tileHeight: number;
+    }>(entity, "Tilemap");
+    // Tiles start at the entity's position (top-left origin), so the extent is
+    // the full grid size; sprites/colliders use the origin-centered half-size.
+    const halfW = tilemap
+      ? (tilemap.gridWidth * tilemap.tileWidth) / 2
+      : sprite
+        ? sprite.width / 2
+        : collider
+          ? collider.size.x / 2
+          : 0;
+    const halfH = tilemap
+      ? (tilemap.gridHeight * tilemap.tileHeight) / 2
+      : sprite
+        ? sprite.height / 2
+        : collider
+          ? collider.size.y / 2
+          : 0;
     maxX = Math.max(maxX, transform.position.x + halfW + 64);
     maxY = Math.max(maxY, transform.position.y + halfH + 64);
   }
