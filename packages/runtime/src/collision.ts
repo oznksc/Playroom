@@ -119,13 +119,22 @@ export function getEntityPolygon(entity: GameKitEntity): Polygon | undefined {
 
   const ox = transform.position.x + collider.offset.x;
   const oy = transform.position.y + collider.offset.y;
+  const radians = ((transform.rotation ?? 0) * Math.PI) / 180;
+  const sx = transform.scale?.x ?? 1;
+  const sy = transform.scale?.y ?? 1;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
   return {
     x: ox,
     y: oy,
-    points: collider.points.map((p) => ({
-      x: ox + p.x,
-      y: oy + p.y,
-    })),
+    points: collider.points.map((p) => {
+      const rx = p.x * sx;
+      const ry = p.y * sy;
+      return {
+        x: ox + rx * cos - ry * sin,
+        y: oy + rx * sin + ry * cos,
+      };
+    }),
   };
 }
 
