@@ -214,6 +214,12 @@ Ordered for product impact, not exhaustive:
       an optional `width` (word-wrap width); Skia wraps via the shared `wrapText`
       helper, Phaser uses native word-wrap, and the editor canvas preview wraps too.
       Missing/unloaded custom fonts fall back to a system font on both runtimes.
+    - **gap closed:** RigidBody sleeping + drag parity on Phaser — the adapter now
+      applies the shared per-frame exponential drag model (no more px/s² guess) and
+      mirrors the Skia sleeping model: a supported body still below the linear/
+      angular thresholds for `RIGID_BODY_SLEEP_DELAY` seconds freezes in place
+      (`moves = false`) while collisions keep working, and wakes on input or
+      `applyImpulse`.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

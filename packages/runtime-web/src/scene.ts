@@ -472,6 +472,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
       // Only jump on the frame the key is pressed — holding must not re-apply impulse
       const jumpPressed = jumpDown && !this.jumpHeldLastFrame;
       this.jumpHeldLastFrame = jumpDown;
+      if (input.left || input.right || input.jump || input.up || input.down) {
+        this.rigidBodies.get(binding.entity.id)?.wake();
+      }
       if (jumpPressed) {
         this.jumpBufferFrames = GameKitPhaserScene.JUMP_BUFFER;
       } else if (this.jumpBufferFrames > 0) {
@@ -546,6 +549,16 @@ export class GameKitPhaserScene extends Phaser.Scene {
     }
 
     playTimeline(this.sceneData, this.timelineState, dt);
+
+    // RigidBody parity: per-frame exponential drag + body sleeping (shared with Skia).
+    for (const [entityId, rb] of this.rigidBodies) {
+      const binding = this.bindings.get(entityId);
+      if (!binding || !binding.body) continue;
+      rb.applyDrag(dt);
+      const supported =
+        Boolean(binding.body.blocked?.down) || Boolean(binding.body.touching?.down);
+      rb.updateSleep(dt, supported);
+    }
 
     for (const entity of this.activeEntities) {
       const binding = this.bindings.get(entity.id);
@@ -1371,8 +1384,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
           body.setAllowGravity(false);
         }
         if (rigidBodyComp.drag > 0) {
-          // World gravity already applied via game config; drag only on X
-          body.setDragX(Math.min(1000, rigidBodyComp.drag * 1000));
+          // Drag is applied per-frame via createPhaserRigidBody.applyDrag,
+          // matching the Skia exponential drag model exactly.
         }
       }
       // Initial velocity + mass + angular velocity from the shared fields.
