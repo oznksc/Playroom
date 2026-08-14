@@ -53,6 +53,10 @@
       "types": "./dist/audio.d.ts",
       "import": "./dist/audio.js"
     },
+    "./spatial-audio": {
+      "types": "./dist/spatial-audio.d.ts",
+      "import": "./dist/spatial-audio.js"
+    },
     "./particles": {
       "types": "./dist/particles.d.ts",
       "import": "./dist/particles.js"

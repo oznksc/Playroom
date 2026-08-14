@@ -479,7 +479,9 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       assetId: "laser-sound",
       volume: 0.8,
       loop: true,
-      playOnStart: false
+      playOnStart: false,
+      minDistance: 40,
+      maxDistance: 600
     });
 
     entity.components.push({
@@ -503,6 +505,8 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     const audioComp = loadedEntity.components.find((c) => c.type === "AudioSource") as any;
     expect(audioComp.volume).toBe(0.8);
     expect(audioComp.loop).toBe(true);
+    expect(audioComp.minDistance).toBe(40);
+    expect(audioComp.maxDistance).toBe(600);
 
     const listenerComp = loadedEntity.components.find((c) => c.type === "AudioListener") as any;
     expect(listenerComp.enabled).toBe(true);

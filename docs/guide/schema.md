@@ -16,7 +16,7 @@ Playroom scenes are JSON validated by `@gamekit/schema`.
 | `Tilemap` | Grid tiles + tileset |
 | `NineSlice` | Stretch-9 panel — rendered on both runtimes: corners stay source-sized, edges stretch one axis, the center stretches both |
 | `Text` | World-space label (`fontAssetId` empty = system font) |
-| `AudioSource` / `AudioListener` | Audio |
+| `AudioSource` / `AudioListener` | Audio — `AudioSource` plays `assetId` with `volume`/`loop`/`playOnStart` plus optional `minDistance`/`maxDistance`; `AudioListener` (with `enabled`) sets the listening position from its `Transform`. Spatial model shared by both runtimes: linear gain rolloff from `minDistance` to `maxDistance` + stereo pan from horizontal offset. No listener → authored volume, centered. |
 | `Tween` / `FollowPath` | Motion helpers |
 | `StateMachine` / `Script` | Behavior |
 | `ParticleSystem` | Lightweight particle emitter |

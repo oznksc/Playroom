@@ -96,6 +96,15 @@ export {
   type ResolvedAudioSource,
 } from "./audio.js";
 export {
+  computeSpatialAudio,
+  findAudioListenerPosition,
+  DEFAULT_MIN_DISTANCE,
+  DEFAULT_MAX_DISTANCE,
+  type SpatialAudioListener,
+  type SpatialAudioSource,
+  type SpatialAudioResult,
+} from "./spatial-audio.js";
+export {
   resolveActionKeys,
   resolveGamepadBindings,
   playerInputFromPressedKeys,

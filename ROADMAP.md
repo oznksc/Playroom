@@ -188,6 +188,13 @@ Ordered for product impact, not exhaustive:
       resolve against them every frame with the shared SAT core
       (`applyAabbCollisions`/`applyCircleCollisions`), matching Skia semantics (polygon-as-
       bounding-box for AABB, true SAT for circle). Concave shapes ghost; no dynamic-vs-dynamic.
+    - **gap closed:** AudioListener / spatial audio on both runtimes — a shared spatial model
+      (`computeSpatialAudio` in `@gamekit/runtime`) computes distance-based linear gain rolloff
+      (full at/below `minDistance`, silent at/above `maxDistance`) plus stereo pan from the
+      horizontal offset. Each frame both runtimes locate the first enabled `AudioListener`
+      entity's `Transform` and apply gain/pan to every playing `AudioSource` (Skia:
+      `StereoPannerNode` on web, volume-only on expo-av; Phaser: `setVolume`/`setPan`).
+      `AudioSource` gained optional `minDistance`/`maxDistance` fields.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

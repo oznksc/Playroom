@@ -52,6 +52,16 @@ export function AudioSourceSection({ audioSource, assets, onChange, open, onTogg
             checked={audioSource.playOnStart}
             onChange={(checked) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.playOnStart = checked; })}
           />
+          <NumberField
+            label="Min distance"
+            value={audioSource.minDistance ?? 0}
+            onChange={(v) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.minDistance = v; })}
+          />
+          <NumberField
+            label="Max distance"
+            value={audioSource.maxDistance ?? 1000}
+            onChange={(v) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.maxDistance = v; })}
+          />
         </>
       ) : (
         <p className="text-center text-[10px] text-text-muted">No audio source</p>

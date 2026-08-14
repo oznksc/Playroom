@@ -175,6 +175,8 @@ export const AudioSourceComponentSchema = z.object({
   volume: z.number().default(1),
   loop: z.boolean().default(false),
   playOnStart: z.boolean().default(true),
+  minDistance: z.number().min(0).optional(),
+  maxDistance: z.number().positive().optional(),
 });
 export type AudioSourceComponent = z.infer<typeof AudioSourceComponentSchema>;
 

@@ -98,6 +98,8 @@ export const TextInputSchema = TextComponentSchema.extend({
 
 export const AudioSourceInputSchema = AudioSourceComponentSchema.extend({
   volume: z.number().min(0).max(1),
+  minDistance: z.number().min(0).optional(),
+  maxDistance: z.number().positive().optional(),
 });
 
 export const AudioListenerInputSchema = AudioListenerComponentSchema;

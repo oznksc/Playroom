@@ -62,8 +62,9 @@ import { showSceneOverlay } from "./scene-overlay.js";
 import {
   playSceneSound,
   setupSceneAudio,
-  stopSceneAudio,
   stopSceneSound,
+  stopSceneAudio,
+  updateSceneAudio,
   type SceneSoundMap,
 } from "./scene-audio.js";
 import { saveGame } from "./store.js";
@@ -431,6 +432,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     }
 
     this.ensureRulesEngine().update(dt);
+    updateSceneAudio(this, this.activeEntities, this.sounds);
 
     if (this.playerBinding) {
       const { binding, controller, controllerData } = this.playerBinding;

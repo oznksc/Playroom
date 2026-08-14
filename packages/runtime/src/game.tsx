@@ -19,6 +19,7 @@ import { updateFollowPath } from "./path.js";
 import { evaluateScriptEvent, hasScriptHandler, transitionFsm, type ScriptContext } from "./script.js";
 import { RulesEngine } from "./rules-engine.js";
 import { createAudioController, type AudioController } from "./audio.js";
+import { findAudioListenerPosition } from "./spatial-audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
 import { deepClone } from "./clone.js";
 import { VirtualControls } from "./virtual-controls.js";
@@ -642,6 +643,8 @@ export function GameKitGame({
 
     const workingScene = { ...scene, entities: currentEntities };
     playTimeline(workingScene, timelineRef.current, dt);
+
+    audioRef.current?.update(findAudioListenerPosition(currentEntities), currentEntities);
 
     setTick((t) => t + 1);
   }, true, { fixedDt: RIGID_BODY_FIXED_DT });

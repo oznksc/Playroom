@@ -1,4 +1,10 @@
-import type { AudioSourceComponent, GameKitEntity } from "@gamekit/schema";
+import type { AudioSourceComponent, GameKitEntity, TransformComponent } from "@gamekit/schema";
+import {
+  computeSpatialAudio,
+  DEFAULT_MAX_DISTANCE,
+  DEFAULT_MIN_DISTANCE,
+  type SpatialAudioListener,
+} from "./spatial-audio.js";
 
 export type ResolvedAudioSource = {
   entityId: string;
@@ -6,6 +12,8 @@ export type ResolvedAudioSource = {
   volume: number;
   loop: boolean;
   playOnStart: boolean;
+  minDistance: number;
+  maxDistance: number;
   url?: string;
 };
 
@@ -16,6 +24,8 @@ export type AudioController = {
   playAsset?: (assetId: string) => void;
   stop: (entityId: string) => void;
   stopAll: () => void;
+  /** Apply per-frame spatial attenuation from the listener to all playing sources. */
+  update: (listener: SpatialAudioListener | null, entities: GameKitEntity[]) => void;
   dispose: () => void;
 };
 
@@ -24,6 +34,8 @@ type AssetResolver = (assetId: string) => string | undefined;
 type BackendPlayer = {
   play: () => void | Promise<void>;
   stop: () => void;
+  /** Apply combined volume (0..1) and stereo pan (-1..1). */
+  setSpatial: (volume: number, pan: number) => void;
   dispose: () => void;
 };
 
@@ -59,13 +71,47 @@ function hasDomAudio(): boolean {
   return typeof Audio !== "undefined";
 }
 
+let sharedAudioContext: AudioContext | null | undefined;
+
+function getSharedAudioContext(): AudioContext | null {
+  if (sharedAudioContext !== undefined) return sharedAudioContext;
+  if (typeof AudioContext === "undefined") {
+    sharedAudioContext = null;
+    return null;
+  }
+  try {
+    sharedAudioContext = new AudioContext();
+    void sharedAudioContext.resume();
+  } catch {
+    sharedAudioContext = null;
+  }
+  return sharedAudioContext;
+}
+
 function createDomPlayer(url: string, volume: number, loop: boolean): BackendPlayer {
   const player = new Audio(url);
   player.loop = loop;
   player.volume = Math.max(0, Math.min(1, volume));
+
+  // Wire a StereoPannerNode for pan support (volume-only fallback when unavailable).
+  let panner: StereoPannerNode | null = null;
+  try {
+    const ctx = getSharedAudioContext();
+    if (ctx) {
+      const source = ctx.createMediaElementSource(player);
+      panner = ctx.createStereoPanner();
+      panner.pan.value = 0;
+      source.connect(panner);
+      panner.connect(ctx.destination);
+    }
+  } catch {
+    panner = null;
+  }
+
   return {
     play() {
       player.currentTime = 0;
+      void getSharedAudioContext()?.resume();
       void player.play().catch(() => {
         // Autoplay policies may block — ignore
       });
@@ -74,9 +120,15 @@ function createDomPlayer(url: string, volume: number, loop: boolean): BackendPla
       player.pause();
       player.currentTime = 0;
     },
+    setSpatial(nextVolume: number, pan: number) {
+      player.volume = Math.max(0, Math.min(1, nextVolume));
+      if (panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
+    },
     dispose() {
       player.pause();
       player.src = "";
+      panner?.disconnect();
+      panner = null;
     },
   };
 }
@@ -87,6 +139,7 @@ function createExpoPlayer(url: string, volume: number, loop: boolean): BackendPl
     playAsync: () => Promise<unknown>;
     stopAsync: () => Promise<unknown>;
     unloadAsync: () => Promise<unknown>;
+    setVolumeAsync: (v: number) => Promise<unknown>;
   } | null = null;
   let loading: Promise<void> | null = null;
   let wantPlay = false;
@@ -131,6 +184,11 @@ function createExpoPlayer(url: string, volume: number, loop: boolean): BackendPl
       wantPlay = false;
       if (sound) {
         void sound.stopAsync().catch(() => undefined);
+      }
+    },
+    setSpatial(nextVolume: number) {
+      if (sound) {
+        void sound.setVolumeAsync(Math.max(0, Math.min(1, nextVolume))).catch(() => undefined);
       }
     },
     dispose() {
@@ -179,6 +237,8 @@ export function createAudioController(
       volume: audio.volume,
       loop: audio.loop,
       playOnStart: audio.playOnStart,
+      minDistance: audio.minDistance ?? DEFAULT_MIN_DISTANCE,
+      maxDistance: audio.maxDistance ?? DEFAULT_MAX_DISTANCE,
       url: resolveAssetUrl(audio.assetId),
     });
   }
@@ -215,6 +275,37 @@ export function createAudioController(
     },
     stop(entityId: string) {
       players.get(entityId)?.stop();
+    },
+    update(listener, entities) {
+      if (!listener) {
+        // No listener — reset every playing source to its authored volume, centered.
+        for (const source of sources) {
+          players.get(source.entityId)?.setSpatial(source.volume, 0);
+        }
+        for (const player of assetPlayers.values()) player.setSpatial(1, 0);
+        return;
+      }
+      for (const entity of entities) {
+        const audio = entity.components.find(
+          (c): c is AudioSourceComponent => c.type === "AudioSource",
+        );
+        if (!audio) continue;
+        const player = players.get(entity.id);
+        if (!player) continue;
+        const transform = entity.components.find(
+          (c): c is TransformComponent => c.type === "Transform",
+        );
+        if (!transform) continue;
+        const { gain, pan } = computeSpatialAudio(listener, {
+          x: transform.position.x,
+          y: transform.position.y,
+          minDistance: audio.minDistance ?? DEFAULT_MIN_DISTANCE,
+          maxDistance: audio.maxDistance ?? DEFAULT_MAX_DISTANCE,
+        });
+        player.setSpatial(audio.volume * gain, pan);
+      }
+      // Script-played one-shots stay full volume, centered.
+      for (const player of assetPlayers.values()) player.setSpatial(1, 0);
     },
     stopAll() {
       for (const player of players.values()) player.stop();

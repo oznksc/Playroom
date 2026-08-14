@@ -354,18 +354,19 @@ export function drawScene(
       // AudioSource range indicator
       const audioSrc = findComponent<AudioSourceComponent>(entity, "AudioSource");
       if (audioSrc) {
+        const maxDistance = audioSrc.maxDistance ?? 1000;
         context.strokeStyle = "rgba(236,72,153,0.4)";
         context.lineWidth = 1;
         context.setLineDash([4, 4]);
         context.beginPath();
-        context.arc(transform.position.x, transform.position.y, 48, 0, Math.PI * 2);
+        context.arc(transform.position.x, transform.position.y, maxDistance, 0, Math.PI * 2);
         context.stroke();
         context.setLineDash([]);
         // Speaker icon indicator
         context.fillStyle = "rgba(236,72,153,0.6)";
         context.font = "10px sans-serif";
         context.textAlign = "center";
-        context.fillText("♪", transform.position.x, transform.position.y - 52);
+        context.fillText("♪", transform.position.x, transform.position.y - maxDistance - 8);
       }
 
       // Tween direction indicator
