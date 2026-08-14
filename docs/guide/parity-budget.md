@@ -45,7 +45,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | FollowPath | ⚠️ | ✅ | Same shared logic (`points`, `speed`, `loop`). Skia path.rs lives under `@gamekit/runtime` and is shared — behavior matches; only constant linear speed (no easing) on both. |
 | ParticleSystem | ⚠️ | ⚠️ | Same shared emitter on both: circle particles only, hex colors only, uniform 360° emission. Phaser renders as CPU Graphics. |
 | StateMachine | ⚠️ | ⚠️ | Both evaluate `on.triggerEnter`/`on.collisionEnter` transitions only. No per-frame states, no timers, no `enter:`/`exit:` hooks inside the FSM itself. |
-| Script | ⚠️ | ⚠️ | Both dispatch `start`, trigger-overlap, GUI-action, and per-frame `update` events (update fires once per frame with `dt` on the context). ❌ Skia adds collision-enter dispatch; Phaser does not. `applyImpulse` works on both. |
+| Script | ✅ | ✅ | Both dispatch `start`, trigger-overlap, GUI-action, per-frame `update`, and collision-enter events (update fires once per frame with `dt` on the context). Collision-enter is edge-triggered on both: a dynamic body vs a static solid (entity or solid tilemap layer) contact dispatches `collisionEnter` once per contact begin, to both entities' scripts and StateMachines. `applyImpulse` works on both. |
 | GUI Text | ✅ | ✅ | `text`, `fontSize`, `color`, `align`; fixed to screen on both. |
 | GUI Button | ✅ | ✅ | `action` dispatch works on both; Phaser makes **all** buttons interactive regardless of the `interactive` field. |
 | GUI Image | ✅ | ✅ | Both render `assetId`. Phaser preloads GUI-only assets and looks them up by the bare `assetId`. |

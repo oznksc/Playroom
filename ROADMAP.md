@@ -200,6 +200,12 @@ Ordered for product impact, not exhaustive:
       the same glow to a cone fan opening along the entity's rotation (0 = up,
       clockwise). Pure helpers (`pointLightColors`, `computeSpotCone`,
       `hexToRgbaHex`) are unit-tested.
+    - **gap closed:** Script collision-enter dispatch on Phaser — solid collision
+      contacts are collected from the Arcade colliders each frame (dynamic body vs
+      static solid entity, or vs a solid tilemap layer, tagged with the tilemap's
+      entity id) and fed through the shared edge-triggered `updateCollisionEvents`,
+      then `collisionEnter` is dispatched to both entities' scripts and
+      StateMachines exactly like Skia.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

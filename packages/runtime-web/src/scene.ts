@@ -45,9 +45,12 @@ import {
   getEntityPolygon,
   applyAabbCollisions,
   applyCircleCollisions,
+  updateCollisionEvents,
   type Aabb,
   type Circle,
+  type CollisionEvent,
   type CollisionSolid,
+  type CollisionState,
 } from "@gamekit/runtime/collision";
 
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
@@ -102,6 +105,10 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private particleEmitters = new Map<string, ParticleEmitterState>();
   private particleGraphics: Phaser.GameObjects.Graphics | null = null;
   private sounds: SceneSoundMap = new Map();
+  /** Contacts collected from Arcade colliders this frame (dynamic vs static solid). */
+  private collisionContacts: CollisionEvent[] = [];
+  /** Active solid-contact pairs from the previous frame (edge detection). */
+  private collisionState: CollisionState = new Set();
   private lightSources = new Map<string, Phaser.GameObjects.Light>();
   private hasLights = false;
   /** Static convex polygon solids, resolved via the Skia SAT collision core. */
@@ -321,12 +328,25 @@ export class GameKitPhaserScene extends Phaser.Scene {
           const dynFilter = colliderLayerMask(binding.entity);
           const statBinding = this.objectBindings.get(stat as Phaser.GameObjects.GameObject);
           const statLayer = statBinding ? colliderLayerMask(statBinding.entity).layer : 1;
+          if (statBinding) {
+            this.collisionContacts.push({
+              entityId: binding.entity.id,
+              otherEntityId: statBinding.entity.id,
+            });
+          }
           return solidCollides(dynFilter.mask, statLayer);
         });
         if (this.tileLayers.length > 0) {
-          // Tile solids live on layer 1.
-          this.physics.add.collider(binding.gameObject, this.tileLayers, undefined, (_dyn, _tile) => {
+          this.physics.add.collider(binding.gameObject, this.tileLayers, undefined, (_dyn, tile) => {
             const dynFilter = colliderLayerMask(binding.entity);
+            const layerEntityId = (tile as Phaser.Tilemaps.Tile).layer as unknown as Phaser.Tilemaps.TilemapLayer;
+            const entityId = layerEntityId.getData("gkEntityId") as string | undefined;
+            if (entityId) {
+              this.collisionContacts.push({
+                entityId: binding.entity.id,
+                otherEntityId: entityId,
+              });
+            }
             return solidCollides(dynFilter.mask, 1);
           });
         }
@@ -433,6 +453,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     this.ensureRulesEngine().update(dt);
     updateSceneAudio(this, this.activeEntities, this.sounds);
+    this.processCollisionEvents();
 
     if (this.playerBinding) {
       const { binding, controller, controllerData } = this.playerBinding;
@@ -843,6 +864,52 @@ export class GameKitPhaserScene extends Phaser.Scene {
     return raycast(origin, direction, this.activeEntities, { maxDistance });
   }
 
+  /**
+   * Dispatch `collisionEnter` to scripts and StateMachines when a dynamic body
+   * first contacts a static solid this frame (edge-triggered, matching Skia).
+   * Contacts are collected from Arcade colliders during the physics step.
+   */
+  private processCollisionEvents(): void {
+    const update = updateCollisionEvents(this.collisionContacts, this.collisionState);
+    this.collisionState = update.active;
+    this.collisionContacts = [];
+
+    if (update.events.length === 0) return;
+
+    const engine = this.ensureRulesEngine();
+    for (const event of update.events) {
+      const e1 = this.activeEntities.find((e) => e.id === event.entityId);
+      const e2 = this.activeEntities.find((e) => e.id === event.otherEntityId);
+
+      for (const entity of [e1, e2]) {
+        if (!entity) continue;
+        const ctx = engine.scriptContext(entity.id, {
+          destroyEntity: (id: string) => this.destroyEntityById(id),
+          rigidBodies: this.rigidBodies,
+          playSound: (assetId: string) => {
+            for (const e of this.activeEntities) {
+              const audio = e.components.find((c) => c.type === "AudioSource");
+              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                this.playSound(e.id);
+              }
+            }
+          },
+        });
+        const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
+        if (sm && sm.currentState) {
+          const stateObj = sm.states.find((s) => s.name === sm.currentState);
+          if (stateObj?.on?.["collisionEnter"]) {
+            transitionFsm(sm, stateObj.on["collisionEnter"], ctx);
+          }
+        }
+        const script = findComponent<ScriptComponent>(entity, "Script");
+        if (script) {
+          evaluateScriptEvent("collisionEnter", script, ctx);
+        }
+      }
+    }
+  }
+
   private handleTriggerOverlap(triggerObj: Phaser.GameObjects.GameObject): void {
     let matchedId: string | null = null;
     for (const [id, binding] of this.bindings) {
@@ -1000,6 +1067,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
     if (tilemap.solid) {
       layer.setCollisionByExclusion([-1]);
+      layer.setData("gkEntityId", entityId);
       this.tileLayers.push(layer);
       this.tileLayerByEntity.set(entityId, layer);
     }
