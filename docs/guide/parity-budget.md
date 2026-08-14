@@ -34,18 +34,18 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | AudioSource | ⚠️ | ✅ | Both play `assetId`/`volume`/`loop`/`playOnStart`. Skia has no pause/resume/fade; Phaser has the same limitation — audio is fire-and-forget on both. |
 | AudioListener | ❌ | ❌ | Defined in schema, unused by both. No spatial/positional audio anywhere. |
 | Light2D | ❌ | ⚠️ | Phaser renders point lights (`range`, `intensity`, `color`); `kind: "spot"` degrades to point. Skia has no lighting pipeline. |
-| NineSlice | ❌ | ✅ | Phaser uses built-in nineslice. Skia has no stretch-9 rendering. |
+| NineSlice | ✅ | ✅ | Both runtimes render 9-slice from the same borders: corners stay source-sized, edges stretch on one axis, the center stretches both. Phaser uses built-in nineslice; Skia draws 9 clipped/stretched image regions. |
 | AabbCollider | ✅ | ✅ | Full field support. layer/mask honored on both: solid collision uses the dynamic body's mask vs the solid's layer; trigger overlap requires both masks to accept the other's layer. |
 | CircleCollider | ✅ | ✅ | Same as AabbCollider; layer/mask filtering on Phaser matches Skia. |
-| PolygonCollider | ⚠️ | ❌ | Skia: SAT convex-only; rotation (degrees) and scale are applied to points; concave shapes ghost; no dynamic-vs-dynamic. Phaser: **no polygon collider at all** — entity gets a default rect with no physics. |
+| PolygonCollider | ✅ | ✅ | Both runtimes resolve convex polygons from the same SAT core: Skia collects static polygon solids in its loop; Phaser has no Arcade polygon bodies, so it collects them via `getEntityPolygon` and resolves dynamic AABB/circle bodies against them every frame (`applyAabbCollisions`/`applyCircleCollisions`). Rotation (degrees) and scale are applied to points; concave shapes ghost; no dynamic-vs-dynamic on either. |
 | RigidBody | ⚠️ | ⚠️ | Both honor `velocity`, `mass`, `angularVelocity`, `isKinematic`, `gravityScale`, `drag`, `useGravity`. `applyImpulse` script actions work on both (impulse ÷ mass; no-op on kinematic). Skia simulates body sleeping; Phaser does not, and Phaser maps `drag` to an approximate px/s² value. |
-| PlayerController | ⚠️ | ✅ | Both: `speed`/`jumpVelocity`/`gravity`, top-down 4-way when `gravity === 0`. Phaser adds coyote grace window, air damping, velocity caps. Skia is bare — no coyote time, no jump buffering, no air control. |
-| CameraFollow | ⚠️ | ✅ | Both follow `targetId` + `smoothing`. 🔶 Phaser remaps smoothing to a different curve and hard-codes a deadzone + `(0,20)` offset; Skia is pure exponential lerp, no bounds/deadzone. |
+| PlayerController | ✅ | ✅ | Both: `speed`/`jumpVelocity`/`gravity`, top-down 4-way when `gravity === 0`. Shared feel model: coyote grace window, jump buffering, edge-triggered jump, air control damping, upward velocity cap. |
+| CameraFollow | ✅ | ✅ | Both follow `targetId` + `smoothing`. `smoothing` is a pure per-frame exponential lerp factor (0–1, higher = snappier) in both runtimes; no remap, deadzone, or follow offset. |
 | Tween | ✅ | ✅ | Full parity (`property`, easing, loop, pingPong). |
 | FollowPath | ⚠️ | ✅ | Same shared logic (`points`, `speed`, `loop`). Skia path.rs lives under `@gamekit/runtime` and is shared — behavior matches; only constant linear speed (no easing) on both. |
 | ParticleSystem | ⚠️ | ⚠️ | Same shared emitter on both: circle particles only, hex colors only, uniform 360° emission. Phaser renders as CPU Graphics. |
 | StateMachine | ⚠️ | ⚠️ | Both evaluate `on.triggerEnter`/`on.collisionEnter` transitions only. No per-frame states, no timers, no `enter:`/`exit:` hooks inside the FSM itself. |
-| Script | ⚠️ | ⚠️ | Both dispatch `start`, trigger-overlap, and GUI-action events. ❌ **No per-frame `update` event on either.** Skia adds collision-enter dispatch; Phaser does not. `applyImpulse` works on both. |
+| Script | ⚠️ | ⚠️ | Both dispatch `start`, trigger-overlap, GUI-action, and per-frame `update` events (update fires once per frame with `dt` on the context). ❌ Skia adds collision-enter dispatch; Phaser does not. `applyImpulse` works on both. |
 | GUI Text | ✅ | ✅ | `text`, `fontSize`, `color`, `align`; fixed to screen on both. |
 | GUI Button | ✅ | ✅ | `action` dispatch works on both; Phaser makes **all** buttons interactive regardless of the `interactive` field. |
 | GUI Image | ✅ | ✅ | Both render `assetId`. Phaser preloads GUI-only assets and looks them up by the bare `assetId`. |
@@ -61,10 +61,10 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | Keyboard input | ✅ | ✅ | Action map + defaults (`arrows`/`wasd`/`space`/`j`/`k`). |
 | Virtual controls (joystick + buttons) | ✅ | ✅ | Analog stick + discrete A/B/X. |
 | Gamepad | ✅ | ✅ | Shared poll + merge; standard button map + sticks. |
-| Gestures (tap/swipe/pinch/longPress) | ⚠️ | ❌ | Skia exports the recognizer but **never wires it** into the game loop. Phaser doesn't reference it at all. |
+| Gestures (tap/swipe/pinch/longPress) | ✅ | ✅ | Shared recognizer fed from pointer events on both runtimes; recognized gestures dispatch script events (`tap`, `longPress`, `swipeUp`/`swipeDown`/`swipeLeft`/`swipeRight`, `pinch`). |
 | Multi-scene / scene switching | ✅ | ⚠️ | Skia has a full `SceneManager`. Phaser relies on the host to remount the Phaser instance on `switchScene`. |
 | Game rules (hazards, objectives, lives, win/lose) | ✅ | ✅ | Shared `RulesEngine` — closest parity area. Only the player overlaps triggers on both. |
-| Save/load | ✅ | ⚠️ | Skia: versioned payload + storage providers. Phaser: `store.ts` helpers exist but **nothing calls them** — runtime is stateless between mounts. |
+| Save/load | ✅ | ⚠️ | Skia: versioned payload + storage providers. Phaser: `store.ts` helpers (save/load/delete/list) wired into gameplay — auto-save into a `saveSlot` on level complete (win) when the host exposes `exportSaveSnapshot`; the generated web bootstrap passes `saveSlot: "auto"`. Loading a save still requires a host decision (stateless between mounts). |
 | Tilemap collision | ✅ | ✅ | `Tilemap.solid` derives static tile bodies on both runtimes (tile id ≠ 0 → AABB on layer 1, so masks filter tiles too). |
 | Dynamic-vs-dynamic body collision | ❌ | ❌ | Both only resolve static solids against the player. |
 | Collision `layer`/`mask` | ✅ | ✅ | Both filter: solid collision = dynamic body's mask & solid's layer; trigger overlap = both masks accept the other's layer. |
@@ -75,11 +75,12 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 
 These are the "same scene, different feel" traps:
 
-1. **Player feel.** Phaser adds coyote-time grace, air damping, and velocity caps;
-   Skia is instant-velocity. Platformers will feel tighter on web unless the Skia
-   controller is brought up to parity.
-2. **Camera.** Phaser remaps `smoothing` and adds a deadzone; Skia is a pure lerp.
-   Same `smoothing` value will not produce the same camera motion.
+1. **Player feel.** Both runtimes share one feel model: coyote-time grace, jump
+   buffering, edge-triggered jump, air damping, and an upward velocity cap. Same
+   `speed`/`jumpVelocity`/`gravity` values produce the same motion and feel.
+2. **Camera.** Both runtimes use the same pure exponential lerp model — `smoothing`
+   is a per-frame lerp factor (0–1, higher = snappier) with no remap, deadzone, or
+   follow offset. Same `smoothing` value produces the same camera motion.
 3. **Collision layer/mask.** Matched on both runtimes: solid collision uses the dynamic
    body's mask vs the solid's layer; trigger overlap requires both masks to accept the
    other's layer.
@@ -104,15 +105,15 @@ Ordered by product impact (games shipping to both targets), not effort.
 | ~~3~~ | ~~RigidBody parity (velocity/mass/isKinematic/gravityScale)~~ | Phaser | M | **Fixed** — Phaser honors `velocity`/`mass`/`angularVelocity`/`isKinematic`/`gravityScale`/`drag`/`useGravity` via Arcade and `applyImpulse` scripts work (impulse ÷ mass; no-op on kinematic). |
 | ~~4~~ | ~~Collision `layer`/`mask` on Phaser~~ | Phaser | M | **Fixed** — Phaser collider/overlap process callbacks apply the Skia layer/mask rule (solid: dynamic mask & static layer; trigger: both masks must accept the other's layer; tile solids are layer 1). |
 | ~~5~~ | ~~Transform scale/rotation rendering on Skia~~ | Skia | M | **Fixed** — Skia applies `rotate`/`scale` (rotation in degrees, pivoted at the entity origin/anchor) to sprite/tilemap/text/animation nodes, and applies rotation + scale to polygon points. Tilemap solids stay axis-aligned (keep solid tilemaps at rotation 0 / scale 1). |
-| 6 | PlayerController feel parity | Skia | M | Add coyote time, jump buffering, air damping; match Phaser velocity model. |
-| 7 | PolygonCollider on Phaser | Phaser | L | Convex SAT via Phaser `Geom`; needs per-entity bodies. |
-| 8 | Gestures wired on both | Both | M | Feed the shared recognizer from pointer events; dispatch script events. |
+| 6 | PlayerController feel parity | Skia | M | **Fixed** — Skia's controller now uses the same feel model as Phaser: coyote grace window (4 frames), jump buffering (6 frames), edge-triggered jump, air control damping (`speed * 0.85` airborne), and an upward velocity cap. Phaser also gained jump buffering to keep both runtimes identical. |
+| 7 | PolygonCollider on Phaser | Phaser | L | **Fixed** — static convex polygons are resolved via the shared Skia SAT core: static solids are collected with `getEntityPolygon` (rotation/scale applied) and dynamic AABB/circle bodies resolve against them every frame with `applyAabbCollisions`/`applyCircleCollisions`, correcting position + velocity (Skia semantics, incl. polygon-as-bounding-box for AABB and true SAT for circle). Arcade has no polygon bodies, so solids are resolved manually; concave shapes ghost and there is no dynamic-vs-dynamic, matching Skia. |
+| 8 | Gestures wired on both | Both | M | **Fixed** — both runtimes feed the shared `createGestureRecognizer` from pointer events (Skia: RN touch handlers; Phaser: `pointerdown`/`pointermove`/`pointerup`/`pointercancel`) and dispatch recognized gestures as script events (`tap`, `longPress`, `swipeUp`/`swipeDown`/`swipeLeft`/`swipeRight`, `pinch`). |
 | 9 | AudioListener / spatial audio | Both | L | Needs a positional audio model (both runtimes). |
 | 10 | Light2D on Skia | Skia | L | Skia color-filters / blend modes for point/spot lights. |
-| 11 | NineSlice on Skia | Skia | M | 9-slice via `useImage` + 9 rects or shader. |
-| 12 | Per-frame script `update` event | Both | S | Dispatch a frame callback into Script handlers. |
-| 13 | Camera smoothing parity | Both | S | Align the lerp model and document the remap. |
-| 14 | Save/load wiring on Phaser | Phaser | S | Call `store.ts` from gameplay (auto-save on level complete). |
+| 11 | NineSlice on Skia | Skia | M | **Fixed** — Skia renders 9-slice via `computeNineSliceRegions` (source rects → target rects) drawing 9 clipped/stretched image regions: corners fixed, edges stretch one axis, center stretches both. Pure helper is unit-tested. |
+| ~~12~~ | ~~Per-frame script `update` event~~ | Both | S | **Fixed** — hosts dispatch an `update` event into Script handlers every frame (Skia loop, Phaser `update`, headless `simulateSceneSteps`); the ScriptContext carries `dt`. |
+| 13 | Camera smoothing parity | Both | S | **Fixed** — Phaser uses Skia's `createCameraFollow` model: `smoothing` is a pure per-frame exponential lerp factor (0–1); removed the remap, deadzone, and follow offset. |
+| ~~14~~ | ~~Save/load wiring on Phaser~~ | Phaser | S | **Fixed** — `store.ts` wired into gameplay: `GameKitPhaserScene` auto-saves into the configured `saveSlot` on level complete (win) via the host's `exportSaveSnapshot`; the generated web bootstrap passes `saveSlot: "auto"` and exposes the SceneManager snapshot. |
 
 **S** = small (< 1 day), **M** = medium (1–3 days), **L** = large (3–5+ days).
 

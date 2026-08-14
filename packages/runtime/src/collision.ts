@@ -348,6 +348,9 @@ function circleVsSolid(circle: Circle, solid: CollisionSolid): boolean {
   if ("width" in solid) {
     return intersectsCircleAabb(circle, solid as Aabb);
   }
+  if ("points" in solid) {
+    return intersectsPolygonCircle(solid as Polygon, circle);
+  }
   return intersectsCircleCircle(circle, solid as Circle);
 }
 

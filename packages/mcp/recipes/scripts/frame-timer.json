@@ -1,0 +1,25 @@
+{
+  "id": "frame-timer",
+  "name": "Frame Timer (per-update counter)",
+  "category": "script",
+  "description": "Run an action every frame via the per-frame `update` script event (counters, thruster impulses, per-frame state).",
+  "tags": ["script", "update", "timer", "counter", "per-frame"],
+  "targets": "entity",
+  "merge": "upsert-by-type",
+  "params": {
+    "key": { "type": "string", "default": "frames", "description": "Persistent variable key to increment each frame" },
+    "by": { "type": "number", "default": 1, "description": "Increment per frame" }
+  },
+  "components": [
+    {
+      "type": "Script",
+      "handlers": [
+        {
+          "event": "update",
+          "actions": [{ "type": "incrementVariable", "key": "{{key}}", "by": "{{by}}" }]
+        }
+      ]
+    }
+  ],
+  "notes": "The `update` event fires once per frame on both runtimes and in headless simulation; the ScriptContext carries `dt`. Combine with incrementVariable for timers, or applyImpulse for continuous thrust."
+}

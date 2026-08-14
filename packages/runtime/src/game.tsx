@@ -1,6 +1,7 @@
 import type { GameKitScene, GameKitLevel, PlayerControllerComponent, CameraFollowComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TransformComponent, TweenComponent, FollowPathComponent, StateMachineComponent, ScriptComponent, ParticleSystemComponent, SceneTransitionDef, GuiComponent, GuiNode } from "@gamekit/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import type { NativeTouchEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GameKitView, type TransitionOverlay } from "./view.js";
 import { useGameLoop } from "./loop.js";
@@ -15,7 +16,7 @@ import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
 import { updateTween } from "./tween.js";
 import { updateFollowPath } from "./path.js";
-import { evaluateScriptEvent, transitionFsm, type ScriptContext } from "./script.js";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm, type ScriptContext } from "./script.js";
 import { RulesEngine } from "./rules-engine.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { createParticleEmitter, updateParticleEmitter, type Particle, type ParticleEmitterState } from "./particles.js";
@@ -23,6 +24,7 @@ import { deepClone } from "./clone.js";
 import { VirtualControls } from "./virtual-controls.js";
 import { pollGamepad } from "./gamepad.js";
 import { extendedInputFromPressedKeys, mergeGamepadIntoInput } from "./input-map.js";
+import { createGestureRecognizer, gestureScriptEventName, type RecognizedGesture } from "./gestures.js";
 
 export type GameKitGameProps = {
   scene: GameKitScene;
@@ -80,6 +82,10 @@ export function GameKitGame({
   const [livesHud, setLivesHud] = useState<number | null>(null);
   const prevSceneIdRef = useRef<string>(scene.id);
   const pressedKeysRef = useRef<Set<string>>(new Set());
+  const gestureRecognizerRef = useRef<ReturnType<typeof createGestureRecognizer> | null>(null);
+  if (!gestureRecognizerRef.current) {
+    gestureRecognizerRef.current = createGestureRecognizer();
+  }
 
   // Desktop / Expo web: track keyboard; merged with virtual controls each frame.
   useEffect(() => {
@@ -142,6 +148,7 @@ export function GameKitGame({
     particleEmittersRef.current.clear();
     particlesByEntityRef.current = {};
     rulesEngineRef.current = null;
+    gestureRecognizerRef.current?.reset();
     setOutcomeOverlay(null);
 
     for (const entity of entitiesRef.current) {
@@ -585,6 +592,33 @@ export function GameKitGame({
     // Fall / survive / objective checks
     rulesEngineRef.current?.update(dt);
 
+    // Per-frame Script "update" events
+    for (const entity of currentEntities) {
+      const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+      if (!script || !hasScriptHandler(script, "update")) continue;
+      const context =
+        rulesEngineRef.current?.scriptContext(entity.id, {
+          dt,
+          sceneManager: sceneManagerRef.current,
+          rigidBodies: rigidBodyRefs.current,
+          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id: string) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+        }) ?? {
+          entityId: entity.id,
+          dt,
+          entities: currentEntities,
+          sceneManager: sceneManagerRef.current,
+          rigidBodies: rigidBodyRefs.current,
+          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id: string) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+        };
+      evaluateScriptEvent("update", script, context);
+    }
+
     // Particles
     const nextParticles: Record<string, Particle[]> = {};
     for (const entity of currentEntities) {
@@ -647,6 +681,71 @@ export function GameKitGame({
     [],
   );
 
+  const dispatchGesture = useCallback((gesture: RecognizedGesture) => {
+    const eventName = gestureScriptEventName(gesture);
+    const engine = rulesEngineRef.current;
+    const entities = entitiesRef.current;
+    for (const entity of entities) {
+      const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+      if (!script || !hasScriptHandler(script, eventName)) continue;
+      const context =
+        engine?.scriptContext(entity.id, {
+          sceneManager: sceneManagerRef.current,
+          playSound: (assetId) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+          rigidBodies: rigidBodyRefs.current,
+        }) ?? {
+          entityId: entity.id,
+          entities,
+          sceneManager: sceneManagerRef.current,
+          playSound: (assetId) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+          rigidBodies: rigidBodyRefs.current,
+        };
+      evaluateScriptEvent(eventName, script, context);
+    }
+  }, []);
+
+  const handleTouchStart = useCallback((event: { nativeEvent: NativeTouchEvent }) => {
+    for (const t of event.nativeEvent.changedTouches) {
+      gestureRecognizerRef.current?.pointerDown(Number(t.identifier), t.pageX, t.pageY, event.nativeEvent.timestamp);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((event: { nativeEvent: NativeTouchEvent }) => {
+    for (const t of event.nativeEvent.touches) {
+      const gesture = gestureRecognizerRef.current?.pointerMove(
+        Number(t.identifier),
+        t.pageX,
+        t.pageY,
+        event.nativeEvent.timestamp,
+      );
+      if (gesture) dispatchGesture(gesture);
+    }
+  }, [dispatchGesture]);
+
+  const handleTouchEnd = useCallback((event: { nativeEvent: NativeTouchEvent }) => {
+    for (const t of event.nativeEvent.changedTouches) {
+      const gesture = gestureRecognizerRef.current?.pointerUp(
+        Number(t.identifier),
+        t.pageX,
+        t.pageY,
+        event.nativeEvent.timestamp,
+      );
+      if (gesture) dispatchGesture(gesture);
+    }
+  }, [dispatchGesture]);
+
+  const handleTouchCancel = useCallback((event: { nativeEvent: NativeTouchEvent }) => {
+    for (const t of event.nativeEvent.changedTouches) {
+      gestureRecognizerRef.current?.pointerCancel(Number(t.identifier));
+    }
+  }, []);
+
   const interactiveButtons = useMemo(() => {
     const buttons: Array<GuiNode & { key: string }> = [];
     const componentMap = new Map(guiComponents.map((c) => [c.id, c]));
@@ -681,7 +780,13 @@ export function GameKitGame({
   const offsetY = insets.top + (availH - refH * scale) / 2;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+    >
       <GameKitView
         scene={currentScene}
         assets={assets}

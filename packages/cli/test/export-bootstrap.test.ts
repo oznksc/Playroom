@@ -86,6 +86,9 @@ describe("export-bootstrap helpers", () => {
     expect(web).toContain("LocalStorageProvider");
     expect(web).toContain("duration: 350");
     expect(web).not.toContain("showControls");
+    // Auto-save wiring: web entry carries a saveSlot + snapshot export to the manager
+    expect(web).toContain('saveSlot: "auto"');
+    expect(web).toContain("exportSaveSnapshot: () => manager.exportSaveSnapshot()");
 
     const mobile = generateMobileApp(input);
     expect(mobile).toContain('import menuJson from "./gamekit/scenes/menu.scene.json"');

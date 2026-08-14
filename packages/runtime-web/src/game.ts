@@ -21,6 +21,8 @@ export type GameKitGameOptions = {
   onCollectProgress?: GameKitPhaserSceneOptions["onCollectProgress"];
   suppressOutcomeOverlay?: boolean;
   level?: GameKitPhaserSceneOptions["level"];
+  /** When set, auto-save progress into this slot on level complete (win). */
+  saveSlot?: string;
 };
 
 export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
@@ -37,6 +39,7 @@ export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
     onCollectProgress,
     suppressOutcomeOverlay,
     level,
+    saveSlot,
   } = options;
 
   const config: Phaser.Types.Core.GameConfig = {
@@ -85,6 +88,7 @@ export function createGameKitGame(options: GameKitGameOptions): Phaser.Game {
     onCollectProgress,
     suppressOutcomeOverlay,
     level,
+    saveSlot,
   };
   game.scene.add("gamekit", new GameKitPhaserScene(scene, assets, transition, sceneOpts), true);
 

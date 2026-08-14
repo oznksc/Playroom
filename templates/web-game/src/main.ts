@@ -55,6 +55,7 @@ function mountCurrent() {
     container,
     pixelArt: false,
     guiComponents,
+    saveSlot: "auto",
     sceneManager: {
       switchScene: (id) => {
         const ok = manager.switchScene(id);
@@ -76,6 +77,7 @@ function mountCurrent() {
       getState: () => ({ currentLevelId: manager.getState().currentLevelId }),
       setPersistentVar: (k, v) => manager.setPersistentVar(k, v),
       getPersistentVar: (k, d) => manager.getPersistentVar(k, d),
+      exportSaveSnapshot: () => manager.exportSaveSnapshot(),
     },
   });
 }

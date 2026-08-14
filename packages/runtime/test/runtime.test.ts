@@ -5,8 +5,9 @@ import { updateTween } from "../src/tween.js";
 import { updateFollowPath } from "../src/path.js";
 import { executeActions, transitionFsm } from "../src/script.js";
 import { createCameraFollow } from "../src/camera.js";
-import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents } from "../src/collision.js";
+import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents, type CollisionSolid } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
+import { computeNineSliceRegions } from "../src/nineslice.js";
 import { createRigidBody, RIGID_BODY_SLEEP_DELAY } from "../src/rigid-body.js";
 import { loadScene } from "../src/scene.js";
 
@@ -47,8 +48,85 @@ describe("player and camera helpers", () => {
       jumpVelocity: 620,
       gravity: 1800
     });
+    player.setGrounded(true);
 
     expect(player.update({ left: false, right: true, jump: false }, 1 / 60).velocity.x).toBe(240);
+  });
+
+  it("applies air control damping while airborne", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 240,
+      jumpVelocity: 620,
+      gravity: 1800
+    });
+
+    expect(player.update({ left: false, right: true, jump: false }, 1 / 60).velocity.x).toBe(240 * 0.85);
+  });
+
+  it("grants coyote time after leaving the ground", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 240,
+      jumpVelocity: 620,
+      gravity: 1800
+    });
+    player.setGrounded(true);
+    player.update({ left: false, right: false, jump: false }, 1 / 60);
+    // Walk off the platform: coyote window keeps "grounded" for a few frames.
+    player.setGrounded(false);
+    player.update({ left: false, right: false, jump: false }, 1 / 60);
+    player.setGrounded(false);
+
+    const jumped = player.update({ left: false, right: false, jump: true }, 1 / 60);
+    expect(jumped.velocity.y).toBe(-620);
+  });
+
+  it("buffers a jump pressed just before landing", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 240,
+      jumpVelocity: 620,
+      gravity: 1800
+    });
+    // Press jump while airborne (buffer starts), then land within the buffer window.
+    player.update({ left: false, right: false, jump: true }, 1 / 60);
+    player.setGrounded(true);
+
+    const landed = player.update({ left: false, right: false, jump: false }, 1 / 60);
+    expect(landed.velocity.y).toBe(-620);
+  });
+
+  it("only jumps once per press (edge-triggered)", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 240,
+      jumpVelocity: 620,
+      gravity: 1800
+    });
+    player.setGrounded(true);
+    const first = player.update({ left: false, right: false, jump: true }, 1 / 60);
+    expect(first.velocity.y).toBe(-620);
+
+    // Holding the key must not re-apply the impulse.
+    player.setGrounded(false);
+    const held = player.update({ left: false, right: false, jump: true }, 1 / 60);
+    expect(held.velocity.y).not.toBe(-620);
+  });
+
+  it("caps upward velocity to keep the player on screen", () => {
+    const player = createPlayerController({
+      type: "PlayerController",
+      speed: 240,
+      jumpVelocity: 100,
+      gravity: 1800
+    });
+    player.setGrounded(true);
+    // An external impulse (e.g. launch pad) below the cap floor is clamped to -200.
+    player.state.velocity.y = -500;
+    const result = player.update({ left: false, right: false, jump: false }, 1 / 60);
+
+    expect(result.velocity.y).toBe(-200);
   });
 
   it("uses 4-way movement when gravity is zero", () => {
@@ -70,6 +148,17 @@ describe("player and camera helpers", () => {
     const camera = createCameraFollow({ viewport: { x: 100, y: 100 }, smoothing: 1 });
 
     expect(camera.update({ x: 200, y: 150 }).position).toEqual({ x: 150, y: 100 });
+  });
+
+  it("applies a pure exponential lerp per frame (0 < smoothing < 1)", () => {
+    const camera = createCameraFollow({ viewport: { x: 100, y: 100 }, smoothing: 0.5 });
+
+    const first = { ...camera.update({ x: 200, y: 150 }).position };
+    const second = { ...camera.update({ x: 200, y: 150 }).position };
+
+    expect(first).toEqual({ x: 75, y: 50 });
+    expect(second.x).toBeCloseTo(75 + (150 - 75) * 0.5, 5);
+    expect(second.y).toBeCloseTo(50 + (100 - 50) * 0.5, 5);
   });
 });
 
@@ -329,6 +418,60 @@ describe("collision events", () => {
 
     expect(resumed.events).toEqual(contacts);
   });
+
+  it("resolves an AABB dynamic body against a static polygon solid (Phaser parity)", () => {
+    // A static convex ramp polygon. applyAabbCollisions resolves the polygon via
+    // its bounding box (solidAabb), matching the Skia runtime exactly.
+    const ramp: CollisionSolid = {
+      x: 0,
+      y: 0,
+      points: [
+        { x: 0, y: 10 },
+        { x: 100, y: 10 },
+        { x: 100, y: 20 },
+      ],
+      layer: 1,
+      entityId: "ramp",
+    };
+
+    // Body falling straight down into the polygon's upper bound (y=10).
+    const result = applyAabbCollisions(
+      { x: 20, y: 0, width: 10, height: 10 },
+      { x: 0, y: 11 },
+      [ramp],
+    );
+
+    expect(result.collisionEntityIds).toContain("ramp");
+    expect(result.grounded).toBe(true);
+    expect(result.velocity.y).toBe(0);
+    expect(result.position.y).toBe(0);
+  });
+
+  it("resolves a circle dynamic body against a static polygon solid (Phaser parity)", () => {
+    // A static convex polygon wall spanning x=10..20.
+    const wall: CollisionSolid = {
+      x: 0,
+      y: 0,
+      points: [
+        { x: 10, y: 0 },
+        { x: 10, y: 50 },
+        { x: 20, y: 50 },
+        { x: 20, y: 0 },
+      ],
+      layer: 1,
+      entityId: "wall",
+    };
+
+    // Circle pushed right into the wall.
+    const result = applyCircleCollisions(
+      { x: 5, y: 25, radius: 4 },
+      { x: 10, y: 0 },
+      [wall],
+    );
+
+    expect(result.collisionEntityIds).toContain("wall");
+    expect(result.velocity.x).toBe(0);
+  });
 });
 
 describe("SceneManager persistent state", () => {
@@ -481,5 +624,60 @@ describe("behavior systems runtime logic", () => {
 
     expect(sm.currentState).toBe("walking");
     expect(sceneManager.getPersistentVar("walk_triggered")).toBe(true);
+  });
+});
+
+describe("nine-slice regions", () => {
+  const base = {
+    type: "NineSlice" as const,
+    assetId: "panel",
+    width: 100,
+    height: 60,
+    leftWidth: 10,
+    rightWidth: 10,
+    topHeight: 8,
+    bottomHeight: 8,
+  };
+
+  it("lays out 9 regions for a natural source matching the component size", () => {
+    const regions = computeNineSliceRegions(base, 0, 0, 100, 60);
+    expect(regions).toHaveLength(9);
+
+    const center = regions.find((r) => r.w === 80 && r.h === 44)!;
+    expect(center.sx).toBe(10);
+    expect(center.sy).toBe(8);
+    expect(center.sw).toBe(80);
+    expect(center.sh).toBe(44);
+    expect(center.x).toBe(10);
+    expect(center.y).toBe(8);
+  });
+
+  it("stretches edges and center when the component is larger than the source", () => {
+    const big = { ...base, width: 200, height: 120 };
+    const regions = computeNineSliceRegions(big, 0, 0, 100, 60);
+    expect(regions).toHaveLength(9);
+
+    const center = regions.find((r) => r.w === 180 && r.h === 104)!;
+    expect(center.sw).toBe(80);
+    expect(center.sh).toBe(44);
+    // Corners keep source size.
+    const topLeft = regions.find((r) => r.w === 10 && r.h === 8)!;
+    expect(topLeft.sw).toBe(10);
+    expect(topLeft.sh).toBe(8);
+  });
+
+  it("anchors target regions at the top-left corner", () => {
+    const regions = computeNineSliceRegions(base, 50, 30, 100, 60);
+    const topLeft = regions.find((r) => r.w === 10 && r.h === 8)!;
+    expect(topLeft.x).toBe(50);
+    expect(topLeft.y).toBe(30);
+  });
+
+  it("collapses to a single center region when borders are zero", () => {
+    const noBorders = { ...base, leftWidth: 0, rightWidth: 0, topHeight: 0, bottomHeight: 0 };
+    const regions = computeNineSliceRegions(noBorders, 0, 0, 100, 60);
+    expect(regions).toHaveLength(1);
+    expect(regions[0].w).toBe(100);
+    expect(regions[0].h).toBe(60);
   });
 });

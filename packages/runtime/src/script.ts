@@ -1,4 +1,4 @@
-import type { ScriptComponent, ScriptAction, StateMachineComponent } from "@gamekit/schema";
+import type { ScriptComponent, ScriptAction, StateMachineComponent, GameSavePayload } from "@gamekit/schema";
 
 /**
  * Host capabilities for script / rules actions.
@@ -6,6 +6,8 @@ import type { ScriptComponent, ScriptAction, StateMachineComponent } from "@game
  */
 export interface ScriptContext {
   entityId: string;
+  /** Delta time (seconds) for the current frame / step (update events). */
+  dt?: number;
   sceneManager?: {
     switchScene: (sceneId: string) => boolean;
     nextScene?: () => boolean;
@@ -15,6 +17,8 @@ export interface ScriptContext {
     getState?: () => { currentLevelId: string | null };
     setPersistentVar: (key: string, value: unknown) => void;
     getPersistentVar?: (key: string, defaultValue?: unknown) => unknown;
+    /** Full progress snapshot for hosts that persist saves (SceneManager.exportSaveSnapshot). */
+    exportSaveSnapshot?: () => GameSavePayload;
   };
   entities: any[];
   rigidBodies?: Map<string, any>;
@@ -209,4 +213,12 @@ export function evaluateScriptEvent(
   if (handler) {
     executeActions(handler.actions, context);
   }
+}
+
+/**
+ * Returns true when the script declares a handler for the given event name.
+ * Used by hosts to cheaply decide whether per-frame `update` dispatch is needed.
+ */
+export function hasScriptHandler(script: ScriptComponent, eventName: string): boolean {
+  return script.handlers.some((h) => h.event === eventName);
 }

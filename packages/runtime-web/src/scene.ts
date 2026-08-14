@@ -6,6 +6,7 @@ import type {
   SpriteComponent,
   AabbColliderComponent,
   CircleColliderComponent,
+  PolygonColliderComponent,
   PlayerControllerComponent,
   CameraFollowComponent,
   AnimationComponent,
@@ -35,11 +36,19 @@ import {
   particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
-import { evaluateScriptEvent, transitionFsm, type ScriptContext } from "@gamekit/runtime/script";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm, type ScriptContext } from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
 import { updateFollowPath } from "@gamekit/runtime/path";
 import { updateTween } from "@gamekit/runtime/tween";
-import { raycast } from "@gamekit/runtime/collision";
+import {
+  raycast,
+  getEntityPolygon,
+  applyAabbCollisions,
+  applyCircleCollisions,
+  type Aabb,
+  type Circle,
+  type CollisionSolid,
+} from "@gamekit/runtime/collision";
 
 import type { EntityBinding, PlayerBinding, TextBinding, Transformable } from "./scene-types.js";
 import { computeWorldBounds, findComponent } from "./scene-helpers.js";
@@ -57,6 +66,13 @@ import {
   stopSceneSound,
   type SceneSoundMap,
 } from "./scene-audio.js";
+import { saveGame } from "./store.js";
+import {
+  createGestureRecognizer,
+  gestureScriptEventName,
+  type GestureRecognizer,
+  type RecognizedGesture,
+} from "@gamekit/runtime/gestures";
 
 export type GameKitPhaserSceneOptions = {
   guiComponents?: GuiComponent[];
@@ -70,6 +86,8 @@ export type GameKitPhaserSceneOptions = {
   suppressOutcomeOverlay?: boolean;
   /** Active level for rules merge / onComplete. */
   level?: import("@gamekit/schema").GameKitLevel | null;
+  /** When set, auto-save progress (via store.ts) into this slot on level complete (win). */
+  saveSlot?: string;
 };
 
 export class GameKitPhaserScene extends Phaser.Scene {
@@ -85,6 +103,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private sounds: SceneSoundMap = new Map();
   private lightSources = new Map<string, Phaser.GameObjects.Light>();
   private hasLights = false;
+  /** Static convex polygon solids, resolved via the Skia SAT collision core. */
+  private polygonSolids: CollisionSolid[] = [];
   private textBindings: TextBinding[] = [];
   private coinsCollected = 0;
   private totalCoins = 0;
@@ -99,9 +119,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private livesText: Phaser.GameObjects.Text | null = null;
   /** Previous-frame jump key state for edge-triggered jumps (prevents rocket while held). */
   private jumpHeldLastFrame = false;
+  /** Frames a jump press stays buffered so a jump just before landing still fires. */
+  private jumpBufferFrames = 0;
   /** Coyote-time / ground stick to avoid Y vibration on platform seams. */
   private groundedGraceFrames = 0;
   private static readonly GROUND_GRACE = 4;
+  private static readonly JUMP_BUFFER = 6;
   private transitionData: SceneTransitionDef | null = null;
   private joystickActive = false;
   private joystickCenter = { x: 0, y: 0 };
@@ -121,6 +144,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private tileLayerByEntity = new Map<string, Phaser.Tilemaps.TilemapLayer>();
   /** RigidBody adapters for script actions (applyImpulse) on dynamic bodies. */
   private rigidBodies = new Map<string, PhaserRigidBody>();
+  /** Shared gesture recognizer fed from pointer events (tap/swipe/pinch/longPress). */
+  private gestureRecognizer: GestureRecognizer | null = null;
   /** GameObject → binding for collision layer/mask filtering. */
   private objectBindings = new Map<Phaser.GameObjects.GameObject, EntityBinding>();
 
@@ -202,6 +227,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
           if (binding?.body) binding.body.setVelocity(0, 0);
           this.groundedGraceFrames = 0;
           this.jumpHeldLastFrame = false;
+          this.jumpBufferFrames = 0;
         },
         playSound: (assetId) => {
           for (const e of this.activeEntities) {
@@ -326,19 +352,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
     if (this.cameraFollowData) {
       const targetBinding = this.bindings.get(this.cameraFollowData.targetId);
       if (targetBinding) {
-        // Schema "smoothing" is a lerp factor (higher = snappier). Phaser needs a
-        // high enough value or the player runs off-screen while the camera lags.
-        const lerp = Phaser.Math.Clamp(
-          Math.max(this.cameraFollowData.smoothing, 0.12) * 4,
-          0.35,
-          1,
-        );
-        this.cameras.main.setDeadzone(
-          this.sceneData.viewport.width * 0.12,
-          this.sceneData.viewport.height * 0.15,
-        );
-        this.cameras.main.startFollow(targetBinding.gameObject, true, lerp, lerp * 0.85);
-        this.cameras.main.setFollowOffset(0, 20);
+        // Aligned with Skia's createCameraFollow (packages/runtime/src/camera.ts):
+        // "smoothing" is a pure per-frame exponential lerp factor (0-1, higher =
+        // snappier). Same value → same camera motion on both runtimes — no remap,
+        // no deadzone, no follow offset.
+        const lerp = Phaser.Math.Clamp(this.cameraFollowData.smoothing, 0, 1);
+        this.cameras.main.startFollow(targetBinding.gameObject, false, lerp, lerp);
       }
     }
 
@@ -430,6 +449,11 @@ export class GameKitPhaserScene extends Phaser.Scene {
       // Only jump on the frame the key is pressed — holding must not re-apply impulse
       const jumpPressed = jumpDown && !this.jumpHeldLastFrame;
       this.jumpHeldLastFrame = jumpDown;
+      if (jumpPressed) {
+        this.jumpBufferFrames = GameKitPhaserScene.JUMP_BUFFER;
+      } else if (this.jumpBufferFrames > 0) {
+        this.jumpBufferFrames -= 1;
+      }
 
       const body = binding.body!;
       const touchingGround = body.blocked.down || body.touching.down;
@@ -470,9 +494,10 @@ export class GameKitPhaserScene extends Phaser.Scene {
         const moveSpeed = touchingGround ? controllerData.speed : controllerData.speed * 0.85;
         body.setVelocityX(direction * moveSpeed);
 
-        // Jump only when actually touching ground (not mere grace), edge-triggered
-        if (jumpPressed && touchingGround) {
+        // Jump when on the ground (or coyote grace), edge-triggered + buffered
+        if (this.jumpBufferFrames > 0 && grounded) {
           body.setVelocityY(-controllerData.jumpVelocity);
+          this.jumpBufferFrames = 0;
           this.groundedGraceFrames = 0;
           controller.setGrounded(false);
         }
@@ -526,6 +551,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const go = binding.gameObject;
       // Dynamic bodies drive transform from physics; non-physics objects from transform
       if (binding.body && !binding.isStatic && !binding.isTrigger && typeof go.x === "number") {
+        this.resolvePolygonSolids(entity, binding, transform);
         transform.position.x = go.x;
         transform.position.y = go.y;
       } else {
@@ -545,6 +571,26 @@ export class GameKitPhaserScene extends Phaser.Scene {
         light.x = transform.position.x;
         light.y = transform.position.y;
       }
+    }
+
+    // Per-frame Script "update" events (after transforms are synced)
+    const updateEngine = this.ensureRulesEngine();
+    for (const entity of this.activeEntities) {
+      const script = findComponent<ScriptComponent>(entity, "Script");
+      if (!script || !hasScriptHandler(script, "update")) continue;
+      evaluateScriptEvent("update", script, updateEngine.scriptContext(entity.id, {
+        dt,
+        destroyEntity: (id) => this.destroyEntityById(id),
+        rigidBodies: this.rigidBodies,
+        playSound: (assetId) => {
+          for (const e of this.activeEntities) {
+            const audio = e.components.find((c) => c.type === "AudioSource");
+            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+              this.playSound(e.id);
+            }
+          }
+        },
+      }));
     }
 
     // Particle systems
@@ -598,6 +644,47 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
   private setupInput(): void {
     this.keys = configureSceneKeyboard(this.input.keyboard, this.sceneData.inputMap);
+    this.setupGestureRecognition();
+  }
+
+  private setupGestureRecognition(): void {
+    const recognizer = createGestureRecognizer();
+    this.gestureRecognizer = recognizer;
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      recognizer.pointerDown(pointer.id, pointer.x, pointer.y, Date.now());
+    });
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      const gesture = recognizer.pointerMove(pointer.id, pointer.x, pointer.y, Date.now());
+      if (gesture) this.dispatchGesture(gesture);
+    });
+    this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+      const gesture = recognizer.pointerUp(pointer.id, pointer.x, pointer.y, Date.now());
+      if (gesture) this.dispatchGesture(gesture);
+    });
+    this.input.on("pointercancel", (pointer: Phaser.Input.Pointer) => {
+      recognizer.pointerCancel(pointer.id);
+    });
+  }
+
+  private dispatchGesture(gesture: RecognizedGesture): void {
+    const eventName = gestureScriptEventName(gesture);
+    const engine = this.ensureRulesEngine();
+    for (const entity of this.activeEntities) {
+      const script = findComponent<ScriptComponent>(entity, "Script");
+      if (!script || !hasScriptHandler(script, eventName)) continue;
+      evaluateScriptEvent(eventName, script, engine.scriptContext(entity.id, {
+        destroyEntity: (id) => this.destroyEntityById(id),
+        rigidBodies: this.rigidBodies,
+        playSound: (assetId) => {
+          for (const e of this.activeEntities) {
+            const audio = e.components.find((c) => c.type === "AudioSource");
+            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+              this.playSound(e.id);
+            }
+          }
+        },
+      }));
+    }
   }
 
   private setupTouchJoystick(): void {
@@ -845,6 +932,13 @@ export class GameKitPhaserScene extends Phaser.Scene {
       this.playerBinding.binding.body.setVelocity(0, 0);
       this.playerBinding.binding.body.moves = false;
     }
+    // Auto-save progress when a slot is configured and the host exposes a snapshot.
+    if (this.hostOptions.saveSlot) {
+      const snapshot = this.sceneManager?.exportSaveSnapshot?.();
+      if (snapshot) {
+        void saveGame(this.hostOptions.saveSlot, snapshot).catch(() => undefined);
+      }
+    }
     this.showOverlay(message || this.gameRules.winMessage, "#00f0ff");
   }
 
@@ -927,6 +1021,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     const animComp = findComponent<AnimationComponent>(entity, "Animation");
     const colliderComp = findComponent<AabbColliderComponent>(entity, "AabbCollider");
     const circleColliderComp = findComponent<CircleColliderComponent>(entity, "CircleCollider");
+    const polygonColliderComp = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
     const playerComp = findComponent<PlayerControllerComponent>(entity, "PlayerController");
     const rigidBodyComp = findComponent<RigidBodyComponent>(entity, "RigidBody");
     const cameraComp = findComponent<CameraFollowComponent>(entity, "CameraFollow");
@@ -1049,6 +1144,25 @@ export class GameKitPhaserScene extends Phaser.Scene {
         originY = 0.5;
         gameObject = rect;
       }
+    } else if (polygonColliderComp) {
+      // Static convex polygon: render a Phaser polygon at the transform. Points
+      // are local (collider space), origin (0,0) so the transform sync applies
+      // position/rotation/scale around it, matching the Skia SAT solid.
+      const localPoints = polygonColliderComp.points.map((p) => ({
+        x: p.x + polygonColliderComp.offset.x,
+        y: p.y + polygonColliderComp.offset.y,
+      }));
+      const poly = this.add.polygon(
+        transform.position.x,
+        transform.position.y,
+        localPoints,
+        polygonColliderComp.isStatic ? 0x8b5cf6 : 0x8b6914,
+        polygonColliderComp.isStatic ? 0.25 : 0,
+      );
+      poly.setOrigin(0, 0);
+      originX = 0;
+      originY = 0;
+      gameObject = poly;
     } else {
       const rect = this.add.rectangle(
         transform.position.x,
@@ -1139,6 +1253,20 @@ export class GameKitPhaserScene extends Phaser.Scene {
           circleColliderComp.offset.y,
         );
         body.setCollideWorldBounds(true);
+      }
+    }
+
+    if (polygonColliderComp && polygonColliderComp.isStatic && !polygonColliderComp.isTrigger) {
+      // Arcade has no polygon bodies: resolve static convex polygons via the
+      // shared Skia SAT core. Push the world-space solid once at spawn (static
+      // polygons do not move during a scene).
+      const polygon = getEntityPolygon(entity);
+      if (polygon) {
+        this.polygonSolids.push({
+          ...polygon,
+          layer: polygonColliderComp.layer ?? 1,
+          entityId: entity.id,
+        });
       }
     }
 
@@ -1233,6 +1361,102 @@ export class GameKitPhaserScene extends Phaser.Scene {
         this.lightSources.set(entity.id, phaserLight);
       }
     }
+  }
+
+  /**
+   * Resolve a dynamic AABB/circle body against the static convex polygon
+   * solids (Arcade has no polygon bodies). Reuses the shared Skia SAT core so
+   * behavior matches the mobile runtime exactly.
+   */
+  private resolvePolygonSolids(
+    entity: GameKitEntity,
+    binding: EntityBinding,
+    transform: TransformComponent,
+  ): void {
+    if (this.polygonSolids.length === 0 || !binding.body) return;
+    const aabbComp = findComponent<AabbColliderComponent>(entity, "AabbCollider");
+    const circleComp = findComponent<CircleColliderComponent>(entity, "CircleCollider");
+
+    const mask = colliderLayerMask(entity).mask;
+
+    if (aabbComp) {
+      const moving: Aabb = {
+        x: binding.body.x,
+        y: binding.body.y,
+        width: binding.body.width,
+        height: binding.body.height,
+      };
+      const velocity = { x: binding.body.velocity.x, y: binding.body.velocity.y };
+      const result = applyAabbCollisions(moving, velocity, this.polygonSolids, mask);
+      this.setBodyPosition(binding, result.position.x, result.position.y);
+      binding.body.setVelocity(result.velocity.x, result.velocity.y);
+      this.syncBlockedFlags(binding.body, velocity, result);
+      if (result.grounded) {
+        transform.position.y = result.position.y - aabbComp.offset.y;
+      }
+    } else if (circleComp) {
+      const moving: Circle = {
+        x: binding.body.center.x,
+        y: binding.body.center.y,
+        radius: binding.body.halfWidth,
+      };
+      const velocity = { x: binding.body.velocity.x, y: binding.body.velocity.y };
+      const result = applyCircleCollisions(moving, velocity, this.polygonSolids, mask);
+      this.setBodyPosition(
+        binding,
+        result.position.x - binding.body.halfWidth,
+        result.position.y - binding.body.halfWidth,
+      );
+      binding.body.setVelocity(result.velocity.x, result.velocity.y);
+      if (result.grounded) {
+        transform.position.y = result.position.y - circleComp.offset.y;
+      }
+    }
+  }
+
+  /**
+   * Reflect the SAT result on the Arcade `blocked` flags so grounded/on-wall
+   * detection (e.g. the player controller) also works against polygon solids
+   * that Arcade knows nothing about.
+   */
+  private syncBlockedFlags(
+    body: Phaser.Physics.Arcade.Body,
+    velocity: { x: number; y: number },
+    result: { velocity: { x: number; y: number }; grounded: boolean },
+  ): void {
+    if (velocity.x !== 0 && result.velocity.x === 0) {
+      body.blocked.left = velocity.x < 0;
+      body.blocked.right = velocity.x > 0;
+      body.touching.left = velocity.x < 0;
+      body.touching.right = velocity.x > 0;
+    }
+    if (velocity.y !== 0 && result.velocity.y === 0) {
+      body.blocked.up = velocity.y < 0;
+      body.blocked.down = velocity.y > 0;
+      body.touching.up = velocity.y < 0;
+      body.touching.down = velocity.y > 0;
+    }
+  }
+
+  /**
+   * Move a dynamic Arcade body (and its game object) so its world position
+   * becomes (x, y). Arcade re-derives the body from the game object every
+   * frame (`updateFromGameObject`), so both must be shifted by the same delta
+   * — moving only the body would be overwritten on the next physics step, and
+   * moving only the game object would leave the body offset behind.
+   */
+  private setBodyPosition(binding: EntityBinding, x: number, y: number): void {
+    const body = binding.body;
+    if (!body) return;
+    const dx = x - body.x;
+    const dy = y - body.y;
+    if (dx === 0 && dy === 0) return;
+    const go = binding.gameObject;
+    body.position.set(x, y);
+    body.prev.set(x, y);
+    body.updateCenter();
+    go.x += dx;
+    go.y += dy;
   }
 }
 

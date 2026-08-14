@@ -189,3 +189,21 @@ export function createGestureRecognizer(
 export function gestureToJumpImpulse(gesture: RecognizedGesture | null): boolean {
   return gesture?.kind === "swipe" && gesture.direction === "up";
 }
+
+/**
+ * Map a recognized gesture to the script event name hosts dispatch into Script
+ * handlers. Swipes are direction-suffixed (`swipeUp`, `swipeDown`, `swipeLeft`,
+ * `swipeRight`); taps / long-presses / pinches use the bare kind.
+ */
+export function gestureScriptEventName(gesture: RecognizedGesture): string {
+  switch (gesture.kind) {
+    case "tap":
+    case "longPress":
+    case "pinch":
+      return gesture.kind;
+    case "swipe": {
+      const dir = gesture.direction[0]!.toUpperCase() + gesture.direction.slice(1);
+      return `swipe${dir}`;
+    }
+  }
+}

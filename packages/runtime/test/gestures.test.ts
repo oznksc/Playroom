@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createGestureRecognizer, gestureToJumpImpulse } from "../src/gestures.js";
+import {
+  createGestureRecognizer,
+  gestureToJumpImpulse,
+  gestureScriptEventName,
+} from "../src/gestures.js";
 
 describe("gesture recognizer", () => {
   it("recognizes a tap", () => {
@@ -36,5 +40,55 @@ describe("gesture recognizer", () => {
     if (result?.kind === "pinch") {
       expect(result.scale).toBeCloseTo(2, 1);
     }
+  });
+
+  it("maps recognized gestures to script event names", () => {
+    expect(gestureScriptEventName({ kind: "tap", x: 0, y: 0 })).toBe("tap");
+    expect(gestureScriptEventName({ kind: "longPress", x: 0, y: 0 })).toBe("longPress");
+    expect(
+      gestureScriptEventName({
+        kind: "swipe",
+        direction: "up",
+        dx: 0,
+        dy: -100,
+        distance: 100,
+        x: 0,
+        y: 0,
+      }),
+    ).toBe("swipeUp");
+    expect(
+      gestureScriptEventName({
+        kind: "swipe",
+        direction: "down",
+        dx: 0,
+        dy: 100,
+        distance: 100,
+        x: 0,
+        y: 0,
+      }),
+    ).toBe("swipeDown");
+    expect(
+      gestureScriptEventName({
+        kind: "swipe",
+        direction: "left",
+        dx: -100,
+        dy: 0,
+        distance: 100,
+        x: 0,
+        y: 0,
+      }),
+    ).toBe("swipeLeft");
+    expect(
+      gestureScriptEventName({
+        kind: "swipe",
+        direction: "right",
+        dx: 100,
+        dy: 0,
+        distance: 100,
+        x: 0,
+        y: 0,
+      }),
+    ).toBe("swipeRight");
+    expect(gestureScriptEventName({ kind: "pinch", scale: 2, centerX: 0, centerY: 0 })).toBe("pinch");
   });
 });

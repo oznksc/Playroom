@@ -1,4 +1,4 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent } from "@gamekit/schema";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent, NineSliceComponent } from "@gamekit/schema";
 import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont } from "@shopify/react-native-skia";
 import type { ComponentType, ReactElement, ReactNode } from "react";
 import { useMemo } from "react";
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
 import { pivotTransform } from "./transform.js";
+import { computeNineSliceRegions } from "./nineslice.js";
 
 // Skia packages may resolve a different @types/react (e.g. 19 vs 18) in monorepos;
 // cast Canvas so tsc accepts it without forcing a monorepo-wide React types upgrade.
@@ -204,6 +205,18 @@ export function GameKitView({
                   sprite={sprite}
                   transform={transform}
                   source={assets[sprite.assetId]}
+                />
+              );
+            }
+
+            const nineSlice = entity.components.find((component): component is NineSliceComponent => component.type === "NineSlice");
+            if (nineSlice && !sprite) {
+              nodes.push(
+                <NineSliceNode
+                  key={`${entity.id}-nineslice`}
+                  nineSlice={nineSlice}
+                  transform={transform}
+                  source={assets[nineSlice.assetId]}
                 />
               );
             }
@@ -420,6 +433,63 @@ function SpriteNode({
           color={Skia.Color("#7dd3fc")}
         />
       )}
+    </Group>
+  );
+}
+
+function NineSliceNode({
+  nineSlice,
+  transform,
+  source
+}: {
+  nineSlice: NineSliceComponent;
+  transform: TransformComponent;
+  source: unknown;
+}): ReactElement {
+  const image = useImage(source as Parameters<typeof useImage>[0]);
+  const srcWidth = image ? image.width() : nineSlice.width;
+  const srcHeight = image ? image.height() : nineSlice.height;
+
+  const cx = transform.position.x;
+  const cy = transform.position.y;
+  const x0 = cx - nineSlice.width / 2;
+  const y0 = cy - nineSlice.height / 2;
+  const regions = computeNineSliceRegions(nineSlice, x0, y0, srcWidth, srcHeight);
+
+  if (!image) {
+    return (
+      <Group
+        transform={pivotTransform(transform, transform.position.x, transform.position.y)}
+      >
+        <Rect x={x0} y={y0} width={nineSlice.width} height={nineSlice.height} color={Skia.Color("#f472b6")} />
+      </Group>
+    );
+  }
+
+  return (
+    <Group
+      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
+    >
+      {regions.map((r, i) => {
+        const scaleX = r.sw > 0 ? r.w / r.sw : 1;
+        const scaleY = r.sh > 0 ? r.h / r.sh : 1;
+        return (
+          <Group key={i} clip={Skia.RRectXY(Skia.XYWHRect(r.x, r.y, r.w, r.h), 0, 0)}>
+            <Group
+              transform={[
+                { translateX: r.x },
+                { translateY: r.y },
+                { scaleX },
+                { scaleY },
+                { translateX: -r.sx },
+                { translateY: -r.sy },
+              ]}
+            >
+              <SkiaImage image={image} x={0} y={0} width={srcWidth} height={srcHeight} />
+            </Group>
+          </Group>
+        );
+      })}
     </Group>
   );
 }

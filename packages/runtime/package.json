@@ -76,6 +76,10 @@
     "./path": {
       "types": "./dist/path.d.ts",
       "import": "./dist/path.js"
+    },
+    "./gestures": {
+      "types": "./dist/gestures.d.ts",
+      "import": "./dist/gestures.js"
     }
   },
   "scripts": {

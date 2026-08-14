@@ -113,6 +113,64 @@ describe("simulateSceneSteps", () => {
     expect(summary.position.y).toBeLessThan(200);
     expect(summary.position.y).toBeGreaterThan(100);
   });
+
+  it("dispatches per-frame update script events", () => {
+    const scene = createEmptyScene("UpdateScript");
+    const vars: Record<string, unknown> = {};
+    const sceneManager = {
+      switchScene: () => false,
+      setPersistentVar: (key: string, value: unknown) => {
+        vars[key] = value;
+      },
+      getPersistentVar: (key: string, defaultValue?: unknown) => vars[key] ?? defaultValue,
+      completeLevel: () => null,
+      getState: () => ({ currentLevelId: null }),
+    };
+    const bot = createEntity("Bot", { x: 10, y: 10 });
+    bot.components.push({
+      type: "Script",
+      handlers: [
+        {
+          event: "update",
+          actions: [{ type: "incrementVariable", key: "ticks", by: 1 }],
+        },
+      ],
+    });
+    scene.entities.push(bot);
+
+    const result = simulateSceneSteps(scene, { steps: 5, sceneManager });
+    expect(result.steps).toBe(5);
+    expect(vars.ticks).toBe(5);
+  });
+
+  it("does not fire update events for scripts without an update handler", () => {
+    const scene = createEmptyScene("NoUpdate");
+    const vars: Record<string, unknown> = {};
+    const sceneManager = {
+      switchScene: () => false,
+      setPersistentVar: (key: string, value: unknown) => {
+        vars[key] = value;
+      },
+      getPersistentVar: (key: string, defaultValue?: unknown) => vars[key] ?? defaultValue,
+      completeLevel: () => null,
+      getState: () => ({ currentLevelId: null }),
+    };
+    const bot = createEntity("Bot", { x: 0, y: 0 });
+    bot.components.push({
+      type: "Script",
+      handlers: [
+        {
+          event: "start",
+          actions: [{ type: "incrementVariable", key: "started", by: 1 }],
+        },
+      ],
+    });
+    scene.entities.push(bot);
+
+    simulateSceneSteps(scene, { steps: 5, sceneManager });
+    expect(vars.started).toBeUndefined();
+    expect(vars.ticks).toBeUndefined();
+  });
 });
 
 describe("input map", () => {

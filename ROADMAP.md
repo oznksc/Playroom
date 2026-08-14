@@ -159,9 +159,35 @@ Ordered for product impact, not exhaustive:
      scripts work (impulse ÷ mass; no-op on kinematic).
    - **gap closed:** Collision `layer`/`mask` on Phaser — collider/overlap process callbacks
      apply the Skia rule (solid: dynamic mask & static layer; trigger: both masks).
-   - **gap closed:** Transform `rotation`/`scale` rendering on Skia — sprite/tilemap/text/
-     animation nodes now rotate/scale around the entity origin (rotation in degrees, matching
-     Phaser) and polygon points get rotation + scale applied.
+- **gap closed:** Transform `rotation`/`scale` rendering on Skia — sprite/tilemap/text/
+      animation nodes now rotate/scale around the entity origin (rotation in degrees, matching
+      Phaser) and polygon points get rotation + scale applied.
+    - **gap closed:** Per-frame script `update` event — Skia loop, Phaser `update`, and
+      headless `simulateSceneSteps` now dispatch an `update` event into Script handlers each
+      frame (context carries `dt`), enabling frame counters and continuous-impulse scripts.
+    - **gap closed:** Save/load wiring on Phaser — `store.ts` is called from gameplay:
+      auto-save into a `saveSlot` on level complete (win) via the host's `exportSaveSnapshot`;
+      the generated web bootstrap passes `saveSlot: "auto"`.
+    - **gap closed:** Camera smoothing parity — Phaser's camera follow now uses the same
+      model as Skia's `createCameraFollow`: `smoothing` is a pure per-frame exponential
+      lerp factor (0–1); the remap curve, deadzone, and follow offset were removed.
+    - **gap closed:** Gestures wired on both runtimes — the shared `createGestureRecognizer`
+      is fed from pointer events (RN touch handlers on Skia, Phaser pointer events) and
+      recognized gestures dispatch script events (`tap`, `longPress`, `swipeUp`/`swipeDown`/
+      `swipeLeft`/`swipeRight`, `pinch`).
+    - **gap closed:** PlayerController feel parity — Skia's controller now shares
+      Phaser's feel model: coyote grace window, jump buffering, edge-triggered jump,
+      air control damping, and an upward velocity cap (Phaser also gained jump
+      buffering so both runtimes are identical).
+    - **gap closed:** NineSlice on Skia — `computeNineSliceRegions` maps source rects to
+      target rects and Skia draws 9 clipped/stretched image regions (corners fixed,
+      edges stretch one axis, center stretches both), matching Phaser's built-in
+      nineslice.
+    - **gap closed:** PolygonCollider on Phaser — Arcade has no polygon bodies, so static
+      convex polygons are collected via `getEntityPolygon` and dynamic AABB/circle bodies
+      resolve against them every frame with the shared SAT core
+      (`applyAabbCollisions`/`applyCircleCollisions`), matching Skia semantics (polygon-as-
+      bounding-box for AABB, true SAT for circle). Concave shapes ghost; no dynamic-vs-dynamic.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

@@ -27,7 +27,7 @@ import { createPlayerController, type PlayerControllerInput } from "./player.js"
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { deepClone } from "./clone.js";
 import { RulesEngine } from "./rules-engine.js";
-import { evaluateScriptEvent, transitionFsm } from "./script.js";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm } from "./script.js";
 
 export type SimulateOptions = {
   steps: number;
@@ -246,6 +246,31 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
           transform.position.y += controller.state.velocity.y * fixedDt;
         }
       }
+    }
+
+    // Per-frame Script "update" events
+    for (const entity of working.entities) {
+      const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
+      if (!script || !hasScriptHandler(script, "update")) continue;
+      const context =
+        engine?.scriptContext(entity.id, {
+          dt: fixedDt,
+          sceneManager,
+          rigidBodies: bodies,
+          destroyEntity: (id) => {
+            working.entities = working.entities.filter((e) => e.id !== id);
+          },
+        }) ?? {
+          entityId: entity.id,
+          dt: fixedDt,
+          entities: working.entities,
+          sceneManager,
+          rigidBodies: bodies,
+          destroyEntity: (id) => {
+            working.entities = working.entities.filter((e) => e.id !== id);
+          },
+        };
+      evaluateScriptEvent("update", script, context);
     }
 
     if (runRules) {
