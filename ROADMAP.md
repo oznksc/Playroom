@@ -210,6 +210,10 @@ Ordered for product impact, not exhaustive:
       jumps to `currentFrame` via `setCurrentFrame` so loops start at the authored
       frame instead of restarting at 0, matching Skia (shared `updateAnimation`
       advances from `currentFrame`).
+    - **gap closed:** Text wrapping + font fallback on Skia — `TextComponent` gained
+      an optional `width` (word-wrap width); Skia wraps via the shared `wrapText`
+      helper, Phaser uses native word-wrap, and the editor canvas preview wraps too.
+      Missing/unloaded custom fonts fall back to a system font on both runtimes.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

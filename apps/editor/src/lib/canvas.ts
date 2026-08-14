@@ -138,7 +138,7 @@ export function drawScene(
       context.font = `${textComp.size}px sans-serif`;
       context.textAlign = textComp.align;
       context.textBaseline = "top";
-      context.fillText(textComp.text, transform.position.x, transform.position.y);
+      drawWrappedText(context, textComp.text, textComp.width, transform.position.x, transform.position.y);
       context.restore();
     }
 
@@ -731,9 +731,39 @@ export function drawScreenSpaceText(
     context.font = `${textComp.size}px sans-serif`;
     context.textAlign = textComp.align;
     context.textBaseline = "top";
-    context.fillText(textComp.text, transform.position.x, transform.position.y);
+    drawWrappedText(context, textComp.text, textComp.width, transform.position.x, transform.position.y);
     context.restore();
   }
+}
+
+function drawWrappedText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  wrapWidth: number | undefined,
+  x: number,
+  y: number,
+): void {
+  if (!wrapWidth || wrapWidth <= 0) {
+    context.fillText(text, x, y);
+    return;
+  }
+  const lineHeight = context.measureText("M").width * 1.2;
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width <= wrapWidth || !line) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  lines.forEach((lineText, i) => {
+    context.fillText(lineText, x, y + i * lineHeight);
+  });
 }
 
 function drawGuiNode(

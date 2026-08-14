@@ -555,6 +555,27 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     }
   });
 
+  it("accepts an optional wrap width on Text labels", () => {
+    const scene = createEmptyScene("WrappedText");
+    const label = createEntity("Subtitle", { x: 0, y: 0 });
+    label.components.push({
+      type: "Text",
+      text: "A long line that wraps",
+      fontAssetId: "",
+      size: 16,
+      color: "#ffffff",
+      align: "left",
+      width: 120,
+    });
+    scene.entities.push(label);
+    const result = validateScene(scene);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const text = result.value.entities[0].components.find((c) => c.type === "Text") as { width: number };
+      expect(text.width).toBe(120);
+    }
+  });
+
   it("validates assets with audio and font kinds", () => {
     const project = {
       schemaVersion: 1 as const,

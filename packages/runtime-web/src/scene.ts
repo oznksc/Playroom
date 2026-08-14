@@ -1111,6 +1111,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
           fontSize: `${textComp.size || 16}px`,
           color: textComp.color || "#ffffff",
           align: textComp.align || "left",
+          wordWrap: textComp.width
+            ? { width: textComp.width, useAdvancedWrap: false }
+            : undefined,
         })
         .setOrigin(
           textComp.align === "center" ? 0.5 : textComp.align === "right" ? 1 : 0,

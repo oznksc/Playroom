@@ -166,6 +166,7 @@ export const TextComponentSchema = z.object({
   size: z.number().default(16),
   color: z.string().default("#ffffff"),
   align: z.enum(["left", "center", "right"]).default("left"),
+  width: z.number().positive().optional(),
 });
 export type TextComponent = z.infer<typeof TextComponentSchema>;
 

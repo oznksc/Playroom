@@ -49,6 +49,13 @@ export function TextSection({ textComp, assets, onChange, open, onToggle, onRemo
             value={textComp.size}
             onChange={(v) => onChange((d) => { findComponent<TextComponent>(d, "Text")!.size = v; })}
           />
+          <NumberField
+            label="Wrap width (0 = no wrap)"
+            value={textComp.width ?? 0}
+            onChange={(v) => onChange((d) => {
+              findComponent<TextComponent>(d, "Text")!.width = v > 0 ? v : undefined;
+            })}
+          />
           <ColorField
             label="Color"
             value={textComp.color}

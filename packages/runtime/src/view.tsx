@@ -8,6 +8,7 @@ import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
 import { pivotTransform } from "./transform.js";
 import { computeNineSliceRegions } from "./nineslice.js";
+import { wrapText } from "./wrap-text.js";
 import {
   computeSpotCone,
   pointLightColors,
@@ -707,8 +708,10 @@ function TextNode({
   let x = transform.position.x;
   const y = transform.position.y;
 
+  const lines = textComponent.width ? wrapText(textComponent.text, font, textComponent.width) : [textComponent.text];
+
   if (textComponent.align === "center" || textComponent.align === "right") {
-    const width = font.getTextWidth(textComponent.text);
+    const width = Math.max(...lines.map((line) => font.getTextWidth(line)));
     if (textComponent.align === "center") {
       x -= width / 2;
     } else {
@@ -716,17 +719,22 @@ function TextNode({
     }
   }
 
+  const lineHeight = textComponent.size * 1.2;
+
   return (
     <Group
       transform={pivotTransform(transform, transform.position.x, transform.position.y)}
     >
-      <SkiaText
-        font={font}
-        text={textComponent.text}
-        x={x}
-        y={y}
-        color={Skia.Color(textComponent.color)}
-      />
+      {lines.map((line, i) => (
+        <SkiaText
+          key={i}
+          font={font}
+          text={line}
+          x={x}
+          y={y + i * lineHeight}
+          color={Skia.Color(textComponent.color)}
+        />
+      ))}
     </Group>
   );
 }
