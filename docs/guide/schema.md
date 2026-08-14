@@ -20,6 +20,7 @@ Playroom scenes are JSON validated by `@gamekit/schema`.
 | `Tween` / `FollowPath` | Motion helpers |
 | `StateMachine` / `Script` | Behavior |
 | `ParticleSystem` | Lightweight particle emitter |
+| `Light2D` | Additive light — `point` (radial glow) or `spot` (cone along Transform rotation), `range`/`intensity`/`color` |
 
 ## Project file
 

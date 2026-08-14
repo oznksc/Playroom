@@ -150,3 +150,13 @@ export {
   type Particle,
   type ParticleEmitterState,
 } from "./particles.js";
+export {
+  computeSpotCone,
+  hexToRgbaHex,
+  pointLightColors,
+  LIGHT_FALLBACK_COLOR,
+  LIGHT_CONE_HALF_ANGLE,
+  LIGHT_GRADIENT_POSITIONS,
+  type LightPoint,
+  type SpotCone,
+} from "./light.js";

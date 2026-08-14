@@ -7,6 +7,7 @@ import type {
   FollowPathComponent,
   CameraFollowComponent,
   AudioSourceComponent,
+  Light2DComponent,
   ParticleSystemComponent,
   TweenComponent,
   GameKitAsset,
@@ -349,6 +350,42 @@ export function drawScene(
           context.fill();
         }
         context.globalAlpha = 1;
+      }
+
+      // Light2D range + falloff indicator
+      const light2d = findComponent<Light2DComponent>(entity, "Light2D");
+      if (light2d) {
+        const range = light2d.range ?? 200;
+        context.save();
+        context.strokeStyle = "rgba(250,204,21,0.45)";
+        context.lineWidth = 1;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        context.arc(transform.position.x, transform.position.y, range, 0, Math.PI * 2);
+        context.stroke();
+        context.setLineDash([]);
+        if (light2d.kind === "spot") {
+          const rotation = (transform.rotation ?? 0) * (Math.PI / 180);
+          const half = Math.PI / 6;
+          context.beginPath();
+          context.moveTo(transform.position.x, transform.position.y);
+          context.lineTo(
+            transform.position.x + Math.sin(rotation - half) * range,
+            transform.position.y - Math.cos(rotation - half) * range,
+          );
+          context.lineTo(
+            transform.position.x + Math.sin(rotation + half) * range,
+            transform.position.y - Math.cos(rotation + half) * range,
+          );
+          context.closePath();
+          context.fillStyle = "rgba(250,204,21,0.08)";
+          context.fill();
+        }
+        context.restore();
+        context.fillStyle = "rgba(250,204,21,0.7)";
+        context.font = "10px sans-serif";
+        context.textAlign = "center";
+        context.fillText("☀", transform.position.x, transform.position.y - range - 8);
       }
 
       // AudioSource range indicator

@@ -195,6 +195,11 @@ Ordered for product impact, not exhaustive:
       entity's `Transform` and apply gain/pan to every playing `AudioSource` (Skia:
       `StereoPannerNode` on web, volume-only on expo-av; Phaser: `setVolume`/`setPan`).
       `AudioSource` gained optional `minDistance`/`maxDistance` fields.
+    - **gap closed:** Light2D on Skia — lights render with additive blend:
+      `point` is a radial gradient glow (`range`/`intensity`/`color`) and `spot` clips
+      the same glow to a cone fan opening along the entity's rotation (0 = up,
+      clockwise). Pure helpers (`pointLightColors`, `computeSpotCone`,
+      `hexToRgbaHex`) are unit-tested.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

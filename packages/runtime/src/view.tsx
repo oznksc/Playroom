@@ -1,13 +1,18 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent, NineSliceComponent } from "@gamekit/schema";
-import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont } from "@shopify/react-native-skia";
+import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent, NineSliceComponent, Light2DComponent } from "@gamekit/schema";
+import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont, Path, RadialGradient } from "@shopify/react-native-skia";
 import type { ComponentType, ReactElement, ReactNode } from "react";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
 import { pivotTransform } from "./transform.js";
 import { computeNineSliceRegions } from "./nineslice.js";
+import {
+  computeSpotCone,
+  pointLightColors,
+  LIGHT_GRADIENT_POSITIONS,
+} from "./light.js";
 
 // Skia packages may resolve a different @types/react (e.g. 19 vs 18) in monorepos;
 // cast Canvas so tsc accepts it without forcing a monorepo-wide React types upgrade.
@@ -250,6 +255,17 @@ export function GameKitView({
               }
             }
 
+            const light = entity.components.find((component): component is Light2DComponent => component.type === "Light2D");
+            if (light) {
+              nodes.push(
+                <LightNode
+                  key={`${entity.id}-light`}
+                  light={light}
+                  transform={transform}
+                />,
+              );
+            }
+
             return nodes.length > 0 ? <Group key={entity.id}>{nodes}</Group> : null;
           })}
         </Group>
@@ -367,6 +383,59 @@ function GuiNodeView({
   }
 
   return null;
+}
+
+/**
+ * Renders a Light2D component with additive blend:
+ * - point: radial gradient glow (bright center -> transparent edge) across `range`.
+ * - spot: the same radial glow clipped to a cone fan opening along the entity's
+ *   rotation (0 = straight up, positive = clockwise).
+ * Intensity scales the peak alpha; color defaults to white.
+ */
+function LightNode({
+  light,
+  transform,
+}: {
+  light: Light2DComponent;
+  transform: TransformComponent;
+}): ReactElement {
+  const x = transform.position.x;
+  const y = transform.position.y;
+  const range = Math.max(0, light.range ?? 0);
+  const intensity = Math.max(0, Math.min(1, light.intensity ?? 1));
+  const colors = pointLightColors(light.color ?? "#ffffff", intensity);
+
+  if (range <= 0) return <Fragment />;
+
+  if (light.kind === "spot") {
+    const cone = computeSpotCone({ x, y }, range, transform.rotation ?? 0);
+    const path = Skia.Path.Make();
+    path.moveTo(cone.x1, cone.y1);
+    path.lineTo(cone.x2, cone.y2);
+    path.lineTo(cone.x3, cone.y3);
+    path.close();
+    return (
+      <Path path={path} blendMode={"plus"}>
+        <RadialGradient
+          c={{ x, y }}
+          r={range}
+          colors={colors}
+          positions={[...LIGHT_GRADIENT_POSITIONS]}
+        />
+      </Path>
+    );
+  }
+
+  return (
+    <Circle cx={x} cy={y} r={range} blendMode={"plus"}>
+      <RadialGradient
+        c={{ x, y }}
+        r={range}
+        colors={colors}
+        positions={[...LIGHT_GRADIENT_POSITIONS]}
+      />
+    </Circle>
+  );
 }
 
 function GuiImageNode({
