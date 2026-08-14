@@ -16,7 +16,7 @@ import type { AnimationComponent } from "@gamekit/schema";
 import type { AssetRegistry } from "./scene.js";
 import { updateTween } from "./tween.js";
 import { updateFollowPath } from "./path.js";
-import { evaluateScriptEvent, hasScriptHandler, transitionFsm, type ScriptContext } from "./script.js";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm, type ScriptContext } from "./script.js";
 import { RulesEngine } from "./rules-engine.js";
 import { createAudioController, type AudioController } from "./audio.js";
 import { findAudioListenerPosition } from "./spatial-audio.js";
@@ -73,6 +73,7 @@ export function GameKitGame({
   const audioRef = useRef<AudioController | null>(null);
   const particleEmittersRef = useRef<Map<string, ParticleEmitterState>>(new Map());
   const particlesByEntityRef = useRef<Record<string, Particle[]>>({});
+  const fsmTimersRef = useRef<Map<string, { stateName: string; elapsed: number }>>(new Map());
   const rulesEngineRef = useRef<RulesEngine | null>(null);
   const sceneManagerRef = useRef(sceneManager);
   sceneManagerRef.current = sceneManager;
@@ -618,6 +619,33 @@ export function GameKitGame({
           },
         };
       evaluateScriptEvent("update", script, context);
+    }
+
+    // Per-frame StateMachine updates (on.update transitions + duration timers)
+    for (const entity of currentEntities) {
+      const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+      if (!sm) continue;
+      const context =
+        rulesEngineRef.current?.scriptContext(entity.id, {
+          dt,
+          sceneManager: sceneManagerRef.current,
+          rigidBodies: rigidBodyRefs.current,
+          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id: string) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+        }) ?? {
+          entityId: entity.id,
+          dt,
+          entities: currentEntities,
+          sceneManager: sceneManagerRef.current,
+          rigidBodies: rigidBodyRefs.current,
+          playSound: (assetId: string) => audioRef.current?.playAsset?.(assetId),
+          destroyEntity: (id: string) => {
+            entitiesRef.current = entitiesRef.current.filter((e) => e.id !== id);
+          },
+        };
+      updateFsm(sm, context, dt, fsmTimersRef.current);
     }
 
     // Particles

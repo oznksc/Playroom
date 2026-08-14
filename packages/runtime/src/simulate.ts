@@ -27,7 +27,7 @@ import { createPlayerController, type PlayerControllerInput } from "./player.js"
 import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { deepClone } from "./clone.js";
 import { RulesEngine } from "./rules-engine.js";
-import { evaluateScriptEvent, hasScriptHandler, transitionFsm } from "./script.js";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm } from "./script.js";
 
 export type SimulateOptions = {
   steps: number;
@@ -77,6 +77,7 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
   const controllers = new Map<string, ReturnType<typeof createPlayerController>>();
   const bodies = new Map<string, ReturnType<typeof createRigidBody>>();
   let triggerState: TriggerState = new Set();
+  const fsmTimers = new Map<string, { stateName: string; elapsed: number }>();
   const vars: Record<string, unknown> = {};
 
   for (const entity of working.entities) {
@@ -271,6 +272,31 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
           },
         };
       evaluateScriptEvent("update", script, context);
+    }
+
+    // Per-frame StateMachine updates (on.update transitions + duration timers)
+    for (const entity of working.entities) {
+      const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+      if (!sm) continue;
+      const context =
+        engine?.scriptContext(entity.id, {
+          dt: fixedDt,
+          sceneManager,
+          rigidBodies: bodies,
+          destroyEntity: (id) => {
+            working.entities = working.entities.filter((e) => e.id !== id);
+          },
+        }) ?? {
+          entityId: entity.id,
+          dt: fixedDt,
+          entities: working.entities,
+          sceneManager,
+          rigidBodies: bodies,
+          destroyEntity: (id) => {
+            working.entities = working.entities.filter((e) => e.id !== id);
+          },
+        };
+      updateFsm(sm, context, fixedDt, fsmTimers);
     }
 
     if (runRules) {

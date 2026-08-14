@@ -185,10 +185,16 @@ export function transitionFsm(
   const script = entity.components.find((c: any) => c.type === "Script") as ScriptComponent | undefined;
 
   // 1. Run exit event actions for current state
-  if (sm.currentState && script) {
-    const exitHandler = script.handlers.find((h) => h.event === `exit:${sm.currentState}`);
-    if (exitHandler) {
-      executeActions(exitHandler.actions, context);
+  if (sm.currentState) {
+    const stateObj = sm.states.find((s) => s.name === sm.currentState);
+    if (stateObj?.exit) {
+      executeActions(stateObj.exit, context);
+    }
+    if (script) {
+      const exitHandler = script.handlers.find((h) => h.event === `exit:${sm.currentState}`);
+      if (exitHandler) {
+        executeActions(exitHandler.actions, context);
+      }
     }
   }
 
@@ -196,10 +202,55 @@ export function transitionFsm(
   sm.currentState = targetState;
 
   // 3. Run enter event actions for target state
+  const targetStateObj = sm.states.find((s) => s.name === targetState);
+  if (targetStateObj?.enter) {
+    executeActions(targetStateObj.enter, context);
+  }
   if (script) {
     const enterHandler = script.handlers.find((h) => h.event === `enter:${targetState}`);
     if (enterHandler) {
       executeActions(enterHandler.actions, context);
+    }
+  }
+}
+
+/**
+ * Per-frame state machine update. Handles `on.update` transitions (a state may
+ * declare `on.update` to leave unconditionally every frame) and timer-based
+ * transitions (`duration` seconds in the state then `then`). Timer state lives
+ * in the caller-provided map, keyed by entity id, so nothing stateful needs to
+ * be stored on the schema component.
+ */
+export function updateFsm(
+  sm: StateMachineComponent,
+  context: ScriptContext,
+  dt: number,
+  timers: Map<string, { stateName: string; elapsed: number }>,
+): void {
+  if (!sm.currentState) {
+    sm.currentState = sm.initialState;
+  }
+
+  const stateObj = sm.states.find((s) => s.name === sm.currentState);
+  if (!stateObj) return;
+
+  // Per-frame transition: `on.update` always fires toward its target.
+  if (stateObj.on?.update) {
+    transitionFsm(sm, stateObj.on.update, context);
+    timers.delete(context.entityId);
+    return;
+  }
+
+  if (stateObj.duration && stateObj.then) {
+    let timer = timers.get(context.entityId);
+    if (!timer || timer.stateName !== sm.currentState) {
+      timer = { stateName: sm.currentState, elapsed: 0 };
+      timers.set(context.entityId, timer);
+    }
+    timer.elapsed += dt;
+    if (timer.elapsed >= stateObj.duration) {
+      timers.delete(context.entityId);
+      transitionFsm(sm, stateObj.then, context);
     }
   }
 }

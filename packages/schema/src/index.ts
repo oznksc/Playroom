@@ -211,9 +211,22 @@ export const FollowPathComponentSchema = z.object({
 });
 export type FollowPathComponent = z.infer<typeof FollowPathComponentSchema>;
 
+export const ScriptActionSchema = z.object({
+  type: z.string().min(1),
+}).catchall(z.unknown());
+export type ScriptAction = z.infer<typeof ScriptActionSchema>;
+
 export const StateMachineStateSchema = z.object({
   name: z.string().min(1),
   on: z.record(z.string().min(1)).optional(),
+  /** Actions run when entering this state (before `on` transitions). */
+  enter: z.array(ScriptActionSchema).optional(),
+  /** Actions run when leaving this state (after `on` transitions). */
+  exit: z.array(ScriptActionSchema).optional(),
+  /** Seconds to stay in this state before transitioning to `then`. */
+  duration: z.number().positive().optional(),
+  /** Target state after `duration` seconds elapses. */
+  then: z.string().min(1).optional(),
 });
 export type StateMachineState = z.infer<typeof StateMachineStateSchema>;
 
@@ -224,11 +237,6 @@ export const StateMachineComponentSchema = z.object({
   states: z.array(StateMachineStateSchema),
 });
 export type StateMachineComponent = z.infer<typeof StateMachineComponentSchema>;
-
-export const ScriptActionSchema = z.object({
-  type: z.string().min(1),
-}).catchall(z.unknown());
-export type ScriptAction = z.infer<typeof ScriptActionSchema>;
 
 export const ScriptHandlerSchema = z.object({
   event: z.string().min(1),

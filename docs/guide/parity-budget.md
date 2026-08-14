@@ -44,7 +44,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | Tween | ✅ | ✅ | Full parity (`property`, easing, loop, pingPong). |
 | FollowPath | ⚠️ | ✅ | Same shared logic (`points`, `speed`, `loop`). Skia path.rs lives under `@gamekit/runtime` and is shared — behavior matches; only constant linear speed (no easing) on both. |
 | ParticleSystem | ⚠️ | ⚠️ | Same shared emitter on both: circle particles only, hex colors only, uniform 360° emission. Phaser renders as CPU Graphics. |
-| StateMachine | ⚠️ | ⚠️ | Both evaluate `on.triggerEnter`/`on.collisionEnter` transitions only. No per-frame states, no timers, no `enter:`/`exit:` hooks inside the FSM itself. |
+| StateMachine | ✅ | ✅ | Both evaluate `on.triggerEnter`/`on.collisionEnter`/`on.update` transitions plus `enter`/`exit` action hooks (state-level or Script `enter:<state>`/`exit:<state>`) and `duration`+`then` timers. Shared `transitionFsm`/`updateFsm`; per-frame update runs on both runtimes and in headless simulate. |
 | Script | ✅ | ✅ | Both dispatch `start`, trigger-overlap, GUI-action, per-frame `update`, and collision-enter events (update fires once per frame with `dt` on the context). Collision-enter is edge-triggered on both: a dynamic body vs a static solid (entity or solid tilemap layer) contact dispatches `collisionEnter` once per contact begin, to both entities' scripts and StateMachines. `applyImpulse` works on both. |
 | GUI Text | ✅ | ✅ | `text`, `fontSize`, `color`, `align`; fixed to screen on both. |
 | GUI Button | ✅ | ✅ | `action` dispatch works on both; Phaser makes **all** buttons interactive regardless of the `interactive` field. |

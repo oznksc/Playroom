@@ -36,7 +36,7 @@ import {
   particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
-import { evaluateScriptEvent, hasScriptHandler, transitionFsm, type ScriptContext } from "@gamekit/runtime/script";
+import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm, type ScriptContext } from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
 import { updateFollowPath } from "@gamekit/runtime/path";
 import { updateTween } from "@gamekit/runtime/tween";
@@ -109,6 +109,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private collisionContacts: CollisionEvent[] = [];
   /** Active solid-contact pairs from the previous frame (edge detection). */
   private collisionState: CollisionState = new Set();
+  /** Per-entity StateMachine timer state (duration -> then transitions). */
+  private fsmTimers = new Map<string, { stateName: string; elapsed: number }>();
   private lightSources = new Map<string, Phaser.GameObjects.Light>();
   private hasLights = false;
   /** Static convex polygon solids, resolved via the Skia SAT collision core. */
@@ -629,6 +631,25 @@ export class GameKitPhaserScene extends Phaser.Scene {
           }
         },
       }));
+    }
+
+    // Per-frame StateMachine updates (on.update transitions + duration timers)
+    for (const entity of this.activeEntities) {
+      const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
+      if (!sm) continue;
+      updateFsm(sm, updateEngine.scriptContext(entity.id, {
+        dt,
+        destroyEntity: (id: string) => this.destroyEntityById(id),
+        rigidBodies: this.rigidBodies,
+        playSound: (assetId) => {
+          for (const e of this.activeEntities) {
+            const audio = e.components.find((c) => c.type === "AudioSource");
+            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+              this.playSound(e.id);
+            }
+          }
+        },
+      }), dt, this.fsmTimers);
     }
 
     // Particle systems

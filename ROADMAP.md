@@ -223,6 +223,11 @@ Ordered for product impact, not exhaustive:
     - **gap closed:** Scene transition `slide` on Phaser — `slide` now fades in
       like Skia (Skia degrades `slide` to the same fade overlay), and `none`
       skips on both, so the three transition types behave identically.
+    - **gap closed:** StateMachine parity on both runtimes — states now support
+      `on.update` per-frame transitions, `duration`+`then` timers, and `enter`/
+      `exit` action hooks (state-level actions or Script `enter:<state>`/
+      `exit:<state>` handlers). Shared `transitionFsm`/`updateFsm` drive the
+      FSM on Skia, Phaser, and headless simulate.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

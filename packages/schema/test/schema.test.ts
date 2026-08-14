@@ -622,7 +622,14 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       type: "StateMachine",
       initialState: "idle",
       states: [
-        { name: "idle", on: { "collisionEnter": "walking" } },
+        {
+          name: "idle",
+          on: { "collisionEnter": "walking", "update": "walking" },
+          enter: [{ type: "setVariable", key: "entered_idle", value: true }],
+          exit: [{ type: "setVariable", key: "exited_idle", value: true }],
+          duration: 1.5,
+          then: "walking",
+        },
         { name: "walking", on: { "triggerEnter": "idle" } }
       ]
     });

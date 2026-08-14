@@ -82,7 +82,7 @@ export { usePlayerInput } from "./input.js";
 export type { ExtendedPlayerInput } from "./input.js";
 export { updateTween } from "./tween.js";
 export { updateFollowPath } from "./path.js";
-export { executeActions, transitionFsm, evaluateScriptEvent, hasScriptHandler, type ScriptContext } from "./script.js";
+export { executeActions, transitionFsm, updateFsm, evaluateScriptEvent, hasScriptHandler, type ScriptContext } from "./script.js";
 export {
   RulesEngine,
   type RulesEngineHost,

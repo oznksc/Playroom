@@ -3,7 +3,7 @@ import { createEmptyScene, createEntity } from "@gamekit/schema";
 import { SceneManager, InMemoryStorage } from "../src/manager.js";
 import { updateTween } from "../src/tween.js";
 import { updateFollowPath } from "../src/path.js";
-import { executeActions, transitionFsm } from "../src/script.js";
+import { executeActions, transitionFsm, updateFsm } from "../src/script.js";
 import { createCameraFollow } from "../src/camera.js";
 import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents, type CollisionSolid } from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
@@ -624,6 +624,145 @@ describe("behavior systems runtime logic", () => {
 
     expect(sm.currentState).toBe("walking");
     expect(sceneManager.getPersistentVar("walk_triggered")).toBe(true);
+  });
+
+  it("runs state enter/exit actions on transition", () => {
+    const sceneManager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 },
+    });
+    const entity = {
+      id: "fsm",
+      name: "FSM",
+      components: [
+        {
+          type: "StateMachine" as const,
+          initialState: "idle",
+          currentState: "idle",
+          states: [
+            {
+              name: "idle",
+              exit: [
+                { type: "setVariable", key: "exited_idle", value: true },
+              ],
+            },
+            {
+              name: "active",
+              enter: [
+                { type: "setVariable", key: "entered_active", value: true },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const context = { entityId: "fsm", entities: [entity], sceneManager };
+    const sm = entity.components[0] as StateMachineComponent;
+
+    transitionFsm(sm, "active", context);
+
+    expect(sm.currentState).toBe("active");
+    expect(sceneManager.getPersistentVar("exited_idle")).toBe(true);
+    expect(sceneManager.getPersistentVar("entered_active")).toBe(true);
+  });
+
+  it("transitions via on.update every frame", () => {
+    const sceneManager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 },
+    });
+    const entity = {
+      id: "pulse",
+      name: "Pulse",
+      components: [
+        {
+          type: "StateMachine" as const,
+          initialState: "a",
+          currentState: "a",
+          states: [
+            { name: "a", on: { update: "b" } },
+            { name: "b", on: { update: "a" } },
+          ],
+        },
+      ],
+    };
+    const context = { entityId: "pulse", entities: [entity], sceneManager };
+    const sm = entity.components[0] as StateMachineComponent;
+    const timers = new Map<string, { stateName: string; elapsed: number }>();
+
+    updateFsm(sm, context, 1 / 60, timers);
+    expect(sm.currentState).toBe("b");
+    updateFsm(sm, context, 1 / 60, timers);
+    expect(sm.currentState).toBe("a");
+  });
+
+  it("transitions via a duration timer to the then state", () => {
+    const sceneManager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 },
+    });
+    const entity = {
+      id: "timer",
+      name: "Timer",
+      components: [
+        {
+          type: "StateMachine" as const,
+          initialState: "idle",
+          currentState: "idle",
+          states: [
+            { name: "idle", duration: 1, then: "moving" },
+            { name: "moving" },
+          ],
+        },
+      ],
+    };
+    const context = { entityId: "timer", entities: [entity], sceneManager };
+    const sm = entity.components[0] as StateMachineComponent;
+    const timers = new Map<string, { stateName: string; elapsed: number }>();
+
+    updateFsm(sm, context, 0.5, timers);
+    expect(sm.currentState).toBe("idle");
+    updateFsm(sm, context, 0.5, timers);
+    expect(sm.currentState).toBe("moving");
+  });
+
+  it("resets the timer when the state changes", () => {
+    const sceneManager = new SceneManager({
+      scenes: {},
+      transition: { type: "none", duration: 0 },
+    });
+    const entity = {
+      id: "reset",
+      name: "Reset",
+      components: [
+        {
+          type: "StateMachine" as const,
+          initialState: "idle",
+          currentState: "idle",
+          states: [
+            // Leaves idle every frame toward "moving"
+            { name: "idle", on: { update: "moving" } },
+            // Returns to idle after 1s in "moving"
+            { name: "moving", duration: 1, then: "idle" },
+          ],
+        },
+      ],
+    };
+    const context = { entityId: "reset", entities: [entity], sceneManager };
+    const sm = entity.components[0] as StateMachineComponent;
+    const timers = new Map<string, { stateName: string; elapsed: number }>();
+
+    // Frame 1: idle -> moving (via on.update); timer starts fresh in "moving".
+    updateFsm(sm, context, 0.9, timers);
+    expect(sm.currentState).toBe("moving");
+
+    // Accumulate towards 1s in "moving".
+    updateFsm(sm, context, 0.9, timers);
+    expect(sm.currentState).toBe("moving");
+
+    // Crossing 1s in "moving" returns to idle.
+    updateFsm(sm, context, 0.1, timers);
+    expect(sm.currentState).toBe("idle");
   });
 });
 

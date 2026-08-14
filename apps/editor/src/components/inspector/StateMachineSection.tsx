@@ -1,6 +1,6 @@
-import type { StateMachineComponent } from "@gamekit/schema";
+import type { StateMachineComponent, ScriptAction } from "@gamekit/schema";
 import { GitBranch, Trash2 } from "lucide-react";
-import { AccordionSection, Select, Input, IconButton, Button } from "@/ui";
+import { AccordionSection, Select, Input, IconButton, Button, NumberField, Textarea } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import { useState } from "react";
 import type { OnChange } from "./types.js";
@@ -129,6 +129,32 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                   </IconButton>
                 </div>
                 <div className="space-y-1.5 border-l border-white/[0.08] pl-2">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <NumberField
+                      label="Duration (s)"
+                      value={st.duration ?? 0}
+                      onChange={(v) => onChange((d) => {
+                        const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                        s.duration = v > 0 ? v : undefined;
+                      })}
+                    />
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Then →</span>
+                      <Select
+                        value={st.then ?? ""}
+                        className="h-7 py-0 text-[11px] px-1.5"
+                        onChange={(e) => onChange((d) => {
+                          const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                          s.then = e.target.value || undefined;
+                        })}
+                      >
+                        <option value="">—</option>
+                        {stateMachine.states.map((s) => (
+                          <option key={s.name} value={s.name}>{s.name}</option>
+                        ))}
+                      </Select>
+                    </label>
+                  </div>
                   <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Transitions</span>
                   {Object.entries(st.on || {}).map(([evt, target]) => (
                     <div key={evt} className="flex items-center gap-1.5 text-[11px]">
@@ -158,6 +184,42 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                     </div>
                   ))}
                   <AddTransitionForm stateIndex={i} states={stateMachine.states} onChange={onChange} />
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Enter actions (JSON)</span>
+                    <Textarea
+                      rows={2}
+                      value={JSON.stringify(st.enter ?? [])}
+                      onChange={(e) => {
+                        try {
+                          const actions = JSON.parse(e.target.value) as ScriptAction[];
+                          onChange((d) => {
+                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                            s.enter = actions;
+                          });
+                        } catch {
+                          // ignore invalid JSON while typing
+                        }
+                      }}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Exit actions (JSON)</span>
+                    <Textarea
+                      rows={2}
+                      value={JSON.stringify(st.exit ?? [])}
+                      onChange={(e) => {
+                        try {
+                          const actions = JSON.parse(e.target.value) as ScriptAction[];
+                          onChange((d) => {
+                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                            s.exit = actions;
+                          });
+                        } catch {
+                          // ignore invalid JSON while typing
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
             ))}
