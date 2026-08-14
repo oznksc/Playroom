@@ -435,7 +435,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setDepth(1600);
     }
 
-    if (this.transitionData && this.transitionData.type === "fade") {
+    if (this.transitionData && (this.transitionData.type === "fade" || this.transitionData.type === "slide")) {
+      // Parity with Skia: `slide` degrades to a fade (Skia applies the same
+      // fade overlay for both); `none` and `skip`/`skip`-like types do nothing.
       const duration = Math.round((this.transitionData.duration ?? 0.3) * 1000);
       this.cameras.main.fadeIn(duration, 0, 0, 0);
     }

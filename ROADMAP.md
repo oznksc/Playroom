@@ -217,9 +217,12 @@ Ordered for product impact, not exhaustive:
     - **gap closed:** RigidBody sleeping + drag parity on Phaser — the adapter now
       applies the shared per-frame exponential drag model (no more px/s² guess) and
       mirrors the Skia sleeping model: a supported body still below the linear/
-      angular thresholds for `RIGID_BODY_SLEEP_DELAY` seconds freezes in place
+      angular       thresholds for `RIGID_BODY_SLEEP_DELAY` seconds freezes in place
       (`moves = false`) while collisions keep working, and wakes on input or
       `applyImpulse`.
+    - **gap closed:** Scene transition `slide` on Phaser — `slide` now fades in
+      like Skia (Skia degrades `slide` to the same fade overlay), and `none`
+      skips on both, so the three transition types behave identically.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  
