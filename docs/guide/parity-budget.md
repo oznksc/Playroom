@@ -28,7 +28,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 |---|---|---|---|
 | Transform | ✅ | ✅ | Both runtimes apply position, `rotation` (degrees), and `scale` to sprites/tilemaps/text/animation nodes. Skia rotates/scales around the entity origin (the anchor point for sprites), matching Phaser. Tilemap solids stay axis-aligned at base scale — keep solid tilemaps at rotation 0 / scale 1. |
 | Sprite | ✅ | ✅ | `assetId`, `width`, `height`, `anchor` on both. Missing-texture placeholder differs (Skia `#7dd3fc` rect vs Phaser colored rect). |
-| Animation | ⚠️ | ⚠️ | Single-row spritesheets only on both; multi-row frame grids render garbage. `currentFrame` honored on Skia, ignored on Phaser (always restarts at frame 0). |
+| Animation | ⚠️ | ⚠️ | Single-row spritesheets only on both; multi-row frame grids render garbage. `currentFrame` honored on both: Skia starts the loop at `currentFrame`, Phaser calls `setCurrentFrame` after `play`. |
 | Tilemap | ✅ | ✅ | Both render (single/multi-row atlas, tile `0` = empty) anchored at the entity's Transform. When `solid` is true, every non-empty tile is a static AABB (tile layer 1) and dynamic bodies collide with it on both runtimes. `solid` defaults to false. |
 | Text | ⚠️ | ✅ | Skia: `fontAssetId` fallback renders nothing when font missing; no wrapping. Phaser loads custom fonts, supports HUD via position heuristic. |
 | AudioSource | ✅ | ✅ | Both play `assetId`/`volume`/`loop`/`playOnStart` plus `minDistance`/`maxDistance` for spatial attenuation. Audio is fire-and-forget on both (no pause/resume/fade). |

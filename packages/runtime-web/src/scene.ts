@@ -1151,6 +1151,14 @@ export class GameKitPhaserScene extends Phaser.Scene {
         });
       }
       sprite.play(animKey);
+      const startFrame = animComp.currentFrame ?? 0;
+      if (startFrame > 0) {
+        const currentAnim = sprite.anims.currentAnim;
+        if (currentAnim) {
+          const animFrame = currentAnim.frames[startFrame];
+          if (animFrame) sprite.anims.setCurrentFrame(animFrame);
+        }
+      }
       gameObject = sprite;
     } else if (spriteComp) {
       if (this.textures.exists(spriteComp.assetId)) {

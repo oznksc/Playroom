@@ -206,6 +206,10 @@ Ordered for product impact, not exhaustive:
       entity id) and fed through the shared edge-triggered `updateCollisionEvents`,
       then `collisionEnter` is dispatched to both entities' scripts and
       StateMachines exactly like Skia.
+    - **gap closed:** Animation `currentFrame` on Phaser — after `play`, the sprite
+      jumps to `currentFrame` via `setCurrentFrame` so loops start at the authored
+      frame instead of restarting at 0, matching Skia (shared `updateAnimation`
+      advances from `currentFrame`).
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  
