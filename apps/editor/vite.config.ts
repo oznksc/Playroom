@@ -31,6 +31,7 @@ export default defineConfig({
         "../../packages/runtime/src/rules-engine.ts",
       ),
       "@gamekit/runtime/clone": path.resolve(__dirname, "../../packages/runtime/src/clone.ts"),
+      "@gamekit/runtime/gui": path.resolve(__dirname, "../../packages/runtime/src/gui.ts"),
     },
   },
   // Keep React Native out of the web editor bundle (runtime subpaths only).

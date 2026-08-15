@@ -13,6 +13,10 @@
       "types": "./dist/collision.d.ts",
       "import": "./dist/collision.js"
     },
+    "./gui": {
+      "types": "./dist/gui.d.ts",
+      "import": "./dist/gui.js"
+    },
     "./camera": {
       "types": "./dist/camera.d.ts",
       "import": "./dist/camera.js"

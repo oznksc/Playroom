@@ -458,6 +458,37 @@ describe("starter menu shell factories", () => {
     const transitions = createDefaultMenuTransitions();
     expect(transitions.every((t) => t.toSceneId && t.type)).toBe(true);
   });
+
+  it("validates GUI nodes with anchors and per-instance overrides", () => {
+    const scene = createEmptyScene("GuiAnchorTest");
+    scene.gui.componentInstances = [
+      {
+        id: "hud-inst",
+        componentId: "hud",
+        x: 10,
+        y: 20,
+        nodeOverrides: { "hud-score": { text: "9999", color: "#00f0ff" } },
+      },
+    ];
+    scene.gui.nodes.push({
+      type: "Button",
+      id: "btn-anchored",
+      x: 100,
+      y: 200,
+      width: 120,
+      height: 40,
+      text: "Go",
+      anchorX: 0.5,
+      anchorY: 0.5,
+    });
+    const result = validateScene(scene);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const node = result.value.gui?.nodes.find((n) => n.id === "btn-anchored");
+    expect(node?.anchorX).toBe(0.5);
+    expect(node?.anchorY).toBe(0.5);
+    expect(result.value.gui?.componentInstances[0]?.nodeOverrides?.["hud-score"]?.text).toBe("9999");
+  });
 });
 
 describe("sprint 4 extensions: audio, text, and font", () => {

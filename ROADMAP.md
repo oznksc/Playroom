@@ -228,6 +228,11 @@ Ordered for product impact, not exhaustive:
       `exit` action hooks (state-level actions or Script `enter:<state>`/
       `exit:<state>` handlers). Shared `transitionFsm`/`updateFsm` drive the
       FSM on Skia, Phaser, and headless simulate.
+    - **gap closed:** GUI `anchorX`/`anchorY`/`nodeOverrides` on both runtimes —
+      GUI nodes honor `anchorX`/`anchorY` (0..1 fractions, `x`/`y` = top-left
+      when unset) and per-instance `nodeOverrides`. Shared `offsetGuiNode`/
+      `guiNodeOrigin` (`@gamekit/runtime/gui`) drive Skia, Phaser, and the
+      editor canvas preview, so instances render identically everywhere.
 2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
 3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
 4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  

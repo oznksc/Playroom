@@ -8,6 +8,7 @@ import type { Particle } from "./particles.js";
 import { particleRenderColor, particleRenderSize, particleRenderAlpha } from "./particles.js";
 import { pivotTransform } from "./transform.js";
 import { computeNineSliceRegions } from "./nineslice.js";
+import { offsetGuiNode, guiNodeOrigin } from "./gui.js";
 import { wrapText } from "./wrap-text.js";
 import {
   computeSpotCone,
@@ -142,7 +143,7 @@ export function GameKitView({
         if (n.visible === false) continue;
         nodes.push({
           key: `${instance.id}-${n.id}`,
-          node: { ...n, x: n.x + instance.x, y: n.y + instance.y },
+          node: offsetGuiNode(n, instance),
         });
       }
     }
@@ -325,20 +326,21 @@ function GuiNodeView({
   if (node.type === "Text") {
     const color = node.color ?? "#ffffff";
     const align = node.align ?? "left";
+    const origin = guiNodeOrigin(node);
     const textX =
-      align === "center" ? node.x + node.width / 2 : align === "right" ? node.x + node.width : node.x + 4;
+      align === "center" ? origin.x + node.width / 2 : align === "right" ? origin.x + node.width : origin.x + 4;
     return (
       <Group>
         {font ? (
           <SkiaText
             x={textX}
-            y={node.y + fontSize + 2}
+            y={origin.y + fontSize + 2}
             text={node.text}
             font={font}
             color={Skia.Color(color)}
           />
         ) : (
-          <Rect x={node.x} y={node.y} width={node.width} height={node.height} color={Skia.Color(color)} opacity={0.15} />
+          <Rect x={origin.x} y={origin.y} width={node.width} height={node.height} color={Skia.Color(color)} opacity={0.15} />
         )}
       </Group>
     );
@@ -347,11 +349,12 @@ function GuiNodeView({
   if (node.type === "Button") {
     const bg = node.backgroundColor ?? "#333333";
     const color = node.color ?? "#ffffff";
+    const origin = guiNodeOrigin(node);
     return (
       <Group>
         <RoundedRect
-          x={node.x}
-          y={node.y}
+          x={origin.x}
+          y={origin.y}
           width={node.width}
           height={node.height}
           r={6}
@@ -359,8 +362,8 @@ function GuiNodeView({
         />
         {font ? (
           <SkiaText
-            x={node.x + node.width / 2 - (node.text.length * fontSize * 0.28)}
-            y={node.y + node.height / 2 + fontSize / 3}
+            x={origin.x + node.width / 2 - (node.text.length * fontSize * 0.28)}
+            y={origin.y + node.height / 2 + fontSize / 3}
             text={node.text}
             font={font}
             color={Skia.Color(color)}
@@ -371,11 +374,12 @@ function GuiNodeView({
   }
 
   if (node.type === "Image") {
+    const origin = guiNodeOrigin(node);
     return (
       <GuiImageNode
         assetId={node.assetId}
-        x={node.x}
-        y={node.y}
+        x={origin.x}
+        y={origin.y}
         width={node.width}
         height={node.height}
         source={assets[node.assetId]}

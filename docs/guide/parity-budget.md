@@ -49,7 +49,7 @@ Single source of truth for how `@gamekit/runtime` (Expo / Skia) and
 | GUI Text | ✅ | ✅ | `text`, `fontSize`, `color`, `align`; fixed to screen on both. |
 | GUI Button | ✅ | ✅ | `action` dispatch works on both; Phaser makes **all** buttons interactive regardless of the `interactive` field. |
 | GUI Image | ✅ | ✅ | Both render `assetId`. Phaser preloads GUI-only assets and looks them up by the bare `assetId`. |
-| `anchorX`/`anchorY` / `nodeOverrides` (GUI) | ❌ | ⚠️ | Skia ignores both. Phaser honors `nodeOverrides`; ignores anchors. |
+| `anchorX`/`anchorY` / `nodeOverrides` (GUI) | ✅ | ✅ | Both honor `anchorX`/`anchorY` (0..1 fractions; `x`/`y` stays the top-left when unset) and `nodeOverrides` per instance. Shared `offsetGuiNode`/`guiNodeOrigin` in `@gamekit/runtime/gui` drive Skia, Phaser, and the editor canvas preview. |
 | Scene transitions | ✅ | ✅ | Skia: `fade` real, `slide` degrades to fade, `none` skipped. Phaser: `fade`/`slide` both fade in, `none` ignored. Scene switching is a host-side remount on both (Phaser doesn't use scene stacking). |
 
 ---

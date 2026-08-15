@@ -21,6 +21,7 @@ import type {
   GuiComponentInstance
 } from "@gamekit/schema";
 import { findComponent, colorForAsset } from "./components.js";
+import { offsetGuiNode, guiNodeOrigin } from "@gamekit/runtime/gui";
 
 export type DrawSceneOptions = {
   /**
@@ -477,7 +478,7 @@ export function drawScene(
       }
 
       for (const node of component.nodes) {
-        const effectiveNode = applyNodeOverrides(node, instance);
+        const effectiveNode = offsetGuiNode(node, instance);
         drawGuiNode(context, effectiveNode, images, assets, false);
       }
     }
@@ -496,24 +497,13 @@ function computeComponentBounds(component: GuiComponent): { x: number; y: number
   if (component.nodes.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const node of component.nodes) {
-    minX = Math.min(minX, node.x);
-    minY = Math.min(minY, node.y);
-    maxX = Math.max(maxX, node.x + node.width);
-    maxY = Math.max(maxY, node.y + node.height);
+    const origin = guiNodeOrigin(node);
+    minX = Math.min(minX, origin.x);
+    minY = Math.min(minY, origin.y);
+    maxX = Math.max(maxX, origin.x + node.width);
+    maxY = Math.max(maxY, origin.y + node.height);
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-function applyNodeOverrides(node: GuiNode, instance: GuiComponentInstance): GuiNode {
-  const base = {
-    ...node,
-    x: node.x + instance.x,
-    y: node.y + instance.y,
-  };
-  const overrides = instance.nodeOverrides?.[node.id];
-  if (!overrides) return base;
-  const { id, type, ...safeOverrides } = overrides as Record<string, unknown>;
-  return { ...base, ...safeOverrides } as GuiNode;
 }
 
 export function hitComponentInstance(
@@ -773,8 +763,9 @@ function drawGuiNode(
   assets: GameKitAsset[],
   selected: boolean
 ) {
-  const x = node.x;
-  const y = node.y;
+  const origin = guiNodeOrigin(node);
+  const x = origin.x;
+  const y = origin.y;
   const w = node.width;
   const h = node.height;
 
@@ -833,11 +824,12 @@ function drawGuiNode(
 
 export function hitGuiNode(node: GuiNode, point: { x: number; y: number }): boolean {
   if (node.visible === false) return false;
+  const origin = guiNodeOrigin(node);
   return (
-    point.x >= node.x &&
-    point.x <= node.x + node.width &&
-    point.y >= node.y &&
-    point.y <= node.y + node.height
+    point.x >= origin.x &&
+    point.x <= origin.x + node.width &&
+    point.y >= origin.y &&
+    point.y <= origin.y + node.height
   );
 }
 

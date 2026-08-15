@@ -23,7 +23,6 @@ import type {
   StateMachineComponent,
   GuiNode,
   GuiComponent,
-  GuiComponentInstance,
 } from "@gamekit/schema";
 import { resolveGameRules } from "@gamekit/schema";
 import { createPlayerController } from "@gamekit/runtime/player";
@@ -38,6 +37,7 @@ import {
 } from "@gamekit/runtime/particles";
 import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm, type ScriptContext } from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
+import { offsetGuiNode, guiNodeOrigin } from "@gamekit/runtime/gui";
 import { updateFollowPath } from "@gamekit/runtime/path";
 import { updateTween } from "@gamekit/runtime/tween";
 import {
@@ -823,9 +823,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
 
   private createGuiNodeObjects(node: GuiNode): Phaser.GameObjects.GameObject[] {
     const created: Phaser.GameObjects.GameObject[] = [];
+    const origin = guiNodeOrigin(node);
+    const left = origin.x;
+    const top = origin.y;
     if (node.type === "Text") {
       const t = this.add
-        .text(node.x, node.y, node.text, {
+        .text(left, top, node.text, {
           fontFamily: "IBM Plex Sans, system-ui, sans-serif",
           fontSize: `${node.fontSize ?? 16}px`,
           color: node.color ?? "#ffffff",
@@ -839,8 +842,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
     } else if (node.type === "Button") {
       const bg = this.add
         .rectangle(
-          node.x + node.width / 2,
-          node.y + node.height / 2,
+          left + node.width / 2,
+          top + node.height / 2,
           node.width,
           node.height,
           Phaser.Display.Color.ValueToColor(node.backgroundColor ?? "#333333").color,
@@ -850,7 +853,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setDepth(1500)
         .setInteractive({ useHandCursor: true });
       const label = this.add
-        .text(node.x + node.width / 2, node.y + node.height / 2, node.text, {
+        .text(left + node.width / 2, top + node.height / 2, node.text, {
           fontFamily: "IBM Plex Sans, system-ui, sans-serif",
           fontSize: `${node.fontSize ?? 14}px`,
           color: node.color ?? "#ffffff",
@@ -868,7 +871,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const key = node.assetId;
       if (this.textures.exists(key)) {
         const img = this.add
-          .image(node.x + node.width / 2, node.y + node.height / 2, key)
+          .image(left + node.width / 2, top + node.height / 2, key)
           .setDisplaySize(node.width, node.height)
           .setScrollFactor(0)
           .setDepth(1500);
@@ -876,8 +879,8 @@ export class GameKitPhaserScene extends Phaser.Scene {
       } else {
         const placeholder = this.add
           .rectangle(
-            node.x + node.width / 2,
-            node.y + node.height / 2,
+            left + node.width / 2,
+            top + node.height / 2,
             node.width,
             node.height,
             0x444466,
@@ -1575,16 +1578,4 @@ export class GameKitPhaserScene extends Phaser.Scene {
     go.x += dx;
     go.y += dy;
   }
-}
-
-function offsetGuiNode(node: GuiNode, instance: GuiComponentInstance): GuiNode {
-  const overrides = instance.nodeOverrides?.[node.id] as Record<string, unknown> | undefined;
-  const base = {
-    ...node,
-    x: node.x + instance.x,
-    y: node.y + instance.y,
-  };
-  if (!overrides) return base as GuiNode;
-  const { id: _id, type: _type, ...safe } = overrides;
-  return { ...base, ...safe } as GuiNode;
 }
