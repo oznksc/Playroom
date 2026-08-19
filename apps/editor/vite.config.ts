@@ -36,7 +36,13 @@ export default defineConfig({
   },
   // Keep React Native out of the web editor bundle (runtime subpaths only).
   optimizeDeps: {
-    exclude: ["react-native", "react-native-safe-area-context", "@shopify/react-native-skia"],
+    exclude: [
+      "react-native",
+      "react-native-safe-area-context",
+      "@shopify/react-native-skia",
+      "expo-av",
+      "@react-native/assets-registry",
+    ],
     include: ["phaser"],
   },
   build: {

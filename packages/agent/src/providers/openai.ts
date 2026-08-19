@@ -138,6 +138,12 @@ function buildOpenAiBody(input: StreamInput): Record<string, unknown> {
         parameters: t.inputSchema,
       },
     }));
+    // gpt-5 / o-series reasoning models reject function tools with a default
+    // reasoning_effort in /chat/completions; force it to "none" so tool calling works.
+    const model = input.model.toLowerCase();
+    if (model.includes("gpt-5") || /^o[134]/.test(model)) {
+      body.reasoning_effort = "none";
+    }
   }
 
   return body;
