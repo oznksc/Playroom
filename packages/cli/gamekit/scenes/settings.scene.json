@@ -76,11 +76,11 @@
         "y": 120,
         "width": 342,
         "height": 48,
+        "visible": true,
         "text": "Settings",
         "fontSize": 28,
         "color": "#00f0ff",
-        "align": "center",
-        "visible": true
+        "align": "center"
       },
       {
         "id": "label-music",
@@ -89,11 +89,11 @@
         "y": 220,
         "width": 342,
         "height": 28,
+        "visible": true,
         "text": "Music: On (edit me)",
         "fontSize": 15,
         "color": "#f8fafc",
-        "align": "center",
-        "visible": true
+        "align": "center"
       },
       {
         "id": "label-sfx",
@@ -102,11 +102,11 @@
         "y": 256,
         "width": 342,
         "height": 28,
+        "visible": true,
         "text": "SFX: On (edit me)",
         "fontSize": 15,
         "color": "#f8fafc",
-        "align": "center",
-        "visible": true
+        "align": "center"
       },
       {
         "id": "label-controls",
@@ -115,11 +115,11 @@
         "y": 310,
         "width": 342,
         "height": 40,
+        "visible": true,
         "text": "Controls: A/D or arrows · Space to jump",
         "fontSize": 13,
         "color": "#94a3b8",
-        "align": "center",
-        "visible": true
+        "align": "center"
       },
       {
         "id": "btn-back",
@@ -128,13 +128,13 @@
         "y": 420,
         "width": 200,
         "height": 48,
+        "visible": true,
+        "interactive": true,
         "text": "Back",
         "action": "backToMenu",
         "fontSize": 16,
         "color": "#f8fafc",
-        "backgroundColor": "#1e293b",
-        "interactive": true,
-        "visible": true
+        "backgroundColor": "#1e293b"
       }
     ],
     "componentInstances": []

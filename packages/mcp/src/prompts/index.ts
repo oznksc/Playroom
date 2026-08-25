@@ -121,9 +121,12 @@ GameKit uses an Entity-Component-System architecture. Here's how to get started:
 2. List available skills using list_skills — these are ready-made full game templates
 3. Apply a skill template using apply_skill to get a head start, OR create a scene manually:
    - Use create_scene to create a new scene
-   - Use add_entity to add game objects
+   - Use list_entities / query_entities / inspect_layout to understand the scene
+   - Use spawn_role / spawn_grid for player/enemy/collectible/platform/obstacle kits
+   - Use layout_entities / place_relative / duplicate_entity for spatial arrangement
+   - Use set_sprite + fit_collider_to_sprite, wire_camera_follow, add_script_handler, paint_tiles
    - Use apply_recipe for ready-made effects/mechanics/scripts/animations/input packs
-   - Use add_component only when no recipe fits
+   - Use add_component only when no recipe or role kit fits
 4. Add game assets using add_asset and place image files in gamekit/assets/
 5. Use regenerate_manifest to update the asset registry
 

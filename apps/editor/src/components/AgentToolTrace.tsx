@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Clock, Check, X, ChevronDown, ChevronRight, Loader } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { AgentToolCall } from "../lib/agent-schemas.js";
+import { resolveToolStage, statusLabel } from "../lib/agent-tool-stage.js";
+import { AgentToolGlyph } from "./AgentToolGlyph.js";
 import { Badge, cn } from "@/ui";
 
 type AgentToolTraceProps = {
@@ -29,15 +31,7 @@ export function AgentToolTrace({ toolCalls }: AgentToolTraceProps) {
 
 function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
   const [expanded, setExpanded] = useState(false);
-
-  const statusColor =
-    toolCall.status === "ok"
-      ? "text-accent-green"
-      : toolCall.status === "error"
-        ? "text-error"
-        : toolCall.status === "running"
-          ? "text-accent"
-          : "text-warning";
+  const stage = resolveToolStage(toolCall.tool);
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-white/[0.08] bg-white/[0.05]">
@@ -46,16 +40,28 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
         className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left hover:bg-white/[0.06]"
         onClick={() => setExpanded(!expanded)}
       >
-        <span className={cn("shrink-0", statusColor)}>
-          {toolCall.status === "running" && (
-            <Loader size={12} className="animate-spin" />
-          )}
-          {toolCall.status === "ok" && <Check size={12} />}
-          {toolCall.status === "error" && <X size={12} />}
-          {toolCall.status === "needs-approval" && <Clock size={12} />}
-        </span>
+        <AgentToolGlyph tool={toolCall.tool} status={toolCall.status} />
         <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[rgba(245,245,247,0.92)]">
           {toolCall.tool}
+        </span>
+        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+          {stage.label}
+        </span>
+        <span
+          className={cn(
+            "shrink-0 text-[9px] font-medium",
+            toolCall.status === "ok"
+              ? "text-accent-green"
+              : toolCall.status === "error"
+                ? "text-error"
+                : toolCall.status === "running"
+                  ? "text-accent"
+                  : toolCall.status === "needs-approval"
+                    ? "text-warning"
+                    : "text-text-muted",
+          )}
+        >
+          {statusLabel(toolCall.status)}
         </span>
         {toolCall.ms !== undefined && (
           <span className="shrink-0 font-mono text-[10px] text-text-muted">{toolCall.ms}ms</span>

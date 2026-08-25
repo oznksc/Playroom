@@ -8,12 +8,14 @@ export type AgentMessage = {
   tokens?: number;
 };
 
+export type AgentToolCallStatus = "running" | "ok" | "error" | "needs-approval" | "cancelled";
+
 export type AgentToolCall = {
   id: string;
   tool: string;
   args: unknown;
   result?: unknown;
-  status: "running" | "ok" | "error" | "needs-approval";
+  status: AgentToolCallStatus;
   ms?: number;
   ts: number;
 };

@@ -28,6 +28,19 @@ const READ_ONLY_TOOLS = new Set([
   "get_scene",
   "get_active_scene",
   "simulate_runtime_step",
+  "get_entity",
+  "query_entities",
+  "inspect_layout",
+  "list_component_types",
+  "list_script_catalog",
+  "list_levels",
+  "get_input_map",
+  "list_gui_nodes",
+  "list_editor_capabilities",
+  "get_scene_settings",
+  "get_timeline",
+  "get_game_rules",
+  "list_gui_components",
 ]);
 
 export type UseAgentReturn = {
@@ -78,9 +91,16 @@ export function useAgent(
         if (cancelled) return;
         if (Array.isArray(data.messages) && data.messages.length > 0) {
           setMessages(data.messages);
+          messagesRef.current = data.messages;
         }
         if (Array.isArray(data.toolCalls) && data.toolCalls.length > 0) {
-          setToolCalls(data.toolCalls);
+          const restored = data.toolCalls.map((tc) =>
+            tc.status === "running" || tc.status === "needs-approval"
+              ? { ...tc, status: "cancelled" as const }
+              : tc,
+          );
+          setToolCalls(restored);
+          toolCallsRef.current = restored;
         }
       } catch {
         // no history yet
@@ -103,12 +123,54 @@ export function useAgent(
     }
   }, [sceneId]);
 
+  const patchMessages = useCallback((updater: (prev: AgentMessage[]) => AgentMessage[]) => {
+    setMessages((prev) => {
+      const next = updater(prev);
+      messagesRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const patchToolCalls = useCallback((updater: (prev: AgentToolCall[]) => AgentToolCall[]) => {
+    setToolCalls((prev) => {
+      const next = updater(prev);
+      toolCallsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const finalizeOpenTools = useCallback((status: "cancelled" | "error" = "cancelled") => {
+    patchToolCalls((prev) =>
+      prev.map((tc) =>
+        tc.status === "running" || tc.status === "needs-approval" ? { ...tc, status } : tc,
+      ),
+    );
+  }, [patchToolCalls]);
+
+  const upsertToolCall = useCallback((
+    id: string,
+    tool: string,
+    args: unknown,
+    status: AgentToolCall["status"],
+    extra?: Partial<AgentToolCall>,
+  ) => {
+    patchToolCalls((prev) => {
+      const index = prev.findIndex((tc) => tc.id === id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = { ...next[index], tool, args, status, ...extra };
+        return next;
+      }
+      return [...prev, { id, tool, args, status, ts: Date.now(), ...extra }];
+    });
+  }, [patchToolCalls]);
+
   const sendChatMessage = useCallback(async (prompt: string, screenshot?: string) => {
     abortRef.current = new AbortController();
     setIsStreaming(true);
 
     const userMsg: AgentMessage = { id: nanoid(), role: "user", content: prompt, ts: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
+    patchMessages((prev) => [...prev, userMsg]);
 
     try {
       const res = await fetch(getApiUrl("/api/agent/chat"), {
@@ -128,10 +190,11 @@ export function useAgent(
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Request failed" }));
-        setMessages((prev) => [
+        patchMessages((prev) => [
           ...prev,
           { id: nanoid(), role: "system", content: `Error: ${err.error ?? res.statusText}`, ts: Date.now() },
         ]);
+        finalizeOpenTools();
         setIsStreaming(false);
         return;
       }
@@ -146,7 +209,7 @@ export function useAgent(
           case "token": {
             const d = data as { text: string };
             agentContent += d.text;
-            setMessages((prev) => {
+            patchMessages((prev) => {
               const last = prev[prev.length - 1];
               if (last?.role === "agent" && last.id === currentToolId) {
                 return [...prev.slice(0, -1), { ...last, content: agentContent }];
@@ -159,34 +222,47 @@ export function useAgent(
           }
 
           case "tool_start": {
-            const d = data as { tool: string; args: unknown };
-            const toolCall: AgentToolCall = {
-              id: nanoid(),
-              tool: d.tool,
-              args: d.args,
-              status: "running",
-              ts: Date.now(),
-            };
-            setToolCalls((prev) => [...prev, toolCall]);
+            const d = data as { callId?: string; tool: string; args: unknown };
+            const id = d.callId || nanoid();
+            upsertToolCall(id, d.tool, d.args, "running");
             break;
           }
 
           case "tool_result": {
-            const d = data as { tool: string; result: unknown; ok: boolean; ms?: number };
-            setToolCalls((prev) => {
+            const d = data as { callId?: string; tool: string; result: unknown; ok: boolean; ms?: number };
+            const status = d.ok ? "ok" : "error";
+            patchToolCalls((prev) => {
               const updated = [...prev];
-              for (let i = updated.length - 1; i >= 0; i--) {
-                if (updated[i].tool === d.tool && updated[i].status === "running") {
-                  updated[i] = {
-                    ...updated[i],
-                    result: d.result,
-                    status: d.ok ? "ok" : "error",
-                    ms: d.ms,
-                  };
-                  break;
+              let index = d.callId ? updated.findIndex((tc) => tc.id === d.callId) : -1;
+              if (index < 0) {
+                for (let i = updated.length - 1; i >= 0; i--) {
+                  if (updated[i].tool === d.tool && (updated[i].status === "running" || updated[i].status === "needs-approval")) {
+                    index = i;
+                    break;
+                  }
                 }
               }
-              return updated;
+              if (index >= 0) {
+                updated[index] = {
+                  ...updated[index],
+                  result: d.result,
+                  status,
+                  ms: d.ms,
+                };
+                return updated;
+              }
+              return [
+                ...updated,
+                {
+                  id: d.callId || nanoid(),
+                  tool: d.tool,
+                  args: undefined,
+                  result: d.result,
+                  status,
+                  ms: d.ms,
+                  ts: Date.now(),
+                },
+              ];
             });
             if (d.ok && !READ_ONLY_TOOLS.has(d.tool)) {
               sceneDirty = true;
@@ -195,25 +271,16 @@ export function useAgent(
           }
 
           case "approval_request": {
-            const d = data as { requestId: string; tool: string; args: unknown };
+            const d = data as { requestId: string; callId?: string; tool: string; args: unknown };
             setPendingApproval({ requestId: d.requestId, tool: d.tool, args: d.args });
-            setToolCalls((prev) => [
-              ...prev,
-              {
-                id: nanoid(),
-                tool: d.tool,
-                args: d.args,
-                status: "needs-approval",
-                ts: Date.now(),
-              },
-            ]);
+            upsertToolCall(d.callId || nanoid(), d.tool, d.args, "needs-approval");
             break;
           }
 
           case "session_snapshot": {
             const d = data as { snapshotId: string };
             setSessionSnapshotId(d.snapshotId);
-            setMessages((prev) => [
+            patchMessages((prev) => [
               ...prev,
               {
                 id: nanoid(),
@@ -227,21 +294,23 @@ export function useAgent(
 
           case "done": {
             if (agentContent) {
-              setMessages((prev) => {
+              patchMessages((prev) => {
                 const last = prev[prev.length - 1];
                 if (last?.role === "agent") return prev;
                 return [...prev, { id: nanoid(), role: "agent", content: agentContent, ts: Date.now() }];
               });
             }
+            finalizeOpenTools();
             break;
           }
 
           case "error": {
             const d = data as { message: string };
-            setMessages((prev) => [
+            patchMessages((prev) => [
               ...prev,
               { id: nanoid(), role: "system", content: `Error: ${d.message}`, ts: Date.now() },
             ]);
+            finalizeOpenTools("error");
             break;
           }
         }
@@ -250,15 +319,17 @@ export function useAgent(
       if (sceneDirty) {
         onSceneMutatedRef.current?.();
       }
+      finalizeOpenTools();
       await persistHistory(messagesRef.current, toolCallsRef.current);
     } catch (e) {
+      finalizeOpenTools();
       if (abortRef.current?.signal.aborted) {
-        setMessages((prev) => [
+        patchMessages((prev) => [
           ...prev,
           { id: nanoid(), role: "system", content: "Request aborted", ts: Date.now() },
         ]);
       } else {
-        setMessages((prev) => [
+        patchMessages((prev) => [
           ...prev,
           {
             id: nanoid(),
@@ -273,7 +344,7 @@ export function useAgent(
       abortRef.current = null;
       void persistHistory(messagesRef.current, toolCallsRef.current);
     }
-  }, [sceneId, model, provider, approvalMode, planMode, persistHistory]);
+  }, [sceneId, model, provider, approvalMode, planMode, persistHistory, patchMessages, patchToolCalls, upsertToolCall, finalizeOpenTools]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (isStreaming) return;
@@ -328,12 +399,13 @@ export function useAgent(
 
   const abort = useCallback(() => {
     abortRef.current?.abort();
+    finalizeOpenTools();
     fetch(getApiUrl("/api/agent/abort"), { method: "POST" }).catch(() => {});
-  }, []);
+  }, [finalizeOpenTools]);
 
   const approveTool = useCallback(async (requestId: string, decision: "allow" | "deny") => {
     setPendingApproval(null);
-    setToolCalls((prev) => {
+    patchToolCalls((prev) => {
       const updated = [...prev];
       for (let i = updated.length - 1; i >= 0; i--) {
         if (updated[i].status === "needs-approval") {
@@ -356,11 +428,13 @@ export function useAgent(
     } catch {
       // ignore
     }
-  }, []);
+  }, [patchToolCalls]);
 
   const clear = useCallback(() => {
     setMessages([]);
     setToolCalls([]);
+    messagesRef.current = [];
+    toolCallsRef.current = [];
     setSessionSnapshotId(null);
     void persistHistory([], []);
     fetch(getApiUrl(`/api/agent/history/${encodeURIComponent(sceneId)}`), { method: "DELETE" }).catch(() => {});

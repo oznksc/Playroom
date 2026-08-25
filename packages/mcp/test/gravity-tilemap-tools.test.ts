@@ -50,6 +50,34 @@ describe("gravity and tilemap tool handlers", () => {
     expect(tilemap.tiles).toEqual([0, 3]);
   });
 
+  it("paints a rectangle of tiles", async () => {
+    await tool("add_tilemap").handler({
+      scenePath: sceneFile,
+      entityId,
+      tilesetId: "tiles",
+      tileWidth: 16,
+      tileHeight: 16,
+      columns: 4,
+      gridWidth: 4,
+      gridHeight: 3,
+    });
+    const result = await tool("paint_tiles").handler({
+      scenePath: sceneFile,
+      entityId,
+      mode: "rect",
+      tileId: 2,
+      x: 1,
+      y: 1,
+      width: 2,
+      height: 1,
+    });
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.success).toBe(true);
+    expect(payload.tiles[1 * 4 + 1]).toBe(2);
+    expect(payload.tiles[1 * 4 + 2]).toBe(2);
+    expect(payload.tiles[0]).toBe(0);
+  });
+
   it("rejects painting outside tilemap bounds", async () => {
     await tool("add_tilemap").handler({ scenePath: sceneFile, entityId, tilesetId: "tiles", tileWidth: 16, tileHeight: 16, columns: 4, gridWidth: 2, gridHeight: 2 });
     const result = await tool("paint_tile").handler({ scenePath: sceneFile, entityId, gridX: 2, gridY: 0, tileId: 1 });

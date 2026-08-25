@@ -24,6 +24,11 @@ import { registerBatchTools } from "./tools/batch.js";
 import { registerInputTools } from "./tools/input.js";
 import { registerDoctorTools } from "./tools/doctor.js";
 import { registerGameRulesTools } from "./tools/game-rules.js";
+import { registerQueryTools } from "./tools/query.js";
+import { registerLayoutTools } from "./tools/layout.js";
+import { registerComposeTools } from "./tools/compose.js";
+import { registerTimelineTools } from "./tools/timeline.js";
+import { registerInspectorTools } from "./tools/inspector.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -61,6 +66,11 @@ export function createMcpServer(basePath: string): McpServer {
   registerInputTools(server, fileIO);
   registerDoctorTools(server, fileIO);
   registerGameRulesTools(server, fileIO);
+  registerQueryTools(server, fileIO);
+  registerLayoutTools(server, fileIO);
+  registerComposeTools(server, fileIO);
+  registerTimelineTools(server, fileIO);
+  registerInspectorTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 

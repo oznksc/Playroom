@@ -5,7 +5,14 @@
     "main.scene.json",
     "top-down.scene.json",
     "top-down-shooter.scene.json",
-    "physics-puzzle.scene.json"
+    "physics-puzzle.scene.json",
+    "topdown-shooter.scene.json",
+    "arena-brawler.scene.json",
+    "physics-puzzle-2.scene.json",
+    "physics-puzzle-3.scene.json",
+    "physics-puzzle-4.scene.json",
+    "physics-puzzle-5.scene.json",
+    "physics-puzzle-6.scene.json"
   ],
   "levels": [
     {
@@ -25,7 +32,88 @@
       "unlocked": false
     }
   ],
-  "assets": [],
-  "guiComponents": [],
-  "activeScene": "physics-puzzle.scene.json"
+  "assets": [
+    {
+      "id": "crate",
+      "file": "crate.svg",
+      "kind": "image"
+    },
+    {
+      "id": "ground",
+      "file": "ground.svg",
+      "kind": "image"
+    },
+    {
+      "id": "platform",
+      "file": "platform.svg",
+      "kind": "image"
+    },
+    {
+      "id": "player",
+      "file": "player.svg",
+      "kind": "image"
+    },
+    {
+      "id": "target",
+      "file": "target.svg",
+      "kind": "image"
+    }
+  ],
+  "guiComponents": [
+    {
+      "id": "dsds",
+      "name": "dsds",
+      "nodes": [
+        {
+          "id": "text-62gewj",
+          "type": "Text",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "text": "Text",
+          "fontSize": 16,
+          "color": "#ffffff"
+        },
+        {
+          "id": "button-3kk294",
+          "type": "Button",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "text": "Button",
+          "fontSize": 14,
+          "color": "#ffffff",
+          "backgroundColor": "#333333"
+        },
+        {
+          "id": "image-pg3lxt",
+          "type": "Image",
+          "x": 10,
+          "y": 10,
+          "width": 200,
+          "height": 40,
+          "visible": true,
+          "interactive": false,
+          "assetId": "crate"
+        }
+      ]
+    }
+  ],
+  "activeScene": "physics-puzzle.scene.json",
+  "transitions": [
+    {
+      "id": "pp2-to-pp3",
+      "name": "Physics Puzzle 2 to 3",
+      "toSceneId": "physics-puzzle-3.scene.json",
+      "type": "fade",
+      "duration": 0.4,
+      "fromSceneId": "physics-puzzle-2.scene.json"
+    }
+  ]
 }

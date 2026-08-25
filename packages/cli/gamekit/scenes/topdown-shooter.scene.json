@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "id": "topdown-shooter",
+  "name": "Top-Down Shooter",
+  "viewport": {
+    "width": 844,
+    "height": 520,
+    "background": "#111827"
+  },
+  "gravity": {
+    "x": 0,
+    "y": 0
+  },
+  "assets": [],
+  "entities": [
+    {
+      "id": "player-hrlfph",
+      "name": "Player",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 140,
+            "y": 260
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -20,
+            "y": -20
+          },
+          "size": {
+            "x": 40,
+            "y": 40
+          },
+          "isStatic": false,
+          "isTrigger": false
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 4,
+          "isKinematic": false,
+          "gravityScale": 0,
+          "useGravity": false
+        },
+        {
+          "type": "PlayerController",
+          "speed": 220,
+          "jumpVelocity": 0,
+          "gravity": 0
+        }
+      ]
+    },
+    {
+      "id": "enemy-tzlbjc",
+      "name": "Enemy",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 650,
+            "y": 260
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "enemy",
+          "width": 40,
+          "height": 40,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -20,
+            "y": -20
+          },
+          "size": {
+            "x": 40,
+            "y": 40
+          },
+          "isStatic": false,
+          "isTrigger": false
+        },
+        {
+          "type": "RigidBody",
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "angularVelocity": 0,
+          "mass": 1,
+          "drag": 1,
+          "isKinematic": true,
+          "gravityScale": 0,
+          "useGravity": false
+        }
+      ],
+      "tags": [
+        "hazard"
+      ]
+    },
+    {
+      "id": "arenawall-ts6j4r",
+      "name": "ArenaWall",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 422,
+            "y": 20
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": {
+            "x": -422,
+            "y": -12
+          },
+          "size": {
+            "x": 844,
+            "y": 24
+          },
+          "isStatic": true,
+          "isTrigger": false
+        }
+      ]
+    },
+    {
+      "id": "game-controller",
+      "name": "Game Controller",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Script",
+          "handlers": [
+            {
+              "event": "backToMenu",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "menu"
+                }
+              ]
+            },
+            {
+              "event": "restartLevel",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "topdown-shooter"
+                }
+              ]
+            },
+            {
+              "event": "retryGame",
+              "actions": [
+                {
+                  "type": "switchScene",
+                  "sceneId": "topdown-shooter"
+                }
+              ]
+            },
+            {
+              "event": "nextLevel",
+              "actions": [
+                {
+                  "type": "nextLevel"
+                }
+              ]
+            },
+            {
+              "event": "resumeGame",
+              "actions": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "responsive": {
+    "mode": "scale",
+    "referenceWidth": 844,
+    "referenceHeight": 520,
+    "orientation": "landscape",
+    "safeArea": {
+      "enabled": true,
+      "padding": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      }
+    }
+  },
+  "timeline": {
+    "tracks": [],
+    "duration": 0,
+    "loop": false,
+    "playing": false
+  },
+  "gui": {
+    "nodes": [],
+    "componentInstances": [
+      {
+        "id": "inst-hud",
+        "componentId": "hud",
+        "x": 0,
+        "y": 0,
+        "visible": true
+      }
+    ]
+  },
+  "inputMap": {
+    "bindings": [
+      {
+        "action": "move_left",
+        "keys": [
+          "ArrowLeft",
+          "a",
+          "A"
+        ],
+        "touchControl": "left",
+        "gamepad": "LEFT_STICK_X_NEG"
+      },
+      {
+        "action": "move_right",
+        "keys": [
+          "ArrowRight",
+          "d",
+          "D"
+        ],
+        "touchControl": "right",
+        "gamepad": "LEFT_STICK_X_POS"
+      },
+      {
+        "action": "jump",
+        "keys": [
+          "ArrowUp",
+          " ",
+          "w",
+          "W"
+        ],
+        "touchControl": "jump",
+        "gamepad": "A"
+      },
+      {
+        "action": "fire",
+        "keys": [
+          "j",
+          "J"
+        ],
+        "touchControl": "fire",
+        "gamepad": "B"
+      },
+      {
+        "action": "action",
+        "keys": [
+          "k",
+          "K"
+        ],
+        "touchControl": "action",
+        "gamepad": "X"
+      }
+    ]
+  },
+  "gameRules": {
+    "fallDeathEnabled": false,
+    "fallMargin": 120,
+    "onFall": "respawn",
+    "lives": 3,
+    "gameOverMessage": "Game Over",
+    "winMessage": "You win!",
+    "hazards": [],
+    "objectives": [],
+    "objectiveMode": "all",
+    "onStart": [],
+    "onWin": [
+      {
+        "type": "completeLevel"
+      }
+    ],
+    "onLose": []
+  }
+}

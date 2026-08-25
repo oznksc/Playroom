@@ -141,18 +141,28 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
 
     // Process tool calls
     for (const call of toolCalls) {
+      const callId = call.id || nanoid();
+
       // Check approval
       if (approvalGate.needsApproval(call.name, input.approvalMode)) {
         const reqId = nanoid();
         yield {
           type: "approval_request",
           requestId: reqId,
+          callId,
           tool: call.name,
           args: call.args,
         };
 
         const decision = await approvalGate.waitForApproval(reqId, input.signal);
         if (decision === "deny") {
+          yield {
+            type: "tool_result",
+            callId,
+            tool: call.name,
+            result: { denied: true },
+            ok: false,
+          };
           history.append({
             role: "user",
             content: `User denied tool call: ${call.name}`,
@@ -162,7 +172,7 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
       }
 
       // Execute tool
-      yield { type: "tool_start", tool: call.name, args: call.args };
+      yield { type: "tool_start", callId, tool: call.name, args: call.args };
       const startMs = Date.now();
 
       let result;
@@ -175,6 +185,7 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
       const ms = Date.now() - startMs;
       yield {
         type: "tool_result",
+        callId,
         tool: call.name,
         result: result.content,
         ok: !result.isError,

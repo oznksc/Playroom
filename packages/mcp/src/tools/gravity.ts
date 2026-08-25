@@ -5,14 +5,15 @@ import type { FileIO } from "../utils/file-io.js";
 export function registerGravityTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
     "set_gravity",
-    "Set the gravity vector for the project",
+    "Set the gravity vector for a scene (Y positive is downward). If scenePath is omitted, uses project.activeScene or the first listed scene.",
     {
       x: z.number().describe("Gravity X component (usually 0)"),
       y: z.number().describe("Gravity Y component (positive = downward)"),
+      scenePath: z.string().optional().describe("Scene filename; defaults to the active scene"),
     },
-    async ({ x, y }) => {
+    async ({ x, y, scenePath }) => {
       const project = await fileIO.readProject();
-      const sceneFile = project.scenes[0] ?? "main.scene.json";
+      const sceneFile = scenePath ?? project.activeScene ?? project.scenes[0] ?? "main.scene.json";
       const filename = fileIO.resolveScenePath(sceneFile);
       const scene = await fileIO.readScene(filename);
 
@@ -20,7 +21,7 @@ export function registerGravityTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, gravity: { x, y } }) }],
+        content: [{ type: "text", text: JSON.stringify({ success: true, scenePath: filename, gravity: { x, y } }) }],
       };
     },
   );

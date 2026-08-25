@@ -6,8 +6,10 @@ import {
   type GameRuleHazard,
   type GameRuleObjective,
   type GameRulesConfig,
+  type ScriptAction,
 } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
+import { toolJson } from "../utils/result.js";
 
 function ensureRules(scene: { gameRules?: GameRulesConfig | null }): GameRulesConfig {
   scene.gameRules = resolveGameRules(scene.gameRules);
@@ -15,6 +17,92 @@ function ensureRules(scene: { gameRules?: GameRulesConfig | null }): GameRulesCo
 }
 
 export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void {
+  server.tool(
+    "get_game_rules",
+    "Read resolved game rules for a scene (lives, spawn, objectives, hazards, onWin/onLose/onStart).",
+    { scenePath: z.string() },
+    async ({ scenePath }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+      return toolJson({ scenePath: filename, rules: resolveGameRules(scene.gameRules) });
+    },
+  );
+
+  server.tool(
+    "set_spawn_point",
+    "Set gameRules.spawnPoint (player respawn). Pass null to clear.",
+    {
+      scenePath: z.string(),
+      x: z.number().optional(),
+      y: z.number().optional(),
+      clear: z.boolean().optional(),
+    },
+    async ({ scenePath, x, y, clear }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+      const gr = ensureRules(scene);
+      if (clear) delete gr.spawnPoint;
+      else if (x !== undefined && y !== undefined) gr.spawnPoint = { x, y };
+      else return toolJson({ error: "Provide x and y, or clear: true." }, true);
+      scene.gameRules = gr;
+      await fileIO.writeScene(filename, scene);
+      return toolJson({ success: true, spawnPoint: gr.spawnPoint ?? null });
+    },
+  );
+
+  server.tool(
+    "set_outcome_actions",
+    "Replace onWin, onLose, or onStart script actions (World panel game-rules outcomes).",
+    {
+      scenePath: z.string(),
+      which: z.enum(["onWin", "onLose", "onStart"]),
+      actions: z.array(z.object({ type: z.string().min(1) }).catchall(z.unknown())),
+    },
+    async ({ scenePath, which, actions }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+      const gr = ensureRules(scene);
+      gr[which] = actions as ScriptAction[];
+      scene.gameRules = gr;
+      await fileIO.writeScene(filename, scene);
+      return toolJson({ success: true, which, actions: gr[which] });
+    },
+  );
+
+  server.tool(
+    "remove_objective",
+    "Remove a game-rules objective by id.",
+    { scenePath: z.string(), id: z.string() },
+    async ({ scenePath, id }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+      const gr = ensureRules(scene);
+      const before = gr.objectives.length;
+      gr.objectives = gr.objectives.filter((o) => o.id !== id);
+      if (gr.objectives.length === before) return toolJson({ error: `Objective "${id}" not found.` }, true);
+      scene.gameRules = gr;
+      await fileIO.writeScene(filename, scene);
+      return toolJson({ success: true, remaining: gr.objectives.map((o) => o.id) });
+    },
+  );
+
+  server.tool(
+    "remove_hazard",
+    "Remove a game-rules hazard by id.",
+    { scenePath: z.string(), id: z.string() },
+    async ({ scenePath, id }) => {
+      const filename = fileIO.resolveScenePath(scenePath);
+      const scene = await fileIO.readScene(filename);
+      const gr = ensureRules(scene);
+      const before = gr.hazards.length;
+      gr.hazards = gr.hazards.filter((h) => h.id !== id);
+      if (gr.hazards.length === before) return toolJson({ error: `Hazard "${id}" not found.` }, true);
+      scene.gameRules = gr;
+      await fileIO.writeScene(filename, scene);
+      return toolJson({ success: true, remaining: gr.hazards.map((h) => h.id) });
+    },
+  );
+
   server.tool(
     "set_game_rules",
     "Merge partial game rules onto a scene (lives, fall, objectives, hazards, onWin/onLose). Arrays replace when provided.",
