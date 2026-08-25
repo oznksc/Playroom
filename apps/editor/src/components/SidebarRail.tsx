@@ -49,6 +49,7 @@ type SidebarRailProps = {
 export function SidebarRail({ active, items, onChange }: SidebarRailProps) {
   return (
     <nav
+      id="tour-activity-rail"
       className="sidebar-rail"
       aria-label="Workspace panels"
       role="tablist"
@@ -59,6 +60,7 @@ export function SidebarRail({ active, items, onChange }: SidebarRailProps) {
         return (
           <button
             key={item.id}
+            id={item.id === "agent" ? "tour-agent-button" : undefined}
             type="button"
             role="tab"
             aria-selected={isActive}

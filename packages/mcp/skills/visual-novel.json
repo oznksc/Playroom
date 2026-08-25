@@ -1,0 +1,125 @@
+{
+  "name": "Visual Novel",
+  "description": "Narrative visual novel layout with character portraits, dialogue backdrop, branch text, and story choice interactions.",
+  "orientation": "landscape",
+  "viewport": {
+    "width": 800,
+    "height": 450,
+    "background": "#14141e"
+  },
+  "gravity": { "x": 0, "y": 0 },
+  "entities": [
+    {
+      "name": "SpeakerPortrait",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 200, "y": 200 },
+          "rotation": 0,
+          "scale": { "x": 1.5, "y": 1.5 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "player",
+          "width": 128,
+          "height": 128,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "name": "DialogueBox",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 400, "y": 360 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "obstacle",
+          "width": 740,
+          "height": 120,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "name": "DialogueSpeaker",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 50, "y": 320 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Text",
+          "text": "ARIA",
+          "fontAssetId": "",
+          "size": 16,
+          "color": "#00f0ff",
+          "align": "left"
+        }
+      ]
+    },
+    {
+      "name": "DialogueText",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 50, "y": 350 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Text",
+          "text": "Welcome to the simulation. Are you ready to begin our journey?",
+          "fontAssetId": "",
+          "size": 14,
+          "color": "#ffffff",
+          "align": "left",
+          "width": 700
+        }
+      ]
+    },
+    {
+      "name": "ChoiceGoal",
+      "components": [
+        {
+          "type": "Transform",
+          "position": { "x": 720, "y": 50 },
+          "rotation": 0,
+          "scale": { "x": 1, "y": 1 }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "target",
+          "width": 40,
+          "height": 40,
+          "anchor": { "x": 0.5, "y": 0.5 }
+        },
+        {
+          "type": "AabbCollider",
+          "offset": { "x": -20, "y": -20 },
+          "size": { "x": 40, "y": 40 },
+          "isStatic": true,
+          "isTrigger": true,
+          "layer": 2,
+          "mask": 1
+        }
+      ]
+    }
+  ],
+  "inputMap": {
+    "bindings": [
+      { "action": "action", "keys": ["Space", "Enter"], "touchControl": "action" }
+    ]
+  },
+  "requiredAssets": [
+    { "id": "player", "file": "player.svg", "sourceFile": "player.svg" },
+    { "id": "obstacle", "file": "obstacle.svg", "sourceFile": "obstacle.svg" },
+    { "id": "target", "file": "target.svg", "sourceFile": "target.svg" }
+  ]
+}

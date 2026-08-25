@@ -33,7 +33,7 @@ export function PlayControls({
   const live = isPlaying && !isPaused;
 
   return (
-    <div className="play-controls" role="toolbar" aria-label="Simulation">
+    <div id="tour-topbar-play" className="play-controls" role="toolbar" aria-label="Simulation">
       <button
         type="button"
         data-testid="play-toggle"

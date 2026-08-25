@@ -135,9 +135,8 @@ Workstreams that closed the “can we make end-to-end games?” gap:
 - [x] Genre skills: platformer, topdown, physics-puzzle, topdown-shooter, puzzle, endless-runner, arena-brawler, …
 - [x] Recipe catalog: effects, mechanics, scripts, animations, gestures
 - [x] Examples under `examples/`
-- [x] Project wizard surface in editor (templates)
-- [ ] More shipped sample genres (tower defense, visual novel, …)
-- [ ] In-app first-run tutorial overlay
+- [x] More shipped sample genres (tower defense, visual novel, …)
+- [x] In-app first-run tutorial overlay (interactive tour with `@guideloop/react`)
 
 ---
 
@@ -236,8 +235,8 @@ Ordered for product impact, not exhaustive:
 3. **Asset packer** — **done:** `gamekit build` writes `packed/atlas.{png,json}` (PNG sprites, TexturePacker hash) and `packed/audio.bank` + `audio-bank.json`. `--no-pack` skips.  
 4. **HTTPS / mTLS editor** — **done:** `gamekit editor --tls-cert --tls-key [--tls-ca --mtls]` (env: `GAMEKIT_EDITOR_TLS_*`).  
 5. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  
-6. **More samples** — endless-runner and topdown-shooter as full `examples/`  
-7. **Editor unit tests (RTL)** — Inspector / SceneCanvas beyond Playwright smoke  
+6. **More samples** — **done:** `examples/endless-runner` and `examples/topdown-shooter` full sample projects, plus `tower-defense` & `visual-novel` genre skills  
+7. **Editor unit tests (RTL)** — **done:** Inspector / SceneCanvas / EditorTour unit test suite  
 8. **Docs site polish** — VitePress already wired; keep guides in sync on every CLI change  
 
 ---

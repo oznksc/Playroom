@@ -600,6 +600,7 @@ export function SceneCanvas({
 
   return (
     <section
+      id="tour-canvas-stage"
       className={cn(
         "canvas-panel relative min-h-0 overflow-hidden bg-bg-base",
         isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"

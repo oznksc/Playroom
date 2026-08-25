@@ -36,6 +36,7 @@ import {
   LayoutGrid,
   Package,
   Wand2,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -92,6 +93,7 @@ type AppTabBarProps = {
   onToggleColliders: (val: boolean) => void;
   onZoomChange: (zoom: number) => void;
   onCenterView: () => void;
+  onOpenTour?: () => void;
 };
 
 const MIN_ZOOM = 0.25;
@@ -174,6 +176,7 @@ export function AppTabBar({
   onToggleColliders,
   onZoomChange,
   onCenterView,
+  onOpenTour,
 }: AppTabBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLElement>(null);
@@ -534,6 +537,16 @@ export function AppTabBar({
               row
               onClick={() => runAndClose(onOpenCommandPalette)}
               icon={<Command size={16} strokeWidth={1.75} />}
+            />
+          )}
+          {onOpenTour && (
+            <TabItem
+              label="Quick tour"
+              active={false}
+              compact
+              row
+              onClick={() => runAndClose(onOpenTour)}
+              icon={<HelpCircle size={16} strokeWidth={1.75} />}
             />
           )}
           <TabItem

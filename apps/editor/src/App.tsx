@@ -52,6 +52,7 @@ import { PlayRuntimeHost } from "./components/PlayRuntimeHost.js";
 import { TilePalette } from "./components/TilePalette.js";
 import { ProfilerOverlay } from "./components/ProfilerOverlay.js";
 import { SceneTabBar } from "./components/SceneTabBar.js";
+import { EditorTour, useEditorTour } from "./components/EditorTour.js";
 import { useImageCache } from "./hooks/useImageCache.js";
 import type { CanvasTool, TilePaintMode } from "./lib/editor-tools.js";
 import { isTilePaintTool } from "./lib/editor-tools.js";
@@ -144,6 +145,7 @@ const SaveErrorSchema = z.object({ error: z.string().optional(), errors: z.array
 
 export function App() {
   const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
+  const { isTourOpen, openTour, closeTour } = useEditorTour();
   const [projectPath, setProjectPath] = useState<string | null>(null);
   const [recentProjects, setRecentProjects] = useState<string[]>(() => {
     try {
@@ -3095,6 +3097,7 @@ export function App() {
           setZoom(1);
           setViewResetKey((k) => k + 1);
         }}
+        onOpenTour={openTour}
       />
 
       {/* Left floating sheet */}
@@ -3403,6 +3406,8 @@ export function App() {
         onOpenChange={setCommandPaletteOpen}
         commands={commandItems}
       />
+
+      <EditorTour isOpen={isTourOpen} onClose={closeTour} />
     </main>
   );
 }

@@ -108,6 +108,29 @@ export const SKILL_PACKS: Record<string, SkillPack> = {
     fallDeathEnabled: false,
     lives: 3,
   },
+  "tower-defense": {
+    label: "Tower defense",
+    tagEntities: [
+      { nameMatch: /enemy|hazard|obstacle/i, tags: ["hazard"] },
+      { nameMatch: /core|base|target/i, tags: ["goal"] },
+    ],
+    recipes: [
+      { id: "win-reach-goal", params: { tag: "goal" } },
+    ],
+    fallDeathEnabled: false,
+    lives: 5,
+  },
+  "visual-novel": {
+    label: "Visual novel",
+    tagEntities: [
+      { nameMatch: /choice|target|goal/i, tags: ["goal"] },
+    ],
+    recipes: [
+      { id: "win-reach-goal", params: { tag: "goal" } },
+    ],
+    fallDeathEnabled: false,
+    lives: 0,
+  },
 };
 
 export function getSkillPack(skillId: string): SkillPack {

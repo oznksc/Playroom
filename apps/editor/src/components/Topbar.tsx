@@ -14,6 +14,7 @@ import {
   PanelRight,
   Sparkles,
   LayoutTemplate,
+  HelpCircle,
 } from "lucide-react";
 import { useRef } from "react";
 import logoUrl from "../../../../logo.png";
@@ -45,6 +46,7 @@ type TopbarProps = {
   onToggleInspector: () => void;
   onOpenAgent?: () => void;
   onOpenWizard?: () => void;
+  onOpenTour?: () => void;
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
@@ -74,6 +76,7 @@ export function Topbar({
   onToggleInspector,
   onOpenAgent,
   onOpenWizard,
+  onOpenTour,
   formatLastSaved,
   projectPath,
   onCloseProject,
@@ -113,7 +116,7 @@ export function Topbar({
       </div>
 
       {MVP_SHOW_PLAY_CONTROLS && (
-        <div className="mx-auto flex items-center gap-1 rounded-md border border-border-default bg-bg-base p-0.5">
+        <div id="tour-topbar-play" className="mx-auto flex items-center gap-1 rounded-md border border-border-default bg-bg-base p-0.5">
           <IconButton
             size="md"
             variant={isPlaying && !isPaused ? "active" : "ghost"}
@@ -187,6 +190,11 @@ export function Topbar({
         {onOpenAgent && (
           <IconButton size="md" onClick={onOpenAgent} title="Open AI Agent">
             <Sparkles size={14} />
+          </IconButton>
+        )}
+        {onOpenTour && (
+          <IconButton size="md" onClick={onOpenTour} title="Take a tour">
+            <HelpCircle size={14} />
           </IconButton>
         )}
         <IconButton

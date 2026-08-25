@@ -67,4 +67,18 @@ describe("CLI skills", () => {
     expect(project.scenes).toContain(result.filename);
     expect(project.assets.some((a: { id: string }) => a.id === "player")).toBe(true);
   });
+
+  it("lists and applies tower-defense and visual-novel skills", async () => {
+    const skills = await listSkills();
+    expect(skills.some((s) => s.id === "tower-defense")).toBe(true);
+    expect(skills.some((s) => s.id === "visual-novel")).toBe(true);
+
+    const tdResult = await applySkill(root, "tower-defense");
+    expect(tdResult.sceneId).toBe("tower-defense");
+    expect(tdResult.entityCount).toBeGreaterThan(0);
+
+    const vnResult = await applySkill(root, "visual-novel");
+    expect(vnResult.sceneId).toBe("visual-novel");
+    expect(vnResult.entityCount).toBeGreaterThan(0);
+  });
 });
