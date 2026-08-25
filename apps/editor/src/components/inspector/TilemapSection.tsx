@@ -29,9 +29,12 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
             <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Tileset</span>
             <Select
               value={tilemap.tilesetId}
-              onChange={(e) => onChange((draft) => {
-                findComponent<TilemapComponent>(draft, "Tilemap")!.tilesetId = e.target.value;
-              })}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange((draft) => {
+                  findComponent<TilemapComponent>(draft, "Tilemap")!.tilesetId = val;
+                });
+              }}
             >
               <option value="">— Select asset —</option>
               {assets.map((a) => (

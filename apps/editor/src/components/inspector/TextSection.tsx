@@ -29,14 +29,20 @@ export function TextSection({ textComp, assets, onChange, open, onToggle, onRemo
             <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text</span>
             <Input
               value={textComp.text}
-              onChange={(e) => onChange((d) => { findComponent<TextComponent>(d, "Text")!.text = e.target.value; })}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange((d) => { findComponent<TextComponent>(d, "Text")!.text = val; });
+              }}
             />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Font asset</span>
             <Select
               value={textComp.fontAssetId}
-              onChange={(e) => onChange((d) => { findComponent<TextComponent>(d, "Text")!.fontAssetId = e.target.value; })}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange((d) => { findComponent<TextComponent>(d, "Text")!.fontAssetId = val; });
+              }}
             >
               <option value="default">default</option>
               {assets.map((a) => (
@@ -65,9 +71,12 @@ export function TextSection({ textComp, assets, onChange, open, onToggle, onRemo
             <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Align</span>
             <Select
               value={textComp.align}
-              onChange={(e) => onChange((d) => {
-                findComponent<TextComponent>(d, "Text")!.align = e.target.value as TextComponent["align"];
-              })}
+              onChange={(e) => {
+                const val = e.target.value as TextComponent["align"];
+                onChange((d) => {
+                  findComponent<TextComponent>(d, "Text")!.align = val;
+                });
+              }}
             >
               <option value="left">Left</option>
               <option value="center">Center</option>

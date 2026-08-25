@@ -1,4 +1,5 @@
 import type { ParticleSystemComponent, Vector2 } from "@gamekit/schema";
+import type { SeededRng } from "./rng.js";
 
 export type Particle = {
   x: number;
@@ -28,6 +29,7 @@ export function updateParticleEmitter(
   origin: Vector2,
   gravityY: number,
   dt: number,
+  rng?: SeededRng,
 ): Particle[] {
   if (!component.active) {
     // Still age existing particles
@@ -40,7 +42,7 @@ export function updateParticleEmitter(
   state.emitAccumulator += component.emissionRate * dt;
   while (state.emitAccumulator >= 1 && state.particles.length < component.maxParticles) {
     state.emitAccumulator -= 1;
-    state.particles.push(spawnParticle(component, origin));
+    state.particles.push(spawnParticle(component, origin, rng));
   }
 
   const g = gravityY * component.gravityScale;
@@ -58,22 +60,23 @@ export function updateParticleEmitter(
   return state.particles;
 }
 
-function spawnParticle(component: ParticleSystemComponent, origin: Vector2): Particle {
+export function spawnParticle(component: ParticleSystemComponent, origin: Vector2, rng?: SeededRng): Particle {
+  const rand = rng ? () => rng.next() : Math.random;
   let ox = origin.x;
   let oy = origin.y;
   if (component.shape === "box") {
-    ox += (Math.random() - 0.5) * component.width;
-    oy += (Math.random() - 0.5) * component.height;
+    ox += (rand() - 0.5) * component.width;
+    oy += (rand() - 0.5) * component.height;
   }
-  const angle = Math.random() * Math.PI * 2;
-  const speed = component.speed * (0.5 + Math.random() * 0.5);
+  const angle = rand() * Math.PI * 2;
+  const speed = component.speed * (0.5 + rand() * 0.5);
   return {
     x: ox,
     y: oy,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     age: 0,
-    lifetime: component.lifetime * (0.7 + Math.random() * 0.6),
+    lifetime: component.lifetime * (0.7 + rand() * 0.6),
     sizeStart: component.sizeStart,
     sizeEnd: component.sizeEnd,
     colorStart: component.colorStart,

@@ -51,14 +51,20 @@ export function RigidBodySection({ rigidBody, onChange, open, onToggle, onRemove
           <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
             <input id="rigid-body-kinematic-check" type="checkbox" className="size-3.5 accent-accent"
               checked={rigidBody.isKinematic}
-              onChange={(event) => onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = event.target.checked; })}
+              onChange={(event) => {
+                const val = event.target.checked;
+                onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = val; });
+              }}
             />
             <label htmlFor="rigid-body-kinematic-check">Is Kinematic</label>
           </div>
           <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
             <input id="rigid-body-gravity-check" type="checkbox" className="size-3.5 accent-accent"
               checked={rigidBody.useGravity}
-              onChange={(event) => onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = event.target.checked; })}
+              onChange={(event) => {
+                const val = event.target.checked;
+                onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = val; });
+              }}
             />
             <label htmlFor="rigid-body-gravity-check">Use Gravity</label>
           </div>

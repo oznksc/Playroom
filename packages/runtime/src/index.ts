@@ -160,3 +160,8 @@ export {
   type LightPoint,
   type SpotCone,
 } from "./light.js";
+export {
+  createRng,
+  seedFromString,
+  type SeededRng,
+} from "./rng.js";

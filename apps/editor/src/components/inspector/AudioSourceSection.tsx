@@ -29,7 +29,10 @@ export function AudioSourceSection({ audioSource, assets, onChange, open, onTogg
             <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset</span>
             <Select
               value={audioSource.assetId}
-              onChange={(e) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.assetId = e.target.value; })}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.assetId = val; });
+              }}
             >
               <option value="">— Select —</option>
               {assets.map((a) => (

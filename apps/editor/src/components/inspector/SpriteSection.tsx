@@ -40,9 +40,12 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
               <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset Ref</label>
               <select className="h-[26px] w-full rounded-md border border-border-default bg-bg-base px-2 text-[12px] outline-none focus:border-accent"
                 value={sprite.assetId}
-                onChange={(event) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.assetId = event.target.value;
-                })}
+                onChange={(event) => {
+                  const val = event.target.value;
+                  onChange((draft) => {
+                    findComponent<SpriteComponent>(draft, "Sprite")!.assetId = val;
+                  });
+                }}
               >
                 {assets.map((asset) => (
                   <option key={asset.id} value={asset.id}>{asset.id}</option>

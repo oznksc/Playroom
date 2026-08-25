@@ -33,9 +33,12 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Event</span>
                 <Input
                   value={h.event}
-                  onChange={(e) => onChange((d) => {
-                    findComponent<ScriptComponent>(d, "Script")!.handlers[i].event = e.target.value;
-                  })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    onChange((d) => {
+                      findComponent<ScriptComponent>(d, "Script")!.handlers[i].event = val;
+                    });
+                  }}
                   placeholder="onStart | onUpdate | onCollision…"
                 />
               </label>

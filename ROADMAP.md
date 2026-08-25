@@ -127,9 +127,8 @@ Workstreams that closed the “can we make end-to-end games?” gap:
 - [x] CLI tests (project, doctor, export, create, recipes, prefabs)
 - [x] Headless pipeline: create → doctor → simulate → export (`e2e-pipeline.test.ts`)
 - [x] Playwright E2E: editor → Phaser play host → stop (`e2e/play-host.spec.ts`, `pnpm test:e2e`)
-- [x] CI workflow (unit + Playwright Chromium)
-- [ ] Editor unit tests (RTL for canvas/inspector)
-- [ ] Deterministic RNG + snapshot suite expansion
+- [x] Editor unit tests (RTL for canvas/inspector)
+- [x] Deterministic RNG + snapshot suite expansion
 
 ### Content
 

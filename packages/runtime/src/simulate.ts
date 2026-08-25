@@ -28,6 +28,7 @@ import { createRigidBody, RIGID_BODY_FIXED_DT } from "./rigid-body.js";
 import { deepClone } from "./clone.js";
 import { RulesEngine } from "./rules-engine.js";
 import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm } from "./script.js";
+import { createRng, type SeededRng } from "./rng.js";
 
 export type SimulateOptions = {
   steps: number;
@@ -45,6 +46,10 @@ export type SimulateOptions = {
   level?: GameKitLevel | null;
   /** Optional scene manager stubs for setVariable / completeLevel during sim. */
   sceneManager?: ConstructorParameters<typeof RulesEngine>[1]["sceneManager"];
+  /** Optional seed for deterministic random numbers during simulation. */
+  seed?: number | string;
+  /** Optional explicit SeededRng instance. */
+  rng?: SeededRng;
 };
 
 export type SimulateResult = {
