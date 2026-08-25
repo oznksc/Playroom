@@ -72,6 +72,7 @@ type StudioTab = "copilot" | "sprites" | "animated" | "sfx" | "music";
 
 type AssetStudioModalProps = {
   isOpen: boolean;
+  embedded?: boolean;
   onClose: () => void;
   onAssetCreated?: (asset: GameKitAsset) => void;
   onSpawnEntityWithSprite?: (assetId: string, width: number, height: number, category?: string) => void;
@@ -181,6 +182,7 @@ const PALETTE_OPTIONS: { value: PaletteName; label: string }[] = [
 
 export function AssetStudioModal({
   isOpen,
+  embedded = false,
   onClose,
   onAssetCreated,
   onSpawnEntityWithSprite,
@@ -278,7 +280,13 @@ export function AssetStudioModal({
   // Initial Seed
   useEffect(() => {
     if (isOpen && variations.length === 0) {
-      handleGenerateWithAi();
+      const analysis = parseAiPrompt(aiPrompt);
+      setSpriteCategory(analysis.category);
+      setSpriteArchetype(analysis.archetype);
+      setSpritePalette(analysis.palette);
+      setSheetAnimation(analysis.animationAction);
+      setVariations(generateAiVariationSet(aiPrompt, analysis.category, analysis.palette, spriteSize));
+      setSelectedVariationIndex(0);
     }
   }, [isOpen]);
 
@@ -530,21 +538,21 @@ export function AssetStudioModal({
   if (!isOpen) return null;
 
   return (
-    <div className={cn("asset-studio-scrim", isOpen && "open")}>
+    <div className={cn(embedded ? "asset-studio-embedded" : "asset-studio-scrim", isOpen && "open")}>
       <div
         className={cn(
-          "asset-studio-sheet",
+          embedded ? "asset-studio-workspace" : "asset-studio-sheet",
           isOpen && "open",
           studioMode === "sheet" && "mode-sheet",
           studioMode === "expanded" && "mode-expanded",
           studioMode === "fullscreen" && "mode-fullscreen"
         )}
       >
-        {/* ── Apple-Style Sheet Top Pill & Header ── */}
-        <div className="relative flex flex-col border-b border-white/[0.08] bg-gradient-to-r from-[#0e1628]/95 via-[#0b101c]/95 to-[#15112c]/95 select-none">
+        {/* Content-sheet chrome: the Studio is an extension of Content, not a separate surface. */}
+        <div className={cn("asset-studio-internal-header bottom-sheet-header relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4", embedded && "hidden")}>
           {/* Drag Handle */}
           <div
-            className="flex items-center justify-center pt-2.5 pb-1 cursor-pointer"
+            className="bottom-sheet-handle !top-2 flex items-center justify-center cursor-pointer"
             onClick={() =>
               setStudioMode((prev) => (prev === "sheet" ? "expanded" : prev === "expanded" ? "fullscreen" : "sheet"))
             }
@@ -554,20 +562,20 @@ export function AssetStudioModal({
           </div>
 
           {/* Top Header Bar */}
-          <div className="flex items-center justify-between px-5 pb-3 pt-1">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 text-black">
                 <Target size={16} className="animate-pulse" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-white tracking-tight">Playroom AI Asset Studio</h2>
+                  <h2 className="bottom-sheet-title !p-0">Asset Studio</h2>
                   <Badge variant="accent" className="text-[9px] uppercase font-mono px-1.5 py-0.5 tracking-wider bg-cyan-500/20 text-cyan-300 border-cyan-500/40">
                     Agent Powered • {resolvedProvider}
                   </Badge>
                 </div>
                 <span className="text-[11px] text-text-muted">
-                  Direct Pinpoint Suggestions & Autonomous Generation using Playroom Agent System
+                  Generate and prepare assets for the current scene
                 </span>
               </div>
             </div>
@@ -632,7 +640,7 @@ export function AssetStudioModal({
           </div>
 
           {/* ── Pinpoint Spot-on Suggestions Carousel Bar ── */}
-          <div className="px-5 pb-3">
+          <div className="w-full pt-2">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
               <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 shrink-0 flex items-center gap-1 bg-cyan-500/10 border border-cyan-500/30 px-2 py-1 rounded-lg">
                 <Target size={12} /> Pinpoint Suggestions:
@@ -664,7 +672,7 @@ export function AssetStudioModal({
         </div>
 
         {/* ── 3-Zone Workspace Layout ── */}
-        <div className="flex-1 flex overflow-hidden min-h-0 bg-[#070b12]">
+        <div className="flex-1 flex overflow-hidden min-h-0 bg-transparent">
           {/* ZONE 1: Navigation Rail */}
           <nav className="w-56 border-r border-white/[0.06] bg-black/30 p-3 flex flex-col justify-between shrink-0 select-none">
             <div className="flex flex-col gap-1.5">

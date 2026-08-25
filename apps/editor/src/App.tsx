@@ -140,7 +140,7 @@ const MVP_SHOW_CONSOLE = true;
 const USE_PHASER_PLAY_HOST = true;
 
 type SidebarTab = SidebarTabId;
-type BottomTab = "assets" | "timeline" | "console";
+type BottomTab = "assets" | "studio" | "timeline" | "console";
 
 const ApiErrorSchema = z.object({ error: z.string().optional() });
 const SaveErrorSchema = z.object({ error: z.string().optional(), errors: z.array(z.string()).optional() });
@@ -246,7 +246,6 @@ export function App() {
   );
   const paletteImages = useImageCache(snapshot.assets);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [assetStudioOpen, setAssetStudioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
   commandPaletteOpenRef.current = commandPaletteOpen;
@@ -2104,7 +2103,7 @@ export function App() {
         keywords: ["asset", "generate", "sprite", "sfx", "music", "character", "sound", "animation"],
         icon: ic(<Wand2 size={14} strokeWidth={1.75} className="text-cyan-400" />),
         shortcut: "Mod+Shift+G",
-        run: () => setAssetStudioOpen(true),
+        run: () => openContent("studio"),
       },
       {
         id: "gen-sprite",
@@ -2112,7 +2111,7 @@ export function App() {
         section: "Assets",
         keywords: ["sprite", "pixel", "prop", "item", "tile", "generate"],
         icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => setAssetStudioOpen(true),
+        run: () => openContent("studio"),
       },
       {
         id: "gen-animated-char",
@@ -2120,7 +2119,7 @@ export function App() {
         section: "Assets",
         keywords: ["character", "animation", "spritesheet", "walk", "jump", "hero", "knight"],
         icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => setAssetStudioOpen(true),
+        run: () => openContent("studio"),
       },
       {
         id: "gen-sfx",
@@ -2128,7 +2127,7 @@ export function App() {
         section: "Assets",
         keywords: ["sfx", "sound", "jump", "coin", "laser", "explosion", "hit", "audio"],
         icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => setAssetStudioOpen(true),
+        run: () => openContent("studio"),
       },
       {
         id: "gen-music",
@@ -2136,7 +2135,7 @@ export function App() {
         section: "Assets",
         keywords: ["music", "bgm", "chiptune", "song", "theme", "audio", "soundtrack"],
         icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => setAssetStudioOpen(true),
+        run: () => openContent("studio"),
       },
       {
         id: "nav-agent",
@@ -3237,7 +3236,7 @@ export function App() {
         onImport={importAsset}
         onAddEntity={addEntity}
         onOpenWizard={() => setWizardOpen(true)}
-        onOpenAssetStudio={() => setAssetStudioOpen(true)}
+        onOpenAssetStudio={() => openContent("studio")}
         onSettings={() => setAgentSettingsOpen(true)}
         onCloseProject={isTauri ? handleCloseProject : undefined}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
@@ -3476,7 +3475,7 @@ export function App() {
       {/* Content drawer — docks just above the tab bar */}
       {scene && (
         <section
-          className={`bottom-sheet${!bottomDrawerCollapsed ? " open" : ""}`}
+          className={`bottom-sheet${!bottomDrawerCollapsed ? " open" : ""}${activeBottomTab === "studio" ? " studio-view" : ""}`}
           aria-hidden={bottomDrawerCollapsed}
           aria-label="Content browser"
         >
@@ -3487,6 +3486,7 @@ export function App() {
                 {(
                   [
                     ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
+                    ["studio", "Studio", <Wand2 key="i" size={13} strokeWidth={1.75} />] as const,
                     ...(MVP_SHOW_TIMELINE
                       ? ([["timeline", "Timeline", <Clock3 key="i" size={13} strokeWidth={1.75} />]] as const)
                       : []),
@@ -3531,7 +3531,23 @@ export function App() {
                 onSelectAsset={setSelectedAssetId}
                 onDeleteAsset={(id) => deleteAsset(id).catch(setError)}
                 onImport={(file) => importAsset(file).catch(setError)}
-                onOpenAssetStudio={() => setAssetStudioOpen(true)}
+                onOpenAssetStudio={() => openContent("studio")}
+              />
+            )}
+            {activeBottomTab === "studio" && (
+              <AssetStudioModal
+                embedded
+                isOpen
+                onClose={() => setActiveBottomTab("assets")}
+                onAssetCreated={async (asset) => {
+                  setSelectedAssetId(asset.id);
+                  await refresh();
+                }}
+                onSpawnEntityWithSprite={handleSpawnEntityWithSprite}
+                onSpawnEntityWithAnimation={handleSpawnEntityWithAnimation}
+                onAttachAudioToEntity={handleAttachAudioToEntity}
+                selectedEntityId={selectedEntityId}
+                activeSceneId={currentSceneFile}
               />
             )}
             {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
@@ -3547,24 +3563,6 @@ export function App() {
           </div>
         </section>
       )}
-
-      <AssetStudioModal
-        isOpen={assetStudioOpen}
-        onClose={() => setAssetStudioOpen(false)}
-        onAssetCreated={async (asset) => {
-          // Asset Studio and Content share the same selection context. Keep the
-          // newly-created asset visible and selected after the project refresh.
-          setSelectedAssetId(asset.id);
-          setActiveBottomTab("assets");
-          setBottomDrawerCollapsed(false);
-          await refresh();
-        }}
-        onSpawnEntityWithSprite={handleSpawnEntityWithSprite}
-        onSpawnEntityWithAnimation={handleSpawnEntityWithAnimation}
-        onAttachAudioToEntity={handleAttachAudioToEntity}
-        selectedEntityId={selectedEntityId}
-        activeSceneId={currentSceneFile}
-      />
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard
