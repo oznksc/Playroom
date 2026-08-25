@@ -703,20 +703,26 @@
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 160ms ease;
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    right 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    top 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    bottom 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .float-sheet-left {
   left: 12px;
   width: min(300px, calc(100vw - 80px));
-  transform: translateX(-14px) scale(0.98);
+  transform: translateX(-24px) scale(0.96);
 }
 
 .float-sheet-right {
   right: 12px;
   width: min(320px, calc(100vw - 80px));
-  transform: translateX(14px) scale(0.98);
+  transform: translateX(24px) scale(0.96);
 }
 
 .float-sheet-left.open,
@@ -860,7 +866,7 @@
 
 /*
  * Content drawer — same glass dock language, sits above tab bar.
- * Closed: fully hidden. Open: slides up from tab bar.
+ * Closed: fully hidden. Open: slides up from tab bar with fluid spring physics.
  */
 .bottom-sheet {
   --tabbar-clearance: 78px;
@@ -871,6 +877,7 @@
   display: flex;
   flex-direction: column;
   width: min(720px, calc(100vw - 24px));
+  height: auto;
   max-height: min(44vh, 400px);
   border-radius: var(--glass-radius);
   background: var(--glass-fill-deep);
@@ -878,12 +885,18 @@
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
   overflow: hidden;
-  transform: translateX(-50%) translateY(16px) scale(0.98);
+  transform: translateX(-50%) translateY(32px) scale(0.96);
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 180ms ease;
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease,
+    width 340ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 340ms cubic-bezier(0.16, 1, 0.3, 1),
+    max-height 340ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 280ms ease,
+    box-shadow 300ms ease;
+  will-change: transform, opacity, width, height, max-height;
 }
 
 .bottom-sheet.open {
@@ -899,6 +912,7 @@
 }
 
 .bottom-sheet-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -917,6 +931,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
+  transition: opacity 160ms ease, background 160ms ease;
 }
 
 .bottom-sheet-title {
@@ -940,21 +955,23 @@
 }
 
 .bottom-sheet-tabs {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
   padding-top: 6px;
 }
 
 .bottom-sheet-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   height: 30px;
-  padding: 0 10px;
-  border: none;
+  padding: 0 11px;
+  border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
   color: var(--glass-fg);
@@ -962,8 +979,12 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    color 120ms ease,
-    background 120ms ease;
+    color 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease;
+  user-select: none;
 }
 
 .bottom-sheet-tab:hover {
@@ -971,9 +992,15 @@
   background: var(--glass-chip);
 }
 
+.bottom-sheet-tab:active {
+  transform: scale(0.96);
+}
+
 .bottom-sheet-tab.active {
   color: var(--accent);
   background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.28);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
 }
 
 .bottom-sheet-close {
@@ -989,20 +1016,60 @@
   color: var(--glass-fg);
   cursor: pointer;
   transition:
-    color 120ms ease,
-    background 120ms ease;
+    color 140ms ease,
+    background 140ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bottom-sheet-close:hover {
   color: var(--glass-fg-hover);
   background: var(--glass-chip-hover);
+  transform: rotate(90deg) scale(1.06);
+}
+
+.bottom-sheet-close:active {
+  transform: rotate(90deg) scale(0.92);
 }
 
 .drawer-content-box {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
   background: transparent;
+}
+
+.drawer-tab-pane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: drawer-tab-in 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.sheet-panel-pane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: sheet-panel-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.studio-station-pane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: studio-station-in 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .drawer-content-box > * {
@@ -1222,7 +1289,7 @@
   max-width: 140px;
   height: 24px;
   padding: 0 8px;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: var(--glass-fg);
@@ -1230,6 +1297,13 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  animation: scene-tab-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 100ms ease,
+    box-shadow 140ms ease;
 }
 
 .scene-tab:hover {
@@ -1237,9 +1311,15 @@
   color: var(--glass-fg-hover);
 }
 
+.scene-tab:active {
+  transform: scale(0.97);
+}
+
 .scene-tab.active {
   background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.25);
   color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
 }
 
 .scene-tab-label {
@@ -1264,11 +1344,20 @@
   height: 14px;
   border-radius: 4px;
   color: var(--text-muted);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    transform 140ms ease;
 }
 
 .scene-tab-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.scene-tab-close:active {
+  transform: scale(0.9);
 }
 
 .scene-tab-bar-split {

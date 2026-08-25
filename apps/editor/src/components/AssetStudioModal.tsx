@@ -684,7 +684,7 @@ export function AssetStudioModal({
                 type="button"
                 onClick={() => setActiveTab("copilot")}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left",
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
                   activeTab === "copilot"
                     ? "bg-gradient-to-r from-cyan-500/25 to-violet-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_20px_rgba(0,240,255,0.15)]"
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
@@ -692,8 +692,8 @@ export function AssetStudioModal({
               >
                 <div
                   className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs",
-                    activeTab === "copilot" ? "bg-cyan-500 text-black font-bold" : "bg-white/[0.06] text-cyan-400"
+                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                    activeTab === "copilot" ? "bg-cyan-500 text-black font-bold scale-105" : "bg-white/[0.06] text-cyan-400"
                   )}
                 >
                   <Bot size={13} />
@@ -708,13 +708,16 @@ export function AssetStudioModal({
                   handleGenerateWithAi();
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left",
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
                   activeTab === "sprites"
                     ? "bg-gradient-to-r from-blue-500/20 to-cyan-500/10 text-blue-300 border border-blue-500/30"
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs bg-white/[0.06] text-blue-400">
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                  activeTab === "sprites" ? "bg-blue-500 text-black font-bold scale-105" : "bg-white/[0.06] text-blue-400"
+                )}>
                   <ImageIcon size={13} />
                 </div>
                 <span>Sprites & Props Matrix</span>
@@ -727,13 +730,16 @@ export function AssetStudioModal({
                   handleGenerateWithAi();
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left",
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
                   activeTab === "animated"
                     ? "bg-gradient-to-r from-violet-500/20 to-fuchsia-500/10 text-violet-300 border border-violet-500/30"
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs bg-white/[0.06] text-violet-400">
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                  activeTab === "animated" ? "bg-violet-500 text-white font-bold scale-105" : "bg-white/[0.06] text-violet-400"
+                )}>
                   <Film size={13} />
                 </div>
                 <span>Animation Cycles</span>
@@ -746,13 +752,16 @@ export function AssetStudioModal({
                   handlePlaySfxPreset("laser");
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left",
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
                   activeTab === "sfx"
                     ? "bg-gradient-to-r from-yellow-500/20 to-amber-500/10 text-yellow-300 border border-yellow-500/30"
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs bg-white/[0.06] text-yellow-400">
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                  activeTab === "sfx" ? "bg-yellow-500 text-black font-bold scale-105" : "bg-white/[0.06] text-yellow-400"
+                )}>
                   <Volume2 size={13} />
                 </div>
                 <span>Sound FX (SFX)</span>
@@ -765,13 +774,16 @@ export function AssetStudioModal({
                   handleGenerateMusic("cyberpunk_pulse", true);
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left",
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
                   activeTab === "music"
                     ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-purple-300 border border-purple-500/30"
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs bg-white/[0.06] text-purple-400">
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                  activeTab === "music" ? "bg-purple-500 text-white font-bold scale-105" : "bg-white/[0.06] text-purple-400"
+                )}>
                   <Music size={13} />
                 </div>
                 <span>Chiptune BGM Studio</span>
@@ -791,9 +803,10 @@ export function AssetStudioModal({
 
           {/* ZONE 2: Middle Parameter Deck & Chat Stream */}
           <div className="flex-1 flex flex-col border-r border-white/[0.06] bg-black/20 overflow-hidden min-h-0">
-            {/* 1. COPILOT CHAT VIEW */}
-            {activeTab === "copilot" && (
-              <div className="flex-1 flex flex-col min-h-0">
+            <div key={activeTab} className="studio-station-pane flex-1 flex flex-col min-h-0">
+              {/* 1. COPILOT CHAT VIEW */}
+              {activeTab === "copilot" && (
+                <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-6 gap-3">
@@ -1089,6 +1102,7 @@ export function AssetStudioModal({
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* ZONE 3: Right Live Interactive Stage & Audio Visualizer */}
@@ -1137,7 +1151,7 @@ export function AssetStudioModal({
             </div>
 
             {/* Stage Center Viewport */}
-            <div className="flex-1 flex flex-col items-center justify-center my-3 gap-3">
+            <div key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab} className="studio-station-pane flex-1 flex flex-col items-center justify-center my-3 gap-3">
               {/* STAGE A: AUDIO EQUALIZER (SFX & MUSIC) */}
               {activeTab === "sfx" || activeTab === "music" ? (
                 <div className="flex flex-col items-center justify-center gap-5 w-full">

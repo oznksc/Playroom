@@ -76,6 +76,8 @@
   --shadow-glow-red: 0 0 12px rgba(239, 68, 68, 0.35);
 
   --animate-pulse-glow: pulse-glow 1.5s ease-in-out infinite;
+  --animate-tab-enter: drawer-tab-in 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-sheet-panel: sheet-panel-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes pulse-glow {
@@ -85,6 +87,50 @@
   }
   50% {
     box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+  }
+}
+
+@keyframes drawer-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.99) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes studio-station-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scene-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

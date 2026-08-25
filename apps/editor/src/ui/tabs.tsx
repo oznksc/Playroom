@@ -73,10 +73,10 @@ export function TabsTrigger({
         ctx?.onValueChange?.(value);
       }}
       className={cn(
-        "relative h-7 flex-1 rounded-[10px] px-3 text-[11px] font-semibold tracking-[-0.01em] transition-[color,background] duration-150",
-        "text-[rgba(235,235,245,0.5)] hover:text-[rgba(245,245,247,0.85)]",
+        "relative h-7 flex-1 rounded-[10px] px-3 text-[11px] font-semibold tracking-[-0.01em] transition-[color,background,box-shadow,transform] duration-150 active:scale-[0.97]",
+        "text-[rgba(235,235,245,0.5)] hover:text-[rgba(245,245,247,0.85)] hover:bg-white/[0.04]",
         active &&
-          "bg-white/[0.1] text-accent shadow-[inset_0_0_0_0.5px_rgba(0,240,255,0.25)]",
+          "bg-white/[0.1] text-accent shadow-[inset_0_0_0_0.5px_rgba(0,240,255,0.25),0_0_12px_rgba(0,240,255,0.12)]",
         className
       )}
       {...props}
@@ -100,7 +100,14 @@ export function TabsContent({
   if (ctx?.value !== value) return null;
 
   return (
-    <div role="tabpanel" className={cn("min-h-0 flex-1", className)} {...props}>
+    <div
+      role="tabpanel"
+      className={cn(
+        "min-h-0 flex-1 animate-[drawer-tab-in_220ms_cubic-bezier(0.16,1,0.3,1)_forwards]",
+        className
+      )}
+      {...props}
+    >
       {children}
     </div>
   );
