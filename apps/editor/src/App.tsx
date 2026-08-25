@@ -40,6 +40,7 @@ import {
   Route,
   Columns2,
   Activity,
+  Wand2,
 } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
@@ -81,6 +82,7 @@ import { AgentPanel } from "./components/AgentPanel.js";
 import { AgentSettings } from "./components/AgentSettings.js";
 import { PrefabPanel } from "./components/PrefabPanel.js";
 import { ProjectWizard } from "./components/ProjectWizard.js";
+import { AssetStudioModal } from "./components/AssetStudioModal.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
 import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
@@ -244,6 +246,7 @@ export function App() {
   );
   const paletteImages = useImageCache(snapshot.assets);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [assetStudioOpen, setAssetStudioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
   commandPaletteOpenRef.current = commandPaletteOpen;
@@ -551,7 +554,7 @@ export function App() {
 
   // Hot-reload scene when file changes on disk (agent / external edits)
   useEffect(() => {
-    if (isPlaying || isDirty) return;
+    if (isPlaying || isDirty || !currentSceneFile) return;
     let cancelled = false;
     const poll = async () => {
       try {
@@ -1141,6 +1144,121 @@ export function App() {
       draft.entities.push(entity);
       setSelectedEntityIds(new Set([entity.id]));
       addConsoleLog("system", `Added template entity: [${templateType.toUpperCase()}] ${entity.name}`);
+    });
+  }
+
+  function handleSpawnEntityWithSprite(assetId: string, width: number, height: number, category?: string) {
+    updateScene((draft) => {
+      const entity = createEntity(assetId, { x: 300, y: 200 });
+      entity.components.push(
+        GameKitComponentSchema.parse({
+          type: "Sprite",
+          assetId,
+          width,
+          height,
+          anchor: { x: 0.5, y: 0.5 },
+        })
+      );
+      if (category === "character" || category === "enemy" || category === "item" || category === "tile") {
+        entity.components.push(
+          GameKitComponentSchema.parse({
+            type: "AabbCollider",
+            offset: { x: -width / 2, y: -height / 2 },
+            size: { x: width, y: height },
+            isStatic: category === "tile",
+          })
+        );
+      }
+      draft.entities.push(entity);
+      setSelectedEntityIds(new Set([entity.id]));
+      addConsoleLog("system", `Spawned sprite entity "${entity.name}" in scene.`);
+    });
+  }
+
+  function handleSpawnEntityWithAnimation(
+    assetId: string,
+    frameWidth: number,
+    frameHeight: number,
+    totalFrames: number,
+    fps: number
+  ) {
+    updateScene((draft) => {
+      const entity = createEntity(assetId, { x: 300, y: 200 });
+      entity.components.push(
+        GameKitComponentSchema.parse({
+          type: "Sprite",
+          assetId,
+          width: frameWidth,
+          height: frameHeight,
+          anchor: { x: 0.5, y: 0.5 },
+        }),
+        GameKitComponentSchema.parse({
+          type: "Animation",
+          assetId,
+          frameWidth,
+          frameHeight,
+          totalFrames,
+          framesPerSecond: fps,
+          loop: true,
+        }),
+        GameKitComponentSchema.parse({
+          type: "AabbCollider",
+          offset: { x: -frameWidth / 2, y: -frameHeight / 2 },
+          size: { x: frameWidth, y: frameHeight },
+          isStatic: false,
+        })
+      );
+      draft.entities.push(entity);
+      setSelectedEntityIds(new Set([entity.id]));
+      addConsoleLog("system", `Spawned animated character "${entity.name}" (${totalFrames} frames) in scene.`);
+    });
+  }
+
+  function handleAttachAudioToEntity(assetId: string, isBgm?: boolean) {
+    updateScene((draft) => {
+      if (isBgm) {
+        let bgmEntity = draft.entities.find((e) => e.id === "bgm-music" || e.name === "bgm-music");
+        if (!bgmEntity) {
+          bgmEntity = createEntity("bgm-music", { x: 0, y: 0 });
+          bgmEntity.components.push(
+            GameKitComponentSchema.parse({
+              type: "AudioSource",
+              assetId,
+              volume: 0.8,
+              loop: true,
+              playOnStart: true,
+            })
+          );
+          draft.entities.push(bgmEntity);
+        } else {
+          bgmEntity.components = bgmEntity.components.filter((c) => c.type !== "AudioSource");
+          bgmEntity.components.push(
+            GameKitComponentSchema.parse({
+              type: "AudioSource",
+              assetId,
+              volume: 0.8,
+              loop: true,
+              playOnStart: true,
+            })
+          );
+        }
+        addConsoleLog("system", `Set scene background music track to "${assetId}".`);
+      } else if (selectedEntityId) {
+        const entity = draft.entities.find((e) => e.id === selectedEntityId);
+        if (entity) {
+          entity.components = entity.components.filter((c) => c.type !== "AudioSource");
+          entity.components.push(
+            GameKitComponentSchema.parse({
+              type: "AudioSource",
+              assetId,
+              volume: 1,
+              loop: false,
+              playOnStart: false,
+            })
+          );
+          addConsoleLog("system", `Attached sound "${assetId}" to entity "${entity.name}".`);
+        }
+      }
     });
   }
 
@@ -1978,6 +2096,47 @@ export function App() {
         keywords: ["assets", "drawer", "files"],
         icon: ic(<Folder size={14} strokeWidth={1.75} />),
         run: () => openContent("assets"),
+      },
+      {
+        id: "open-asset-studio",
+        label: "Open Asset Studio",
+        section: "Assets",
+        keywords: ["asset", "generate", "sprite", "sfx", "music", "character", "sound", "animation"],
+        icon: ic(<Wand2 size={14} strokeWidth={1.75} className="text-cyan-400" />),
+        shortcut: "Mod+Shift+G",
+        run: () => setAssetStudioOpen(true),
+      },
+      {
+        id: "gen-sprite",
+        label: "Generate Sprite / Prop",
+        section: "Assets",
+        keywords: ["sprite", "pixel", "prop", "item", "tile", "generate"],
+        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
+        run: () => setAssetStudioOpen(true),
+      },
+      {
+        id: "gen-animated-char",
+        label: "Generate Animated Character",
+        section: "Assets",
+        keywords: ["character", "animation", "spritesheet", "walk", "jump", "hero", "knight"],
+        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
+        run: () => setAssetStudioOpen(true),
+      },
+      {
+        id: "gen-sfx",
+        label: "Generate Sound Effect (SFX)",
+        section: "Assets",
+        keywords: ["sfx", "sound", "jump", "coin", "laser", "explosion", "hit", "audio"],
+        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
+        run: () => setAssetStudioOpen(true),
+      },
+      {
+        id: "gen-music",
+        label: "Generate Music Track (BGM)",
+        section: "Assets",
+        keywords: ["music", "bgm", "chiptune", "song", "theme", "audio", "soundtrack"],
+        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
+        run: () => setAssetStudioOpen(true),
       },
       {
         id: "nav-agent",
@@ -3078,6 +3237,7 @@ export function App() {
         onImport={importAsset}
         onAddEntity={addEntity}
         onOpenWizard={() => setWizardOpen(true)}
+        onOpenAssetStudio={() => setAssetStudioOpen(true)}
         onSettings={() => setAgentSettingsOpen(true)}
         onCloseProject={isTauri ? handleCloseProject : undefined}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
@@ -3371,6 +3531,7 @@ export function App() {
                 onSelectAsset={setSelectedAssetId}
                 onDeleteAsset={(id) => deleteAsset(id).catch(setError)}
                 onImport={(file) => importAsset(file).catch(setError)}
+                onOpenAssetStudio={() => setAssetStudioOpen(true)}
               />
             )}
             {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
@@ -3386,6 +3547,24 @@ export function App() {
           </div>
         </section>
       )}
+
+      <AssetStudioModal
+        isOpen={assetStudioOpen}
+        onClose={() => setAssetStudioOpen(false)}
+        onAssetCreated={async (asset) => {
+          // Asset Studio and Content share the same selection context. Keep the
+          // newly-created asset visible and selected after the project refresh.
+          setSelectedAssetId(asset.id);
+          setActiveBottomTab("assets");
+          setBottomDrawerCollapsed(false);
+          await refresh();
+        }}
+        onSpawnEntityWithSprite={handleSpawnEntityWithSprite}
+        onSpawnEntityWithAnimation={handleSpawnEntityWithAnimation}
+        onAttachAudioToEntity={handleAttachAudioToEntity}
+        selectedEntityId={selectedEntityId}
+        activeSceneId={currentSceneFile}
+      />
 
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard

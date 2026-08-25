@@ -1,5 +1,5 @@
 import type { GameKitAsset } from "@gamekit/schema";
-import { ImagePlus, Trash2, Search, Upload, FileImage } from "lucide-react";
+import { ImagePlus, Trash2, Search, Upload, FileImage, Sparkles, Volume2, Music, Type, Play, Pause } from "lucide-react";
 import { useRef, useState } from "react";
 import { getApiUrl } from "../lib/api.js";
 import { Button, Input, EmptyState, IconButton, Badge, cn } from "@/ui";
@@ -10,6 +10,7 @@ type AssetsPanelProps = {
   onSelectAsset: (id: string) => void;
   onDeleteAsset: (id: string) => void;
   onImport: (file: File) => void;
+  onOpenAssetStudio?: () => void;
 };
 
 export function AssetsPanel({
@@ -18,13 +19,35 @@ export function AssetsPanel({
   onSelectAsset,
   onDeleteAsset,
   onImport,
+  onOpenAssetStudio,
 }: AssetsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   const filteredAssets = assets.filter((asset) =>
     asset.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  function handlePlayAudio(asset: GameKitAsset, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (playingAudioId === asset.id) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      setPlayingAudioId(null);
+    } else {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      const sound = new Audio(getApiUrl(`/gamekit/assets/${asset.file}`));
+      audioPlayerRef.current = sound;
+      sound.onended = () => setPlayingAudioId(null);
+      sound.play().catch(() => setPlayingAudioId(null));
+      setPlayingAudioId(asset.id);
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
@@ -38,13 +61,25 @@ export function AssetsPanel({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button size="md" variant="solid" onClick={() => fileInputRef.current?.click()}>
+
+        {onOpenAssetStudio && (
+          <Button
+            size="md"
+            variant="solid"
+            onClick={onOpenAssetStudio}
+            className="bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-400 hover:to-violet-500 text-black font-semibold shadow-md shadow-cyan-500/20"
+          >
+            <Sparkles size={13} className="text-black" /> Studio
+          </Button>
+        )}
+
+        <Button size="md" variant="secondary" onClick={() => fileInputRef.current?.click()}>
           <Upload size={13} /> Import
         </Button>
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml,audio/wav,audio/mp3,audio/ogg"
           className="hidden"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
@@ -62,13 +97,17 @@ export function AssetsPanel({
             description={
               searchQuery
                 ? "No assets match this search."
-                : "Import PNG, JPG, WebP, or SVG assets."
+                : "Generate sprites, SFX, and music with Asset Studio or import files."
             }
           />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
             {filteredAssets.map((asset) => {
               const active = asset.id === selectedAssetId;
+              const isAudio = asset.kind === "audio" || asset.file.endsWith(".wav") || asset.file.endsWith(".mp3") || asset.file.endsWith(".ogg");
+              const isFont = asset.kind === "font" || asset.file.endsWith(".ttf") || asset.file.endsWith(".otf");
+              const isPlaying = playingAudioId === asset.id;
+
               return (
                 <div
                   key={asset.id}
@@ -89,24 +128,53 @@ export function AssetsPanel({
                   )}
                 >
                   <div className="relative flex aspect-square items-center justify-center bg-black/25">
-                    <img
-                      src={getApiUrl(`/gamekit/assets/${asset.file}`)}
-                      alt=""
-                      className="max-h-full max-w-full object-contain p-1"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        const fallback = e.currentTarget.parentElement?.querySelector(
-                          ".asset-fallback-icon"
-                        );
-                        if (fallback) (fallback as HTMLElement).style.display = "flex";
-                      }}
-                    />
-                    <div className="asset-fallback-icon absolute inset-0 hidden items-center justify-center text-text-muted">
-                      <FileImage size={22} />
-                    </div>
-                    <Badge variant="muted" className="absolute left-1 top-1">
-                      IMAGE
-                    </Badge>
+                    {isAudio ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 w-full h-full p-2">
+                        <div
+                          onClick={(e) => handlePlayAudio(asset, e)}
+                          className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer",
+                            isPlaying
+                              ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/30 scale-110"
+                              : "bg-white/[0.08] text-yellow-400 hover:bg-yellow-500/20 hover:scale-105"
+                          )}
+                          title={isPlaying ? "Pause Sound" : "Play Sound"}
+                        >
+                          {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                        </div>
+                        <Badge variant="muted" className="absolute left-1 top-1 text-[8px] bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                          AUDIO
+                        </Badge>
+                      </div>
+                    ) : isFont ? (
+                      <div className="flex flex-col items-center justify-center text-text-muted">
+                        <Type size={26} />
+                        <Badge variant="muted" className="absolute left-1 top-1 text-[8px]">
+                          FONT
+                        </Badge>
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={getApiUrl(`/gamekit/assets/${asset.file}`)}
+                          alt=""
+                          className="max-h-full max-w-full object-contain p-1 [image-rendering:pixelated]"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(
+                              ".asset-fallback-icon"
+                            );
+                            if (fallback) (fallback as HTMLElement).style.display = "flex";
+                          }}
+                        />
+                        <div className="asset-fallback-icon absolute inset-0 hidden items-center justify-center text-text-muted">
+                          <FileImage size={22} />
+                        </div>
+                        <Badge variant="muted" className="absolute left-1 top-1 text-[8px]">
+                          IMAGE
+                        </Badge>
+                      </>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 px-1.5 py-1">
                     <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-text-secondary">

@@ -481,6 +481,34 @@
           ]
         }
       ]
+    },
+    {
+      "id": "prop-knight-v3-hqr18h",
+      "name": "prop-knight-v3",
+      "components": [
+        {
+          "type": "Transform",
+          "position": {
+            "x": 351,
+            "y": 197
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "type": "Sprite",
+          "assetId": "prop-knight-v3",
+          "width": 32,
+          "height": 32,
+          "anchor": {
+            "x": 0.5,
+            "y": 0.5
+          }
+        }
+      ]
     }
   ],
   "responsive": {

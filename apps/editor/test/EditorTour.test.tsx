@@ -15,7 +15,7 @@ describe("EditorTour with GuideLoop", () => {
 
   it("defines 4 core workflow steps targeting editor elements", () => {
     expect(TOUR_STEPS.length).toBe(4);
-    expect(TOUR_STEPS.map((s) => s.target)).toEqual([
+    expect(TOUR_STEPS.map((s) => s.additionalTargets?.[0] ?? s.target)).toEqual([
       "#tour-canvas-stage",
       "#tour-topbar-play",
       "#tour-activity-rail",

@@ -83,6 +83,7 @@ type AppTabBarProps = {
   onImport: (file: File) => void;
   onAddEntity: () => void;
   onOpenWizard?: () => void;
+  onOpenAssetStudio?: () => void;
   onSettings: () => void;
   onCloseProject?: () => void;
   onOpenCommandPalette?: () => void;
@@ -166,6 +167,7 @@ export function AppTabBar({
   onImport,
   onAddEntity,
   onOpenWizard,
+  onOpenAssetStudio,
   onSettings,
   onCloseProject,
   onOpenCommandPalette,
@@ -478,6 +480,16 @@ export function AppTabBar({
             }}
             icon={<Upload size={16} strokeWidth={1.75} />}
           />
+          {onOpenAssetStudio && (
+            <TabItem
+              label="Asset Studio"
+              active={false}
+              compact
+              row
+              onClick={() => runAndClose(onOpenAssetStudio)}
+              icon={<Wand2 size={16} strokeWidth={1.75} className="text-cyan-400" />}
+            />
+          )}
           {onOpenWizard && (
             <TabItem
               label="Template"

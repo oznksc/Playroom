@@ -40,6 +40,7 @@ Prefabs: create_prefab, instantiate_prefab, list_prefabs, remove_prefab
 Recipes: list_recipes, describe_recipe, apply_recipe — ready-made effects, mechanics, scripts, animations, input packs
 Bulk: batch_apply_edit — atomic multi-entity edits
 Scenes: load_scene, get_active_scene, define_scene_transition
+Asset Gen: generate_sprite, generate_character_spritesheet, generate_sound_effect, generate_music_track, list_asset_generator_presets
 `.trim();
 
 export function buildSystemPrompt(ctx: PromptContext): string {
@@ -85,7 +86,8 @@ To apply a skill, call the apply_skill tool with its name.`);
   - scripts: destroy-on-trigger, play-sound-on-trigger, impulse-on-trigger, switch-scene-on-trigger, set-var-on-trigger
   - mechanics: collect-on-touch, hazard-on-contact, patrol-enemy, moving-platform, camera-follow-player, score-label
   - gestures/input: platformer-wasd-jump, topdown-wasd, swipe-jump-hint, virtual-joystick-move
-- Call describe_recipe when you need params. Entity recipes require entityId; scene recipes update inputMap.`);
+- Call describe_recipe when you need params. Entity recipes require entityId; scene recipes update inputMap.
+- When visuals or audio are missing, generate them on the fly: generate_sprite (tiles, props, items), generate_character_spritesheet (animated walk/idle/jump strips), generate_sound_effect (SFX audio), or generate_music_track (BGM loop).`);
 
   sections.push(`## Workspace
 Viewport: ${ctx.viewport.width}×${ctx.viewport.height} (${ctx.orientation})

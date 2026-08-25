@@ -13,6 +13,7 @@ import {
   PanelLeft,
   PanelRight,
   Sparkles,
+  Wand2,
   LayoutTemplate,
   HelpCircle,
 } from "lucide-react";
@@ -45,6 +46,7 @@ type TopbarProps = {
   onToggleSidebar: () => void;
   onToggleInspector: () => void;
   onOpenAgent?: () => void;
+  onOpenAssetStudio?: () => void;
   onOpenWizard?: () => void;
   onOpenTour?: () => void;
   formatLastSaved: () => string;
@@ -75,6 +77,7 @@ export function Topbar({
   onToggleSidebar,
   onToggleInspector,
   onOpenAgent,
+  onOpenAssetStudio,
   onOpenWizard,
   onOpenTour,
   formatLastSaved,
@@ -182,6 +185,11 @@ export function Topbar({
         >
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </IconButton>
+        {onOpenAssetStudio && (
+          <IconButton size="md" onClick={onOpenAssetStudio} title="Open Asset Studio (Sprites, Animations, SFX, Music)">
+            <Wand2 size={14} className="text-cyan-400" />
+          </IconButton>
+        )}
         {onOpenWizard && (
           <IconButton size="md" onClick={onOpenWizard} title="New scene from template">
             <LayoutTemplate size={14} />

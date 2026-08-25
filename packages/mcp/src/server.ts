@@ -3,6 +3,7 @@ import { FileIO } from "./utils/file-io.js";
 import { registerSceneTools } from "./tools/scenes.js";
 import { registerEntityTools } from "./tools/entities.js";
 import { registerAssetTools } from "./tools/assets.js";
+import { registerAssetGeneratorTools } from "./tools/asset-generator.js";
 import { registerProjectTools } from "./tools/project.js";
 import { registerSkillTools } from "./tools/skills.js";
 import { registerRecipeTools } from "./tools/recipes.js";
@@ -46,6 +47,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerSceneTools(server, fileIO);
   registerEntityTools(server, fileIO);
   registerAssetTools(server, fileIO);
+  registerAssetGeneratorTools(server, fileIO);
   registerProjectTools(server, fileIO);
   registerSkillTools(server, fileIO);
   registerRecipeTools(server, fileIO);

@@ -1,6 +1,17 @@
 import * as React from "react";
 import { cn } from "./cn";
 
+type TabsContextValue = {
+  value: string;
+  onValueChange?: (value: string) => void;
+};
+
+const TabsContext = React.createContext<TabsContextValue | null>(null);
+
+function useTabsContext() {
+  return React.useContext(TabsContext);
+}
+
 export type TabsProps = {
   value: string;
   onValueChange: (value: string) => void;
@@ -9,32 +20,20 @@ export type TabsProps = {
 };
 
 export function Tabs({ value, onValueChange, children, className }: TabsProps) {
+  const contextValue = React.useMemo(() => ({ value, onValueChange }), [value, onValueChange]);
   return (
-    <div className={cn("flex flex-col", className)} data-tabs-value={value}>
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) return child;
-        return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
-          __tabsValue: value,
-          __onTabsChange: onValueChange,
-        });
-      })}
-    </div>
+    <TabsContext.Provider value={contextValue}>
+      <div className={cn("flex flex-col", className)} data-tabs-value={value}>
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
 }
 
-export type TabsListProps = React.HTMLAttributes<HTMLDivElement> & {
-  __tabsValue?: string;
-  __onTabsChange?: (v: string) => void;
-};
+export type TabsListProps = React.HTMLAttributes<HTMLDivElement>;
 
 /** Segmented glass control — Apple tab strip */
-export function TabsList({
-  className,
-  children,
-  __tabsValue,
-  __onTabsChange,
-  ...props
-}: TabsListProps) {
+export function TabsList({ className, children, ...props }: TabsListProps) {
   return (
     <div
       role="tablist"
@@ -44,38 +43,35 @@ export function TabsList({
       )}
       {...props}
     >
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) return child;
-        return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
-          __tabsValue,
-          __onTabsChange,
-        });
-      })}
+      {children}
     </div>
   );
 }
 
 export type TabsTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   value: string;
-  __tabsValue?: string;
-  __onTabsChange?: (v: string) => void;
 };
 
 export function TabsTrigger({
   value,
   className,
   children,
-  __tabsValue,
-  __onTabsChange,
+  onClick,
   ...props
 }: TabsTriggerProps) {
-  const active = __tabsValue === value;
+  const ctx = useTabsContext();
+  const active = ctx?.value === value;
+
   return (
     <button
       type="button"
       role="tab"
       aria-selected={active}
-      onClick={() => __onTabsChange?.(value)}
+      data-state={active ? "active" : "inactive"}
+      onClick={(e) => {
+        onClick?.(e);
+        ctx?.onValueChange?.(value);
+      }}
       className={cn(
         "relative h-7 flex-1 rounded-[10px] px-3 text-[11px] font-semibold tracking-[-0.01em] transition-[color,background] duration-150",
         "text-[rgba(235,235,245,0.5)] hover:text-[rgba(245,245,247,0.85)]",
@@ -92,19 +88,17 @@ export function TabsTrigger({
 
 export type TabsContentProps = React.HTMLAttributes<HTMLDivElement> & {
   value: string;
-  __tabsValue?: string;
-  __onTabsChange?: (v: string) => void;
 };
 
 export function TabsContent({
   value,
   className,
   children,
-  __tabsValue,
-  __onTabsChange: _,
   ...props
 }: TabsContentProps) {
-  if (__tabsValue !== value) return null;
+  const ctx = useTabsContext();
+  if (ctx?.value !== value) return null;
+
   return (
     <div role="tabpanel" className={cn("min-h-0 flex-1", className)} {...props}>
       {children}

@@ -30,6 +30,22 @@ import { buildProject } from "./build.js";
 import { validateScene } from "@gamekit/schema";
 import { z } from "zod";
 import { handleAgentRoute } from "./agent/routes.js";
+import {
+  generateSprite,
+  generateCharacterSpritesheet,
+  synthesizeSfx,
+  synthesizeMusic,
+  SFX_PRESETS,
+  MUSIC_PRESETS,
+  PALETTES,
+  type SpriteCategory,
+  type PaletteName,
+  type SfxPreset,
+  type MusicPreset,
+  type MusicalKey,
+  type MusicalScale,
+  type AnimationAction,
+} from "./generators/index.js";
 
 export type EditorTlsOptions = {
   /** PEM contents or path to a certificate file. */
@@ -196,7 +212,8 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/scene" && request.method === "GET") {
-    const file = url.searchParams.get("file") ?? "main.scene.json";
+    const fileParam = url.searchParams.get("file")?.trim();
+    const file = fileParam || "main.scene.json";
     try {
       sendJson(response, 200, await readScene(options.root, file));
     } catch (error) {
@@ -208,7 +225,8 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/scene/meta" && request.method === "GET") {
-    const file = url.searchParams.get("file") ?? "main.scene.json";
+    const fileParam = url.searchParams.get("file")?.trim();
+    const file = fileParam || "main.scene.json";
     try {
       const mtimeMs = await getSceneMtime(options.root, file);
       sendJson(response, 200, { file, mtimeMs });
@@ -288,6 +306,147 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     }
     const asset = await importAssetBuffer(options.root, filename, await readBody(request));
     sendJson(response, 200, asset);
+    return;
+  }
+
+  if (url.pathname === "/api/assets/generator-presets" && request.method === "GET") {
+    sendJson(response, 200, {
+      sfxPresets: Object.keys(SFX_PRESETS),
+      musicPresets: Object.keys(MUSIC_PRESETS),
+      palettes: Object.keys(PALETTES),
+      spriteCategories: ["character", "enemy", "item", "tile", "prop", "icon"],
+      characterArchetypes: ["hero", "knight", "rogue", "wizard", "monster", "slime", "robot", "alien"],
+      animationActions: ["idle", "walk", "run", "jump", "attack", "hurt", "die"],
+      musicalScales: ["major", "minor", "pentatonic", "dorian", "blues", "harmonic_minor"],
+      musicalKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/assets/generate/sprite" && request.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(request)).toString("utf8") || "{}");
+      const sprite = generateSprite({
+        id: body.id,
+        category: body.category as SpriteCategory | undefined,
+        archetype: body.archetype,
+        palette: body.palette as PaletteName | undefined,
+        size: body.size,
+        prompt: body.prompt,
+      });
+      const fileName = `${sprite.id}.png`;
+      const asset = await importAssetBuffer(options.root, fileName, sprite.buffer);
+      sendJson(response, 200, {
+        asset,
+        dataUrl: sprite.dataUrl,
+        width: sprite.width,
+        height: sprite.height,
+        category: sprite.category,
+        palette: sprite.palette,
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Failed to generate sprite",
+      });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/assets/generate/spritesheet" && request.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(request)).toString("utf8") || "{}");
+      const sheet = generateCharacterSpritesheet({
+        id: body.id,
+        archetype: body.archetype,
+        animation: body.animation as AnimationAction | undefined,
+        frameCount: body.frameCount,
+        frameSize: body.frameSize,
+        fps: body.fps,
+        palette: body.palette as PaletteName | undefined,
+      });
+      const fileName = `${sheet.id}.png`;
+      const asset = await importAssetBuffer(options.root, fileName, sheet.buffer);
+      sendJson(response, 200, {
+        asset,
+        dataUrl: sheet.dataUrl,
+        frameWidth: sheet.frameWidth,
+        frameHeight: sheet.frameHeight,
+        totalFrames: sheet.totalFrames,
+        framesPerSecond: sheet.framesPerSecond,
+        sheetWidth: sheet.sheetWidth,
+        sheetHeight: sheet.sheetHeight,
+        animation: sheet.animation,
+        archetype: sheet.archetype,
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Failed to generate spritesheet",
+      });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/assets/generate/sfx" && request.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(request)).toString("utf8") || "{}");
+      const wavBuffer = synthesizeSfx({
+        preset: body.preset as SfxPreset | undefined,
+        waveType: body.waveType,
+        startFreq: body.startFreq,
+        endFreq: body.endFreq,
+        attack: body.attack,
+        decay: body.decay,
+        sustain: body.sustain,
+        release: body.release,
+        volume: body.volume,
+        vibratoSpeed: body.vibratoSpeed,
+        vibratoDepth: body.vibratoDepth,
+        dutyCycle: body.dutyCycle,
+        noiseMix: body.noiseMix,
+      });
+      const id = body.id || `sfx-${body.preset || "custom"}`;
+      const fileName = `${id}.wav`;
+      const asset = await importAssetBuffer(options.root, fileName, Buffer.from(wavBuffer));
+      sendJson(response, 200, {
+        asset,
+        preset: body.preset,
+        kind: "audio",
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Failed to synthesize SFX",
+      });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/assets/generate/music" && request.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(request)).toString("utf8") || "{}");
+      const wavBuffer = synthesizeMusic({
+        preset: body.preset as MusicPreset | undefined,
+        bpm: body.bpm,
+        durationSec: body.durationSec,
+        key: body.key as MusicalKey | undefined,
+        scale: body.scale as MusicalScale | undefined,
+        volume: body.volume,
+        leadWave: body.leadWave,
+        bassWave: body.bassWave,
+        hasDrums: body.hasDrums,
+      });
+      const id = body.id || `bgm-${body.preset || "theme"}`;
+      const fileName = `${id}.wav`;
+      const asset = await importAssetBuffer(options.root, fileName, Buffer.from(wavBuffer));
+      sendJson(response, 200, {
+        asset,
+        preset: body.preset,
+        kind: "audio",
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Failed to synthesize music track",
+      });
+    }
     return;
   }
 
