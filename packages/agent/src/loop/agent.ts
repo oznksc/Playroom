@@ -3,7 +3,7 @@ import type { ProviderAdapter, ProviderMessage, ToolCall } from "../providers/ty
 import type { McpClient } from "../mcp/client.js";
 import { listTools, toModelTools } from "../mcp/tools.js";
 import { callTool } from "../mcp/executor.js";
-import { MessageHistory } from "./history.js";
+import { MessageHistory, formatToolDigest, toPriorProviderMessages, type PriorTurn } from "./history.js";
 import { globalApprovalGate, type ApprovalGate, type ApprovalMode } from "./approval.js";
 import { buildSystemPrompt, type PromptContext } from "../system/prompt.js";
 import type { SseEvent } from "./streaming.js";
@@ -21,6 +21,10 @@ export type AgentInput = {
   signal: AbortSignal;
   /** Optional undo snapshot id created before the run. */
   sessionSnapshotId?: string;
+  /** Prior editor chat (not including the live user message). */
+  priorTurns?: PriorTurn[];
+  /** Compact prior tool-call statuses for this scene chat. */
+  priorTools?: Array<{ tool: string; status: string }>;
 };
 
 export type AgentDeps = {
@@ -55,6 +59,17 @@ export async function* runAgent(
     system += `\n\n## Session Safety\nAn undo snapshot was created before this run: \`${input.sessionSnapshotId}\`. You can call restore_snapshot with this id if the user wants to roll back.`;
   }
   history.append({ role: "system", content: system });
+  for (const prior of toPriorProviderMessages(input.priorTurns)) {
+    history.append(prior);
+  }
+  const digest = formatToolDigest(input.priorTools);
+  if (digest) {
+    history.append({ role: "user", content: digest });
+    history.append({
+      role: "assistant",
+      content: "Understood. I will use those prior results and continue from the current scene state.",
+    });
+  }
   let userContent = input.message;
   if (input.screenshot) {
     userContent = `${input.message}

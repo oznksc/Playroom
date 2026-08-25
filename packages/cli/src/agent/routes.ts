@@ -19,6 +19,7 @@ import {
   callTool,
   type ApprovalMode,
   type PromptContext,
+  type PriorTurn,
 } from "@gamekit/agent";
 import { readScene, getGameKitRoot } from "../project.js";
 import { beginSse, writeSse, endSse } from "./sse.js";
@@ -138,6 +139,8 @@ export async function handleAgentRoute(
       provider: string;
       approvalMode: ApprovalMode;
       planMode?: boolean;
+      history?: PriorTurn[];
+      toolCalls?: Array<{ tool: string; status: string }>;
     };
 
     if (!body?.sceneId || !body?.message) {
@@ -246,6 +249,8 @@ export async function handleAgentRoute(
           planMode: body.planMode === true || body.approvalMode === "plan",
           sessionSnapshotId,
           sceneContext,
+          priorTurns: body.history,
+          priorTools: body.toolCalls,
           signal: abortController.signal,
         },
         { provider, mcpClient, approvalGate: globalApprovalGate },
@@ -432,16 +437,38 @@ function extractSnapshotId(content: unknown): string | undefined {
 }
 
 function summarizeScene(scene: Record<string, unknown>): string {
-  const entities = (scene.entities ?? []) as Array<{ name: string; components: Array<{ type: string }> }>;
-  const lines = [`Scene: ${scene.name ?? "untitled"}`, `Entities: ${entities.length}`];
-
-  for (const e of entities.slice(0, 20)) {
-    const comps = e.components.map((c) => c.type).join(", ");
-    lines.push(`  - ${e.name} [${comps}]`);
+  const entities = (scene.entities ?? []) as Array<{
+    id?: string;
+    name: string;
+    tags?: string[];
+    components: Array<{ type: string; position?: { x: number; y: number } }>;
+  }>;
+  const viewport = scene.viewport as { width?: number; height?: number; background?: string } | undefined;
+  const gravity = scene.gravity as { x?: number; y?: number } | undefined;
+  const lines = [
+    `Scene: ${scene.name ?? "untitled"} (${scene.id ?? "?"})`,
+    `Entities: ${entities.length}`,
+  ];
+  if (viewport?.width && viewport.height) {
+    lines.push(`Viewport: ${viewport.width}×${viewport.height} bg=${viewport.background ?? "?"}`);
+  }
+  if (gravity) {
+    lines.push(`Gravity: (${gravity.x}, ${gravity.y})`);
   }
 
-  if (entities.length > 20) {
-    lines.push(`  ... and ${entities.length - 20} more`);
+  for (const e of entities.slice(0, 24)) {
+    const comps = e.components.map((c) => c.type).join(", ");
+    const transform = e.components.find((c) => c.type === "Transform");
+    const pos =
+      transform?.position && typeof transform.position.x === "number"
+        ? ` @ (${Math.round(transform.position.x)}, ${Math.round(transform.position.y)})`
+        : "";
+    const tags = e.tags && e.tags.length > 0 ? ` tags=${e.tags.join(",")}` : "";
+    lines.push(`  - ${e.name} id=${e.id ?? "?"}${pos}${tags} [${comps}]`);
+  }
+
+  if (entities.length > 24) {
+    lines.push(`  ... and ${entities.length - 24} more`);
   }
 
   return lines.join("\n");

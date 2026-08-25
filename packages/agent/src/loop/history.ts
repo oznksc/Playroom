@@ -56,6 +56,44 @@ export class MessageHistory {
   }
 }
 
+export type PriorTurn = {
+  role: string;
+  content: string;
+};
+
+const MAX_PRIOR_TURNS = 24;
+const MAX_TURN_CHARS = 1500;
+
+/**
+ * Convert persisted editor chat into provider messages (excludes the live user turn).
+ * System notes are folded into user messages so providers keep a single system prompt.
+ */
+export function toPriorProviderMessages(items: PriorTurn[] | undefined): ProviderMessage[] {
+  if (!items || items.length === 0) return [];
+  const out: ProviderMessage[] = [];
+  for (const item of items) {
+    const content = truncate((item.content ?? "").trim(), MAX_TURN_CHARS);
+    if (!content) continue;
+    if (item.role === "user") {
+      out.push({ role: "user", content });
+    } else if (item.role === "agent" || item.role === "assistant") {
+      out.push({ role: "assistant", content });
+    } else if (item.role === "system") {
+      out.push({ role: "user", content: `[note] ${content}` });
+    }
+  }
+  return out.slice(-MAX_PRIOR_TURNS);
+}
+
+export function formatToolDigest(
+  calls: Array<{ tool: string; status: string }> | undefined,
+): string | undefined {
+  if (!calls || calls.length === 0) return undefined;
+  const recent = calls.slice(-16);
+  const lines = recent.map((c) => `- ${c.tool}: ${c.status}`);
+  return `[Previous tool results in this chat]\n${lines.join("\n")}`;
+}
+
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen) + "...";

@@ -250,14 +250,15 @@ Ordered for product impact, not exhaustive:
 - [x] `@gamekit/agent` ReAct loop + provider adapters (Anthropic-first; more providers partial)
 - [x] Editor BYOK keys + chat SSE + approval modes
 - [x] Skill/recipe injection into agent context
+- [x] MCP authoring coverage for editor panels (query/layout/compose/inspector/timeline) + per-stage tool glyphs
+- [x] Plan-then-execute (`Plan first`, `/plan`, `/execute`) with multi-turn chat history
+- [x] Auto undo snapshot per agent session (`snapshot_undo_point` + Undo session)
+- [x] `/screenshot` → vision model loop
+- [x] BYOK: OS keychain on Tauri, passphrase-encrypted localStorage in the browser
 
 ### Open
 
-- [ ] Plan-then-execute mode with user confirmation  
-- [ ] Auto undo snapshot per agent session  
-- [ ] `/screenshot` → vision model loop  
-- [ ] Tool audit log + idempotency keys for LLM retries  
-- [ ] Stronghold/keychain storage for Tauri  
+- [ ] Tool audit log + idempotency keys for LLM retries
 
 ---
 

@@ -184,6 +184,8 @@ export function useAgent(
           provider,
           approvalMode,
           planMode: planMode || approvalMode === "plan",
+          history: messagesRef.current.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+          toolCalls: toolCallsRef.current.map((t) => ({ tool: t.tool, status: t.status })),
         }),
         signal: abortRef.current.signal,
       });

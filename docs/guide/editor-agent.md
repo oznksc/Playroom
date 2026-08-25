@@ -24,7 +24,9 @@ Add a **Tilemap** component, select paint/erase tools, use the bottom palette (t
    - **Browser:** encrypted with a passphrase in localStorage
 3. Chat or use slash commands: `/plan`, `/execute`, `/screenshot`, `/help`
 
-Destructive tools require approval (default: destructive-only).
+The agent receives prior turns in this scene (so `/execute` can run a plan) plus a scene summary with entity ids and positions. Destructive tools require approval (default: destructive-only).
+
+Prefer describing the whole level to the agent; use the canvas afterward for pixel nudges without extra tokens.
 
 ## Hot-reload
 
