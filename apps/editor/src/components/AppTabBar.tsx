@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
+import type { CanvasTool } from "../lib/editor-tools.js";
+export type { CanvasTool } from "../lib/editor-tools.js";
 
 /** Left workspace destinations (shown on tab bar). */
 export type TabBarDestination =
@@ -52,7 +54,6 @@ export type TabBarDestination =
   | "content"
   | "agent"
   | "world";
-export type CanvasTool = "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit";
 
 type AppTabBarProps = {
   active: TabBarDestination | null;

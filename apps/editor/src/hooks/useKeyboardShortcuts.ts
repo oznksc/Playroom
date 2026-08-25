@@ -2,6 +2,7 @@ import type { GameKitScene, TransformComponent } from "@gamekit/schema";
 import { useEffect } from "react";
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
 import { findComponent } from "../lib/components.js";
+import type { CanvasTool, TilePaintMode } from "../lib/editor-tools.js";
 
 type UseKeyboardShortcutsParams = {
   /** Ref tracking whether the command palette is open (event suppressor). */
@@ -26,7 +27,10 @@ type UseKeyboardShortcutsParams = {
   sceneRef: MutableRefObject<GameKitScene | null | undefined>;
 
   /** Set active canvas tool. */
-  setActiveTool: Dispatch<SetStateAction<"select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit">>;
+  setActiveTool: Dispatch<SetStateAction<CanvasTool>>;
+  setTilePaintMode?: Dispatch<SetStateAction<TilePaintMode>>;
+  setBrushSize?: Dispatch<SetStateAction<number>>;
+  onToggleProfiler?: () => void;
 
   /** Currently selected entity IDs (ref to avoid stale closure). */
   selectedEntityIdsRef: MutableRefObject<Set<string>>;
@@ -80,6 +84,9 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
     saveScene,
     sceneRef,
     setActiveTool,
+    setTilePaintMode,
+    setBrushSize,
+    onToggleProfiler,
     selectedEntityIdsRef,
     setIsDirty,
     triggerAutoSave,
@@ -162,6 +169,45 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         if (event.key === "e" || event.key === "E") { setActiveTool("rotate"); return; }
         if (event.key === "r" || event.key === "R") { setActiveTool("scale"); return; }
         if (event.key === "p" || event.key === "P") { setActiveTool("polygon-edit"); return; }
+        if (event.key === "b" || event.key === "B") {
+          setActiveTool("paint");
+          setTilePaintMode?.("brush");
+          return;
+        }
+        if (event.key === "x" || event.key === "X") {
+          setActiveTool("erase");
+          setTilePaintMode?.("erase");
+          return;
+        }
+        if (event.key === "g" || event.key === "G") {
+          setActiveTool("paint");
+          setTilePaintMode?.("fill");
+          return;
+        }
+        if (event.key === "t" || event.key === "T") {
+          setActiveTool("paint");
+          setTilePaintMode?.("rect");
+          return;
+        }
+        if (event.key === "i" || event.key === "I") {
+          setActiveTool("paint");
+          setTilePaintMode?.("eyedropper");
+          return;
+        }
+        if (event.key === "[" ) {
+          setBrushSize?.((n) => Math.max(1, n - 1));
+          return;
+        }
+        if (event.key === "]" ) {
+          setBrushSize?.((n) => Math.min(3, n + 1));
+          return;
+        }
+      }
+
+      if (!isInput && event.key === "`" && onToggleProfiler) {
+        event.preventDefault();
+        onToggleProfiler();
+        return;
       }
 
       // Delete / backspace
@@ -282,6 +328,9 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
     saveScene,
     sceneRef,
     setActiveTool,
+    setTilePaintMode,
+    setBrushSize,
+    onToggleProfiler,
     selectedEntityIdsRef,
     setIsDirty,
     triggerAutoSave,

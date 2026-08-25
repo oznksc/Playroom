@@ -38,6 +38,8 @@ import {
   FileText,
   Command,
   Route,
+  Columns2,
+  Activity,
 } from "lucide-react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
@@ -47,6 +49,25 @@ import { Sidebar } from "./components/Sidebar.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
 import { SceneCanvas } from "./components/SceneCanvas.js";
 import { PlayRuntimeHost } from "./components/PlayRuntimeHost.js";
+import { TilePalette } from "./components/TilePalette.js";
+import { ProfilerOverlay } from "./components/ProfilerOverlay.js";
+import { SceneTabBar } from "./components/SceneTabBar.js";
+import { useImageCache } from "./hooks/useImageCache.js";
+import type { CanvasTool, TilePaintMode } from "./lib/editor-tools.js";
+import { isTilePaintTool } from "./lib/editor-tools.js";
+import {
+  closeSceneTab,
+  createSceneWorkspace,
+  focusedSceneFile,
+  focusScenePane,
+  openSceneTab,
+  setSceneSplit,
+  syncWorkspaceScenes,
+  type ScenePaneId,
+  type SceneWorkspaceState,
+  type SplitMode,
+} from "./lib/scene-workspace.js";
+import { EMPTY_PROFILER_SAMPLE, type PlayProfilerSample } from "./lib/play-profiler.js";
 import { Inspector } from "./components/Inspector.js";
 import { ScenePanel } from "./components/ScenePanel.js";
 import { LevelPanel } from "./components/LevelPanel.js";
@@ -180,10 +201,20 @@ export function App() {
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
     []
   );
-  const [activeTool, setActiveTool] = useState<"select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit">("translate");
+  const [activeTool, setActiveTool] = useState<CanvasTool>("translate");
   const [paintTileId, setPaintTileId] = useState(1);
+  const [tilePaintMode, setTilePaintMode] = useState<TilePaintMode>("brush");
+  const [brushSize, setBrushSize] = useState(1);
   const [playFps, setPlayFps] = useState(0);
   const [playFrameMs, setPlayFrameMs] = useState(0);
+  const [playDrawCalls, setPlayDrawCalls] = useState(0);
+  const [profilerSample, setProfilerSample] = useState<PlayProfilerSample>(EMPTY_PROFILER_SAMPLE);
+  const [profilerOpen, setProfilerOpen] = useState(false);
+  const [workspace, setWorkspace] = useState<SceneWorkspaceState>(() => createSceneWorkspace(""));
+  const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(() => new Set());
+  const [paneScenes, setPaneScenes] = useState<Record<string, GameKitScene>>({});
+  const sceneCacheRef = useRef<Map<string, GameKitScene>>(new Map());
+  const skipNextSceneLoadRef = useRef(false);
   /**
    * Play-mode game camera (world top-left of the locked screen).
    * Scrolls only inside the design viewport frame — never the editor workspace pan.
@@ -209,6 +240,7 @@ export function App() {
   const [agentExpanded, setAgentExpanded] = useState(
     () => localStorage.getItem("gamekit:agent:expanded") === "1",
   );
+  const paletteImages = useImageCache(snapshot.assets);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
@@ -421,8 +453,36 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (scene && currentSceneFile) {
+      sceneCacheRef.current.set(currentSceneFile, scene);
+      setPaneScenes((prev) =>
+        prev[currentSceneFile] === scene ? prev : { ...prev, [currentSceneFile]: scene },
+      );
+    }
+  }, [scene, currentSceneFile]);
+
+  useEffect(() => {
+    if (!currentSceneFile) return;
+    setWorkspace((ws) => {
+      const next = ws.openTabs.length === 0 ? createSceneWorkspace(currentSceneFile) : openSceneTab(ws, currentSceneFile);
+      return next.paneA === ws.paneA && next.openTabs.join() === ws.openTabs.join() && next.focused === ws.focused
+        ? ws
+        : next;
+    });
+  }, [currentSceneFile]);
+
+  useEffect(() => {
+    if (snapshot.scenes.length === 0) return;
+    setWorkspace((ws) => syncWorkspaceScenes(ws, snapshot.scenes, currentSceneFile || snapshot.scenes[0]));
+  }, [snapshot.scenes, currentSceneFile]);
+
+  useEffect(() => {
     if (isTauri && !projectPath) return;
     if (!currentSceneFile) return;
+    if (skipNextSceneLoadRef.current) {
+      skipNextSceneLoadRef.current = false;
+      return;
+    }
 
     let cancelled = false;
     fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(currentSceneFile)}`))
@@ -467,6 +527,9 @@ export function App() {
     saveScene,
     sceneRef,
     setActiveTool,
+    setTilePaintMode,
+    setBrushSize,
+    onToggleProfiler: () => setProfilerOpen((open) => !open),
     selectedEntityIdsRef,
     setIsDirty,
     triggerAutoSave,
@@ -519,6 +582,31 @@ export function App() {
   useEffect(() => {
     sceneMtimeRef.current = null;
   }, [currentSceneFile]);
+
+  useEffect(() => {
+    const other =
+      workspace.split === "none"
+        ? null
+        : workspace.focused === "b"
+          ? workspace.paneA
+          : workspace.paneB;
+    if (!other || sceneCacheRef.current.has(other) || paneScenes[other]) return;
+    let cancelled = false;
+    fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(other)}`))
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (cancelled) return;
+        const parsed = parseScene(data);
+        sceneCacheRef.current.set(other, parsed);
+        setPaneScenes((prev) => ({ ...prev, [other]: parsed }));
+      })
+      .catch(() => {
+        /* secondary pane can stay empty until fetch succeeds */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace.split, workspace.paneA, workspace.paneB, workspace.focused, paneScenes]);
 
   // Legacy canvas physics loop (kept as fallback when Phaser host is disabled)
   useEffect(() => {
@@ -921,6 +1009,14 @@ export function App() {
       }
       setSaveState("saved");
       setIsDirty(false);
+      if (currentSceneFile) {
+        setDirtyFiles((prev) => {
+          if (!prev.has(currentSceneFile)) return prev;
+          const next = new Set(prev);
+          next.delete(currentSceneFile);
+          return next;
+        });
+      }
       setLastSaved(new Date());
       setStatus("Saved");
       setTimeout(() => setSaveState("idle"), 2000);
@@ -961,7 +1057,51 @@ export function App() {
       if (draft) mutator(draft);
     });
     setIsDirty(true);
+    if (currentSceneFile) {
+      setDirtyFiles((prev) => {
+        if (prev.has(currentSceneFile)) return prev;
+        const next = new Set(prev);
+        next.add(currentSceneFile);
+        return next;
+      });
+    }
     triggerAutoSave();
+  }
+
+  function activateScene(file: string, pane?: ScenePaneId) {
+    if (!file) return;
+    if (scene && currentSceneFile && currentSceneFile !== file) {
+      sceneCacheRef.current.set(currentSceneFile, structuredClone(scene));
+      setPaneScenes((prev) => ({ ...prev, [currentSceneFile]: scene }));
+    }
+    setWorkspace((ws) => {
+      const opened = openSceneTab(ws, file);
+      return pane ? focusScenePane(opened, pane) : opened;
+    });
+    if (file === currentSceneFile) return;
+    const cached = sceneCacheRef.current.get(file);
+    if (cached) {
+      skipNextSceneLoadRef.current = true;
+      reset(cached);
+      setSelectedEntityIds(new Set());
+      setSelectedGuiNodeId(null);
+      setSelectedComponentInstanceId(null);
+      setIsDirty(dirtyFiles.has(file));
+      setCurrentSceneFile(file);
+      return;
+    }
+    setCurrentSceneFile(file);
+  }
+
+  function handleCloseSceneTab(file: string) {
+    const next = closeSceneTab(workspace, file);
+    setWorkspace(next);
+    const focused = focusedSceneFile(next);
+    if (focused && focused !== currentSceneFile) activateScene(focused, next.focused);
+  }
+
+  function handleSplitChange(split: SplitMode) {
+    setWorkspace((ws) => setSceneSplit(ws, split, snapshot.scenes));
   }
 
   function addEntity() {
@@ -1067,6 +1207,7 @@ export function App() {
     fetch(getApiUrl(`/api/scene?file=${sceneId}`), { method: "DELETE" }).then(() => {
       const remaining = snapshot.scenes.filter((s) => s !== sceneId);
       setSnapshot((prev) => ({ ...prev, scenes: remaining }));
+      setWorkspace((ws) => closeSceneTab(ws, sceneId));
       if (currentSceneFile === sceneId) setCurrentSceneFile(remaining[0]);
       refresh();
       addConsoleLog("system", `Deleted scene configuration file ${sceneId}`);
@@ -1958,16 +2099,64 @@ export function App() {
         id: "tool-paint",
         label: "Paint tool",
         section: "Tools",
+        shortcut: "B",
         keywords: ["tile", "brush"],
         icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("paint"),
+        run: () => {
+          setActiveTool("paint");
+          setTilePaintMode("brush");
+        },
       },
       {
         id: "tool-erase",
         label: "Erase tool",
         section: "Tools",
+        shortcut: "X",
         icon: ic(<Eraser size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("erase"),
+        run: () => {
+          setActiveTool("erase");
+          setTilePaintMode("erase");
+        },
+      },
+      {
+        id: "tool-fill",
+        label: "Fill tiles",
+        section: "Tools",
+        shortcut: "G",
+        keywords: ["bucket", "flood"],
+        icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
+        run: () => {
+          setActiveTool("paint");
+          setTilePaintMode("fill");
+        },
+      },
+      {
+        id: "tool-rect",
+        label: "Rect paint",
+        section: "Tools",
+        shortcut: "T",
+        icon: ic(<Maximize size={14} strokeWidth={1.75} />),
+        run: () => {
+          setActiveTool("paint");
+          setTilePaintMode("rect");
+        },
+      },
+      {
+        id: "view-split-h",
+        label: workspace.split === "horizontal" ? "Close split view" : "Split scenes left/right",
+        section: "View",
+        keywords: ["pane", "tabs"],
+        icon: ic(<Columns2 size={14} strokeWidth={1.75} />),
+        run: () => handleSplitChange(workspace.split === "horizontal" ? "none" : "horizontal"),
+      },
+      {
+        id: "view-profiler",
+        label: profilerOpen ? "Hide profiler" : "Show profiler",
+        section: "View",
+        shortcut: "`",
+        keywords: ["fps", "draw", "calls"],
+        icon: ic(<Activity size={14} strokeWidth={1.75} />),
+        run: () => setProfilerOpen((open) => !open),
       },
       {
         id: "tool-polygon-edit",
@@ -2142,7 +2331,7 @@ export function App() {
         section: "Scenes",
         keywords: ["goto", "switch", sceneFile],
         icon: ic(<FileText size={14} strokeWidth={1.75} />),
-        run: () => setCurrentSceneFile(sceneFile),
+        run: () => activateScene(sceneFile),
       });
     }
 
@@ -2191,6 +2380,8 @@ export function App() {
     selectedEntity,
     currentSceneFile,
     saveEntityAsPrefab,
+    workspace.split,
+    profilerOpen,
   ]);
 
   if (isTauri && !projectPath) {
@@ -2291,10 +2482,32 @@ export function App() {
     >
       {/* Full-bleed canvas — primary focus */}
       <div className="canvas-stage relative">
+        <SceneTabBar
+          workspace={workspace.openTabs.length ? workspace : createSceneWorkspace(currentSceneFile)}
+          dirtyFiles={dirtyFiles}
+          scenes={snapshot.scenes}
+          onSelectTab={(file) => activateScene(file)}
+          onCloseTab={handleCloseSceneTab}
+          onSplitChange={handleSplitChange}
+        />
+        <div
+          className={`scene-panes${workspace.split === "horizontal" ? " split-h" : ""}${workspace.split === "vertical" ? " split-v" : ""}`}
+        >
+          <div
+            className={`scene-pane${workspace.split === "none" || workspace.focused === "a" ? " focused" : ""}`}
+            data-testid="scene-pane-a"
+            onPointerDownCapture={() => {
+              if (workspace.split !== "none" && workspace.focused !== "a") activateScene(workspace.paneA, "a");
+            }}
+          >
         <SceneCanvas
-          scene={scene}
+          scene={
+            workspace.split !== "none" && workspace.focused !== "a"
+              ? paneScenes[workspace.paneA] ?? scene
+              : scene
+          }
           assets={snapshot.assets}
-          selectedEntityIds={selectedEntityIds}
+          selectedEntityIds={workspace.split !== "none" && workspace.focused !== "a" ? new Set() : selectedEntityIds}
           selectedGuiNodeId={selectedGuiNodeId}
           guiComponents={snapshot.guiComponents}
           selectedComponentInstanceId={selectedComponentInstanceId}
@@ -2303,10 +2516,12 @@ export function App() {
           snap={snap}
           hasClipboard={clipboardRef.current !== null}
           activeTool={activeTool}
+          tilePaintMode={tilePaintMode}
+          brushSize={brushSize}
           showGrid={showGrid}
           showColliders={showColliders}
           snapSize={snapSize}
-          isPlaying={isPlaying}
+          isPlaying={isPlaying && (workspace.split === "none" || workspace.focused === "a")}
           playViewPan={playViewPan}
           paintTileId={paintTileId}
           viewResetKey={viewResetKey}
@@ -2364,17 +2579,25 @@ export function App() {
           onActiveToolChange={setActiveTool}
           onToggleGrid={setShowGrid}
           onToggleColliders={setShowColliders}
-          onPaintTile={(entityId, gridX, gridY, tileId) => {
+          onPaintTiles={(entityId, tiles) => {
+            if (workspace.split !== "none" && workspace.focused !== "a") return;
             updateScene((draft) => {
               const entity = draft.entities.find((e) => e.id === entityId);
               if (!entity) return;
               const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
               if (!tm) return;
-              const idx = gridY * tm.gridWidth + gridX;
-              if (idx < 0 || idx >= tm.tiles.length) return;
-              if (tm.tiles[idx] === tileId) return;
-              tm.tiles[idx] = tileId;
+              tm.tiles = tiles;
             });
+          }}
+          onSampleTile={(tileId) => {
+            setPaintTileId(tileId);
+            if (tileId === 0) {
+              setActiveTool("erase");
+              setTilePaintMode("erase");
+            } else {
+              setActiveTool("paint");
+              if (tilePaintMode === "erase") setTilePaintMode("brush");
+            }
           }}
           onSelect={(id, shift) => {
             setSelectedGuiNodeId(null);
@@ -2451,7 +2674,7 @@ export function App() {
           onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
         />
 
-        {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && (
+        {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && (workspace.split === "none" || workspace.focused === "a") && (
           <PlayRuntimeHost
             remountKey={playHostKey}
             scene={playHostScene}
@@ -2534,9 +2757,11 @@ export function App() {
               // Phaser scene already evaluates Script handlers; log for editor console.
               addConsoleLog("system", `GUI action: ${action}`);
             }}
-            onMetrics={(fps, frameMs) => {
-              setPlayFps(fps);
-              setPlayFrameMs(frameMs);
+            onMetrics={(sample) => {
+              setPlayFps(sample.fps);
+              setPlayFrameMs(sample.frameMs);
+              setPlayDrawCalls(sample.drawCalls);
+              setProfilerSample(sample);
             }}
           />
         )}
@@ -2582,30 +2807,168 @@ export function App() {
           </div>
         )}
 
-        {(activeTool === "paint" || activeTool === "erase") && (
-          <div className="tile-palette" role="toolbar" aria-label="Tile palette">
-            <span className="tile-palette-label">
-              {activeTool === "erase" ? "Erase" : "Brush"} · tile
-            </span>
-            <div className="tile-palette-swatches">
-              {Array.from({ length: 16 }, (_, i) => i).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`tile-swatch${paintTileId === id && activeTool === "paint" ? " active" : ""}${id === 0 ? " empty" : ""}`}
-                  onClick={() => {
-                    setPaintTileId(id);
-                    if (id === 0) setActiveTool("erase");
-                    else setActiveTool("paint");
-                  }}
-                  title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
-                >
-                  {id === 0 ? "·" : id}
-                </button>
-              ))}
-            </div>
           </div>
+          {workspace.split !== "none" && workspace.paneB && (
+            <div
+              className={`scene-pane${workspace.focused === "b" ? " focused" : ""}`}
+              data-testid="scene-pane-b"
+              onPointerDownCapture={() => {
+                if (workspace.focused !== "b") activateScene(workspace.paneB!, "b");
+              }}
+            >
+              <SceneCanvas
+                scene={
+                  workspace.focused === "b"
+                    ? scene
+                    : paneScenes[workspace.paneB]
+                }
+                assets={snapshot.assets}
+                selectedEntityIds={workspace.focused === "b" ? selectedEntityIds : new Set()}
+                selectedGuiNodeId={workspace.focused === "b" ? selectedGuiNodeId : null}
+                guiComponents={snapshot.guiComponents}
+                selectedComponentInstanceId={workspace.focused === "b" ? selectedComponentInstanceId : null}
+                showGuiTools={MVP_SHOW_GUI_TOOLS}
+                zoom={zoom}
+                snap={snap}
+                hasClipboard={clipboardRef.current !== null}
+                activeTool={activeTool}
+                tilePaintMode={tilePaintMode}
+                brushSize={brushSize}
+                showGrid={showGrid}
+                showColliders={showColliders}
+                snapSize={snapSize}
+                isPlaying={isPlaying && workspace.focused === "b"}
+                playViewPan={playViewPan}
+                paintTileId={paintTileId}
+                viewResetKey={viewResetKey}
+                onZoomChange={setZoom}
+                onSnapToggle={setSnap}
+                onSnapSizeChange={setSnapSize}
+                onActiveToolChange={setActiveTool}
+                onToggleGrid={setShowGrid}
+                onToggleColliders={setShowColliders}
+                onPaintTiles={(entityId, tiles) => {
+                  if (workspace.focused !== "b") return;
+                  updateScene((draft) => {
+                    const entity = draft.entities.find((e) => e.id === entityId);
+                    if (!entity) return;
+                    const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
+                    if (!tm) return;
+                    tm.tiles = tiles;
+                  });
+                }}
+                onSampleTile={(tileId) => {
+                  setPaintTileId(tileId);
+                  if (tileId === 0) {
+                    setActiveTool("erase");
+                    setTilePaintMode("erase");
+                  } else {
+                    setActiveTool("paint");
+                    if (tilePaintMode === "erase") setTilePaintMode("brush");
+                  }
+                }}
+                onSelect={(id, shift) => {
+                  if (workspace.focused !== "b") return;
+                  setSelectedGuiNodeId(null);
+                  setSelectedComponentInstanceId(null);
+                  if (!id) {
+                    setSelectedEntityIds(new Set());
+                    return;
+                  }
+                  setSelectedEntityIds((prev) => {
+                    const next = new Set(shift ? prev : undefined);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  });
+                }}
+                onSelectGuiNode={(id) => {
+                  setSelectedEntityIds(new Set());
+                  setSelectedComponentInstanceId(null);
+                  setSelectedGuiNodeId(id);
+                }}
+                onSelectComponentInstance={(id) => {
+                  setSelectedEntityIds(new Set());
+                  setSelectedGuiNodeId(null);
+                  setSelectedComponentInstanceId(id);
+                }}
+                onTransform={(id, updates) => {
+                  if (workspace.focused !== "b") return;
+                  push((draft) => {
+                    if (!draft) return;
+                    const entity = draft.entities.find((candidate) => candidate.id === id);
+                    const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
+                    if (transform) {
+                      if (updates.position) transform.position = updates.position;
+                      if (updates.rotation !== undefined) transform.rotation = updates.rotation;
+                      if (updates.scale) transform.scale = updates.scale;
+                    }
+                  });
+                  setIsDirty(true);
+                  triggerAutoSave();
+                }}
+                onAddEntity={addEntity}
+                onPasteEntity={() => {
+                  const entity = clipboardRef.current;
+                  if (entity) pasteEntity(entity);
+                }}
+                onSelectAll={() => {
+                  if (!scene) return;
+                  setSelectedEntityIds(new Set(scene.entities.map((e) => e.id)));
+                }}
+                onCopyEntity={(id) => {
+                  const entity = scene?.entities.find((e) => e.id === id);
+                  if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
+                }}
+                onCutEntity={(id) => {
+                  const entity = scene?.entities.find((e) => e.id === id);
+                  if (entity) {
+                    clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
+                    deleteEntity(id);
+                  }
+                }}
+                onDuplicateEntity={(id) => duplicateEntity(id)}
+                onDeleteEntity={(id) => deleteEntity(id)}
+                onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
+              />
+              {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && workspace.focused === "b" && (
+                <PlayRuntimeHost
+                  remountKey={playHostKey}
+                  scene={playHostScene}
+                  assetUrls={playAssetUrls}
+                  guiComponents={snapshot.guiComponents}
+                  level={playHostLevel}
+                  paused={isPaused || playOutcome !== null}
+                  onMetrics={(sample) => {
+                    setPlayFps(sample.fps);
+                    setPlayFrameMs(sample.frameMs);
+                    setPlayDrawCalls(sample.drawCalls);
+                    setProfilerSample(sample);
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {isTilePaintTool(activeTool) && (
+          <TilePalette
+            scene={scene}
+            assets={snapshot.assets}
+            images={paletteImages}
+            selectedEntityIds={selectedEntityIds}
+            paintTileId={paintTileId}
+            paintMode={activeTool === "erase" ? "erase" : tilePaintMode}
+            brushSize={brushSize}
+            onPaintTileIdChange={setPaintTileId}
+            onPaintModeChange={(mode) => {
+              setTilePaintMode(mode);
+              setActiveTool(mode === "erase" ? "erase" : "paint");
+            }}
+            onBrushSizeChange={setBrushSize}
+          />
         )}
+        {isPlaying && profilerOpen && <ProfilerOverlay sample={profilerSample} open={profilerOpen} />}
       </div>
 
       {/* Bottom-left logo, tab-bar level — every action is on the tab bar */}
@@ -2617,8 +2980,11 @@ export function App() {
         playFps={playFps}
         playFrameMs={playFrameMs}
         entityCount={scene?.entities.length ?? 0}
+        drawCalls={playDrawCalls}
+        profilerOpen={profilerOpen}
         onPlayToggle={handlePlayToggle}
         onStop={handleStop}
+        onToggleProfiler={() => setProfilerOpen((open) => !open)}
       />
 
       {/* Bottom tab bar — navigation, tools, project */}
@@ -2776,7 +3142,7 @@ export function App() {
             <ScenePanel
               scenes={snapshot.scenes}
               currentSceneId={currentSceneFile}
-              onSelectScene={setCurrentSceneFile}
+              onSelectScene={(file) => activateScene(file)}
               onCreateScene={handleCreateScene}
               onDeleteScene={handleDeleteScene}
             />

@@ -1,4 +1,14 @@
 import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent, TilemapComponent } from "@gamekit/schema";
+import type { CanvasTool, TilePaintMode } from "../lib/editor-tools.js";
+import { isTilePaintTool } from "../lib/editor-tools.js";
+import {
+  fillRectCells,
+  findTilemapHit,
+  floodFill,
+  stampBrush,
+  type TileCell,
+  type TilePaintOverlay,
+} from "../lib/tile-paint.js";
 import {
   Plus,
   ClipboardPaste,
@@ -9,7 +19,7 @@ import {
   CopyPlus,
   Boxes,
 } from "lucide-react";
-import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
 import {
   drawScene,
@@ -36,7 +46,9 @@ type SceneCanvasProps = {
   zoom: number;
   snap: boolean;
   hasClipboard: boolean;
-  activeTool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit";
+  activeTool: CanvasTool;
+  tilePaintMode?: TilePaintMode;
+  brushSize?: number;
   showGrid: boolean;
   showColliders: boolean;
   snapSize: number;
@@ -63,7 +75,7 @@ type SceneCanvasProps = {
   onZoomChange: (zoom: number) => void;
   onSnapToggle: (snap: boolean) => void;
   onSnapSizeChange: (size: number) => void;
-  onActiveToolChange: (tool: "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit") => void;
+  onActiveToolChange: (tool: CanvasTool) => void;
   onToggleGrid: (val: boolean) => void;
   onToggleColliders: (val: boolean) => void;
   onSelect: (id: string, shift: boolean) => void;
@@ -71,7 +83,8 @@ type SceneCanvasProps = {
   onSelectComponentInstance: (id: string) => void;
   onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
   onPolygonPointsChange?: (id: string, points: { x: number; y: number }[]) => void;
-  onPaintTile?: (entityId: string, gridX: number, gridY: number, tileId: number) => void;
+  onPaintTiles?: (entityId: string, tiles: number[]) => void;
+  onSampleTile?: (tileId: number) => void;
   onAddEntity: () => void;
   onPasteEntity: () => void;
   onSelectAll: () => void;
@@ -98,6 +111,8 @@ export function SceneCanvas({
   snap,
   hasClipboard,
   activeTool,
+  tilePaintMode = "brush",
+  brushSize = 1,
   showGrid,
   showColliders,
   snapSize,
@@ -114,7 +129,8 @@ export function SceneCanvas({
   onSelectComponentInstance,
   onTransform,
   onPolygonPointsChange,
-  onPaintTile,
+  onPaintTiles,
+  onSampleTile,
   onAddEntity,
   onPasteEntity,
   onSelectAll,
@@ -148,6 +164,25 @@ export function SceneCanvas({
     startPoints: { x: number; y: number }[];
     startPointer: { x: number; y: number };
   } | undefined>();
+
+  const [paintHover, setPaintHover] = useState<{ entityId: string; cell: TileCell } | null>(null);
+  const [paintDraft, setPaintDraft] = useState<{ entityId: string; tiles: number[] } | null>(null);
+  const [paintRectStart, setPaintRectStart] = useState<{ entityId: string; cell: TileCell } | null>(null);
+  const paintMode = activeTool === "erase" ? "erase" : tilePaintMode;
+  const paintOverlayForDraw = useMemo<TilePaintOverlay | null>(() => {
+    if (!isTilePaintTool(activeTool) || isPlaying) return null;
+    const entityId = paintDraft?.entityId ?? paintHover?.entityId ?? paintRectStart?.entityId;
+    if (!entityId) return null;
+    return {
+      entityId,
+      hover: paintHover?.entityId === entityId ? paintHover.cell : null,
+      rectStart: paintRectStart?.entityId === entityId ? paintRectStart.cell : null,
+      tileId: paintMode === "erase" ? 0 : paintTileId,
+      brushSize,
+      mode: paintMode,
+      draftTiles: paintDraft?.entityId === entityId ? paintDraft.tiles : undefined,
+    };
+  }, [activeTool, isPlaying, paintDraft, paintHover, paintRectStart, paintMode, paintTileId, brushSize]);
 
   /** World-space top-left of the visible view: screen = (world - pan) * zoom */
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -384,7 +419,7 @@ export function SceneCanvas({
           guiComponents,
           selectedComponentInstanceId,
           showGuiTools,
-          { skipViewportChrome: true, skipScreenSpaceText: true, activeTool },
+          { skipViewportChrome: true, skipScreenSpaceText: true, activeTool, zoom },
         );
         context.restore();
 
@@ -417,7 +452,11 @@ export function SceneCanvas({
           guiComponents,
           selectedComponentInstanceId,
           showGuiTools,
-          { activeTool },
+          {
+            activeTool,
+            zoom,
+            paintOverlay: paintOverlayForDraw,
+          },
         );
         drawSceneFrame(context, vw, vh, zoom, {
           worldLeft,
@@ -447,6 +486,8 @@ export function SceneCanvas({
     isPlaying,
     playViewPan?.x,
     playViewPan?.y,
+    activeTool,
+    paintOverlayForDraw,
   ]);
 
   function clientToWorld(clientX: number, clientY: number, el: HTMLElement) {
@@ -551,8 +592,10 @@ export function SceneCanvas({
     ? "grabbing"
     : isSpacePressed
       ? "grab"
-      : activeTool === "paint" || activeTool === "erase"
-        ? "cell"
+      : isTilePaintTool(activeTool)
+        ? paintMode === "eyedropper"
+          ? "copy"
+        : "cell"
         : "crosshair";
 
   return (
@@ -618,47 +661,59 @@ export function SceneCanvas({
 
               const point = pointerPosition(event);
 
-              // Tile paint / erase — paint on selected tilemap entity or hit tilemap
-              if ((activeTool === "paint" || activeTool === "erase") && onPaintTile && !isPlaying) {
-                const tileTarget =
-                  [...selectedEntityIds]
-                    .map((id) => scene.entities.find((e) => e.id === id))
-                    .find((e) => e && findComponent(e, "Tilemap")) ??
-                  [...scene.entities].reverse().find((entity) => {
-                    const tm = findComponent<TilemapComponent>(entity, "Tilemap");
-                    const tr = findComponent<TransformComponent>(entity, "Transform");
-                    if (!tm || !tr) return false;
-                    const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
-                    const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
-                    return gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight;
-                  });
-                if (tileTarget) {
-                  const tm = findComponent<TilemapComponent>(tileTarget, "Tilemap");
-                  const tr = findComponent<TransformComponent>(tileTarget, "Transform");
-                  if (tm && tr) {
-                    const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
-                    const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
-                    if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
-                      onSelect(tileTarget.id, false);
-                      onPaintTile(
-                        tileTarget.id,
-                        gx,
-                        gy,
-                        activeTool === "erase" ? 0 : paintTileId
-                      );
-                      event.currentTarget.setPointerCapture(event.pointerId);
-                      setDrag({
-                        id: tileTarget.id,
-                        dx: 0,
-                        dy: 0,
-                        startPosition: { x: 0, y: 0 },
-                        startRotation: 0,
-                        startScale: { x: 1, y: 1 },
-                        startPointer: { x: point.x, y: point.y },
-                      });
-                      return;
-                    }
+              // Tile paint / erase / fill / rect / eyedropper
+              if (isTilePaintTool(activeTool) && onPaintTiles && !isPlaying) {
+                const hit = findTilemapHit(scene.entities, point, selectedEntityIds);
+                if (hit) {
+                  onSelect(hit.entityId, false);
+                  setPaintHover({ entityId: hit.entityId, cell: hit.cell });
+                  const pick = paintMode === "eyedropper" || event.altKey;
+                  if (pick) {
+                    const idx = hit.cell.gy * hit.tilemap.gridWidth + hit.cell.gx;
+                    onSampleTile?.(hit.tilemap.tiles[idx] ?? 0);
+                    return;
                   }
+                  const value = paintMode === "erase" ? 0 : paintTileId;
+                  if (paintMode === "fill") {
+                    onPaintTiles(
+                      hit.entityId,
+                      floodFill(
+                        hit.tilemap.tiles,
+                        hit.tilemap.gridWidth,
+                        hit.tilemap.gridHeight,
+                        hit.cell.gx,
+                        hit.cell.gy,
+                        value,
+                      ),
+                    );
+                    return;
+                  }
+                  if (paintMode === "rect") {
+                    setPaintRectStart({ entityId: hit.entityId, cell: hit.cell });
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    return;
+                  }
+                  const next = stampBrush(
+                    hit.tilemap.tiles,
+                    hit.tilemap.gridWidth,
+                    hit.tilemap.gridHeight,
+                    hit.cell.gx,
+                    hit.cell.gy,
+                    value,
+                    brushSize,
+                  );
+                  setPaintDraft({ entityId: hit.entityId, tiles: next });
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  setDrag({
+                    id: hit.entityId,
+                    dx: 0,
+                    dy: 0,
+                    startPosition: { x: 0, y: 0 },
+                    startRotation: 0,
+                    startScale: { x: 1, y: 1 },
+                    startPointer: { x: point.x, y: point.y },
+                  });
+                  return;
                 }
               }
 
@@ -764,6 +819,34 @@ export function SceneCanvas({
                 setPan({ x: panning.panStartX + dx, y: panning.panStartY + dy });
                 return;
               }
+              if (isTilePaintTool(activeTool) && scene && !isPlaying) {
+                const point = pointerPosition(event);
+                const hit = findTilemapHit(scene.entities, point, selectedEntityIds);
+                if (hit) setPaintHover({ entityId: hit.entityId, cell: hit.cell });
+                else if (!paintRectStart && !paintDraft) setPaintHover(null);
+
+                if (paintRectStart && hit && hit.entityId === paintRectStart.entityId) {
+                  setPaintHover({ entityId: hit.entityId, cell: hit.cell });
+                  return;
+                }
+                if (paintDraft && hit && hit.entityId === paintDraft.entityId) {
+                  const value = paintMode === "erase" ? 0 : paintTileId;
+                  setPaintDraft({
+                    entityId: hit.entityId,
+                    tiles: stampBrush(
+                      paintDraft.tiles,
+                      hit.tilemap.gridWidth,
+                      hit.tilemap.gridHeight,
+                      hit.cell.gx,
+                      hit.cell.gy,
+                      value,
+                      brushSize,
+                    ),
+                  });
+                  return;
+                }
+                if (paintDraft || paintRectStart) return;
+              }
               if (polygonDrag && scene && onPolygonPointsChange) {
                 let point = pointerPosition(event);
                 if (snap) {
@@ -791,17 +874,7 @@ export function SceneCanvas({
               if (!drag || !scene) return;
               const point = pointerPosition(event);
 
-              if ((activeTool === "paint" || activeTool === "erase") && onPaintTile) {
-                const entity = scene.entities.find((e) => e.id === drag.id);
-                const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
-                const tr = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
-                if (tm && tr) {
-                  const gx = Math.floor((point.x - tr.position.x) / tm.tileWidth);
-                  const gy = Math.floor((point.y - tr.position.y) / tm.tileHeight);
-                  if (gx >= 0 && gy >= 0 && gx < tm.gridWidth && gy < tm.gridHeight) {
-                    onPaintTile(drag.id, gx, gy, activeTool === "erase" ? 0 : paintTileId);
-                  }
-                }
+              if (isTilePaintTool(activeTool)) {
                 return;
               }
 
@@ -849,9 +922,34 @@ export function SceneCanvas({
               }
             }}
             onPointerUp={() => {
+              if (paintRectStart && scene && onPaintTiles) {
+                const entity = scene.entities.find((e) => e.id === paintRectStart.entityId);
+                const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
+                const hover = paintHover?.entityId === paintRectStart.entityId ? paintHover.cell : paintRectStart.cell;
+                if (tm) {
+                  onPaintTiles(
+                    paintRectStart.entityId,
+                    fillRectCells(
+                      tm.tiles,
+                      tm.gridWidth,
+                      tm.gridHeight,
+                      paintRectStart.cell,
+                      hover,
+                      paintMode === "erase" ? 0 : paintTileId,
+                    ),
+                  );
+                }
+              } else if (paintDraft && onPaintTiles) {
+                onPaintTiles(paintDraft.entityId, paintDraft.tiles);
+              }
+              setPaintDraft(null);
+              setPaintRectStart(null);
               setDrag(undefined);
               setPanning(undefined);
               setPolygonDrag(undefined);
+            }}
+            onPointerLeave={() => {
+              if (!paintDraft && !paintRectStart) setPaintHover(null);
             }}
           />
         </div>

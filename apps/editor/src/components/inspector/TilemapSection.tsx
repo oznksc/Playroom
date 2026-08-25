@@ -86,7 +86,7 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
             onChange={(checked) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.solid = checked; })}
           />
           <p className="m-0 font-mono text-[10px] text-text-muted">
-            {tilemap.tiles.length} cells · paint on canvas with brush tools
+            {tilemap.tiles.length} cells · B brush · X erase · G fill · T rect · I pick
           </p>
         </>
       ) : (

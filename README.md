@@ -71,7 +71,7 @@ pnpm gamekit editor --port 4177 --host 0.0.0.0
 GAMEKIT_EDITOR_PORT=8080 GAMEKIT_EDITOR_HOST=0.0.0.0 pnpm gamekit editor
 ```
 
-The editor provides entity management, component editing (Transform, Sprite, AABB Collider, Player Controller, Camera Follow, and more), scene settings, timeline, GUI editor, and an AI agent panel.
+The editor provides entity management, component editing (Transform, Sprite, AABB Collider, Player Controller, Camera Follow, and more), scene tabs with split view, tile-palette painting, collider debug gizmos, a play-mode profiler overlay, scene settings, timeline, GUI editor, and an AI agent panel.
 
 ## Export & Deploy
 

@@ -104,10 +104,10 @@ Workstreams that closed the “can we make end-to-end games?” gap:
 - [x] GUI editor, timeline panel, console, undo hook
 - [x] Hot-reload poll for external scene edits
 - [x] Agent panel (BYOK) over MCP tools
-- [ ] Richer gizmos (collider/trigger debug polish)
-- [ ] Full tile palette paint UX polish
-- [ ] Split multi-scene tabs
-- [ ] Profiler overlay (FPS exists in play; draw-call deep dive open)
+- [x] Richer gizmos (collider/trigger debug polish)
+- [x] Full tile palette paint UX polish
+- [x] Split multi-scene tabs
+- [x] Profiler overlay (FPS exists in play; draw-call deep dive open)
 
 ### CLI & DX
 

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { GameKitLevel, GameKitScene, GuiComponent } from "@gamekit/schema";
 import type { ScriptContext } from "@gamekit/runtime/script";
 import { createGameKitGame } from "@gamekit/runtime-web";
+import { installDrawCallCounter, samplePhaserProfiler, type PlayProfilerSample } from "../lib/play-profiler.js";
 
 export type PlayRuntimeHostProps = {
   scene: GameKitScene;
@@ -17,8 +18,8 @@ export type PlayRuntimeHostProps = {
   onLivesChange?: (lives: number | null) => void;
   onCollectProgress?: (tag: string, collected: number, target: number) => void;
   onGuiAction?: (action: string) => void;
-  /** FPS + frame ms from Phaser loop. */
-  onMetrics?: (fps: number, frameMs: number) => void;
+  /** FPS, frame time, draw calls, and display-list stats from Phaser. */
+  onMetrics?: (sample: PlayProfilerSample) => void;
 };
 
 /**
@@ -91,16 +92,22 @@ export function PlayRuntimeHost({
     });
     gameRef.current = game;
 
-    const metricsId = window.setInterval(() => {
-      const g = gameRef.current;
-      if (!g) return;
-      const fps = Math.round(g.loop.actualFps || 0);
-      const frameMs = Math.round((g.loop.delta || 0) * 10) / 10;
-      callbacksRef.current.onMetrics?.(fps, frameMs);
-    }, 400);
+    const readDraws = installDrawCallCounter(game);
+    let lastEmit = 0;
+    const onPostRender = () => {
+      const now = performance.now();
+      if (now - lastEmit < 120) return;
+      lastEmit = now;
+      callbacksRef.current.onMetrics?.(samplePhaserProfiler(game, readDraws()));
+    };
+    game.events.on("postrender", onPostRender);
 
     return () => {
-      window.clearInterval(metricsId);
+      try {
+        game.events.off("postrender", onPostRender);
+      } catch {
+        /* game may already be torn down */
+      }
       try {
         game.destroy(true);
       } catch {

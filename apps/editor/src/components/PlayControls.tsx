@@ -1,4 +1,4 @@
-import { Play, Pause, Square, Cpu } from "lucide-react";
+import { Play, Pause, Square, Cpu, Activity } from "lucide-react";
 import { cn } from "@/ui";
 
 type PlayControlsProps = {
@@ -7,8 +7,11 @@ type PlayControlsProps = {
   playFps?: number;
   playFrameMs?: number;
   entityCount?: number;
+  drawCalls?: number;
+  profilerOpen?: boolean;
   onPlayToggle: () => void;
   onStop: () => void;
+  onToggleProfiler?: () => void;
 };
 
 /**
@@ -21,8 +24,11 @@ export function PlayControls({
   playFps = 0,
   playFrameMs = 0,
   entityCount = 0,
+  drawCalls = 0,
+  profilerOpen = false,
   onPlayToggle,
   onStop,
+  onToggleProfiler,
 }: PlayControlsProps) {
   const live = isPlaying && !isPaused;
 
@@ -72,6 +78,24 @@ export function PlayControls({
             <strong>{entityCount}</strong>
             <em>ent</em>
           </span>
+          <span className="play-controls-dot" aria-hidden />
+          <span className="play-controls-stat" title="GPU draw calls (pipeline flushes)">
+            <strong>{drawCalls || "—"}</strong>
+            <em>dc</em>
+          </span>
+          {onToggleProfiler && (
+            <button
+              type="button"
+              className={cn("play-controls-btn profiler", profilerOpen && "live")}
+              title={profilerOpen ? "Hide profiler" : "Show profiler"}
+              aria-label="Toggle profiler"
+              aria-pressed={profilerOpen}
+              data-testid="profiler-toggle"
+              onClick={onToggleProfiler}
+            >
+              <Activity size={12} strokeWidth={1.75} />
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -2,7 +2,6 @@ import type {
   AabbColliderComponent,
   CircleColliderComponent,
   PolygonColliderComponent,
-  RigidBodyComponent,
   TextComponent,
   FollowPathComponent,
   CameraFollowComponent,
@@ -22,6 +21,8 @@ import type {
 } from "@gamekit/schema";
 import { findComponent, colorForAsset } from "./components.js";
 import { offsetGuiNode, guiNodeOrigin } from "@gamekit/runtime/gui";
+import { drawEntityColliderGizmos } from "./collider-gizmos.js";
+import { drawTilemapPaintOverlay, type TilePaintOverlay } from "./tile-paint.js";
 
 export type DrawSceneOptions = {
   /**
@@ -36,6 +37,10 @@ export type DrawSceneOptions = {
   skipScreenSpaceText?: boolean;
   /** When "polygon-edit", draw vertex handles for polygon colliders. */
   activeTool?: string;
+  /** World zoom so gizmo strokes stay ~1 CSS px. */
+  zoom?: number;
+  /** Live tile-paint hover / rect / draft overlay. */
+  paintOverlay?: TilePaintOverlay | null;
 };
 
 export function drawScene(
@@ -93,9 +98,14 @@ export function drawScene(
 
     const tilemap = findComponent<TilemapComponent>(entity, "Tilemap");
     if (tilemap) {
+      const overlay = options.paintOverlay;
+      const tiles =
+        overlay && overlay.entityId === entity.id && overlay.draftTiles
+          ? overlay.draftTiles
+          : tilemap.tiles;
       const tileImage = images.get(tilemap.tilesetId);
-      for (let i = 0; i < tilemap.tiles.length; i++) {
-        const tileId = tilemap.tiles[i];
+      for (let i = 0; i < tiles.length; i++) {
+        const tileId = tiles[i];
         if (tileId === 0) continue;
         const gx = i % tilemap.gridWidth;
         const gy = Math.floor(i / tilemap.gridWidth);
@@ -144,126 +154,12 @@ export function drawScene(
     }
 
     if (showColliders) {
-      const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
-      if (aabb) {
-        const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : aabb.isTrigger ? "#3b82f6" : "#10b981";
-        context.lineWidth = isSelected ? 2 : 1;
-        context.setLineDash(isSelected ? [] : [4, 4]);
-        context.strokeRect(
-          transform.position.x + aabb.offset.x,
-          transform.position.y + aabb.offset.y,
-          aabb.size.x,
-          aabb.size.y
-        );
-        context.setLineDash([]);
-      }
-
-      const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
-      if (circle) {
-        const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : circle.isTrigger ? "#3b82f6" : "#10b981";
-        context.lineWidth = isSelected ? 2 : 1;
-        context.setLineDash(isSelected ? [] : [4, 4]);
-        context.beginPath();
-        context.arc(
-          transform.position.x + circle.offset.x,
-          transform.position.y + circle.offset.y,
-          circle.radius,
-          0,
-          Math.PI * 2
-        );
-        context.stroke();
-        context.setLineDash([]);
-      }
-
-      const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
-      if (polygon && polygon.points.length >= 3) {
-        const isSelected = selectedEntityIds.has(entity.id);
-        context.strokeStyle = isSelected ? "#ffb300" : polygon.isTrigger ? "#3b82f6" : "#10b981";
-        context.lineWidth = isSelected ? 2 : 1;
-        context.setLineDash(isSelected ? [] : [4, 4]);
-        context.beginPath();
-        const ox = transform.position.x + polygon.offset.x;
-        const oy = transform.position.y + polygon.offset.y;
-        context.moveTo(ox + polygon.points[0].x, oy + polygon.points[0].y);
-        for (let i = 1; i < polygon.points.length; i++) {
-          context.lineTo(ox + polygon.points[i].x, oy + polygon.points[i].y);
-        }
-        context.closePath();
-        context.stroke();
-        context.setLineDash([]);
-      }
-
-      const rb = findComponent<RigidBodyComponent>(entity, "RigidBody");
-      if (rb && rb.velocity && (rb.velocity.x !== 0 || rb.velocity.y !== 0)) {
-        drawArrow(
-          context,
-          transform.position.x,
-          transform.position.y,
-          transform.position.x + rb.velocity.x * 0.15,
-          transform.position.y + rb.velocity.y * 0.15,
-          "#00f0ff"
-        );
-      }
-
-      // Collider fill overlays (semi-transparent)
-      if (aabb) {
-        const fillColor = aabb.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
-        context.fillStyle = fillColor;
-        context.fillRect(
-          transform.position.x + aabb.offset.x,
-          transform.position.y + aabb.offset.y,
-          aabb.size.x,
-          aabb.size.y
-        );
-      }
-      if (circle) {
-        const fillColor = circle.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
-        context.fillStyle = fillColor;
-        context.beginPath();
-        context.arc(
-          transform.position.x + circle.offset.x,
-          transform.position.y + circle.offset.y,
-          circle.radius,
-          0,
-          Math.PI * 2
-        );
-        context.fill();
-      }
-      if (polygon && polygon.points.length >= 3) {
-        const fillColor = polygon.isTrigger ? "rgba(59,130,246,0.08)" : "rgba(16,185,129,0.06)";
-        context.fillStyle = fillColor;
-        context.beginPath();
-        const pox = transform.position.x + polygon.offset.x;
-        const poy = transform.position.y + polygon.offset.y;
-        context.moveTo(pox + polygon.points[0].x, poy + polygon.points[0].y);
-        for (let i = 1; i < polygon.points.length; i++) {
-          context.lineTo(pox + polygon.points[i].x, poy + polygon.points[i].y);
-        }
-        context.closePath();
-        context.fill();
-      }
-
-      // Polygon vertex handles (when polygon-edit tool is active)
-      if (polygon && polygon.points.length >= 1 && selectedEntityIds.has(entity.id) && options.activeTool === "polygon-edit") {
-        const pox = transform.position.x + polygon.offset.x;
-        const poy = transform.position.y + polygon.offset.y;
-        const zoom = Math.abs(context.getTransform().a) || 1;
-        const radius = 5 / zoom;
-        const strokeWidth = 1 / zoom;
-        for (let i = 0; i < polygon.points.length; i++) {
-          const px = pox + polygon.points[i].x;
-          const py = poy + polygon.points[i].y;
-          context.fillStyle = "#ffb300";
-          context.beginPath();
-          context.arc(px, py, radius, 0, Math.PI * 2);
-          context.fill();
-          context.strokeStyle = "#fff";
-          context.lineWidth = strokeWidth;
-          context.stroke();
-        }
-      }
+      drawEntityColliderGizmos(context, entity, transform, {
+        selected: selectedEntityIds.has(entity.id),
+        zoom: options.zoom ?? 1,
+        activeTool: options.activeTool,
+        showLabels: true,
+      });
 
       // FollowPath waypoint gizmo — connected line + dots
       const followPath = findComponent<FollowPathComponent>(entity, "FollowPath");
@@ -429,6 +325,23 @@ export function drawScene(
           );
         }
       }
+    }
+  }
+
+  const paintOverlay = options.paintOverlay;
+  if (paintOverlay) {
+    const paintEntity = scene.entities.find((e) => e.id === paintOverlay.entityId);
+    const paintTm = paintEntity ? findComponent<TilemapComponent>(paintEntity, "Tilemap") : undefined;
+    const paintTr = paintEntity ? findComponent<TransformComponent>(paintEntity, "Transform") : undefined;
+    if (paintTm && paintTr) {
+      drawTilemapPaintOverlay(
+        context,
+        paintTm,
+        paintTr.position,
+        paintOverlay,
+        images,
+        options.zoom ?? 1,
+      );
     }
   }
 
