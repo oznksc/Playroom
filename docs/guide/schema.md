@@ -22,6 +22,10 @@ Playroom scenes are JSON validated by `@gamekit/schema`.
 | `ParticleSystem` | Lightweight particle emitter |
 | `Light2D` | Additive light — `point` (radial glow) or `spot` (cone along Transform rotation), `range`/`intensity`/`color` |
 
+## Schema version & migrate
+
+Every project, scene, and prefab JSON carries `schemaVersion` (currently `1`). `@gamekit/schema` exports `detectSchemaVersion`, `migrateDocument`, and `listMigrationPath`. The CLI command is `gamekit migrate <from> <to>` — see the [CLI reference](./cli.md#schema-migrate). Missing `schemaVersion` is treated as `0`.
+
 ## Project file
 
 `gamekit/project.json` holds:

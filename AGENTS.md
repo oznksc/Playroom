@@ -8,7 +8,8 @@ server (`packages/mcp`) talk to it. Two runtimes consume the produced JSON:
 ## Layout
 
 - `packages/schema` — Types, `parseScene` / `validateScene` / `validateProject`,
-  `createEmptyScene` / `createProject` / `createId` / `slugify` / `*ToJson`.
+  `createEmptyScene` / `createProject` / `createId` / `slugify` / `*ToJson`,
+  `migrateDocument` / `detectSchemaVersion` (`src/migrate.ts`).
   Every other package depends on this; build it first.
 - `packages/runtime` — React Native + Skia runtime. `GameKitGame` (loop,
   controllers, collisions, animations, timeline) and `GameKitView` (renderer).
@@ -17,13 +18,16 @@ server (`packages/mcp`) talk to it. Two runtimes consume the produced JSON:
 - `packages/runtime-web` — Phaser runtime. Exports `createGameKitGame`.
 - `packages/cli` — `gamekit` binary. Subcommands: `init`, `create <skill>`,
   `import <file>`, `remove <id>`, `generate [--platform web|mobile]`,
-  `editor [--port]`, `export [path] [--platform web|mobile]`, `doctor`,
-  `validate`, `build`, `dev`, `mcp [project-path]`,
+  `editor [--port] [--host] [--tls-cert] [--tls-key] [--tls-ca] [--mtls]`,
+  `export [path] [--platform web|mobile]`, `doctor`, `validate`,
+  `migrate <from> <to>`, `build` (texture atlas + audio bank in `packed/`),
+  `dev`, `mcp [project-path]`,
   `skills list|apply <name>`, `recipes list|describe|apply`,
   `save`/`load`/`list-saves`. Source is TS, run via `tsx src/index.ts` in
   dev (the `gamekit` script); the bin resolves to `dist/index.js` after build.
   Genre skill packs: `packages/cli/src/skill-packs.ts`. Export bootstrap:
-  `packages/cli/src/export-bootstrap.ts`.
+  `packages/cli/src/export-bootstrap.ts`. Packer: `src/packer.ts`.
+  Migrations: `src/migrate.ts`. HTTPS/mTLS: `src/server.ts`.
 - `packages/mcp` — `@modelcontextprotocol/sdk` server, tools grouped by
   scenes/entities/assets/project/skills/recipes/gui/gui-components, plus
   resources and prompts. Genre skill templates live in

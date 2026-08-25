@@ -185,7 +185,7 @@ In scope (ship a small game end-to-end):
 Still evolving (see `ROADMAP.md`):
 
 - Cross-runtime parity budgets and Playwright E2E
-- Schema `migrate`, asset atlas packer
+- Schema `migrate`, asset atlas packer, HTTPS/mTLS editor — shipped (`gamekit migrate`, `gamekit build` packer, `gamekit editor --tls-*`)
 - Deeper agent plan/undo/vision polish
 
 ## Documentation

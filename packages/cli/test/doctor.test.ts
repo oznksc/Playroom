@@ -71,6 +71,18 @@ describe("runDoctor", () => {
     const report = await runDoctor(root);
     expect(report.ok).toBe(false);
     expect(report.issues.some((i) => i.code === "PROJECT_INVALID")).toBe(true);
+    expect(report.issues.some((i) => i.code === "SCHEMA_VERSION")).toBe(true);
+  });
+
+  it("flags SCHEMA_VERSION and points at migrate for unversioned JSON", async () => {
+    await writeFile(
+      join(root, "gamekit", "project.json"),
+      JSON.stringify({ name: "Legacy", scenes: ["main.scene.json"] }),
+    );
+    const report = await runDoctor(root);
+    expect(report.ok).toBe(false);
+    const issue = report.issues.find((i) => i.code === "SCHEMA_VERSION");
+    expect(issue?.message).toMatch(/gamekit migrate 0 1/);
   });
 
   it("flags NO_SCENES_DIR when scenes directory is missing", async () => {

@@ -50,7 +50,8 @@ export {
   resolveTransitionMs,
   sceneFileToImportVar,
 } from "./export-bootstrap.js";
-export { startEditorServer } from "./server.js";
+export { startEditorServer, type EditorTlsOptions } from "./server.js";
+export { migrateProject, listSchemaMigrations } from "./migrate.js";
 
 async function main(argv: string[]): Promise<void> {
   const [command, ...args] = argv;
@@ -132,7 +133,86 @@ async function main(argv: string[]): Promise<void> {
     case "editor": {
       const port = Number(readOption(args, "--port") ?? process.env.GAMEKIT_EDITOR_PORT ?? 4177);
       const host = readOption(args, "--host") ?? process.env.GAMEKIT_EDITOR_HOST ?? "127.0.0.1";
-      await startEditorServer({ root: cwd, port, host });
+      const tlsCert = readOption(args, "--tls-cert") ?? process.env.GAMEKIT_EDITOR_TLS_CERT;
+      const tlsKey = readOption(args, "--tls-key") ?? process.env.GAMEKIT_EDITOR_TLS_KEY;
+      const tlsCa = readOption(args, "--tls-ca") ?? process.env.GAMEKIT_EDITOR_TLS_CA;
+      const mtls = args.includes("--mtls") || process.env.GAMEKIT_EDITOR_MTLS === "1";
+      if (mtls && (!tlsCert || !tlsKey)) {
+        throw new Error(
+          "mTLS requires HTTPS: pass --tls-cert and --tls-key (or GAMEKIT_EDITOR_TLS_CERT / GAMEKIT_EDITOR_TLS_KEY)",
+        );
+      }
+      if ((tlsCert && !tlsKey) || (tlsKey && !tlsCert)) {
+        throw new Error("HTTPS editor requires both --tls-cert and --tls-key");
+      }
+      if (mtls && !tlsCa) {
+        throw new Error("mTLS requires --tls-ca (or GAMEKIT_EDITOR_TLS_CA) with the client CA certificate");
+      }
+      await startEditorServer({
+        root: cwd,
+        port,
+        host,
+        tls:
+          tlsCert && tlsKey
+            ? {
+                cert: tlsCert,
+                key: tlsKey,
+                ca: tlsCa,
+                requestCert: mtls,
+                rejectUnauthorized: mtls,
+              }
+            : undefined,
+      });
+      return;
+    }
+    case "migrate": {
+      const { migrateProject, listSchemaMigrations, listMigrationPath } = await import("./migrate.js");
+      if (args.includes("--list")) {
+        const steps = listSchemaMigrations();
+        if (steps.length === 0) {
+          console.log("No schema migrations registered.");
+          return;
+        }
+        console.log("Registered schema migrations:");
+        for (const step of steps) {
+          console.log(`  ${step.from} → ${step.to}  ${step.description}`);
+        }
+        return;
+      }
+      const positional = args.filter((arg) => !arg.startsWith("--"));
+      if (positional.length < 2) {
+        throw new Error("Usage: gamekit migrate <from> <to> [--dry-run] [--force]\n       gamekit migrate --list");
+      }
+      const from = Number(positional[0]);
+      const to = Number(positional[1]);
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0) {
+        throw new Error("from and to must be non-negative integers");
+      }
+      listMigrationPath(from, to);
+      const result = await migrateProject(cwd, from, to, {
+        dryRun: args.includes("--dry-run"),
+        force: args.includes("--force"),
+      });
+      console.log(
+        `${result.dryRun ? "Dry-run: would migrate" : "Migrated"} schema ${result.from} → ${result.to}`,
+      );
+      for (const file of result.files) {
+        const icon = file.status === "migrated" ? (file.valid ? "✓" : "!") : file.status === "error" ? "✖" : "·";
+        const extra = file.message ? ` — ${file.message}` : "";
+        console.log(`  ${icon} [${file.kind}] ${file.path} (v${file.detectedVersion})${extra}`);
+        if (file.applied.length) {
+          for (const step of file.applied) {
+            console.log(`      ${step}`);
+          }
+        }
+        for (const err of file.errors) {
+          console.log(`      error: ${err}`);
+        }
+      }
+      console.log(
+        `\n${result.migrated} migrated, ${result.skipped} skipped, ${result.errors} error(s)`,
+      );
+      if (result.errors > 0) process.exitCode = 1;
       return;
     }
     case "export": {
@@ -418,11 +498,24 @@ async function main(argv: string[]): Promise<void> {
         throw new Error("--platform must be 'web' or 'mobile'");
       }
       const skipDoctor = args.includes("--skip-doctor");
-      const result = await buildProject(cwd, { outDir: resolve(cwd, out), platform, skipDoctor });
+      const pack = !args.includes("--no-pack");
+      const result = await buildProject(cwd, { outDir: resolve(cwd, out), platform, skipDoctor, pack });
       console.log(`Built gamekit pack → ${result.outDir}`);
       console.log(`  platform: ${result.platform}`);
       console.log(`  scenes:   ${result.scenes.length}`);
       console.log(`  assets:   ${result.assets}`);
+      if (result.packed?.atlas) {
+        console.log(
+          `  atlas:    ${result.packed.atlas.frames} frame(s) → ${result.packed.atlas.image}` +
+            (result.packed.atlas.skipped.length ? ` (${result.packed.atlas.skipped.length} skipped)` : ""),
+        );
+      }
+      if (result.packed?.audioBank) {
+        console.log(
+          `  audio:    ${result.packed.audioBank.clips} clip(s) → ${result.packed.audioBank.bank}` +
+            (result.packed.audioBank.skipped.length ? ` (${result.packed.audioBank.skipped.length} skipped)` : ""),
+        );
+      }
       console.log(`  duration: ${result.durationMs}ms`);
       return;
     }
@@ -489,6 +582,7 @@ function printHelp(): void {
 Usage:
   gamekit init [--name MyGame]
   gamekit editor [--port 4177] [--host 127.0.0.1]
+           [--tls-cert path] [--tls-key path] [--tls-ca path] [--mtls]
   gamekit import <file>
   gamekit remove <asset-id>
   gamekit export [path] [--platform web|mobile]
@@ -502,7 +596,9 @@ Usage:
   gamekit search <query>
   gamekit validate
   gamekit doctor
-  gamekit build [--out build/gamekit] [--platform web|mobile] [--skip-doctor]
+  gamekit migrate <from> <to> [--dry-run] [--force]
+  gamekit migrate --list
+  gamekit build [--out build/gamekit] [--platform web|mobile] [--skip-doctor] [--no-pack]
   gamekit dev [--platform web|mobile]
 `);
 }

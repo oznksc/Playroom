@@ -3,11 +3,14 @@ import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 import { generateAssetRegistry, getGameKitRoot, getProjectSnapshot, readScene } from "./project.js";
 import { runDoctor } from "./doctor.js";
+import { packBuildAssets, type PackerResult } from "./packer.js";
 
 export type BuildOptions = {
   outDir?: string;
   platform?: "web" | "mobile";
   skipDoctor?: boolean;
+  /** Pack PNG sprites into a texture atlas and audio files into a bank (default true). */
+  pack?: boolean;
 };
 
 export type BuildResult = {
@@ -16,6 +19,7 @@ export type BuildResult = {
   scenes: string[];
   assets: number;
   assetHashes: Record<string, string>;
+  packed: PackerResult | null;
   durationMs: number;
 };
 
@@ -92,12 +96,18 @@ export async function buildProject(root: string, options: BuildOptions = {}): Pr
     // no prefabs
   }
 
+  let packed: PackerResult | null = null;
+  if (options.pack !== false) {
+    packed = await packBuildAssets(join(gamekitRoot, "assets"), outDir, snapshot.assets);
+  }
+
   const manifest = {
     builtAt: new Date().toISOString(),
     platform,
     schemaVersion: snapshot.project.schemaVersion,
     scenes: snapshot.scenes,
     assetHashes,
+    packed,
     relativeRoot: relative(root, outDir),
   };
   await writeFile(join(outDir, "build-manifest.json"), JSON.stringify(manifest, null, 2));
@@ -108,6 +118,7 @@ export async function buildProject(root: string, options: BuildOptions = {}): Pr
     scenes: snapshot.scenes,
     assets: snapshot.assets.length,
     assetHashes,
+    packed,
     durationMs: Date.now() - started,
   };
 }

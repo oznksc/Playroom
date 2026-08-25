@@ -1691,3 +1691,15 @@ function formatZodError(error: z.ZodError): string[] {
     return `${pathStr ? pathStr + " " : ""}must be valid: ${err.message}`;
   });
 }
+
+export {
+  SCHEMA_MIGRATIONS,
+  currentSchemaVersion,
+  detectSchemaVersion,
+  listMigrationPath,
+  listSchemaMigrations,
+  migrateDocument,
+  type MigrateDocumentResult,
+  type SchemaDocumentKind,
+  type SchemaMigration,
+} from "./migrate.js";

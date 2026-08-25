@@ -1,4 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer as createHttpsServer, type ServerOptions as HttpsServerOptions } from "node:https";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, stat, unlink } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,30 +31,68 @@ import { validateScene } from "@gamekit/schema";
 import { z } from "zod";
 import { handleAgentRoute } from "./agent/routes.js";
 
+export type EditorTlsOptions = {
+  /** PEM contents or path to a certificate file. */
+  cert: string | Buffer;
+  /** PEM contents or path to a private key file. */
+  key: string | Buffer;
+  /** PEM contents or path to the CA that signs client certificates (mTLS). */
+  ca?: string | Buffer;
+  /** Ask clients for a certificate. Pair with `rejectUnauthorized` for mTLS. */
+  requestCert?: boolean;
+  /** Reject clients whose certificate is missing or untrusted. Default: same as `requestCert`. */
+  rejectUnauthorized?: boolean;
+};
+
 export type EditorServerOptions = {
   root: string;
   port?: number;
   host?: string;
   editorDist?: string;
+  tls?: EditorTlsOptions;
 };
 
 export type EditorServerHandle = {
   host: string;
   port: number;
   url: string;
+  protocol: "http" | "https";
+  mtls: boolean;
   close: () => Promise<void>;
 };
 
+function resolvePem(value: string | Buffer, label: string): string | Buffer {
+  if (Buffer.isBuffer(value)) return value;
+  const trimmed = value.trim();
+  if (trimmed.includes("BEGIN")) return trimmed;
+  if (!existsSync(trimmed)) {
+    throw new Error(`TLS ${label} file not found: ${trimmed}`);
+  }
+  return readFileSync(trimmed);
+}
+
+function buildHttpsOptions(tls: EditorTlsOptions): HttpsServerOptions {
+  const requestCert = tls.requestCert === true;
+  return {
+    cert: resolvePem(tls.cert, "cert"),
+    key: resolvePem(tls.key, "key"),
+    ...(tls.ca ? { ca: resolvePem(tls.ca, "ca") } : {}),
+    requestCert,
+    rejectUnauthorized: tls.rejectUnauthorized ?? requestCert,
+  };
+}
+
 /**
- * Start the editor HTTP server. Returns a handle so tests/CI can shut it down.
+ * Start the editor HTTP(S) server. Returns a handle so tests/CI can shut it down.
  * Pass `port: 0` to bind an ephemeral free port.
+ * Pass `tls` (cert + key) for HTTPS; set `tls.requestCert` + `tls.ca` for mTLS.
  */
 export async function startEditorServer(options: EditorServerOptions): Promise<EditorServerHandle> {
   const preferredPort = options.port ?? 4177;
   const host = options.host ?? "127.0.0.1";
   await initProject(options.root);
 
-  const server = createServer(async (request, response) => {
+  const onRequest = async (request: IncomingMessage, response: ServerResponse) => {
     try {
       await handleRequest(options, request, response);
     } catch (error) {
@@ -60,7 +100,15 @@ export async function startEditorServer(options: EditorServerOptions): Promise<E
         error: error instanceof Error ? error.message : "Unknown server error"
       });
     }
-  });
+  };
+
+  const httpsOptions = options.tls ? buildHttpsOptions(options.tls) : undefined;
+  const server = httpsOptions
+    ? createHttpsServer(httpsOptions, onRequest)
+    : createServer(onRequest);
+
+  const protocol: "http" | "https" = httpsOptions ? "https" : "http";
+  const mtls = Boolean(httpsOptions?.requestCert && httpsOptions.rejectUnauthorized);
 
   const port = await new Promise<number>((resolve, reject) => {
     server.once("error", reject);
@@ -71,7 +119,8 @@ export async function startEditorServer(options: EditorServerOptions): Promise<E
         typeof addr === "object" && addr && typeof addr.port === "number"
           ? addr.port
           : preferredPort;
-      console.log(`Playroom editor: http://${host}:${bound}`);
+      const mtlsNote = mtls ? " (mTLS)" : "";
+      console.log(`Playroom editor: ${protocol}://${host}:${bound}${mtlsNote}`);
       resolve(bound);
     });
   });
@@ -79,7 +128,9 @@ export async function startEditorServer(options: EditorServerOptions): Promise<E
   return {
     host,
     port,
-    url: `http://${host}:${port}`,
+    protocol,
+    mtls,
+    url: `${protocol}://${host}:${port}`,
     close: () =>
       new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
@@ -91,6 +142,7 @@ const BuildRequestSchema = z.object({
   platform: z.enum(["web", "mobile"]).optional(),
   outDir: z.string().optional(),
   skipDoctor: z.boolean().optional(),
+  pack: z.boolean().optional(),
 });
 
 const PrefabRequestSchema = z.object({
@@ -178,6 +230,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         platform: body.platform ?? "mobile",
         outDir: body.outDir,
         skipDoctor: body.skipDoctor,
+        pack: body.pack,
       });
       sendJson(response, 200, { ok: true, ...result });
     } catch (error) {

@@ -115,9 +115,9 @@ Workstreams that closed the “can we make end-to-end games?” gap:
 - [x] `create <skill>`, `skills list|apply`, `recipes list|describe|apply`
 - [x] `doctor`, `validate`, `build`, `dev`
 - [x] `save` / `load` / `list-saves`, `mcp`
-- [ ] `migrate <from> <to>` schema upgrades
-- [ ] Texture atlas / audio bank packer
-- [ ] HTTPS / mTLS editor binding (host/port already exist)
+- [x] `migrate <from> <to>` schema upgrades
+- [x] Texture atlas / audio bank packer
+- [x] HTTPS / mTLS editor binding (host/port already exist)
 
 ### Testing & quality
 
@@ -233,12 +233,13 @@ Ordered for product impact, not exhaustive:
       when unset) and per-instance `nodeOverrides`. Shared `offsetGuiNode`/
       `guiNodeOrigin` (`@gamekit/runtime/gui`) drive Skia, Phaser, and the
       editor canvas preview, so instances render identically everywhere.
-2. **Schema migrate command** — safe upgrades when `schemaVersion` bumps  
-3. **Asset packer** — texture atlas + audio bank in `gamekit build`  
-4. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  
-5. **More samples** — endless-runner and topdown-shooter as full `examples/`  
-6. **Editor unit tests (RTL)** — Inspector / SceneCanvas beyond Playwright smoke  
-7. **Docs site polish** — VitePress already wired; keep guides in sync on every CLI change  
+2. **Schema migrate command** — **done:** `gamekit migrate <from> <to>` walks `@gamekit/schema` (`0 → 1` fills reserved blocks, component defaults, collider/body aliases). `doctor` reports `SCHEMA_VERSION`.  
+3. **Asset packer** — **done:** `gamekit build` writes `packed/atlas.{png,json}` (PNG sprites, TexturePacker hash) and `packed/audio.bank` + `audio-bank.json`. `--no-pack` skips.  
+4. **HTTPS / mTLS editor** — **done:** `gamekit editor --tls-cert --tls-key [--tls-ca --mtls]` (env: `GAMEKIT_EDITOR_TLS_*`).  
+5. **Agent reliability** — plan-then-execute, undo snapshot, vision screenshot  
+6. **More samples** — endless-runner and topdown-shooter as full `examples/`  
+7. **Editor unit tests (RTL)** — Inspector / SceneCanvas beyond Playwright smoke  
+8. **Docs site polish** — VitePress already wired; keep guides in sync on every CLI change  
 
 ---
 
@@ -269,6 +270,6 @@ Ordered for product impact, not exhaustive:
 |-----|--------|
 | MVP 0.1.x | Schema + dual runtime + editor + basic MCP |
 | E2E Ready | Export bootstrap, samples, Phaser play host, `gamekit create`, shipping docs |
-| Next | Parity, E2E tests, migrate, packer, agent polish |
+| Next | Parity, E2E tests, agent polish |
 
 Historical detailed design notes may still live in `ROADMAP_DETAILED.md`; **this file is the status source of truth**.

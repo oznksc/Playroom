@@ -46,6 +46,8 @@ describe("buildProject", () => {
     const manifest = JSON.parse(await readFile(join(outDir, "build-manifest.json"), "utf8"));
     expect(manifest.platform).toBe("mobile");
     expect(manifest.scenes).toContain("main.scene.json");
+    expect(manifest.packed).toEqual({ atlas: null, audioBank: null });
+    expect(result.packed).toEqual({ atlas: null, audioBank: null });
 
     // compact JSON (no pretty indent for scene)
     const sceneRaw = await readFile(join(outDir, "scenes", "main.scene.json"), "utf8");

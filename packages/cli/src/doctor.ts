@@ -1,6 +1,14 @@
 import { access, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { validateProject, validateScene, validatePrefab, type GameKitProject, type GameKitScene } from "@gamekit/schema";
+import {
+  GAMEKIT_SCHEMA_VERSION,
+  detectSchemaVersion,
+  validateProject,
+  validateScene,
+  validatePrefab,
+  type GameKitProject,
+  type GameKitScene,
+} from "@gamekit/schema";
 import { getGameKitRoot } from "./project.js";
 
 export type DoctorIssue = {
@@ -44,6 +52,18 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
   let project: GameKitProject;
   try {
     const raw = JSON.parse(await readFile(projectPath, "utf8"));
+    const detected = detectSchemaVersion(raw);
+    if (detected !== GAMEKIT_SCHEMA_VERSION) {
+      issues.push({
+        level: "error",
+        code: "SCHEMA_VERSION",
+        message:
+          detected < GAMEKIT_SCHEMA_VERSION
+            ? `Project schemaVersion is ${detected}; current is ${GAMEKIT_SCHEMA_VERSION}. Run \`gamekit migrate ${detected} ${GAMEKIT_SCHEMA_VERSION}\`.`
+            : `Project schemaVersion ${detected} is newer than this CLI (${GAMEKIT_SCHEMA_VERSION}). Upgrade Playroom.`,
+        path: "gamekit/project.json",
+      });
+    }
     const result = validateProject(raw);
     if (!result.ok) {
       for (const err of result.errors) {
@@ -117,6 +137,18 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     const path = join(scenesDir, file);
     try {
       const raw = JSON.parse(await readFile(path, "utf8"));
+      const detected = detectSchemaVersion(raw);
+      if (detected !== GAMEKIT_SCHEMA_VERSION) {
+        issues.push({
+          level: "error",
+          code: "SCHEMA_VERSION",
+          message:
+            detected < GAMEKIT_SCHEMA_VERSION
+              ? `Scene schemaVersion is ${detected}; current is ${GAMEKIT_SCHEMA_VERSION}. Run \`gamekit migrate ${detected} ${GAMEKIT_SCHEMA_VERSION}\`.`
+              : `Scene schemaVersion ${detected} is newer than this CLI (${GAMEKIT_SCHEMA_VERSION}). Upgrade Playroom.`,
+          path: `gamekit/scenes/${file}`,
+        });
+      }
       const result = validateScene(raw);
       if (!result.ok) {
         for (const err of result.errors) {
@@ -253,6 +285,18 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     const path = join(prefabsDir, file);
     try {
       const raw = JSON.parse(await readFile(path, "utf8"));
+      const detected = detectSchemaVersion(raw);
+      if (detected !== GAMEKIT_SCHEMA_VERSION) {
+        issues.push({
+          level: "error",
+          code: "SCHEMA_VERSION",
+          message:
+            detected < GAMEKIT_SCHEMA_VERSION
+              ? `Prefab schemaVersion is ${detected}; current is ${GAMEKIT_SCHEMA_VERSION}. Run \`gamekit migrate ${detected} ${GAMEKIT_SCHEMA_VERSION}\`.`
+              : `Prefab schemaVersion ${detected} is newer than this CLI (${GAMEKIT_SCHEMA_VERSION}). Upgrade Playroom.`,
+          path: `gamekit/prefabs/${file}`,
+        });
+      }
       const result = validatePrefab(raw);
       if (!result.ok) {
         for (const err of result.errors) {
