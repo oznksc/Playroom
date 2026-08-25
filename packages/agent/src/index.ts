@@ -25,7 +25,14 @@ export type { KeyVault, StoredKey } from "./store/keys.js";
 export { McpClient } from "./mcp/client.js";
 export { listTools, toModelTools } from "./mcp/tools.js";
 export { callTool } from "./mcp/executor.js";
-export { normalizeToolResult, ToolCallCache } from "./loop/tool-runtime.js";
+export {
+  normalizeToolResult,
+  ToolCallCache,
+  InspectSpinTracker,
+  isReadOnlyTool,
+  isMutationTool,
+  READ_ONLY_TOOLS,
+} from "./loop/tool-runtime.js";
 
 export type { AgentInput, AgentDeps } from "./loop/agent.js";
 export { runAgent } from "./loop/agent.js";
@@ -38,3 +45,6 @@ export type { ApprovalMode } from "./loop/approval.js";
 export { buildSystemPrompt } from "./system/prompt.js";
 export type { PromptContext } from "./system/prompt.js";
 export { loadSkillSummaries } from "./system/skills-loader.js";
+
+export { AgentAuditLogger, DEFAULT_MAX_AUDIT_ENTRIES } from "./audit/logger.js";
+export type { AuditEntry, AuditQueryOptions, AuditEntryStatus, AuditApprovalDecision } from "./audit/types.js";

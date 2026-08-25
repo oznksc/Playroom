@@ -9,10 +9,13 @@ import { buildSystemPrompt, type PromptContext } from "../system/prompt.js";
 import type { SseEvent } from "./streaming.js";
 import {
   ToolCallCache,
+  InspectSpinTracker,
   fingerprint,
   isReadOnlyTool,
+  isMutationTool,
   isTransientProviderError,
 } from "./tool-runtime.js";
+import type { AgentAuditLogger } from "../audit/logger.js";
 
 export type AgentInput = {
   message: string;
@@ -31,6 +34,8 @@ export type AgentInput = {
   priorTurns?: PriorTurn[];
   /** Compact prior tool-call statuses for this scene chat. */
   priorTools?: Array<{ tool: string; status: string }>;
+  /** Optional chat / session ID for tracing and audit logs */
+  sessionId?: string;
 };
 
 export type AgentDeps = {
@@ -38,12 +43,12 @@ export type AgentDeps = {
   mcpClient: McpClient;
   /** Defaults to process-wide globalApprovalGate so /api/agent/approve works. */
   approvalGate?: ApprovalGate;
+  /** Optional audit logger to persist tool audit logs to disk. */
+  auditLogger?: AgentAuditLogger;
 };
 
 const MAX_TURNS = 25;
 const PROVIDER_RETRY_MS = 400;
-const SPIN_BREAKER =
-  "Stop inspecting. You already queried the scene enough times. Make a concrete edit with a write tool, or finish with a short summary of the current scene.";
 
 const PLAN_MODE_INSTRUCTION = `PLAN MODE is ON.
 1. First reply with a numbered plan of the exact tool steps you will take.
@@ -55,9 +60,10 @@ export async function* runAgent(
   input: AgentInput,
   deps: AgentDeps,
 ): AsyncGenerator<SseEvent> {
-  const { provider, mcpClient } = deps;
+  const { provider, mcpClient, auditLogger } = deps;
   const history = new MessageHistory();
   const approvalGate = deps.approvalGate ?? globalApprovalGate;
+  const sessionId = input.sessionId || nanoid();
 
   // Build system prompt
   let system = buildSystemPrompt(input.sceneContext);
@@ -101,7 +107,7 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
 
   const modelTools = toModelTools(mcpTools, provider.id);
   const cache = new ToolCallCache();
-  let inspectTurns = 0;
+  const spinTracker = new InspectSpinTracker();
 
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     let streamEvents: StreamEvent[] = [];
@@ -147,6 +153,47 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
       return;
     }
 
+    // Evaluate spin and cycle detection
+    const spinEvaluation = spinTracker.recordTurn(toolCalls);
+
+    // If circuit breaker is triggered and only read tools were requested, block redundant reads
+    if (spinEvaluation.haltReads && toolCalls.every((c) => isReadOnlyTool(c.name))) {
+      const haltMsg = spinEvaluation.message || "Circuit breaker: Inspection halted.";
+      for (const call of toolCalls) {
+        const callId = call.id || nanoid();
+        yield { type: "tool_start", callId, tool: call.name, args: call.args };
+        yield {
+          type: "tool_result",
+          callId,
+          tool: call.name,
+          result: { error: haltMsg, halted: true },
+          ok: false,
+          ms: 0,
+        };
+        history.append({
+          role: "tool",
+          toolCallId: call.id,
+          name: call.name,
+          content: JSON.stringify({ error: haltMsg }),
+        });
+        if (auditLogger) {
+          auditLogger.append({
+            sceneId: input.sceneContext.sceneId,
+            projectPath: input.sceneContext.projectPath,
+            sessionId,
+            turn,
+            tool: call.name,
+            args: call.args,
+            status: "cancelled",
+            durationMs: 0,
+            error: haltMsg,
+          }).catch(() => {});
+        }
+      }
+      history.append({ role: "user", content: haltMsg });
+      continue;
+    }
+
     yield* executeToolCalls(toolCalls, {
       mcpClient,
       approvalGate,
@@ -154,13 +201,16 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
       signal: input.signal,
       history,
       cache,
+      auditLogger,
+      sceneId: input.sceneContext.sceneId,
+      projectPath: input.sceneContext.projectPath,
+      sessionId,
+      turn,
     });
 
-    const onlyReads = toolCalls.every((c) => isReadOnlyTool(c.name));
-    inspectTurns = onlyReads ? inspectTurns + 1 : 0;
-    if (inspectTurns >= 3) {
-      history.append({ role: "user", content: SPIN_BREAKER });
-      inspectTurns = 0;
+    // If a spin intervention message was triggered, append to history
+    if (spinEvaluation.message) {
+      history.append({ role: "user", content: spinEvaluation.message });
     }
 
     history.compact();
@@ -207,16 +257,23 @@ async function* streamProvider(
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
+type ExecutionContext = {
+  mcpClient: AgentDeps["mcpClient"];
+  approvalGate: ApprovalGate;
+  approvalMode: ApprovalMode;
+  signal: AbortSignal;
+  history: MessageHistory;
+  cache: ToolCallCache;
+  auditLogger?: AgentAuditLogger;
+  sceneId?: string;
+  projectPath?: string;
+  sessionId?: string;
+  turn?: number;
+};
+
 async function* executeToolCalls(
   toolCalls: ToolCall[],
-  ctx: {
-    mcpClient: AgentDeps["mcpClient"];
-    approvalGate: ApprovalGate;
-    approvalMode: ApprovalMode;
-    signal: AbortSignal;
-    history: MessageHistory;
-    cache: ToolCallCache;
-  },
+  ctx: ExecutionContext,
 ): AsyncGenerator<SseEvent> {
   let index = 0;
   while (index < toolCalls.length) {
@@ -240,7 +297,7 @@ async function* executeToolCalls(
 
 async function* runReadBatch(
   batch: ToolCall[],
-  ctx: Parameters<typeof executeToolCalls>[1],
+  ctx: ExecutionContext,
 ): AsyncGenerator<SseEvent> {
   if (batch.length === 1) {
     yield* runOneTool(batch[0], ctx);
@@ -262,6 +319,7 @@ async function* runReadBatch(
         const cached = ctx.cache.cached(item.key);
         return {
           item,
+          isCached: true,
           result: {
             content: cached?.content ?? { skipped: true, reason: skip },
             text: cached?.ok ? cached.text : skip,
@@ -272,7 +330,7 @@ async function* runReadBatch(
       try {
         const result = await callTool(ctx.mcpClient, item.call.name, item.call.args, ctx.signal);
         ctx.cache.record(item.key, result);
-        return { item, result };
+        return { item, isCached: false, result };
       } catch (e) {
         const result = {
           content: { error: e instanceof Error ? e.message : "Tool call failed" },
@@ -280,12 +338,12 @@ async function* runReadBatch(
           isError: true,
         };
         ctx.cache.record(item.key, result);
-        return { item, result };
+        return { item, isCached: false, result };
       }
     }),
   );
   const ms = Date.now() - started;
-  for (const { item, result } of settled) {
+  for (const { item, isCached, result } of settled) {
     yield {
       type: "tool_result",
       callId: item.callId,
@@ -300,14 +358,32 @@ async function* runReadBatch(
       name: item.call.name,
       content: result.text,
     });
+
+    if (ctx.auditLogger) {
+      ctx.auditLogger.append({
+        sceneId: ctx.sceneId,
+        projectPath: ctx.projectPath,
+        sessionId: ctx.sessionId,
+        turn: ctx.turn,
+        tool: item.call.name,
+        args: item.call.args,
+        status: isCached ? "cached" : result.isError ? "error" : "ok",
+        cached: isCached,
+        durationMs: ms,
+        approval: "none",
+        summary: summarizeContent(result.content),
+        error: result.isError ? result.text : undefined,
+      }).catch(() => {});
+    }
   }
 }
 
 async function* runOneTool(
   call: ToolCall,
-  ctx: Parameters<typeof executeToolCalls>[1],
+  ctx: ExecutionContext,
 ): AsyncGenerator<SseEvent> {
   const callId = call.id || nanoid();
+  let approvalDecision: "none" | "allowed" | "denied" = "none";
 
   if (ctx.approvalGate.needsApproval(call.name, ctx.approvalMode)) {
     const reqId = nanoid();
@@ -319,6 +395,7 @@ async function* runOneTool(
       args: call.args,
     };
     const decision = await ctx.approvalGate.waitForApproval(reqId, ctx.signal);
+    approvalDecision = decision === "allow" ? "allowed" : "denied";
     if (decision === "deny") {
       yield {
         type: "tool_result",
@@ -333,6 +410,20 @@ async function* runOneTool(
         name: call.name,
         content: JSON.stringify({ denied: true }),
       });
+      if (ctx.auditLogger) {
+        ctx.auditLogger.append({
+          sceneId: ctx.sceneId,
+          projectPath: ctx.projectPath,
+          sessionId: ctx.sessionId,
+          turn: ctx.turn,
+          tool: call.name,
+          args: call.args,
+          status: "denied",
+          durationMs: 0,
+          approval: "denied",
+          summary: "Denied by user approval",
+        }).catch(() => {});
+      }
       return;
     }
   }
@@ -345,13 +436,14 @@ async function* runOneTool(
   if (skip) {
     const cached = ctx.cache.cached(key);
     const ok = cached?.ok ?? false;
+    const durationMs = Date.now() - startMs;
     yield {
       type: "tool_result",
       callId,
       tool: call.name,
       result: cached?.content ?? { skipped: true, reason: skip },
       ok,
-      ms: Date.now() - startMs,
+      ms: durationMs,
     };
     ctx.history.append({
       role: "tool",
@@ -359,6 +451,21 @@ async function* runOneTool(
       name: call.name,
       content: ok && cached ? cached.text : skip,
     });
+    if (ctx.auditLogger) {
+      ctx.auditLogger.append({
+        sceneId: ctx.sceneId,
+        projectPath: ctx.projectPath,
+        sessionId: ctx.sessionId,
+        turn: ctx.turn,
+        tool: call.name,
+        args: call.args,
+        status: "cached",
+        cached: true,
+        durationMs,
+        approval: approvalDecision,
+        summary: "Reused identical cached result",
+      }).catch(() => {});
+    }
     return;
   }
 
@@ -374,13 +481,19 @@ async function* runOneTool(
   }
   ctx.cache.record(key, result);
 
+  // If this was a mutation tool, invalidate cached scene state reads
+  if (isMutationTool(call.name)) {
+    ctx.cache.invalidateOnMutation(call.name, call.args);
+  }
+
+  const durationMs = Date.now() - startMs;
   yield {
     type: "tool_result",
     callId,
     tool: call.name,
     result: result.content,
     ok: !result.isError,
-    ms: Date.now() - startMs,
+    ms: durationMs,
   };
   ctx.history.append({
     role: "tool",
@@ -388,6 +501,39 @@ async function* runOneTool(
     name: call.name,
     content: result.text,
   });
+
+  if (ctx.auditLogger) {
+    ctx.auditLogger.append({
+      sceneId: ctx.sceneId,
+      projectPath: ctx.projectPath,
+      sessionId: ctx.sessionId,
+      turn: ctx.turn,
+      tool: call.name,
+      args: call.args,
+      status: result.isError ? "error" : "ok",
+      cached: false,
+      durationMs,
+      approval: approvalDecision,
+      summary: summarizeContent(result.content),
+      error: result.isError ? result.text : undefined,
+    }).catch(() => {});
+  }
+}
+
+function summarizeContent(content: unknown): string {
+  if (content == null) return "ok";
+  if (typeof content === "string") {
+    return content.length > 150 ? `${content.slice(0, 147)}...` : content;
+  }
+  if (typeof content === "object") {
+    try {
+      const s = JSON.stringify(content);
+      return s.length > 150 ? `${s.slice(0, 147)}...` : s;
+    } catch {
+      return "[Object]";
+    }
+  }
+  return String(content);
 }
 
 function sleep(ms: number): Promise<void> {

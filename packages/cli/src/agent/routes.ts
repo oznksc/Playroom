@@ -14,9 +14,12 @@ import {
   runAgent,
   globalApprovalGate,
   callTool,
+  AgentAuditLogger,
   type ApprovalMode,
   type PromptContext,
   type PriorTurn,
+  type AuditQueryOptions,
+  type AuditEntryStatus,
 } from "@gamekit/agent";
 import { readScene, getGameKitRoot } from "../project.js";
 import { beginSse, writeSse, endSse } from "./sse.js";
@@ -214,6 +217,8 @@ export async function handleAgentRoute(
     const defaultModel = body.model ?? storedKey?.model ?? defaultModelFor(provider.id);
     const defaultBaseUrl = body.baseUrl ?? storedKey?.baseUrl ?? provider.defaultBaseUrl;
 
+    const auditLogger = new AgentAuditLogger(root);
+
     try {
       const stream = runAgent(
         {
@@ -228,9 +233,10 @@ export async function handleAgentRoute(
           sceneContext,
           priorTurns: body.history,
           priorTools: body.toolCalls,
+          sessionId: chatId,
           signal: abortController.signal,
         },
-        { provider, mcpClient, approvalGate: globalApprovalGate },
+        { provider, mcpClient, approvalGate: globalApprovalGate, auditLogger },
       );
 
       for await (const event of stream) {
@@ -369,6 +375,31 @@ export async function handleAgentRoute(
     } catch {
       sendJson(response, 404, { error: "History not found" });
     }
+    return true;
+  }
+
+  // GET /api/agent/audit
+  if (pathname === "/api/agent/audit" && method === "GET") {
+    const urlObj = new URL(request.url ?? pathname, "http://localhost");
+    const limit = urlObj.searchParams.get("limit") ? Number(urlObj.searchParams.get("limit")) : 50;
+    const sceneId = urlObj.searchParams.get("sceneId") ?? undefined;
+    const tool = urlObj.searchParams.get("tool") ?? undefined;
+    const status = (urlObj.searchParams.get("status") as AuditEntryStatus | null) ?? undefined;
+    const since = urlObj.searchParams.get("since") ? Number(urlObj.searchParams.get("since")) : undefined;
+    const until = urlObj.searchParams.get("until") ? Number(urlObj.searchParams.get("until")) : undefined;
+    const sessionId = urlObj.searchParams.get("sessionId") ?? undefined;
+
+    const auditLogger = new AgentAuditLogger(root);
+    const entries = await auditLogger.query({ limit, sceneId, tool, status, since, until, sessionId });
+    sendJson(response, 200, { entries, total: entries.length });
+    return true;
+  }
+
+  // DELETE /api/agent/audit
+  if (pathname === "/api/agent/audit" && method === "DELETE") {
+    const auditLogger = new AgentAuditLogger(root);
+    await auditLogger.clear();
+    sendJson(response, 200, { ok: true });
     return true;
   }
 

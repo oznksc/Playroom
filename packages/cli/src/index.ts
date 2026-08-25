@@ -539,6 +539,44 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    case "audit": {
+      const { AgentAuditLogger } = await import("@gamekit/agent");
+      const logger = new AgentAuditLogger(cwd);
+
+      if (args.includes("--clear")) {
+        await logger.clear();
+        console.log("Cleared tool audit log.");
+        return;
+      }
+
+      const limit = Number(readOption(args, "--tail") ?? readOption(args, "--limit") ?? 20);
+      const tool = readOption(args, "--tool");
+      const sceneId = readOption(args, "--scene");
+      const status = readOption(args, "--status") as any;
+      const asJson = args.includes("--json");
+
+      const entries = await logger.query({ limit, tool, sceneId, status });
+      if (asJson) {
+        console.log(JSON.stringify(entries, null, 2));
+        return;
+      }
+
+      if (entries.length === 0) {
+        console.log("No tool audit logs found.");
+        return;
+      }
+
+      console.log(`Tool audit logs (showing ${entries.length} recent entries):\n`);
+      for (const entry of entries) {
+        const time = entry.isoTime.replace("T", " ").replace("Z", "").slice(0, 19);
+        const icon = entry.status === "ok" ? "✓" : entry.status === "cached" ? "⚡" : entry.status === "denied" ? "✋" : "✖";
+        const scene = entry.sceneId ? ` [${entry.sceneId}]` : "";
+        const dur = `${entry.durationMs}ms`;
+        const summary = entry.error ? ` — error: ${entry.error}` : entry.summary ? ` — ${entry.summary}` : "";
+        console.log(`  ${icon} ${time}  ${entry.tool.padEnd(24)}  ${entry.status.padEnd(8)}  ${dur.padStart(6)}${scene}${summary}`);
+      }
+      return;
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -593,6 +631,7 @@ Usage:
   gamekit recipes list [--category effect|mechanic|script|animation|gesture] [--tag pickup] [--query bob]
   gamekit recipes describe <recipe-id>
   gamekit recipes apply <recipe-id> --scene <file> [--entity <id>] [--param key=value]...
+  gamekit audit [--tail 20] [--tool <name>] [--scene <id>] [--status ok|error|denied|cached] [--json] [--clear]
   gamekit search <query>
   gamekit validate
   gamekit doctor

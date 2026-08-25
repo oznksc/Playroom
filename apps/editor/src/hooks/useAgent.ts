@@ -41,6 +41,10 @@ const READ_ONLY_TOOLS = new Set([
   "get_timeline",
   "get_game_rules",
   "list_gui_components",
+  "run_doctor",
+  "get_audit_log",
+  "query_audit_log",
+  "get_prefab",
 ]);
 
 export type UseAgentReturn = {

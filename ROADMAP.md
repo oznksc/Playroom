@@ -257,10 +257,8 @@ Ordered for product impact, not exhaustive:
 - [x] `/screenshot` → vision model loop
 - [x] BYOK: OS keychain on Tauri, passphrase-encrypted localStorage in the browser
 
-### Open
-
-- [x] Tool-loop muscle: compact MCP results, identical-call cache, parallel read-only tools, transient provider retry, inspect-spin breaker
-- [ ] Tool audit log persisted to disk
+- [x] Tool audit log persisted to disk (`gamekit/agent/audit.jsonl`, `gamekit audit` CLI, `/api/agent/audit` endpoints, `get_audit_log` MCP tool)
+- [x] Advanced tool-loop optimizations: mutation-aware cache invalidation, parallel read-only tool batching with streamed results, multi-tier inspect-spin circuit breakers & cycle detection
 
 ---
 

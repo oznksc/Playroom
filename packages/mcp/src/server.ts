@@ -29,6 +29,7 @@ import { registerLayoutTools } from "./tools/layout.js";
 import { registerComposeTools } from "./tools/compose.js";
 import { registerTimelineTools } from "./tools/timeline.js";
 import { registerInspectorTools } from "./tools/inspector.js";
+import { registerAuditTools } from "./tools/audit.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -71,6 +72,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerComposeTools(server, fileIO);
   registerTimelineTools(server, fileIO);
   registerInspectorTools(server, fileIO);
+  registerAuditTools(server, fileIO);
   registerResources(server, fileIO);
   registerPrompts(server);
 

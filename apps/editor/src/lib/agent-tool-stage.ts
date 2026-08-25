@@ -182,6 +182,8 @@ const EXACT_KIND: Record<string, ToolStageKind> = {
   apply_input_preset: "input",
   import_image: "asset",
   set_tilemap_solid: "write",
+  get_audit_log: "read",
+  query_audit_log: "read",
 };
 
 function inferKind(tool: string): ToolStageKind {
