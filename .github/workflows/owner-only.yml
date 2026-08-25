@@ -1,0 +1,36 @@
+name: Owner only
+
+# Blocks contributions from anyone except the repo owner.
+# Does not require reviews or PRs for the owner's own pushes.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  close-foreign-prs:
+    if: github.event.pull_request.user.login != 'oznksc'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Close pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              'This repository does not accept pull requests.',
+              'Only @oznksc can change the project.',
+            ].join(' ');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed',
+            });
