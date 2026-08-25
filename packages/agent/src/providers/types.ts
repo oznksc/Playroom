@@ -31,7 +31,7 @@ export type StreamEvent =
   | { type: "error"; message: string }
   | { type: "done"; usage?: { inputTokens: number; outputTokens: number } };
 
-export type ProviderId = "anthropic" | "openai" | "google" | "ollama" | "lmstudio" | "custom" | "openrouter";
+export type ProviderId = "anthropic" | "openai" | "google" | "ollama" | "lmstudio" | "custom" | "openrouter" | "xai";
 
 export interface ProviderAdapter {
   readonly id: ProviderId;

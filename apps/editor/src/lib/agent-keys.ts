@@ -175,6 +175,16 @@ export function usesOsKeychain(): boolean {
 }
 
 /** Persist API key: OS keychain on Tauri, encrypted localStorage on web. */
+const sessionSecrets = new Map<string, string>();
+
+export function cacheSessionSecret(provider: string, apiKey: string): void {
+  sessionSecrets.set(provider, apiKey);
+}
+
+export function getSessionSecret(provider: string): string | undefined {
+  return sessionSecrets.get(provider);
+}
+
 export async function storeApiKey(
   provider: string,
   apiKey: string,
@@ -188,6 +198,7 @@ export async function storeApiKey(
     const meta = readMeta();
     meta[provider] = { model, baseUrl, storage: "keychain" };
     writeMeta(meta);
+    cacheSessionSecret(provider, apiKey);
     // Remove any legacy encrypted local copy
     const keys = JSON.parse(localStorage.getItem(KEYS_PREFIX + "v1") ?? "{}");
     if (keys[provider]) {
@@ -199,6 +210,7 @@ export async function storeApiKey(
 
   const encrypted = await encryptApiKey(apiKey, passphrase);
   saveEncryptedKey(provider, encrypted, model, baseUrl);
+  cacheSessionSecret(provider, apiKey);
   return "local";
 }
 
@@ -208,7 +220,10 @@ export async function loadApiKey(provider: string, passphrase?: string): Promise
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const secret = await invoke<string | null>("secret_get", { account: provider });
-      if (secret) return secret;
+      if (secret) {
+        cacheSessionSecret(provider, secret);
+        return secret;
+      }
     } catch {
       // fall through to local
     }
@@ -217,7 +232,9 @@ export async function loadApiKey(provider: string, passphrase?: string): Promise
   const entry = getEncryptedKey(provider);
   if (!entry) return null;
   if (!passphrase) return null;
-  return decryptApiKey(entry.encryptedApiKey, passphrase);
+  const plain = await decryptApiKey(entry.encryptedApiKey, passphrase);
+  if (plain) cacheSessionSecret(provider, plain);
+  return plain;
 }
 
 export async function removeApiKey(provider: string): Promise<void> {
@@ -230,4 +247,5 @@ export async function removeApiKey(provider: string): Promise<void> {
     }
   }
   deleteEncryptedKey(provider);
+  sessionSecrets.delete(provider);
 }

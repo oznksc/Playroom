@@ -9,6 +9,12 @@ const DESTRUCTIVE_TOOLS = new Set([
   "write_project",
   "restore_snapshot",
   "apply_skill",
+  "remove_level",
+  "remove_timeline_track",
+  "remove_script_handler",
+  "remove_gui_node",
+  "remove_objective",
+  "remove_hazard",
 ]);
 
 type PendingApproval = {
@@ -24,7 +30,8 @@ export class ApprovalGate {
   needsApproval(toolName: string, mode: ApprovalMode): boolean {
     if (mode === "off") return false;
     if (mode === "always" || mode === "plan") return true;
-    return DESTRUCTIVE_TOOLS.has(toolName);
+    if (DESTRUCTIVE_TOOLS.has(toolName)) return true;
+    return /^(remove_|delete_)/.test(toolName);
   }
 
   waitForApproval(

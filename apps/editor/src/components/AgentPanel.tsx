@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Square, Settings, X } from "lucide-react";
+import { Sparkles, Send, Square, Settings, X, Maximize2, Minimize2 } from "lucide-react";
 import { AgentMessage } from "./AgentMessage.js";
 import { AgentToolTrace } from "./AgentToolTrace.js";
 import { useAgent } from "../hooks/useAgent.js";
@@ -22,6 +22,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   anthropic: "Anthropic Claude",
   openrouter: "OpenRouter",
   openai: "OpenAI",
+  xai: "xAI Grok",
   google: "Google AI",
   ollama: "Ollama (local)",
   lmstudio: "LM Studio (local)",
@@ -30,13 +31,15 @@ const PROVIDER_LABELS: Record<string, string> = {
 type AgentPanelProps = {
   sceneId: string;
   isPlaying: boolean;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
   onSettings?: () => void;
   onSceneMutated?: () => void;
 };
 
-export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: AgentPanelProps) {
+export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSettings, onSceneMutated }: AgentPanelProps) {
   const [input, setInput] = useState("");
-  const { keys } = useAgentKeys();
+  const { keys, sessionKey } = useAgentKeys();
   const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
   const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
@@ -85,7 +88,16 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
     approveTool,
     clear,
     restoreSessionSnapshot,
-  } = useAgent(sceneId, resolvedModel, resolvedProvider, approvalMode, onSceneMutated, planMode);
+  } = useAgent(
+    sceneId,
+    resolvedModel,
+    resolvedProvider,
+    approvalMode,
+    onSceneMutated,
+    planMode,
+    sessionKey(resolvedProvider),
+    activeKeyEntry?.baseUrl,
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,10 +134,18 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
               const entry = keys.find((k) => k.provider === newProvider);
               const defaultModel =
                 newProvider === "openrouter"
-                  ? "meta-llama/llama-3.3-70b-instruct"
+                  ? "anthropic/claude-sonnet-4.5"
                   : newProvider === "lmstudio"
                     ? "local-model"
-                    : "claude-sonnet-4-5";
+                    : newProvider === "xai"
+                      ? "grok-4"
+                      : newProvider === "openai"
+                        ? "gpt-4o"
+                        : newProvider === "google"
+                          ? "gemini-2.0-flash"
+                          : newProvider === "ollama"
+                            ? "llama3.1:8b"
+                            : "claude-sonnet-4-5";
               const newModel = entry?.model || defaultModel;
               setActiveModel(newModel);
               localStorage.setItem("gamekit:agent:activeModel", newModel);
@@ -148,6 +168,9 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
                 localStorage.setItem("gamekit:agent:activeModel", newModel);
               }}
             >
+              {!modelsList.includes(resolvedModel) && (
+                <option value={resolvedModel}>{resolvedModel}</option>
+              )}
               {modelsList.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -196,6 +219,15 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
               Undo session
             </Button>
           )}
+          {onToggleExpand && (
+            <IconButton
+              size="sm"
+              title={expanded ? "Exit full screen" : "Full screen"}
+              onClick={onToggleExpand}
+            >
+              {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </IconButton>
+          )}
           <IconButton size="sm" title="Settings" onClick={onSettings}>
             <Settings size={13} />
           </IconButton>
@@ -214,7 +246,13 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            {messages.length === 0 ? (
+            {keys.length === 0 ? (
+              <EmptyState
+                icon={<Sparkles size={16} />}
+                title="Connect an AI provider"
+                description="Open Settings, add Anthropic, OpenAI, xAI, or a local server, then describe the level you want."
+              />
+            ) : messages.length === 0 ? (
               <EmptyState
                 icon={<Sparkles size={16} />}
                 title="Ask the agent to build your scene"
@@ -292,7 +330,7 @@ export function AgentPanel({ sceneId, isPlaying, onSettings, onSceneMutated }: A
                 size="lg"
                 variant="accent"
                 type="submit"
-                disabled={!input.trim() || !!pendingApproval}
+                disabled={!input.trim() || !!pendingApproval || keys.length === 0}
                 title="Send"
               >
                 <Send size={14} />

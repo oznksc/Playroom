@@ -206,6 +206,9 @@ export function App() {
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
+  const [agentExpanded, setAgentExpanded] = useState(
+    () => localStorage.getItem("gamekit:agent:expanded") === "1",
+  );
   const [wizardOpen, setWizardOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
@@ -2729,7 +2732,11 @@ export function App() {
       />
 
       {/* Left floating sheet */}
-      <div className={`float-sheet-left${sidebarOpen ? " open" : ""}`} role="dialog" aria-label="Workspace panel">
+      <div
+        className={`float-sheet-left${sidebarOpen ? " open" : ""}${sidebarOpen && activeTab === "agent" && agentExpanded ? " expanded" : ""}`}
+        role="dialog"
+        aria-label="Workspace panel"
+      >
         <div className="sidebar-content">
           {activeTab === "entities" && (
             <Sidebar
@@ -2799,6 +2806,15 @@ export function App() {
             <AgentPanel
               sceneId={currentSceneFile}
               isPlaying={isPlaying}
+              expanded={agentExpanded}
+              onToggleExpand={() => {
+                setAgentExpanded((prev) => {
+                  const next = !prev;
+                  localStorage.setItem("gamekit:agent:expanded", next ? "1" : "0");
+                  if (next) setInspectorOpen(false);
+                  return next;
+                });
+              }}
               onSettings={() => setAgentSettingsOpen(true)}
               onSceneMutated={() => {
                 if (!isPlaying) {

@@ -14,7 +14,7 @@
   "assets": [],
   "entities": [
     {
-      "id": "player-hrlfph",
+      "id": "player-30y5j7",
       "name": "Player",
       "components": [
         {
@@ -74,7 +74,7 @@
       ]
     },
     {
-      "id": "enemy-tzlbjc",
+      "id": "enemy-fw1t85",
       "name": "Enemy",
       "components": [
         {
@@ -131,7 +131,7 @@
       ]
     },
     {
-      "id": "arenawall-ts6j4r",
+      "id": "arenawall-w58yvv",
       "name": "ArenaWall",
       "components": [
         {

@@ -12,6 +12,8 @@ export { AnthropicAdapter } from "./providers/anthropic.js";
 export { LmStudioAdapter } from "./providers/lmstudio.js";
 export { OpenRouterAdapter } from "./providers/openrouter.js";
 export { OpenAIAdapter } from "./providers/openai.js";
+export { createProvider, PROVIDER_CATALOG, defaultModelFor } from "./providers/factory.js";
+export type { ProviderCatalogEntry } from "./providers/factory.js";
 export { OllamaAdapter } from "./providers/ollama.js";
 export { GoogleAdapter } from "./providers/google.js";
 
@@ -23,6 +25,7 @@ export type { KeyVault, StoredKey } from "./store/keys.js";
 export { McpClient } from "./mcp/client.js";
 export { listTools, toModelTools } from "./mcp/tools.js";
 export { callTool } from "./mcp/executor.js";
+export { normalizeToolResult, ToolCallCache } from "./loop/tool-runtime.js";
 
 export type { AgentInput, AgentDeps } from "./loop/agent.js";
 export { runAgent } from "./loop/agent.js";

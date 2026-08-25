@@ -63,6 +63,8 @@ export function useAgent(
   approvalMode: ApprovalMode,
   onSceneMutated?: () => void,
   planMode = false,
+  apiKey?: string,
+  baseUrl?: string,
 ): UseAgentReturn {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [toolCalls, setToolCalls] = useState<AgentToolCall[]>([]);
@@ -186,6 +188,8 @@ export function useAgent(
           planMode: planMode || approvalMode === "plan",
           history: messagesRef.current.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
           toolCalls: toolCallsRef.current.map((t) => ({ tool: t.tool, status: t.status })),
+          ...(apiKey ? { apiKey } : {}),
+          ...(baseUrl ? { baseUrl } : {}),
         }),
         signal: abortRef.current.signal,
       });
@@ -346,7 +350,7 @@ export function useAgent(
       abortRef.current = null;
       void persistHistory(messagesRef.current, toolCallsRef.current);
     }
-  }, [sceneId, model, provider, approvalMode, planMode, persistHistory, patchMessages, patchToolCalls, upsertToolCall, finalizeOpenTools]);
+  }, [sceneId, model, provider, approvalMode, planMode, apiKey, baseUrl, persistHistory, patchMessages, patchToolCalls, upsertToolCall, finalizeOpenTools]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (isStreaming) return;

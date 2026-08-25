@@ -726,6 +726,16 @@
   pointer-events: auto;
 }
 
+.float-sheet-left.open.expanded {
+  left: 12px;
+  right: 12px;
+  width: auto;
+  top: 12px;
+  bottom: 88px;
+  z-index: 46;
+  transform: none;
+}
+
 .float-sheet-left .sidebar-content,
 .float-sheet-left .panel,
 .float-sheet-right .inspector-column,

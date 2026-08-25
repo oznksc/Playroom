@@ -7,6 +7,8 @@ describe("ApprovalGate", () => {
     expect(gate.needsApproval("remove_entity", "destructive-only")).toBe(true);
     expect(gate.needsApproval("add_entity", "destructive-only")).toBe(false);
     expect(gate.needsApproval("apply_skill", "destructive-only")).toBe(true);
+    expect(gate.needsApproval("remove_level", "destructive-only")).toBe(true);
+    expect(gate.needsApproval("remove_gui_node", "destructive-only")).toBe(true);
   });
 
   it("always mode requires approval for any tool", () => {

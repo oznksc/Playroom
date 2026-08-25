@@ -105,15 +105,15 @@
       ]
     }
   ],
-  "activeScene": "physics-puzzle.scene.json",
   "transitions": [
     {
       "id": "pp2-to-pp3",
       "name": "Physics Puzzle 2 to 3",
+      "fromSceneId": "physics-puzzle-2.scene.json",
       "toSceneId": "physics-puzzle-3.scene.json",
       "type": "fade",
-      "duration": 0.4,
-      "fromSceneId": "physics-puzzle-2.scene.json"
+      "duration": 0.4
     }
-  ]
+  ],
+  "activeScene": "physics-puzzle.scene.json"
 }

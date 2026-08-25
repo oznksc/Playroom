@@ -8,12 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import {
   McpClient,
-  AnthropicAdapter,
-  LmStudioAdapter,
-  OpenRouterAdapter,
-  OpenAIAdapter,
-  OllamaAdapter,
-  GoogleAdapter,
+  createProvider,
+  PROVIDER_CATALOG,
+  defaultModelFor,
   runAgent,
   globalApprovalGate,
   callTool,
@@ -46,58 +43,50 @@ export async function handleAgentRoute(
 ): Promise<boolean> {
   // GET /api/agent/providers
   if (pathname === "/api/agent/providers" && method === "GET") {
+    sendJson(response, 200, { providers: PROVIDER_CATALOG });
+    return true;
+  }
+
+  // GET /api/agent/keys — which providers the CLI currently has (no secrets)
+  if (pathname === "/api/agent/keys" && method === "GET") {
     sendJson(response, 200, {
-      providers: [
-        {
-          id: "anthropic",
-          label: "Anthropic Claude",
-          defaultBaseUrl: "https://api.anthropic.com",
-          requiresApiKey: true,
-          defaultModel: "claude-sonnet-4-5",
-          supported: true,
-        },
-        {
-          id: "openrouter",
-          label: "OpenRouter",
-          defaultBaseUrl: "https://openrouter.ai/api/v1",
-          requiresApiKey: true,
-          defaultModel: "meta-llama/llama-3.3-70b-instruct",
-          supported: true,
-        },
-        {
-          id: "openai",
-          label: "OpenAI",
-          defaultBaseUrl: "https://api.openai.com/v1",
-          requiresApiKey: true,
-          defaultModel: "gpt-4o",
-          supported: true,
-        },
-        {
-          id: "google",
-          label: "Google AI",
-          defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-          requiresApiKey: true,
-          defaultModel: "gemini-2.0-flash",
-          supported: true,
-        },
-        {
-          id: "ollama",
-          label: "Ollama (local)",
-          defaultBaseUrl: "http://localhost:11434",
-          requiresApiKey: false,
-          defaultModel: "llama3.1:8b",
-          supported: true,
-        },
-        {
-          id: "lmstudio",
-          label: "LM Studio (local)",
-          defaultBaseUrl: "http://127.0.0.1:1234",
-          requiresApiKey: false,
-          defaultModel: "local-model",
-          supported: true,
-        },
-      ],
+      providers: [...keyStore.entries()].map(([id, stored]) => ({
+        id,
+        hasKey: Boolean(stored.apiKey) && stored.apiKey !== "local",
+        model: stored.model,
+        baseUrl: stored.baseUrl,
+      })),
     });
+    return true;
+  }
+
+  // POST /api/agent/validate
+  if (pathname === "/api/agent/validate" && method === "POST") {
+    const body = JSON.parse((await readBody(request)).toString("utf8")) as {
+      provider?: string;
+      apiKey?: string;
+      baseUrl?: string;
+    };
+    if (!body?.provider) {
+      sendJson(response, 400, { error: "Missing provider" });
+      return true;
+    }
+    const adapter = createProvider(body.provider);
+    if (!adapter) {
+      sendJson(response, 400, { error: `Unknown provider: ${body.provider}` });
+      return true;
+    }
+    const apiKey = body.apiKey || keyStore.get(body.provider)?.apiKey || "";
+    if (adapter.requiresApiKey && !apiKey) {
+      sendJson(response, 400, { error: "Missing apiKey" });
+      return true;
+    }
+    const result = await adapter.validateKey({
+      apiKey: apiKey || "local",
+      baseUrl: body.baseUrl || keyStore.get(body.provider)?.baseUrl || adapter.defaultBaseUrl,
+      signal: new AbortController().signal,
+    });
+    sendJson(response, result.ok ? 200 : 400, result);
     return true;
   }
 
@@ -109,22 +98,10 @@ export async function handleAgentRoute(
       return true;
     }
     keyStore.set(body.provider, body);
-    const defaultModel = body.provider === "openrouter"
-      ? "meta-llama/llama-3.3-70b-instruct"
-      : body.provider === "lmstudio"
-      ? "local-model"
-      : body.provider === "openai"
-      ? "gpt-4o"
-      : body.provider === "google"
-      ? "gemini-2.0-flash"
-      : body.provider === "ollama"
-      ? "llama3.1:8b"
-      : "claude-sonnet-4-5";
-
     sendJson(response, 200, {
       ok: true,
       provider: body.provider,
-      model: body.model ?? defaultModel,
+      model: body.model ?? defaultModelFor(body.provider),
     });
     return true;
   }
@@ -141,6 +118,8 @@ export async function handleAgentRoute(
       planMode?: boolean;
       history?: PriorTurn[];
       toolCalls?: Array<{ tool: string; status: string }>;
+      apiKey?: string;
+      baseUrl?: string;
     };
 
     if (!body?.sceneId || !body?.message) {
@@ -148,24 +127,27 @@ export async function handleAgentRoute(
       return true;
     }
 
-    let provider;
-    if (body.provider === "lmstudio") {
-      provider = new LmStudioAdapter();
-    } else if (body.provider === "openrouter") {
-      provider = new OpenRouterAdapter();
-    } else if (body.provider === "openai") {
-      provider = new OpenAIAdapter();
-    } else if (body.provider === "google") {
-      provider = new GoogleAdapter();
-    } else if (body.provider === "ollama") {
-      provider = new OllamaAdapter();
-    } else {
-      provider = new AnthropicAdapter();
+    const provider = createProvider(body.provider ?? "anthropic");
+    if (!provider) {
+      sendJson(response, 400, { error: `Unknown provider: ${body.provider}` });
+      return true;
+    }
+
+    if (body.apiKey) {
+      const prev = keyStore.get(body.provider) ?? { provider: body.provider, apiKey: body.apiKey };
+      keyStore.set(body.provider, {
+        ...prev,
+        apiKey: body.apiKey,
+        baseUrl: body.baseUrl ?? prev.baseUrl,
+        model: body.model ?? prev.model,
+      });
     }
 
     const storedKey = keyStore.get(body.provider ?? "anthropic");
-    if (provider.requiresApiKey && !storedKey) {
-      sendJson(response, 401, { error: `No API key for provider: ${body.provider ?? "anthropic"}` });
+    if (provider.requiresApiKey && !storedKey?.apiKey) {
+      sendJson(response, 401, {
+        error: `No API key for ${body.provider}. Open Agent settings, connect the provider, then send again.`,
+      });
       return true;
     }
 
@@ -229,22 +211,17 @@ export async function handleAgentRoute(
       writeSse(response, "session_snapshot", { snapshotId: sessionSnapshotId, sceneId: body.sceneId });
     }
 
-    const defaultModel = provider.id === "lmstudio"
-      ? "local-model"
-      : provider.id === "openrouter"
-      ? "meta-llama/llama-3.3-70b-instruct"
-      : "claude-sonnet-4-5";
-
-    const defaultBaseUrl = provider.id === "anthropic" ? undefined : provider.defaultBaseUrl;
+    const defaultModel = body.model ?? storedKey?.model ?? defaultModelFor(provider.id);
+    const defaultBaseUrl = body.baseUrl ?? storedKey?.baseUrl ?? provider.defaultBaseUrl;
 
     try {
       const stream = runAgent(
         {
           message: body.message,
           screenshot: body.screenshot,
-          model: body.model ?? defaultModel,
+          model: defaultModel,
           apiKey: storedKey?.apiKey ?? "local",
-          baseUrl: storedKey?.baseUrl ?? defaultBaseUrl,
+          baseUrl: defaultBaseUrl,
           approvalMode: body.approvalMode ?? "destructive-only",
           planMode: body.planMode === true || body.approvalMode === "plan",
           sessionSnapshotId,
@@ -275,20 +252,7 @@ export async function handleAgentRoute(
   // GET /api/agent/models/:provider
   if (pathname.startsWith("/api/agent/models/") && method === "GET") {
     const providerId = pathname.slice("/api/agent/models/".length);
-    let providerAdapter;
-    if (providerId === "lmstudio") {
-      providerAdapter = new LmStudioAdapter();
-    } else if (providerId === "openrouter") {
-      providerAdapter = new OpenRouterAdapter();
-    } else if (providerId === "openai") {
-      providerAdapter = new OpenAIAdapter();
-    } else if (providerId === "google") {
-      providerAdapter = new GoogleAdapter();
-    } else if (providerId === "ollama") {
-      providerAdapter = new OllamaAdapter();
-    } else if (providerId === "anthropic") {
-      providerAdapter = new AnthropicAdapter();
-    }
+    const providerAdapter = createProvider(providerId);
 
     if (!providerAdapter) {
       sendJson(response, 400, { error: `Invalid provider: ${providerId}` });
@@ -301,10 +265,11 @@ export async function handleAgentRoute(
 
     if (providerAdapter.requiresApiKey && !apiKey) {
       const defaults: Record<string, string[]> = {
-        anthropic: ["claude-sonnet-4-5", "claude-3-5-sonnet-latest", "claude-3-opus-latest"],
-        openai: ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
+        anthropic: ["claude-sonnet-4-5", "claude-haiku-4-5", "claude-opus-4-5"],
+        openai: ["gpt-4o", "gpt-4o-mini", "gpt-5"],
+        xai: ["grok-4", "grok-3", "grok-3-mini"],
         google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-        openrouter: ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet"],
+        openrouter: ["anthropic/claude-sonnet-4.5", "openai/gpt-4o", "x-ai/grok-4"],
       };
       sendJson(response, 200, { models: defaults[providerId] ?? [] });
       return true;
@@ -416,6 +381,10 @@ function sanitizeHistoryId(sceneId: string): string {
 }
 
 function extractSnapshotId(content: unknown): string | undefined {
+  if (content && typeof content === "object" && !Array.isArray(content) && "snapshotId" in content) {
+    const id = (content as { snapshotId?: unknown }).snapshotId;
+    return typeof id === "string" ? id : undefined;
+  }
   let text: string | undefined;
   if (typeof content === "string") {
     text = content;

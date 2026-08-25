@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Key, Check, Plus, Trash2 } from "lucide-react";
+import { Key, Check, Plus, Trash2, Pencil, Loader, Unplug } from "lucide-react";
 import { useAgentKeys, type AgentKeyEntry } from "../hooks/useAgentKeys.js";
+import { getApiUrl } from "../lib/api.js";
+import { getSessionSecret } from "../lib/agent-keys.js";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +22,13 @@ type AgentSettingsProps = {
 };
 
 const PROVIDERS = [
-  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5", requiresKey: true },
-  { id: "openrouter", label: "OpenRouter", defaultModel: "meta-llama/llama-3.3-70b-instruct", requiresKey: true },
-  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o", requiresKey: true },
-  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash", requiresKey: true },
-  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b", requiresKey: false },
-  { id: "lmstudio", label: "LM Studio (local)", defaultModel: "local-model", requiresKey: false },
+  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5", requiresKey: true, defaultBaseUrl: "https://api.anthropic.com" },
+  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o", requiresKey: true, defaultBaseUrl: "https://api.openai.com/v1" },
+  { id: "xai", label: "xAI Grok", defaultModel: "grok-4", requiresKey: true, defaultBaseUrl: "https://api.x.ai/v1" },
+  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash", requiresKey: true, defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" },
+  { id: "openrouter", label: "OpenRouter", defaultModel: "anthropic/claude-sonnet-4.5", requiresKey: true, defaultBaseUrl: "https://openrouter.ai/api/v1" },
+  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b", requiresKey: false, defaultBaseUrl: "http://localhost:11434" },
+  { id: "lmstudio", label: "LM Studio (local)", defaultModel: "local-model", requiresKey: false, defaultBaseUrl: "http://127.0.0.1:1234" },
 ];
 
 export function AgentSettings({ open, onClose }: AgentSettingsProps) {
@@ -35,21 +38,63 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; reason?: string } | null>(null);
 
   const currentProvider = PROVIDERS.find((p) => p.id === editing);
   const needsKey = currentProvider?.requiresKey ?? true;
   const needsPassphrase = needsKey && !osKeychain;
+  const existing = editing ? keys.find((k) => k.provider === editing) : undefined;
 
   function getKeyStatus(providerId: string): AgentKeyEntry | undefined {
     return keys.find((k) => k.provider === providerId);
   }
 
+  function startEdit(providerId: string, entry?: AgentKeyEntry) {
+    const catalog = PROVIDERS.find((p) => p.id === providerId);
+    setEditing(providerId);
+    setApiKey("");
+    setPassphrase("");
+    setModel(entry?.model || catalog?.defaultModel || "");
+    setBaseUrl(entry?.baseUrl || catalog?.defaultBaseUrl || "");
+    setTestResult(null);
+  }
+
+  async function handleTest() {
+    if (!editing) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(getApiUrl("/api/agent/validate"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: editing,
+          apiKey: apiKey || undefined,
+          baseUrl: baseUrl || undefined,
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; reason?: string };
+      setTestResult({ ok: data.ok === true, reason: data.reason });
+    } catch (e) {
+      setTestResult({ ok: false, reason: e instanceof Error ? e.message : "Validate failed" });
+    } finally {
+      setTesting(false);
+    }
+  }
+
   async function handleSave() {
     if (!editing) return;
-    if (needsKey && !apiKey) return;
-    if (needsPassphrase && !passphrase) return;
-    const pass = needsPassphrase ? passphrase : "local";
-    const key = needsKey ? apiKey : "local";
+    if (needsKey && !apiKey && !existing && !getSessionSecret(editing)) return;
+    if (needsPassphrase && !passphrase && !existing && !getSessionSecret(editing)) return;
+    const pass = needsPassphrase ? passphrase || "local" : "local";
+    const key = needsKey ? apiKey || getSessionSecret(editing) || "" : "local";
+    if (needsKey && !key) {
+      localStorage.setItem("gamekit:agent:activeProvider", editing);
+      if (model) localStorage.setItem("gamekit:agent:activeModel", model);
+      setEditing(null);
+      return;
+    }
     await addKey(editing, key, pass, model || undefined, baseUrl || undefined);
 
     localStorage.setItem("gamekit:agent:activeProvider", editing);
@@ -64,16 +109,21 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
     setPassphrase("");
     setModel("");
     setBaseUrl("");
+    setTestResult(null);
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[min(560px,calc(100vw-32px))]">
+      <DialogContent className="w-[min(620px,calc(100vw-32px))]">
         <DialogHeader>
           <Key size={14} className="text-accent" />
           <DialogTitle className="text-[12px]">AI Providers</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-3">
+          <p className="m-0 text-[11px] leading-relaxed text-text-secondary">
+            Connect at least one provider. Keys stay on this machine
+            {osKeychain ? " (OS keychain)" : " (encrypted in the browser)"}. The editor sends the key with each chat so a CLI restart does not drop the session.
+          </p>
           <div className="overflow-hidden rounded-md border border-border-default">
             <table className="w-full border-collapse text-left text-[11px]">
               <thead className="bg-bg-base text-[9px] uppercase tracking-wide text-text-muted">
@@ -103,27 +153,35 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {entry ? (
-                          <IconButton
-                            size="sm"
-                            variant="danger"
-                            onClick={() => void removeKey(p.id)}
-                            title="Remove"
-                          >
-                            <Trash2 size={12} />
-                          </IconButton>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                              setEditing(p.id);
-                              setModel(p.defaultModel);
-                            }}
-                          >
-                            <Plus size={12} /> Add
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {entry ? (
+                            <>
+                              <IconButton
+                                size="sm"
+                                title="Edit"
+                                onClick={() => startEdit(p.id, entry)}
+                              >
+                                <Pencil size={12} />
+                              </IconButton>
+                              <IconButton
+                                size="sm"
+                                variant="danger"
+                                onClick={() => void removeKey(p.id)}
+                                title="Remove"
+                              >
+                                <Trash2 size={12} />
+                              </IconButton>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => startEdit(p.id)}
+                            >
+                              <Plus size={12} /> Add
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -135,18 +193,19 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
           {editing && (
             <div className="space-y-2 rounded-md border border-border-default bg-bg-base p-3">
               <h4 className="m-0 text-[11px] font-semibold text-text-primary">
-                Connect {currentProvider?.label}
+                {existing ? "Update" : "Connect"} {currentProvider?.label}
               </h4>
               {needsKey && (
                 <label className="block space-y-1">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-                    API Key
+                    API Key {existing && !apiKey ? "(leave blank to keep)" : ""}
                   </span>
                   <Input
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-..."
+                    placeholder={existing ? "••••••••" : "sk-..."}
+                    autoComplete="off"
                   />
                 </label>
               )}
@@ -161,25 +220,17 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   placeholder={currentProvider?.defaultModel}
                 />
               </label>
-              {(!needsKey || editing === "openrouter" || editing === "openai") && (
-                <label className="block space-y-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-                    Base URL {needsKey && "(optional)"}
-                  </span>
-                  <Input
-                    type="text"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder={
-                      editing === "openrouter"
-                        ? "https://openrouter.ai/api/v1"
-                        : editing === "openai"
-                          ? "https://api.openai.com/v1"
-                          : "http://127.0.0.1:1234"
-                    }
-                  />
-                </label>
-              )}
+              <label className="block space-y-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                  Base URL
+                </span>
+                <Input
+                  type="text"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  placeholder={currentProvider?.defaultBaseUrl}
+                />
+              </label>
               {needsPassphrase && (
                 <label className="block space-y-1">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
@@ -189,9 +240,14 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     type="password"
                     value={passphrase}
                     onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder="Enter passphrase"
+                    placeholder="Encrypts the key in this browser"
                   />
                 </label>
+              )}
+              {testResult && (
+                <p className={`m-0 text-[10px] ${testResult.ok ? "text-accent-green" : "text-error"}`}>
+                  {testResult.ok ? "Connection ok." : `Failed: ${testResult.reason ?? "unknown"}`}
+                </p>
               )}
               {needsKey && (
                 <p className="m-0 text-[10px] leading-relaxed text-text-muted">
@@ -204,13 +260,16 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                 <Button variant="ghost" size="md" onClick={() => setEditing(null)}>
                   Cancel
                 </Button>
+                <Button variant="secondary" size="md" onClick={() => void handleTest()} disabled={testing}>
+                  {testing ? <Loader size={12} className="animate-spin" /> : <Unplug size={12} />} Test
+                </Button>
                 <Button
                   variant="primary"
                   size="md"
                   onClick={() => void handleSave()}
-                  disabled={needsKey ? !apiKey || (needsPassphrase && !passphrase) : false}
+                  disabled={needsKey && !existing ? !apiKey || (needsPassphrase && !passphrase) : false}
                 >
-                  <Check size={12} /> Connect
+                  <Check size={12} /> {existing ? "Save" : "Connect"}
                 </Button>
               </div>
             </div>

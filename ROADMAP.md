@@ -258,7 +258,8 @@ Ordered for product impact, not exhaustive:
 
 ### Open
 
-- [ ] Tool audit log + idempotency keys for LLM retries
+- [x] Tool-loop muscle: compact MCP results, identical-call cache, parallel read-only tools, transient provider retry, inspect-spin breaker
+- [ ] Tool audit log persisted to disk
 
 ---
 

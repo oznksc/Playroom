@@ -4,20 +4,29 @@ import type {
   StreamEvent,
   ProviderMessage,
   ModelTool,
-  ToolCall
+  ToolCall,
+  ProviderId,
 } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://api.openai.com/v1";
-
 export class OpenAIAdapter implements ProviderAdapter {
-  readonly id = "openai" as const;
-  readonly label = "OpenAI";
-  readonly defaultBaseUrl = DEFAULT_BASE_URL;
+  readonly id: ProviderId;
+  readonly label: string;
+  readonly defaultBaseUrl: string;
   readonly requiresApiKey = true;
+
+  constructor(
+    id: ProviderId = "openai",
+    label = "OpenAI",
+    defaultBaseUrl = "https://api.openai.com/v1",
+  ) {
+    this.id = id;
+    this.label = label;
+    this.defaultBaseUrl = defaultBaseUrl;
+  }
 
   async listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]> {
     try {
-      const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/models`, {
+      const res = await fetch(`${input.baseUrl ?? this.defaultBaseUrl}/models`, {
         headers: {
           "Authorization": `Bearer ${input.apiKey}`,
         },
@@ -37,7 +46,7 @@ export class OpenAIAdapter implements ProviderAdapter {
     signal: AbortSignal;
   }): Promise<{ ok: boolean; reason?: string }> {
     try {
-      const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/models`, {
+      const res = await fetch(`${input.baseUrl ?? this.defaultBaseUrl}/models`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${input.apiKey}`,
@@ -47,12 +56,12 @@ export class OpenAIAdapter implements ProviderAdapter {
       if (res.ok) return { ok: true };
       return { ok: false, reason: `HTTP ${res.status}` };
     } catch (e) {
-      return { ok: false, reason: e instanceof Error ? e.message : "Cannot connect to OpenAI" };
+      return { ok: false, reason: e instanceof Error ? e.message : `Cannot connect to ${this.label}` };
     }
   }
 
   async *stream(input: StreamInput): AsyncGenerator<StreamEvent> {
-    const baseUrl = input.baseUrl ?? DEFAULT_BASE_URL;
+    const baseUrl = input.baseUrl ?? this.defaultBaseUrl;
     const body = buildOpenAiBody(input);
 
     const headers: Record<string, string> = {

@@ -98,8 +98,9 @@ Gravity: (${ctx.gravity.x}, ${ctx.gravity.y})`);
 - Finish with a playable setup: camera, colliders, input, rules, then simulate_runtime_step.
 - Validate with validate_scene (and inspect_layout for spacing) after structural changes.
 - Prefer minimal, targeted edits over broad rewrites.
-- If a tool returns an error, read the message and adapt.
+- If a tool returns an error, read the message and adapt. Do not retry the same arguments.
 - Never call remove_* on the last entity of a scene without explicit user consent.
+- Do not loop on list_/get_/inspect_ tools — after you know ids, write.
 - Reply in the user's language.`);
 
   return sections.join("\n\n");

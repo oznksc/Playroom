@@ -7,6 +7,7 @@ import {
   removeApiKey,
   loadApiKey,
   usesOsKeychain,
+  getSessionSecret,
 } from "../lib/agent-keys.js";
 import { getApiUrl } from "../lib/api.js";
 
@@ -114,5 +115,9 @@ export function useAgentKeys() {
     return loadApiKey(provider, passphrase);
   }, []);
 
-  return { keys, addKey, removeKey, getKey, osKeychain };
+  const sessionKey = useCallback((provider: string): string | undefined => {
+    return getSessionSecret(provider);
+  }, []);
+
+  return { keys, addKey, removeKey, getKey, sessionKey, osKeychain };
 }
