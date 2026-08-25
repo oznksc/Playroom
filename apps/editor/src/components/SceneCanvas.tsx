@@ -606,6 +606,11 @@ export function SceneCanvas({
         isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"
       )}
     >
+      <span
+        id="tour-canvas-tour-anchor"
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-4 h-px w-px"
+      />
       <ContextMenu items={getCanvasContextMenuItems()} fill>
         <div
           ref={viewportRef}

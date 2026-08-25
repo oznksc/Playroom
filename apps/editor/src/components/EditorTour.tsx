@@ -5,15 +5,20 @@ export const TOUR_STORAGE_KEY = "playroom_tour_completed";
 
 export const TOUR_STEPS: Step[] = [
   {
-    target: "#tour-canvas-stage",
+    target: "#tour-canvas-tour-anchor",
+    additionalTargets: ["#tour-canvas-stage"],
     title: "Canvas Viewport",
     content:
       "Design your 2D game world in this full-bleed canvas. Pan with middle-click or Space, zoom with wheel, and manipulate entities with transform gizmos.",
+    // The canvas fills the viewport, so its bottom edge is outside the
+    // usable area. Keep the first card anchored above the target instead of
+    // letting the tour render below the viewport.
     placement: "bottom",
     spotlightPadding: 8,
   },
   {
-    target: "#tour-topbar-play",
+    target: "#tour-canvas-tour-anchor",
+    additionalTargets: ["#tour-topbar-play"],
     title: "Play in Editor",
     content:
       "Launch your game instantly with export-parity physics, rules engine, audio, and gamepad support running on the embedded Phaser host.",
@@ -21,19 +26,21 @@ export const TOUR_STEPS: Step[] = [
     spotlightPadding: 6,
   },
   {
-    target: "#tour-activity-rail",
+    target: "#tour-canvas-tour-anchor",
+    additionalTargets: ["#tour-activity-rail"],
     title: "Activity Rail & Drawers",
     content:
       "Quickly toggle Hierarchy, Component Inspectors, Asset Library, Prefabs, GUI Designer, and Animation Timeline panels.",
-    placement: "right",
+    placement: "bottom",
     spotlightPadding: 6,
   },
   {
-    target: "#tour-agent-button",
+    target: "#tour-canvas-tour-anchor",
+    additionalTargets: ["#tour-agent-button"],
     title: "Antigravity AI Agent",
     content:
       "Collaborate with the in-editor AI agent. Ask it to build levels, compose mechanics, tweak physics, or diagnose project health with natural language.",
-    placement: "right",
+    placement: "bottom",
     spotlightPadding: 6,
   },
 ];
