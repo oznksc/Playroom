@@ -135,4 +135,76 @@ describe("Asset Generator MCP Tools", () => {
     expect(audioComp.assetId).toBe("bgm-dungeon");
     expect(audioComp.loop).toBe(true);
   });
+
+  it("analyzes natural language asset prompts", async () => {
+    const { data } = await call("analyze_asset_prompt", {
+      prompt: "cyberpunk ninja jumping with glowing laser sword",
+    });
+
+    expect(data.category).toBe("character");
+    expect(data.archetype).toBe("ninja");
+    expect(data.palette).toBe("cyberpunk");
+    expect(data.animationAction).toBe("jump");
+  });
+
+  it("enhances minimal asset generation prompts", async () => {
+    const { data } = await call("enhance_asset_prompt", {
+      prompt: "hero knight",
+      category: "character",
+    });
+
+    expect(data.original).toBe("hero knight");
+    expect(data.enhanced).toContain("pixel art");
+  });
+
+  it("generates 4 multi-variation preview candidates", async () => {
+    const { data } = await call("generate_asset_variations", {
+      prompt: "golden magic ring",
+      category: "item",
+      count: 4,
+    });
+
+    expect(data.success).toBe(true);
+    expect(data.count).toBe(4);
+    expect(data.variations.length).toBe(4);
+    expect(data.variations[0].dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(data.variations[0].seed).toBeDefined();
+  });
+
+  it("generates a procedural tileset asset", async () => {
+    const { data } = await call("generate_tileset", {
+      id: "tileset-cyber",
+      theme: "cyberpunk",
+      palette: "cyberpunk",
+      tileSize: 16,
+      columns: 4,
+      rows: 4,
+    });
+
+    expect(data.success).toBe(true);
+    expect(data.assetId).toBe("tileset-cyber");
+    expect(data.totalTiles).toBe(16);
+    expect(data.file).toBe("tileset-cyber.png");
+
+    const assetPath = join(tmpDir, "gamekit", "assets", "tileset-cyber.png");
+    const fileBytes = await readFile(assetPath);
+    expect(fileBytes.length).toBeGreaterThan(100);
+  });
+
+  it("generates a full cohesive thematic game asset pack", async () => {
+    const { data } = await call("generate_asset_pack", {
+      packName: "dungeon-pack",
+      theme: "dungeon",
+      autoSpawn: true,
+    });
+
+    expect(data.success).toBe(true);
+    expect(data.packName).toBe("dungeon-pack");
+    expect(data.assetCount).toBe(8); // hero, enemy, coin, tileset, 3 sfx, bgm
+    expect(data.spawnedEntities.length).toBeGreaterThanOrEqual(4);
+
+    const projectContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "project.json"), "utf8"));
+    expect(projectContent.assets.length).toBe(8);
+  });
 });
+

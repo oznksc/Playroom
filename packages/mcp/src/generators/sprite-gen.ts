@@ -433,20 +433,319 @@ function generateIconMatrix(
   }
 }
 
-function inferCategoryFromPrompt(text: string): SpriteCategory {
+export function inferCategoryFromPrompt(text: string): SpriteCategory {
   const t = text.toLowerCase();
-  if (t.includes("enemy") || t.includes("monster") || t.includes("slime") || t.includes("boss") || t.includes("zombie")) return "enemy";
-  if (t.includes("character") || t.includes("hero") || t.includes("player") || t.includes("knight") || t.includes("wizard") || t.includes("ninja")) return "character";
-  if (t.includes("sword") || t.includes("shield") || t.includes("coin") || t.includes("gem") || t.includes("potion") || t.includes("heart") || t.includes("item")) return "item";
-  if (t.includes("tile") || t.includes("brick") || t.includes("grass") || t.includes("ground") || t.includes("wall") || t.includes("floor")) return "tile";
-  if (t.includes("tree") || t.includes("rock") || t.includes("crate") || t.includes("chest") || t.includes("door") || t.includes("prop")) return "prop";
+  if (t.includes("enemy") || t.includes("monster") || t.includes("slime") || t.includes("boss") || t.includes("zombie") || t.includes("goblin") || t.includes("skeleton")) return "enemy";
+  if (t.includes("character") || t.includes("hero") || t.includes("player") || t.includes("knight") || t.includes("wizard") || t.includes("ninja") || t.includes("rogue")) return "character";
+  if (t.includes("sword") || t.includes("shield") || t.includes("coin") || t.includes("gem") || t.includes("potion") || t.includes("heart") || t.includes("item") || t.includes("key")) return "item";
+  if (t.includes("tile") || t.includes("brick") || t.includes("grass") || t.includes("ground") || t.includes("wall") || t.includes("floor") || t.includes("platform")) return "tile";
+  if (t.includes("tree") || t.includes("rock") || t.includes("crate") || t.includes("chest") || t.includes("door") || t.includes("prop") || t.includes("torch")) return "prop";
   return "character";
 }
 
-function hashString(str: string): number {
+export function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0;
   }
   return hash;
 }
+
+export type AiPromptAnalysis = {
+  category: SpriteCategory;
+  archetype: string;
+  palette: PaletteName;
+  animationAction: "idle" | "walk" | "run" | "jump" | "attack" | "hurt" | "die";
+  sfxPreset: string;
+  musicGenre: string;
+  suggestedSize: number;
+  tags: string[];
+};
+
+/**
+ * Intelligent AI Prompt Parser: extracts archetype, category, palette, animation action,
+ * and acoustics from raw natural language input.
+ */
+export function parseAiPrompt(rawPrompt: string): AiPromptAnalysis {
+  const p = rawPrompt.toLowerCase().trim();
+
+  // Determine Palette
+  let palette: PaletteName = "pico8";
+  if (p.includes("cyber") || p.includes("neon") || p.includes("futur") || p.includes("laser") || p.includes("matrix") || p.includes("synth")) {
+    palette = "cyberpunk";
+  } else if (p.includes("gameboy") || p.includes("retro green") || p.includes("nostalg")) {
+    palette = "gameboy";
+  } else if (p.includes("nes") || p.includes("8-bit") || p.includes("classic arcade")) {
+    palette = "nes";
+  } else if (p.includes("pastel") || p.includes("fairy") || p.includes("soft") || p.includes("cute") || p.includes("dream")) {
+    palette = "pastel";
+  } else if (p.includes("mono") || p.includes("ink") || p.includes("noir") || p.includes("black and white") || p.includes("shadow")) {
+    palette = "monochrome";
+  }
+
+  // Determine Category
+  const category = inferCategoryFromPrompt(p);
+
+  // Determine Archetype Keyword
+  const archetypeMatches = [
+    "knight", "wizard", "rogue", "assassin", "ninja", "mage", "archer", "robot", "alien", "cyborg",
+    "slime", "goblin", "skeleton", "demon", "dragon", "golem", "ghost", "zombie",
+    "sword", "katana", "shield", "potion", "coin", "gem", "heart", "key", "axe", "hammer",
+    "tree", "rock", "chest", "torch", "barrel", "spikes", "wall", "floor", "brick", "grass"
+  ];
+  let archetype = category === "character" ? "hero" : category === "enemy" ? "slime" : category === "item" ? "coin" : "stone";
+  for (const a of archetypeMatches) {
+    if (p.includes(a)) {
+      archetype = a;
+      break;
+    }
+  }
+
+  // Determine Animation Action
+  let animationAction: "idle" | "walk" | "run" | "jump" | "attack" | "hurt" | "die" = "walk";
+  if (p.includes("attack") || p.includes("slash") || p.includes("strike") || p.includes("swing")) animationAction = "attack";
+  else if (p.includes("run") || p.includes("sprint") || p.includes("dash")) animationAction = "run";
+  else if (p.includes("jump") || p.includes("leap") || p.includes("air")) animationAction = "jump";
+  else if (p.includes("idle") || p.includes("stand") || p.includes("breath")) animationAction = "idle";
+  else if (p.includes("hurt") || p.includes("damage") || p.includes("hit")) animationAction = "hurt";
+  else if (p.includes("die") || p.includes("death") || p.includes("defeat")) animationAction = "die";
+
+  // Determine SFX preset
+  let sfxPreset = "jump";
+  if (p.includes("laser") || p.includes("pew") || p.includes("shoot")) sfxPreset = "laser";
+  else if (p.includes("coin") || p.includes("gem") || p.includes("pickup") || p.includes("chime")) sfxPreset = "coin";
+  else if (p.includes("explosion") || p.includes("boom") || p.includes("blast")) sfxPreset = "explosion";
+  else if (p.includes("hit") || p.includes("punch") || p.includes("strike")) sfxPreset = "hit";
+  else if (p.includes("powerup") || p.includes("level up")) sfxPreset = "powerup";
+  else if (p.includes("hurt") || p.includes("grunt")) sfxPreset = "hurt";
+  else if (p.includes("victory") || p.includes("fanfare") || p.includes("win")) sfxPreset = "victory";
+  else if (p.includes("defeat") || p.includes("game over")) sfxPreset = "defeat";
+
+  // Determine Music genre
+  let musicGenre = "chiptune_adventure";
+  if (p.includes("boss") || p.includes("battle") || p.includes("intense") || p.includes("combat")) musicGenre = "boss_battle";
+  else if (p.includes("dungeon") || p.includes("cave") || p.includes("chill") || p.includes("ambient")) musicGenre = "chill_dungeon";
+  else if (p.includes("cyber") || p.includes("synthwave") || p.includes("electronic")) musicGenre = "cyberpunk_pulse";
+  else if (p.includes("menu") || p.includes("title") || p.includes("intro")) musicGenre = "retro_menu";
+  else if (p.includes("spooky") || p.includes("horror") || p.includes("dark")) musicGenre = "spooky_night";
+
+  return {
+    category,
+    archetype,
+    palette,
+    animationAction,
+    sfxPreset,
+    musicGenre,
+    suggestedSize: category === "character" || category === "enemy" ? 32 : 24,
+    tags: [category, archetype, palette, animationAction],
+  };
+}
+
+/**
+ * Magic AI Prompt Enhancer: expands minimal keywords into rich, stylized generative prompts.
+ */
+export function enhanceAiPrompt(inputPrompt: string, category?: SpriteCategory): string {
+  const clean = inputPrompt.trim();
+  const cat = category ?? inferCategoryFromPrompt(clean);
+  if (!clean) {
+    if (cat === "character") return "16-bit cyber knight with glowing cyan visor, neon edge trim, and dark obsidian armor, crisp pixel outlines";
+    if (cat === "enemy") return "pulsing radioactive emerald slime monster with molten core and fiery pixel eyes, transparent background";
+    if (cat === "item") return "legendary glowing ancient rune sword with crystalline hilt and celestial particle aura";
+    return "dungeon stone brick tile with moss highlights and glowing neon glyphs";
+  }
+
+  const enhancements = [
+    "crisp 16-bit pixel art contours, harmonious shading, transparent background",
+    "vibrant retro palette, clean pixel geometry, high readability in game canvas",
+    "cyberpunk illuminated glow, dynamic pixel highlights, centered silhouette",
+    "stylized arcade game asset, balanced proportions, clean silhouettes",
+  ];
+  const hash = hashString(clean);
+  const modifier = enhancements[hash % enhancements.length];
+
+  if (clean.includes("pixel") || clean.includes("16-bit")) {
+    return `${clean}, ${modifier}`;
+  }
+  return `${clean}, 16-bit pixel art style, ${modifier}`;
+}
+
+export type SpriteVariation = {
+  variationIndex: number;
+  seed: number;
+  sprite: GeneratedSprite;
+};
+
+/**
+ * Generate 4 distinct seed variations of a sprite for preview and selection.
+ */
+export function generateSpriteVariations(
+  options: Omit<SpriteOptions, "seed"> & { baseSeed?: number; count?: number } = {}
+): SpriteVariation[] {
+  const count = options.count ?? 4;
+  const seedOrigin = options.baseSeed ?? hashString((options.prompt || "") + (options.archetype || "") + (options.category || ""));
+  const variations: SpriteVariation[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const seed = (seedOrigin + i * 1013904223) >>> 0;
+    const sprite = generateSprite({
+      ...options,
+      id: options.id ? `${options.id}-v${i + 1}` : undefined,
+      seed,
+    });
+    variations.push({
+      variationIndex: i + 1,
+      seed,
+      sprite,
+    });
+  }
+
+  return variations;
+}
+
+export type TilesetOptions = {
+  id?: string;
+  theme?: string;
+  palette?: PaletteName;
+  tileSize?: number;
+  columns?: number;
+  rows?: number;
+  seed?: number;
+};
+
+export type GeneratedTileset = {
+  id: string;
+  buffer: Buffer;
+  width: number;
+  height: number;
+  tileSize: number;
+  columns: number;
+  rows: number;
+  totalTiles: number;
+  dataUrl: string;
+  palette: PaletteName;
+};
+
+/**
+ * Generate a 2D tilemap tileset texture containing terrain variations (grass tops, dirt centers, stone borders, hazards).
+ */
+export function generateTileset(options: TilesetOptions = {}): GeneratedTileset {
+  const theme = (options.theme || "grass").toLowerCase();
+  const paletteName = options.palette ?? "pico8";
+  const palette = PALETTES[paletteName] || PALETTES.pico8;
+  const tileSize = options.tileSize ?? 16;
+  const columns = options.columns ?? 4;
+  const rows = options.rows ?? 4;
+  const totalTiles = columns * rows;
+
+  const totalWidth = columns * tileSize;
+  const totalHeight = rows * tileSize;
+  const rgbaPixels = new Uint8Array(totalWidth * totalHeight * 4);
+
+  let seed = options.seed ?? hashString(theme + paletteName + tileSize);
+  function rand(): number {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+
+  const primaryColor = palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
+  const accentColor = palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
+  const darkColor = palette[0];
+  const highlightColor = palette[palette.length - 1];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const tileIndex = r * columns + c;
+      const startX = c * tileSize;
+      const startY = r * tileSize;
+
+      for (let y = 0; y < tileSize; y++) {
+        for (let x = 0; x < tileSize; x++) {
+          let color: ColorRGBA = primaryColor;
+
+          // Tile 0: Solid Ground / Center
+          if (tileIndex === 0) {
+            const isAlt = (x + y + Math.floor(rand() * 2)) % 3 === 0;
+            color = isAlt ? accentColor : primaryColor;
+          }
+          // Tile 1: Top Grass Edge
+          else if (tileIndex === 1) {
+            if (y === 0 || y === 1) color = [34, 197, 94, 255];
+            else if (y === 2 && x % 2 === 0) color = [34, 197, 94, 255];
+            else color = primaryColor;
+          }
+          // Tile 2: Left Wall Edge
+          else if (tileIndex === 2) {
+            if (x === 0 || x === 1) color = darkColor;
+            else color = (x + y) % 2 === 0 ? accentColor : primaryColor;
+          }
+          // Tile 3: Right Wall Edge
+          else if (tileIndex === 3) {
+            if (x >= tileSize - 2) color = darkColor;
+            else color = (x + y) % 2 === 0 ? accentColor : primaryColor;
+          }
+          // Tile 4: Top-Left Corner
+          else if (tileIndex === 4) {
+            if (y <= 1 || x <= 1) color = [34, 197, 94, 255];
+            else color = primaryColor;
+          }
+          // Tile 5: Top-Right Corner
+          else if (tileIndex === 5) {
+            if (y <= 1 || x >= tileSize - 2) color = [34, 197, 94, 255];
+            else color = primaryColor;
+          }
+          // Tile 6: Platform / Floating Plank
+          else if (tileIndex === 6) {
+            if (y < 4 || y > tileSize - 4) {
+              // Transparent outside
+              continue;
+            }
+            if (y === 4 || y === tileSize - 4 || x === 0 || x === tileSize - 1) color = darkColor;
+            else color = accentColor;
+          }
+          // Tile 7: Spikes / Hazard
+          else if (tileIndex === 7) {
+            const mid = Math.floor(tileSize / 2);
+            const inSpike1 = y >= tileSize - 1 - (x % 8) * 2;
+            if (inSpike1) color = [239, 68, 68, 255]; // Red hazard
+            else continue;
+          }
+          // Tile 8+: Textured brick / dungeon / stone patterns
+          else {
+            const brickRow = Math.floor(y / 4);
+            const brickShift = brickRow % 2 === 0 ? 0 : 4;
+            const isMortar = y % 4 === 0 || (x + brickShift) % 8 === 0;
+            if (isMortar) color = darkColor;
+            else if ((x + y) % 5 === 0) color = highlightColor;
+            else color = primaryColor;
+          }
+
+          const px = startX + x;
+          const py = startY + y;
+          const offset = (py * totalWidth + px) * 4;
+          rgbaPixels[offset] = color[0];
+          rgbaPixels[offset + 1] = color[1];
+          rgbaPixels[offset + 2] = color[2];
+          rgbaPixels[offset + 3] = color[3];
+        }
+      }
+    }
+  }
+
+  const buffer = encodePng(rgbaPixels, totalWidth, totalHeight);
+  const dataUrl = `data:image/png;base64,${buffer.toString("base64")}`;
+  const id = options.id ?? `tileset-${theme}`;
+
+  return {
+    id,
+    buffer,
+    width: totalWidth,
+    height: totalHeight,
+    tileSize,
+    columns,
+    rows,
+    totalTiles,
+    dataUrl,
+    palette: paletteName,
+  };
+}
+

@@ -154,8 +154,8 @@ What kind of game would you like to create?`,
   );
 
   server.prompt(
-    "add_platformer_level",
-    "Step-by-step guide for adding a new platformer level",
+    "asset_studio_guide",
+    "Asset Studio: Complete guide for generating sprites, character animations, tilesets, SFX, and BGM music tracks",
     {},
     async () => ({
       messages: [
@@ -163,26 +163,33 @@ What kind of game would you like to create?`,
           role: "user",
           content: {
             type: "text",
-            text: `I want to add a new platformer level to my GameKit project. Guide me through the process:
+            text: `# Asset Studio Complete Agent Guide
 
-1. Use create_scene to create a new scene (e.g., name: "Level 2", orientation: "landscape")
-2. Add a player entity with these components:
-   - Transform at starting position
-   - Sprite with player asset
-   - AabbCollider matching sprite size
-   - PlayerController (speed: 300, jumpVelocity: 600, gravity: 1800)
-   - CameraFollow targeting the player entity
-3. Add ground/platform entities with:
-   - Transform at their positions
-   - Sprite with platform asset
-   - AabbCollider with isStatic: true
-4. Optionally add collectibles, enemies, or decorative elements
-5. Update project.json to include the new scene in levels
+GameKit MCP provides procedural neural & acoustic synthesis tools to generate production-ready 2D game assets directly into the project.
 
-Let me know the theme and layout you have in mind!`,
+## Available Asset Studio Tools:
+
+1. **Prompt Analysis & Enhancement:**
+   - \`analyze_asset_prompt\`: Parses natural language prompt to suggest archetype, palette, animation action, sfx preset, and music genre.
+   - \`enhance_asset_prompt\`: Expands basic keywords into rich pixel art generation prompts.
+
+2. **2D Visual Generation:**
+   - \`generate_asset_variations\`: Generates 4 seed variations with base64 data URLs for visual inspection/selection.
+   - \`generate_sprite\`: Generates a 2D PNG sprite (character, enemy, item, tile, prop, icon) and registers to project; can auto-spawn with Sprite & AabbCollider.
+   - \`generate_character_spritesheet\`: Generates animated PNG spritesheet (idle, walk, run, jump, attack, hurt, die) and attaches Animation component.
+   - \`generate_tileset\`: Generates multi-tile terrain / dungeon / scifi tileset textures.
+
+3. **Acoustic & Audio Synthesis:**
+   - \`generate_sound_effect\`: Synthesizes 8-bit / arcade WAV sound effects (jump, coin, laser, explosion, hit, powerup, hurt, defeat, victory, etc.).
+   - \`generate_music_track\`: Synthesizes looping BGM tracks (chiptune adventure, boss battle, chill dungeon, cyberpunk pulse, retro menu) with customizable key, scale, and tempo.
+
+4. **One-Shot Thematic Pack:**
+   - \`generate_asset_pack\`: Generates a cohesive full-suite pack (hero spritesheet, enemy, coin, tileset, 3 SFX, and BGM loop) and wires them to the scene in one step.
+`,
           },
         },
       ],
     }),
   );
 }
+
