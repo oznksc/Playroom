@@ -1,17 +1,45 @@
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
-.expo/
-.turbo/
+build/
+build-web/
+**/build/
+**/build-web/
 .vite/
+.turbo/
+.expo/
+**/.expo/
+
+# Rust / Tauri build artifacts
+target/
+**/target/
+**/src-tauri/target/
+**/src-tauri/gen/schemas
+
+# Documentation
 docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Tests & Coverage
 coverage/
-*.log
-*.tsbuildinfo
-gamekit/generated/assets.ts
-!templates/expo-game/gamekit/generated/assets.ts
-!examples/**/gamekit/generated/assets.ts
-examples/**/build/
-examples/**/build-web/
 playwright-report/
 test-results/
 blob-report/
+.playwright-cli/
+
+# Logs & Environment
+*.log
+*.tsbuildinfo
+.DS_Store
+*.pem
+.env
+.env.local
+.env.*.local
+
+# Generated asset references (keep starter template)
+**/gamekit/generated/assets.ts
+!templates/expo-game/gamekit/generated/assets.ts
+!examples/**/gamekit/generated/assets.ts

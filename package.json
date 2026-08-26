@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/oznksc/Playroom#readme",
   "scripts": {
-    "build": "pnpm -r --filter './packages/**' build && pnpm --filter @gamekit/editor build",
+    "build": "pnpm -r --filter './packages/**' build && pnpm --filter @gamekit/editor build && pnpm --filter @gamekit/studio build",
     "typecheck": "pnpm --filter @gamekit/schema build && pnpm -r --filter './packages/**' --filter './apps/**' typecheck",
     "test": "pnpm --filter @gamekit/schema build && pnpm --filter @gamekit/runtime build && vitest run",
     "test:e2e": "pnpm --filter @gamekit/schema build && pnpm --filter @gamekit/runtime build && pnpm --filter @gamekit/cli build && pnpm --filter @gamekit/editor build && playwright test",

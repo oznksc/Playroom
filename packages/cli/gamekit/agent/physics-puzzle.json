@@ -1,13 +1,6 @@
 {
   "sceneId": "physics-puzzle.scene.json",
-  "updatedAt": 1787694933737,
-  "messages": [
-    {
-      "id": "14f8e07c-d69f-46f9-a6",
-      "role": "user",
-      "content": "cyberpunk armored knight with neon cyan blade, glowing visor",
-      "ts": 1787694933718
-    }
-  ],
+  "updatedAt": 1787760010305,
+  "messages": [],
   "toolCalls": []
 }

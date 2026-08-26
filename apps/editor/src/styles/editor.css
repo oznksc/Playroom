@@ -877,8 +877,9 @@
   display: flex;
   flex-direction: column;
   width: min(720px, calc(100vw - 24px));
-  height: auto;
-  max-height: min(44vh, 400px);
+  height: min(44vh, 380px);
+  min-height: 280px;
+  max-height: min(50vh, 480px);
   border-radius: var(--glass-radius);
   background: var(--glass-fill-deep);
   backdrop-filter: var(--glass-blur);
@@ -2027,4 +2028,317 @@
 .asset-studio-handle:hover {
   background: rgba(0, 240, 255, 0.6);
   width: 54px;
+}
+
+/* ── Agent Settings Modal ─────────────────────────────────────── */
+
+.agent-settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 420px;
+}
+
+.agent-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agent-settings-section-title {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(235, 235, 245, 0.5);
+}
+
+.agent-settings-section-desc {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgba(235, 235, 245, 0.35);
+}
+
+/* Provider cards */
+.provider-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.provider-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.provider-card.connected {
+  border-color: rgba(0, 240, 255, 0.15);
+  background: rgba(0, 240, 255, 0.03);
+}
+
+.provider-card.editing {
+  border-color: rgba(0, 240, 255, 0.25);
+  background: rgba(0, 240, 255, 0.04);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.06);
+}
+
+.provider-card-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  transition: box-shadow 150ms ease;
+}
+
+.provider-card.connected .provider-card-avatar {
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+}
+
+.provider-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245, 245, 247, 0.92);
+  letter-spacing: -0.01em;
+}
+
+.provider-card-hint {
+  font-size: 10px;
+  color: rgba(235, 235, 245, 0.4);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.provider-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: -1px;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+  animation: agent-card-expand 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes agent-card-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.provider-card-form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.provider-card-form-label span {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(235, 235, 245, 0.5);
+}
+
+/* Radio card group (approval mode) */
+.radio-card-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.radio-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 150ms ease;
+  user-select: none;
+}
+
+.radio-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.radio-card.active {
+  border-color: rgba(0, 240, 255, 0.3);
+  background: rgba(0, 240, 255, 0.06);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.08), inset 0 0 0 0.5px rgba(0, 240, 255, 0.15);
+}
+
+.radio-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.radio-card.active .radio-card-icon {
+  background: rgba(0, 240, 255, 0.1);
+}
+
+.radio-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(245, 245, 247, 0.85);
+  letter-spacing: -0.01em;
+}
+
+.radio-card-desc {
+  font-size: 9px;
+  color: rgba(235, 235, 245, 0.4);
+  margin-top: 1px;
+}
+
+/* Range slider */
+.agent-range {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.agent-range-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(235, 235, 245, 0.5);
+}
+
+.agent-range-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: rgba(245, 245, 247, 0.85);
+  min-width: 36px;
+  text-align: right;
+}
+
+.agent-range input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  transition: background 150ms ease;
+}
+
+.agent-range input[type="range"]:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.agent-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00f0ff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.agent-range input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.agent-range input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00f0ff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* Custom instructions textarea */
+.agent-instructions-textarea {
+  width: 100%;
+  min-height: 80px;
+  max-height: 160px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(245, 245, 247, 0.92);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.agent-instructions-textarea:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.agent-instructions-textarea:focus {
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.08);
+}
+
+.agent-instructions-textarea::placeholder {
+  color: rgba(235, 235, 245, 0.25);
+}
+
+/* Settings divider */
+.agent-settings-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 0;
 }

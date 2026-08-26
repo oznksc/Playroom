@@ -34,6 +34,41 @@
   ],
   "assets": [
     {
+      "id": "bgm-boss-battle",
+      "file": "bgm-boss-battle.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "bgm-chill-dungeon",
+      "file": "bgm-chill-dungeon.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "bgm-chiptune-adventure",
+      "file": "bgm-chiptune-adventure.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "bgm-cyberpunk-pulse",
+      "file": "bgm-cyberpunk-pulse.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "bgm-spooky-night",
+      "file": "bgm-spooky-night.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "bgm-victory-fanfare",
+      "file": "bgm-victory-fanfare.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "character-knight",
+      "file": "character-knight.png",
+      "kind": "image"
+    },
+    {
       "id": "crate",
       "file": "crate.svg",
       "kind": "image"
@@ -52,6 +87,66 @@
       "id": "player",
       "file": "player.svg",
       "kind": "image"
+    },
+    {
+      "id": "sfx-coin",
+      "file": "sfx-coin.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-defeat",
+      "file": "sfx-defeat.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-explosion",
+      "file": "sfx-explosion.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-hit",
+      "file": "sfx-hit.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-hurt",
+      "file": "sfx-hurt.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-jump",
+      "file": "sfx-jump.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-laser",
+      "file": "sfx-laser.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-powerup",
+      "file": "sfx-powerup.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-teleport",
+      "file": "sfx-teleport.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-ui-click",
+      "file": "sfx-ui-click.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-victory",
+      "file": "sfx-victory.wav",
+      "kind": "audio"
+    },
+    {
+      "id": "sfx-whoosh",
+      "file": "sfx-whoosh.wav",
+      "kind": "audio"
     },
     {
       "id": "target",

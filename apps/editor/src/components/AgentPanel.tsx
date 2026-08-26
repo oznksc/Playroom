@@ -9,10 +9,9 @@ import { getApiUrl } from "../lib/api.js";
 import {
   IconButton,
   Button,
-  Select,
   Textarea,
   EmptyState,
-  CheckboxField,
+  Badge,
   Panel,
   PanelHeader,
   PanelTitle,
@@ -40,10 +39,28 @@ type AgentPanelProps = {
 export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSettings, onSceneMutated }: AgentPanelProps) {
   const [input, setInput] = useState("");
   const { keys, sessionKey } = useAgentKeys();
+
+  // Read settings from localStorage (set by AgentSettings modal)
   const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
   const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
   const [planMode, setPlanMode] = useState(() => localStorage.getItem("gamekit:agent:planMode") === "1");
+
+  // Sync when settings change in the modal
+  useEffect(() => {
+    const handleSync = () => {
+      setActiveProvider(localStorage.getItem("gamekit:agent:activeProvider") || "");
+      setActiveModel(localStorage.getItem("gamekit:agent:activeModel") || "");
+      setApprovalMode((localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
+      setPlanMode(localStorage.getItem("gamekit:agent:planMode") === "1");
+    };
+    window.addEventListener("gamekit:agent:keys-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("gamekit:agent:keys-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
 
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
   const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
@@ -51,31 +68,6 @@ export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSet
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [modelsList, setModelsList] = useState<string[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    async function fetchModels() {
-      try {
-        const res = await fetch(getApiUrl(`/api/agent/models/${resolvedProvider}`));
-        if (!res.ok) return;
-        const data = await res.json() as { models?: string[] };
-        if (active && data.models) {
-          setModelsList(data.models);
-          if (data.models.length > 0 && !data.models.includes(resolvedModel)) {
-            setActiveModel(data.models[0]);
-            localStorage.setItem("gamekit:agent:activeModel", data.models[0]);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-    fetchModels();
-    return () => {
-      active = false;
-    };
-  }, [resolvedProvider, resolvedModel]);
 
   const {
     messages,
@@ -117,95 +109,25 @@ export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSet
     }
   }
 
+  // Compact provider + model label for the header
+  const providerShort = PROVIDER_LABELS[resolvedProvider]?.split(" ")[0] ?? resolvedProvider;
+  const modelShort = resolvedModel.split("/").pop() || resolvedModel;
+
   return (
     <Panel className="flex h-full min-h-0 flex-col overflow-hidden bg-transparent">
       <PanelHeader className="h-auto min-h-[38px] flex-wrap gap-2 py-1.5">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
           <PanelTitle className="mr-1">
             <Sparkles size={12} className="text-accent-purple" /> Agent
           </PanelTitle>
-          <Select
-            className="h-[24px] w-auto min-w-[110px] max-w-[140px] text-[10px]"
-            value={resolvedProvider}
-            onChange={(e) => {
-              const newProvider = e.target.value;
-              setActiveProvider(newProvider);
-              localStorage.setItem("gamekit:agent:activeProvider", newProvider);
-              const entry = keys.find((k) => k.provider === newProvider);
-              const defaultModel =
-                newProvider === "openrouter"
-                  ? "anthropic/claude-sonnet-4.5"
-                  : newProvider === "lmstudio"
-                    ? "local-model"
-                    : newProvider === "xai"
-                      ? "grok-4"
-                      : newProvider === "openai"
-                        ? "gpt-4o"
-                        : newProvider === "google"
-                          ? "gemini-2.0-flash"
-                          : newProvider === "ollama"
-                            ? "llama3.1:8b"
-                            : "claude-sonnet-4-5";
-              const newModel = entry?.model || defaultModel;
-              setActiveModel(newModel);
-              localStorage.setItem("gamekit:agent:activeModel", newModel);
-            }}
-          >
-            {keys.map((k) => (
-              <option key={k.provider} value={k.provider}>
-                {PROVIDER_LABELS[k.provider] || k.provider}
-              </option>
-            ))}
-            {keys.length === 0 && <option value="anthropic">Anthropic Claude</option>}
-          </Select>
-          {modelsList.length > 0 ? (
-            <Select
-              className="h-[24px] w-auto min-w-[100px] max-w-[160px] text-[10px]"
-              value={resolvedModel}
-              onChange={(e) => {
-                const newModel = e.target.value;
-                setActiveModel(newModel);
-                localStorage.setItem("gamekit:agent:activeModel", newModel);
-              }}
-            >
-              {!modelsList.includes(resolvedModel) && (
-                <option value={resolvedModel}>{resolvedModel}</option>
-              )}
-              {modelsList.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </Select>
-          ) : (
-            <span className="max-w-[120px] truncate font-mono text-[10px] text-text-muted">
-              {resolvedModel}
-            </span>
+          <Badge variant="default" className="max-w-[200px] truncate font-mono text-[10px]">
+            {providerShort} · {modelShort}
+          </Badge>
+          {planMode && (
+            <Badge variant="default" className="text-[9px] text-purple-400">
+              Plan
+            </Badge>
           )}
-          <Select
-            className="h-[24px] w-auto max-w-[130px] text-[10px]"
-            value={approvalMode}
-            title="Tool approval mode"
-            onChange={(e) => {
-              const newMode = e.target.value as ApprovalMode;
-              setApprovalMode(newMode);
-              localStorage.setItem("gamekit:agent:approvalMode", newMode);
-            }}
-          >
-            <option value="destructive-only">Destructive Only</option>
-            <option value="always">Always Approve</option>
-            <option value="plan">Plan + Approve</option>
-            <option value="off">Off (Auto Approve)</option>
-          </Select>
-          <CheckboxField
-            label="Plan first"
-            checked={planMode}
-            className="text-[10px]"
-            onChange={(checked) => {
-              setPlanMode(checked);
-              localStorage.setItem("gamekit:agent:planMode", checked ? "1" : "0");
-            }}
-          />
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           {sessionSnapshotId && (
