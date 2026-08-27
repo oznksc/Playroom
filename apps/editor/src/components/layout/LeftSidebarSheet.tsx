@@ -1,4 +1,4 @@
-import type { GameKitEntity, GameKitLevel, GameKitScene, GuiNode } from "@gamekit/schema";
+import type { GameKitEntity, GameKitLevel, GameKitScene, GuiNode, GameServicesDef } from "@gamekit/schema";
 import { GameKitEntitySchema, findLevelForScene } from "@gamekit/schema";
 import { cn } from "@/ui";
 import shellStyles from "../AppShell.module.css";
@@ -11,6 +11,7 @@ import { LevelPanel } from "../LevelPanel.js";
 import { GuiPanel } from "../GuiPanel.js";
 import { GuiComponentPanel } from "../GuiComponentPanel.js";
 import { RecipesPanel } from "../RecipesPanel.js";
+import { GameServicesPanel } from "../GameServicesPanel.js";
 import type { SidebarTabId } from "../SidebarRail.js";
 import type { ProjectSnapshot } from "../../types.js";
 import type { ConsoleLog } from "../ConsolePanel.js";
@@ -73,6 +74,9 @@ export interface LeftSidebarSheetProps {
   addNodeToEditingComponent: (type: GuiNode["type"]) => void;
   deleteNodeFromEditingComponent: (nodeId: string) => void;
   addGuiComponentInstance: (componentId: string) => void;
+  // Game Services
+  gameServices?: GameServicesDef;
+  onUpdateGameServices?: (def: GameServicesDef) => Promise<void>;
 }
 
 export function LeftSidebarSheet({
@@ -82,6 +86,8 @@ export function LeftSidebarSheet({
   setAgentExpanded,
   setInspectorOpen,
   setAgentSettingsOpen,
+  gameServices,
+  onUpdateGameServices,
   snapshot,
   currentSceneFile,
   setCurrentSceneFile,
@@ -305,6 +311,12 @@ export function LeftSidebarSheet({
                 setStatus(message);
                 addConsoleLog("system", message);
               }}
+            />
+          )}
+          {activeTab === "services" && onUpdateGameServices && (
+            <GameServicesPanel
+              gameServices={gameServices ?? snapshot.project?.gameServices}
+              onUpdateGameServices={onUpdateGameServices}
             />
           )}
         </div>

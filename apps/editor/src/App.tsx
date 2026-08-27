@@ -136,6 +136,7 @@ export function App() {
   const openGuis = useCallback(() => openLeftPanel("guis"), [openLeftPanel]);
   const openGuiComponents = useCallback(() => openLeftPanel("components"), [openLeftPanel]);
   const openRecipes = useCallback(() => openLeftPanel("recipes"), [openLeftPanel]);
+  const openServices = useCallback(() => openLeftPanel("services"), [openLeftPanel]);
 
   const openContent = useCallback((tab: BottomTab = "assets") => {
     setActiveBottomTab(tab);
@@ -474,9 +475,11 @@ export function App() {
                           ? "gui-components"
                           : sidebarOpen && activeTab === "recipes"
                             ? "recipes"
-                            : sidebarOpen
-                              ? "hierarchy"
-                              : null
+                            : sidebarOpen && activeTab === "services"
+                              ? "services"
+                              : sidebarOpen
+                                ? "hierarchy"
+                                : null
         }
         saveState={project.saveState}
         projectPath={project.isTauri ? project.projectPath : null}
@@ -521,6 +524,10 @@ export function App() {
         onRecipes={() => {
           if (sidebarOpen && activeTab === "recipes") setSidebarOpen(false);
           else openRecipes();
+        }}
+        onServices={() => {
+          if (sidebarOpen && activeTab === "services") setSidebarOpen(false);
+          else openServices();
         }}
         onContent={() => {
           if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
@@ -570,6 +577,8 @@ export function App() {
         setAgentExpanded={setAgentExpanded}
         setInspectorOpen={setInspectorOpen}
         setAgentSettingsOpen={setAgentSettingsOpen}
+        gameServices={project.snapshot.project?.gameServices}
+        onUpdateGameServices={project.handleUpdateGameServices}
         snapshot={project.snapshot}
         currentSceneFile={project.currentSceneFile}
         setCurrentSceneFile={project.setCurrentSceneFile}

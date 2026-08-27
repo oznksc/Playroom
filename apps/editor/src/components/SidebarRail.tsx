@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Package,
   Globe,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/ui";
 
@@ -19,7 +20,8 @@ export type SidebarTabId =
   | "levels"
   | "guis"
   | "components"
-  | "recipes";
+  | "recipes"
+  | "services";
 
 export type SidebarRailItem = {
   id: SidebarTabId;
@@ -38,6 +40,7 @@ const ICONS: Record<SidebarTabId, React.ReactNode> = {
   guis: <LayoutGrid size={15} strokeWidth={1.75} />,
   components: <Package size={15} strokeWidth={1.75} />,
   recipes: <Sparkles size={15} strokeWidth={1.75} />,
+  services: <Trophy size={15} strokeWidth={1.75} />,
 };
 
 type SidebarRailProps = {

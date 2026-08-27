@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { z } from "zod";
-import type { GameKitScene, GameKitAsset, GameKitLevel, GuiComponent, GameKitProject } from "@gamekit/schema";
+import type { GameKitScene, GameKitAsset, GameKitLevel, GuiComponent, GameKitProject, GameServicesDef } from "@gamekit/schema";
 import { parseScene, createEmptyScene } from "@gamekit/schema";
 import { useUndo } from "./useUndo.js";
 import { getApiUrl } from "../lib/api.js";
@@ -117,13 +117,14 @@ export function useProjectState() {
   const refresh = useCallback(async () => {
     const projectResponse = await fetch(getApiUrl("/api/project"));
     const rawSnapshot = (await projectResponse.json()) as {
-      project?: { activeScene?: string };
+      project?: GameKitProject;
       scenes: string[];
       assets: GameKitAsset[];
       levels?: GameKitLevel[];
       guiComponents?: GuiComponent[];
     };
     const nextSnapshot: ProjectSnapshot = {
+      project: rawSnapshot.project,
       scenes: rawSnapshot.scenes ?? [],
       assets: rawSnapshot.assets ?? [],
       levels: rawSnapshot.levels ?? [],
@@ -304,6 +305,17 @@ export function useProjectState() {
       body: JSON.stringify(partial),
     });
   }, []);
+
+  const handleUpdateGameServices = useCallback(
+    async (gameServices: GameServicesDef) => {
+      setSnapshot((prev) => ({
+        ...prev,
+        project: prev.project ? { ...prev.project, gameServices } : undefined,
+      }));
+      await persistProject({ gameServices });
+    },
+    [persistProject],
+  );
 
   const activateScene = useCallback((file: string, pane?: ScenePaneId) => {
     if (!file) return;
@@ -624,6 +636,7 @@ export function useProjectState() {
     triggerAutoSave,
     updateScene,
     persistProject,
+    handleUpdateGameServices,
     activateScene,
     handleCloseSceneTab,
     handleSplitChange,

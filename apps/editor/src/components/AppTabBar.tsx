@@ -37,6 +37,7 @@ import {
   Package,
   Wand2,
   HelpCircle,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
@@ -53,6 +54,7 @@ export type TabBarDestination =
   | "guis"
   | "gui-components"
   | "recipes"
+  | "services"
   | "content"
   | "agent"
   | "world";
@@ -76,6 +78,7 @@ type AppTabBarProps = {
   onGuis?: () => void;
   onGuiComponents?: () => void;
   onRecipes?: () => void;
+  onServices?: () => void;
   onContent: () => void;
   onAgent: () => void;
   onWorld: () => void;
@@ -160,6 +163,7 @@ export function AppTabBar({
   onGuis,
   onGuiComponents,
   onRecipes,
+  onServices,
   onContent,
   onAgent,
   onWorld,
@@ -223,7 +227,8 @@ export function AppTabBar({
     active === "levels" ||
     active === "guis" ||
     active === "gui-components" ||
-    active === "recipes";
+    active === "recipes" ||
+    active === "services";
 
   const projectFace =
     active === "scenes"
@@ -238,7 +243,9 @@ export function AppTabBar({
               ? { label: "GUI Comp", icon: <Package size={18} strokeWidth={1.75} /> }
               : active === "recipes"
                 ? { label: "Recipes", icon: <Wand2 size={18} strokeWidth={1.75} /> }
-                : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
+                : active === "services"
+                  ? { label: "Services", icon: <Trophy size={18} strokeWidth={1.75} /> }
+                  : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
 
   return (
     <nav ref={barRef} className={styles["app-tabbar"]} aria-label="Editor">
@@ -315,6 +322,16 @@ export function AppTabBar({
               row
               onClick={() => runAndClose(onRecipes)}
               icon={<Wand2 size={16} strokeWidth={1.75} />}
+            />
+          )}
+          {onServices && (
+            <TabItem
+              label="Services"
+              active={active === "services"}
+              compact
+              row
+              onClick={() => runAndClose(onServices)}
+              icon={<Trophy size={16} strokeWidth={1.75} />}
             />
           )}
         </TabGroup>
