@@ -142,7 +142,7 @@
  * Do NOT use `.canvas-panel > *` — absolute HUD chrome is also a direct child
  * and would stretch to full-screen if given width/height 100%.
  */
-.canvas-stage .canvas-panel > [data-canvas-shell],
+.canvas-stage .canvas-panel>[data-canvas-shell],
 .canvas-stage .canvas-panel [data-canvas-workspace] {
   flex: 1 1 auto;
   min-height: 0;
@@ -152,8 +152,8 @@
 }
 
 /* Absolute HUD overlays must size to content, never flex-fill the stage */
-.canvas-stage .canvas-panel > .absolute,
-.canvas-stage .canvas-panel > [class*="absolute"] {
+.canvas-stage .canvas-panel>.absolute,
+.canvas-stage .canvas-panel>[class*="absolute"] {
   flex: 0 0 auto !important;
   width: max-content !important;
   max-width: calc(100% - 24px);
@@ -165,18 +165,30 @@
   position: absolute;
   bottom: 12px;
   left: 12px;
-  z-index: 45;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 56px;
-  padding: 0 10px;
+  height: 53px;
+  padding: 0;
+  border: none;
   border-radius: 22px;
   background: var(--glass-fill);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.brand-corner:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.35), var(--glass-ring), var(--glass-inset);
+}
+
+.brand-corner:active {
+  transform: scale(0.96);
 }
 
 .brand-corner-logo {
@@ -184,15 +196,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 53px;
+  height: 53px;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .brand-corner-logo img {
-  width: 28px;
-  height: 28px;
+  width: 53px;
+  height: 53px;
   object-fit: contain;
 }
 
@@ -465,7 +477,7 @@
   align-items: flex-end;
 }
 
-.app-tabbar-group.has-active > .app-tabbar-group-trigger:not(.active) {
+.app-tabbar-group.has-active>.app-tabbar-group-trigger:not(.active) {
   color: rgba(235, 235, 245, 0.78);
 }
 
@@ -540,6 +552,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(6px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
@@ -555,6 +568,7 @@
     opacity: 0;
     transform: translateY(6px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -745,7 +759,7 @@
 .float-sheet-left .sidebar-content,
 .float-sheet-left .panel,
 .float-sheet-right .inspector-column,
-.float-sheet-right > * {
+.float-sheet-right>* {
   min-height: 0;
   flex: 1;
   height: 100%;
@@ -792,7 +806,7 @@
 }
 
 /* Sheet chrome — pill headers matching tab items */
-.float-sheet-left .panel > .flex.h-9,
+.float-sheet-left .panel>.flex.h-9,
 .float-sheet-left [class*="PanelHeader"],
 .float-sheet-right .bg-bg-base\/50 {
   background: transparent !important;
@@ -1073,7 +1087,7 @@
   will-change: transform, opacity;
 }
 
-.drawer-content-box > * {
+.drawer-content-box>* {
   background: transparent !important;
   height: 100%;
 }
@@ -1576,7 +1590,7 @@
   align-items: center;
 }
 
-.search-field > svg {
+.search-field>svg {
   position: absolute;
   left: 10px;
   z-index: 1;
@@ -1584,7 +1598,7 @@
   pointer-events: none;
 }
 
-.search-field > input {
+.search-field>input {
   padding-left: 30px;
 }
 
@@ -1705,6 +1719,7 @@
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -1917,11 +1932,13 @@
 }
 
 @keyframes agent-tool-pulse {
+
   0%,
   100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.45;
     transform: scale(0.86);
@@ -1929,20 +1946,24 @@
 }
 
 @keyframes agent-tool-bounce {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-2px);
   }
 }
 
 @keyframes agent-tool-sweep {
+
   0%,
   100% {
     transform: translateX(0);
   }
+
   50% {
     transform: translateX(2px);
   }
@@ -2153,6 +2174,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

@@ -26,7 +26,7 @@ const buttonVariants = cva(
         solid:
           "bg-accent/15 text-accent border border-accent/25 hover:bg-accent/22 hover:border-accent/40",
         primary:
-          "bg-accent text-[#041016] border border-accent hover:bg-accent-hover font-semibold shadow-[0_0_0_0.5px_rgba(0,240,255,0.25)]",
+          "btn-cyan-primary bg-accent !text-[#06090e] border border-accent hover:bg-accent-hover font-semibold shadow-[0_0_0_0.5px_rgba(0,240,255,0.25)]",
         danger:
           "bg-transparent text-error border border-transparent hover:bg-error/12 hover:border-error/25",
         play:
@@ -59,6 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         type={asChild ? undefined : type}
+        data-variant={variant ?? "ghost"}
         className={cn(buttonVariants({ variant, size }), className)}
         {...props}
       />

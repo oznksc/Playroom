@@ -181,6 +181,61 @@ fn select_directory() -> Option<String> {
 }
 
 #[tauri::command]
+fn pick_location_directory() -> Option<String> {
+  let dir = rfd::FileDialog::new()
+    .set_title("Choose Destination Folder for New Game")
+    .pick_folder();
+  dir.map(|path| path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn create_new_project(
+  name: String,
+  target_dir: String,
+  platform: String,
+  genre: String,
+  package_manager: Option<String>,
+  run_install: bool,
+) -> Result<String, String> {
+  let cli_path = cli_dist_path();
+  if !cli_path.exists() {
+    return Err(
+      "Playroom CLI dist not found. From the monorepo root run: pnpm build".to_string(),
+    );
+  }
+
+  let mut cmd = Command::new("node");
+  cmd.arg(&cli_path)
+    .arg("new")
+    .arg(&target_dir)
+    .arg("--name")
+    .arg(&name)
+    .arg("--platform")
+    .arg(&platform)
+    .arg("--genre")
+    .arg(&genre);
+
+  if let Some(pm) = package_manager {
+    cmd.arg("--pm").arg(pm);
+  }
+  if !run_install {
+    cmd.arg("--no-install");
+  }
+
+  let output = cmd
+    .output()
+    .map_err(|e| format!("Failed to run project creator: {}", e))?;
+
+  if !output.status.success() {
+    let err_str = String::from_utf8_lossy(&output.stderr);
+    let out_str = String::from_utf8_lossy(&output.stdout);
+    return Err(format!("Scaffolding failed:\n{}\n{}", out_str, err_str));
+  }
+
+  start_server(target_dir)
+}
+
+#[tauri::command]
 fn start_server(project_path: String) -> Result<String, String> {
   let resolved = resolve_project_root(&project_path)?;
   let resolved_str = resolved.to_string_lossy().to_string();
@@ -275,6 +330,8 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       select_directory,
+      pick_location_directory,
+      create_new_project,
       start_server,
       stop_server,
       list_example_projects,

@@ -25,6 +25,15 @@ import {
   applyRecipe,
   getSceneMtime,
 } from "./project.js";
+import {
+  scaffoldProject,
+  detectPackageManagers,
+  openNativeFolderDialog,
+  GENRE_TEMPLATES,
+  type ProjectPlatform,
+  type ProjectGenre,
+  type PackageManager,
+} from "./scaffold.js";
 import { runDoctor } from "./doctor.js";
 import { buildProject } from "./build.js";
 import { validateScene } from "@gamekit/schema";
@@ -183,6 +192,16 @@ const RecipeApplySchema = z.object({
   params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
+const ProjectCreateSchema = z.object({
+  name: z.string().min(1, "Project name is required"),
+  targetDir: z.string().min(1, "Target directory is required"),
+  platform: z.enum(["expo", "web", "tauri"]).default("web"),
+  genre: z.enum(["platformer", "topdown", "puzzle", "topdown-shooter", "endless-runner", "physics-puzzle", "blank"]).default("platformer"),
+  packageManager: z.enum(["pnpm", "bun", "yarn", "npm"]).optional(),
+  runInstall: z.boolean().default(true),
+  initGit: z.boolean().default(false),
+});
+
 async function handleRequest(options: EditorServerOptions, request: IncomingMessage, response: ServerResponse): Promise<void> {
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
@@ -196,6 +215,73 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+
+  if (url.pathname === "/api/projects/templates" && request.method === "GET") {
+    sendJson(response, 200, {
+      templates: GENRE_TEMPLATES,
+      platforms: [
+        {
+          id: "web",
+          name: "Web Game (Phaser + Vite)",
+          description: "Runs instantly in any modern browser with 60FPS Phaser rendering and fast Vite HMR.",
+          icon: "Globe",
+        },
+        {
+          id: "expo",
+          name: "Expo Mobile (React Native + Skia)",
+          description: "Native iOS and Android gaming with high-performance Skia GPU rendering and touch controls.",
+          icon: "Smartphone",
+        },
+        {
+          id: "tauri",
+          name: "Desktop App (Tauri + Phaser)",
+          description: "Ultra-lightweight native desktop app for macOS, Windows, and Linux powered by Rust & Webview.",
+          icon: "Monitor",
+        },
+      ],
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/system/environment" && request.method === "GET") {
+    const envInfo = await detectPackageManagers();
+    sendJson(response, 200, {
+      packageManagers: envInfo.available,
+      preferredPackageManager: envInfo.preferred,
+      nodeVersion: process.version,
+      platform: process.platform,
+      cwd: process.cwd(),
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/system/pick-directory" && (request.method === "POST" || request.method === "GET")) {
+    const selected = await openNativeFolderDialog();
+    sendJson(response, 200, { path: selected });
+    return;
+  }
+
+  if (url.pathname === "/api/projects/create" && request.method === "POST") {
+    try {
+      const raw = JSON.parse((await readBody(request)).toString("utf8"));
+      const parsed = ProjectCreateSchema.parse(raw);
+      const result = await scaffoldProject({
+        targetDir: parsed.targetDir,
+        name: parsed.name,
+        platform: parsed.platform as ProjectPlatform,
+        genre: parsed.genre as ProjectGenre,
+        packageManager: parsed.packageManager as PackageManager | undefined,
+        runInstall: parsed.runInstall,
+        initGit: parsed.initGit,
+      });
+      sendJson(response, 200, result);
+    } catch (err) {
+      sendJson(response, 400, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return;
+  }
 
   if (url.pathname === "/api/project" && request.method === "GET") {
     sendJson(response, 200, await getProjectSnapshot(options.root));

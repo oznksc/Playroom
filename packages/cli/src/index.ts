@@ -20,6 +20,14 @@ import {
   wireShellToGameplay,
   applySkillPackRecipes,
 } from "./project.js";
+import {
+  scaffoldProject,
+  detectPackageManagers,
+  GENRE_TEMPLATES,
+  type ProjectPlatform,
+  type ProjectGenre,
+  type PackageManager,
+} from "./scaffold.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
 
@@ -42,6 +50,16 @@ export {
   wireShellToGameplay,
   applySkillPackRecipes,
 } from "./project.js";
+export {
+  scaffoldProject,
+  detectPackageManagers,
+  GENRE_TEMPLATES,
+  type ProjectPlatform,
+  type ProjectGenre,
+  type PackageManager,
+  type ScaffoldOptions,
+  type ScaffoldResult,
+} from "./scaffold.js";
 export { getSkillPack, SKILL_PACKS } from "./skill-packs.js";
 export {
   generateWebMain,
@@ -58,6 +76,59 @@ async function main(argv: string[]): Promise<void> {
   const cwd = process.cwd();
 
   switch (command) {
+    case "new": {
+      // Usage: gamekit new <target-dir-or-name> [--platform expo|web|tauri] [--genre platformer|topdown|puzzle|topdown-shooter|endless-runner|physics-puzzle|blank] [--pm pnpm|bun|npm|yarn] [--no-install] [--git]
+      const targetArg = args.find((arg) => !arg.startsWith("--"));
+      const name = readOption(args, "--name") ?? targetArg ?? "Playroom Game";
+      const targetDir = resolve(cwd, targetArg ?? name.toLowerCase().replace(/\s+/g, "-"));
+      const platform = (readOption(args, "--platform") as ProjectPlatform | undefined) ?? "web";
+      const genre = (readOption(args, "--genre") as ProjectGenre | undefined) ?? "platformer";
+      const pm = readOption(args, "--pm") as PackageManager | undefined;
+      const runInstall = !args.includes("--no-install");
+      const initGit = args.includes("--git");
+
+      console.log(`\x1b[36m⚡ Scaffolding new ${platform.toUpperCase()} game project...\x1b[0m`);
+      console.log(`   Name:      ${name}`);
+      console.log(`   Location:  ${targetDir}`);
+      console.log(`   Platform:  ${platform}`);
+      console.log(`   Genre:     ${genre}`);
+
+      const result = await scaffoldProject({
+        targetDir,
+        name,
+        platform,
+        genre,
+        packageManager: pm,
+        runInstall,
+        initGit,
+        onProgress: (msg, step, total, detail) => {
+          const prefix = `\x1b[35m[${step}/${total}]\x1b[0m`;
+          console.log(`${prefix} ${msg}`);
+          if (detail && detail !== msg) {
+            console.log(`      \x1b[90m${detail.slice(0, 100)}\x1b[0m`);
+          }
+        },
+      });
+
+      console.log("");
+      console.log(`\x1b[32m✔ Project successfully created at:\x1b[0m ${result.targetDir}`);
+      console.log(`   Platform:   ${result.platform}`);
+      console.log(`   Scene:      ${result.scenePath}`);
+      console.log(`   Installed:  ${result.installed ? `Yes (${result.packageManager})` : "No"}`);
+      if (result.warnings.length) {
+        for (const w of result.warnings) {
+          console.log(`   \x1b[33mwarning:\x1b[0m ${w}`);
+        }
+      }
+      console.log("");
+      console.log("\x1b[36mNext steps:\x1b[0m");
+      console.log(`  cd ${targetArg ?? name.toLowerCase().replace(/\s+/g, "-")}`);
+      if (!result.installed) {
+        console.log(`  ${result.packageManager} install`);
+      }
+      console.log(`  pnpm gamekit editor`);
+      return;
+    }
     case "init": {
       const project = await initProject(cwd, { name: readOption(args, "--name") ?? basename(cwd) });
       console.log(`Created Playroom project: ${project.projectPath}`);

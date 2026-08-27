@@ -82,6 +82,9 @@ import { AgentPanel } from "./components/AgentPanel.js";
 import { AgentSettings } from "./components/AgentSettings.js";
 import { PrefabPanel } from "./components/PrefabPanel.js";
 import { ProjectWizard } from "./components/ProjectWizard.js";
+import { WelcomeHub } from "./components/WelcomeHub.js";
+import { NewProjectWizard } from "./components/NewProjectWizard.js";
+import { QuickStartBanner } from "./components/QuickStartBanner.js";
 import { AssetStudioModal } from "./components/AssetStudioModal.js";
 import { GuiInspector } from "./components/GuiInspector.js";
 import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
@@ -246,6 +249,8 @@ export function App() {
   );
   const paletteImages = useImageCache(snapshot.assets);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [welcomeHubOpen, setWelcomeHubOpen] = useState(false);
+  const [newProjectWizardOpen, setNewProjectWizardOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
   commandPaletteOpenRef.current = commandPaletteOpen;
@@ -335,11 +340,23 @@ export function App() {
     try {
       setProjectLoadError(null);
       setStatus("Opening dialog...");
-      const { invoke } = await import("@tauri-apps/api/core");
-      const selected = await invoke<string | null>("select_directory");
-      if (selected) {
-        await loadProjectFolder(selected);
+      if (isTauri) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const selected = await invoke<string | null>("select_directory");
+        if (selected) {
+          await loadProjectFolder(selected);
+        } else {
+          setStatus("Select a project folder to get started.");
+        }
       } else {
+        const res = await fetch(getApiUrl("/api/system/pick-directory"), { method: "POST" });
+        if (res.ok) {
+          const data = (await res.json()) as { path?: string | null };
+          if (data.path) {
+            await loadProjectFolder(data.path);
+            return;
+          }
+        }
         setStatus("Select a project folder to get started.");
       }
     } catch (e) {
@@ -354,17 +371,25 @@ export function App() {
     setIsLoadingProject(true);
     setProjectLoadError(null);
     try {
-      setStatus("Starting server…");
-      const { invoke } = await import("@tauri-apps/api/core");
-      const resolved = await invoke<string>("start_server", { projectPath: path });
-      setStatus("Waiting for editor API…");
-      await waitForEditorApi();
-      setStatus("Loading project…");
-      // Keep welcome screen until scene is loaded — avoids empty-shell crash/black frame
-      await refresh();
-      setProjectPath(resolved);
-      addToRecentProjects(resolved);
-      addConsoleLog("system", `Loaded project: ${resolved}`);
+      if (isTauri) {
+        setStatus("Starting server…");
+        const { invoke } = await import("@tauri-apps/api/core");
+        const resolved = await invoke<string>("start_server", { projectPath: path });
+        setStatus("Waiting for editor API…");
+        await waitForEditorApi();
+        setStatus("Loading project…");
+        await refresh();
+        setProjectPath(resolved);
+        addToRecentProjects(resolved);
+        addConsoleLog("system", `Loaded project: ${resolved}`);
+      } else {
+        setStatus("Loading project…");
+        await refresh();
+        setProjectPath(path);
+        addToRecentProjects(path);
+        addConsoleLog("system", `Loaded project: ${path}`);
+      }
+      setWelcomeHubOpen(false);
     } catch (e) {
       console.error(e);
       const msg =
@@ -372,10 +397,12 @@ export function App() {
           ? e
           : e instanceof Error
             ? e.message
-            : "Failed to start server";
+            : "Failed to load project";
       setStatus(msg);
       setProjectLoadError(msg);
-      setProjectPath(null);
+      if (isTauri) {
+        setProjectPath(null);
+      }
     } finally {
       setIsLoadingProject(false);
     }
@@ -383,9 +410,12 @@ export function App() {
 
   const handleCloseProject = async () => {
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("stop_server");
+      if (isTauri) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("stop_server");
+      }
       setProjectPath(null);
+      setWelcomeHubOpen(true);
       setStatus("Select a project folder to get started.");
       addConsoleLog("system", "Closed project folder.");
     } catch (e) {
@@ -2474,6 +2504,25 @@ export function App() {
       },
     ];
 
+    items.push({
+      id: "project-new",
+      label: "New Game Project...",
+      section: "Project",
+      shortcut: "⌘N",
+      keywords: ["create", "new", "project", "scaffold", "expo", "web", "tauri"],
+      icon: ic(<Plus size={14} strokeWidth={1.75} />),
+      run: () => setNewProjectWizardOpen(true),
+    });
+
+    items.push({
+      id: "project-hub",
+      label: "Open Project Launch Hub",
+      section: "Project",
+      keywords: ["hub", "welcome", "home", "dashboard", "onboarding"],
+      icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
+      run: () => setWelcomeHubOpen(true),
+    });
+
     if (isTauri && projectPath) {
       items.push({
         id: "project-close",
@@ -2544,93 +2593,26 @@ export function App() {
     profilerOpen,
   ]);
 
-  if (isTauri && !projectPath) {
+  if ((isTauri && !projectPath) || welcomeHubOpen) {
     return (
-      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-bg-base text-text-primary">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-80"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 40%, rgba(0,240,255,0.08) 0%, transparent 55%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.06) 0%, transparent 45%)",
-          }}
-        />
-        <div className="relative z-10 w-[min(480px,calc(100vw-32px))] rounded-[18px] border border-white/[0.08] bg-[rgba(16,18,22,0.92)] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-          <div className="mb-6 flex flex-col items-center text-center">
-            <img src={logoUrl} alt="Playroom" className="mb-3 size-14 object-contain" />
-            <h1 className="type-display m-0 tracking-[0.08em]">PLAYROOM</h1>
-            <p className="type-body mt-1.5">Open a project folder that contains a gamekit/ directory</p>
-          </div>
-
-          <button
-            type="button"
-            disabled={isLoadingProject}
-            onClick={handleOpenProject}
-            className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-accent/40 bg-accent/15 px-4 py-3 text-md font-semibold tracking-[-0.015em] text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
-          >
-            <FolderOpen size={16} />
-            {isLoadingProject ? "Opening…" : "Open Project Folder"}
-          </button>
-
-          {exampleProjects.length > 0 && (
-            <div className="mt-5">
-              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
-                Example projects
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                {exampleProjects.map((ex) => (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    disabled={isLoadingProject}
-                    onClick={() => loadProjectFolder(ex.path)}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.08] disabled:opacity-50"
-                  >
-                    <span className="text-[13px] font-semibold tracking-[-0.015em] text-[rgba(245,245,247,0.92)]">
-                      {ex.name}
-                    </span>
-                    <span className="text-[11px] text-[rgba(235,235,245,0.4)]">{ex.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {recentProjects.length > 0 && (
-            <div className="mt-5 border-t border-white/[0.06] pt-4">
-              <h3 className="m-0 mb-2 text-[11px] font-semibold tracking-[-0.01em] text-[rgba(235,235,245,0.45)]">
-                Recent
-              </h3>
-              <div className="flex max-h-36 flex-col gap-1 overflow-auto">
-                {recentProjects.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    disabled={isLoadingProject}
-                    className="list-row cursor-pointer disabled:opacity-50"
-                    onClick={() => loadProjectFolder(p)}
-                  >
-                    <Folder size={13} className="shrink-0 text-accent" />
-                    <span className="type-mono min-w-0 flex-1 truncate" title={p}>
-                      {p}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {projectLoadError && (
-            <div className="mt-4 rounded-[12px] border border-error/30 bg-error/10 px-3 py-2 text-[11px] leading-relaxed text-error whitespace-pre-wrap">
-              {projectLoadError}
-            </div>
-          )}
-
-          <p className="type-micro mt-5 text-center text-text-muted">
-            Tip: pick the project root (e.g. templates/expo-game), not only the gamekit folder.
-            Requires <code className="text-accent">pnpm build</code> first.
-          </p>
-        </div>
-      </div>
+      <WelcomeHub
+        recentProjects={recentProjects}
+        exampleProjects={exampleProjects.map((e) => e.path)}
+        isLoadingProject={isLoadingProject}
+        projectLoadError={projectLoadError}
+        onOpenFolder={handleOpenProject}
+        onSelectProject={async (path) => {
+          setWelcomeHubOpen(false);
+          await loadProjectFolder(path);
+        }}
+        onRemoveRecent={(path) => {
+          setRecentProjects((prev) => {
+            const next = prev.filter((p) => p !== path);
+            localStorage.setItem("gamekit_recent_projects", JSON.stringify(next));
+            return next;
+          });
+        }}
+      />
     );
   }
 
@@ -2642,6 +2624,13 @@ export function App() {
     >
       {/* Full-bleed canvas — primary focus */}
       <div className="canvas-stage relative">
+        <QuickStartBanner
+          onPlayTest={handlePlayToggle}
+          onOpenAssetStudio={() => openContent("studio")}
+          onOpenLevels={() => openLevels()}
+          onOpenTour={openTour}
+          onNewProject={() => setNewProjectWizardOpen(true)}
+        />
         <SceneTabBar
           workspace={workspace.openTabs.length ? workspace : createSceneWorkspace(currentSceneFile)}
           dirtyFiles={dirtyFiles}
@@ -3132,7 +3121,7 @@ export function App() {
       </div>
 
       {/* Bottom-left logo, tab-bar level — every action is on the tab bar */}
-      <BrandCorner isDirty={isDirty} />
+      <BrandCorner isDirty={isDirty} onClick={() => setWelcomeHubOpen(true)} />
 
       <PlayControls
         isPlaying={isPlaying}
@@ -3573,6 +3562,14 @@ export function App() {
         </section>
       )}
 
+      <NewProjectWizard
+        open={newProjectWizardOpen}
+        onClose={() => setNewProjectWizardOpen(false)}
+        onProjectCreated={async (path) => {
+          setNewProjectWizardOpen(false);
+          await loadProjectFolder(path);
+        }}
+      />
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
       <ProjectWizard
         open={wizardOpen}

@@ -49,6 +49,8 @@ type TopbarProps = {
   onOpenAssetStudio?: () => void;
   onOpenWizard?: () => void;
   onOpenTour?: () => void;
+  onNewProject?: () => void;
+  onOpenProjectHub?: () => void;
   formatLastSaved: () => string;
   projectPath?: string | null;
   onCloseProject?: () => void;
@@ -80,6 +82,8 @@ export function Topbar({
   onOpenAssetStudio,
   onOpenWizard,
   onOpenTour,
+  onNewProject,
+  onOpenProjectHub,
   formatLastSaved,
   projectPath,
   onCloseProject,
@@ -97,23 +101,36 @@ export function Topbar({
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 bg-bg-surface px-3">
       <div className="flex min-w-0 items-center gap-2">
-        <img src={logoUrl} alt="Playroom" className="size-7 object-contain" />
-        <div className="hidden min-w-0 sm:block">
-          <div className="text-[13px] font-semibold leading-none text-text-primary">
-            Playroom
+        <button
+          type="button"
+          onClick={onOpenProjectHub}
+          className="flex items-center gap-2 rounded-lg p-1 hover:bg-white/[0.06] transition-colors"
+          title="Open Project Hub"
+        >
+          <img src={logoUrl} alt="Playroom" className="size-7 object-contain" />
+          <div className="hidden min-w-0 sm:block text-left">
+            <div className="text-[13px] font-semibold leading-none text-text-primary">
+              Playroom
+            </div>
+            <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-text-muted">
+              Editor
+            </div>
           </div>
-          <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-text-muted">
-            Editor
-          </div>
-        </div>
+        </button>
         <ChevronRight size={12} className="shrink-0 text-text-muted" />
         <span className="truncate font-mono text-[12px] font-medium text-text-secondary">
           {sceneName}
         </span>
         {isDirty && <StatusDot status="dirty" title="Unsaved changes" />}
+        {onNewProject && (
+          <Button size="sm" variant="secondary" onClick={onNewProject} className="ml-1 hidden md:inline-flex text-xs gap-1">
+            <Plus size={12} className="text-accent" />
+            New Game
+          </Button>
+        )}
         {projectPath && onCloseProject && (
-          <Button size="sm" variant="secondary" onClick={onCloseProject} className="ml-1 hidden md:inline-flex">
-            Close Project
+          <Button size="sm" variant="secondary" onClick={onCloseProject} className="ml-1 hidden lg:inline-flex text-xs">
+            Close
           </Button>
         )}
       </div>

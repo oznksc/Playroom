@@ -386,3 +386,33 @@ pre {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-muted);
 }
+
+/* ── High-contrast Dark Text for Solid Cyan/Accent Buttons ── */
+.btn-cyan-primary,
+button.bg-accent:not([class*="/"]),
+a.bg-accent:not([class*="/"]),
+[data-variant="primary"],
+.btn-primary-cyan {
+  background-color: var(--accent) !important;
+  color: #06090e !important;
+  font-weight: 600 !important;
+}
+
+.btn-cyan-primary:hover,
+button.bg-accent:not([class*="/"]):hover,
+a.bg-accent:not([class*="/"]):hover,
+[data-variant="primary"]:hover {
+  background-color: var(--accent-hover) !important;
+  color: #06090e !important;
+}
+
+.btn-cyan-primary *,
+.btn-cyan-primary svg,
+button.bg-accent:not([class*="/"]) *,
+button.bg-accent:not([class*="/"]) svg,
+[data-variant="primary"] *,
+[data-variant="primary"] svg {
+  color: #06090e !important;
+  stroke: #06090e !important;
+}
+
