@@ -162,12 +162,12 @@ export function AssetsPanel({
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
                             const fallback = e.currentTarget.parentElement?.querySelector(
-                              ".asset-fallback-icon"
+                              "[data-asset-fallback]"
                             );
                             if (fallback) (fallback as HTMLElement).style.display = "flex";
                           }}
                         />
-                        <div className="asset-fallback-icon absolute inset-0 hidden items-center justify-center text-text-muted">
+                        <div data-asset-fallback className="absolute inset-0 hidden items-center justify-center text-text-muted">
                           <FileImage size={22} />
                         </div>
                         <Badge variant="muted" className="absolute left-1 top-1 text-[8px]">

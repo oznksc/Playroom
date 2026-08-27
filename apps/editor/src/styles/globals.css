@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./base.css";
+@import "./utilities.css";
 
 /* ── Playroom design tokens (brief.md) ───────────────────────────── */
 /*
@@ -15,9 +17,17 @@
   --color-bg-hover: rgba(255, 255, 255, 0.08);
   --color-bg-active: rgba(255, 255, 255, 0.12);
 
+  /* Semantic editor roles. Prefer these for new components. */
+  --color-surface-base: #06090e;
+  --color-surface-sunken: #030508;
+  --color-surface-raised: #0b0f17;
+  --color-surface-overlay: #121824;
+
   --color-border-subtle: rgba(255, 255, 255, 0.05);
   --color-border-default: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-border-focus: rgba(0, 240, 255, 0.4);
+  --color-border-active: rgba(0, 240, 255, 0.62);
 
   --color-text-primary: rgba(245, 245, 247, 0.96);
   --color-text-secondary: rgba(235, 235, 245, 0.6);
@@ -34,6 +44,10 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+  --color-signal-select: #00f0ff;
+  --color-signal-component: #8b5cf6;
+  --color-signal-play: #10b981;
+  --color-signal-danger: #ef4444;
 
   --radius-sm: 8px;
   --radius-md: 10px;
@@ -147,9 +161,17 @@
   --bg-hover: rgba(255, 255, 255, 0.08);
   --bg-active: rgba(255, 255, 255, 0.12);
 
+  /* Semantic aliases are the stable vocabulary for editor chrome. */
+  --surface-base: #06090e;
+  --surface-sunken: #030508;
+  --surface-raised: #0b0f17;
+  --surface-overlay: #121824;
+
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-default: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
+  --border-focus: rgba(0, 240, 255, 0.4);
+  --border-active: rgba(0, 240, 255, 0.62);
 
   --text-primary: rgba(245, 245, 247, 0.96);
   --text-secondary: rgba(235, 235, 245, 0.6);
@@ -158,6 +180,12 @@
   /* Apple glass surfaces (shared with tab bar / play pill) */
   --glass-fill: rgba(22, 22, 24, 0.8);
   --glass-fill-deep: rgba(16, 18, 22, 0.88);
+  --glass-blur: blur(22px) saturate(1.4);
+  --glass-ring: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --glass-inset: inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.48);
+  --glass-radius: 18px;
+  --glass-radius-sm: 14px;
   --glass-chip: rgba(255, 255, 255, 0.06);
   --glass-chip-hover: rgba(255, 255, 255, 0.1);
   --glass-fg: rgba(235, 235, 245, 0.55);
@@ -169,6 +197,10 @@
   --accent-purple: #8b5cf6;
   --accent-green: #10b981;
   --accent-red: #ef4444;
+  --signal-select: #00f0ff;
+  --signal-component: #8b5cf6;
+  --signal-play: #10b981;
+  --signal-danger: #ef4444;
 
   --selection: #ffb300;
   --selection-muted: rgba(255, 179, 0, 0.1);
@@ -231,188 +263,3 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-  letter-spacing: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Numeric / data — JetBrains Mono */
-.font-mono,
-code,
-kbd,
-samp,
-pre {
-  font-family: var(--font-mono);
-  font-feature-settings: "liga" 0, "calt" 1;
-  letter-spacing: 0;
-}
-
-/* Role utilities (prefer these over one-off text-[Npx] in new code) */
-.type-label {
-  font-size: var(--type-label-size);
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  text-transform: none;
-  color: var(--text-muted);
-}
-
-/* Shared glass utility for cards / menus / chips */
-.glass-chip {
-  background: var(--glass-chip);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
-}
-
-.glass-chip:hover {
-  background: var(--glass-chip-hover);
-}
-
-.glass-panel {
-  background: var(--glass-fill-deep);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-glass);
-  backdrop-filter: blur(22px) saturate(1.4);
-  -webkit-backdrop-filter: blur(22px) saturate(1.4);
-}
-
-.type-micro {
-  font-size: var(--type-micro-size);
-  font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  color: var(--text-secondary);
-}
-
-.type-ui {
-  font-size: var(--type-ui-size);
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-}
-
-.type-body {
-  font-size: var(--type-body-size);
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: -0.01em;
-  color: var(--text-secondary);
-}
-
-.type-title {
-  font-size: var(--type-title-size);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.015em;
-  color: var(--text-primary);
-}
-
-.type-display {
-  font-size: var(--type-display-size);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: var(--type-tab-tracking);
-  color: var(--text-primary);
-}
-
-.type-mono {
-  font-family: var(--font-mono);
-  font-size: var(--type-micro-size);
-  font-weight: 400;
-  line-height: 1.35;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Scrollbars — soft glass style */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.focus-ring:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-muted);
-}
-
-/* ── High-contrast Dark Text for Solid Cyan/Accent Buttons ── */
-.btn-cyan-primary,
-button.bg-accent:not([class*="/"]),
-a.bg-accent:not([class*="/"]),
-[data-variant="primary"],
-.btn-primary-cyan {
-  background-color: var(--accent) !important;
-  color: #06090e !important;
-  font-weight: 600 !important;
-}
-
-.btn-cyan-primary:hover,
-button.bg-accent:not([class*="/"]):hover,
-a.bg-accent:not([class*="/"]):hover,
-[data-variant="primary"]:hover {
-  background-color: var(--accent-hover) !important;
-  color: #06090e !important;
-}
-
-.btn-cyan-primary *,
-.btn-cyan-primary svg,
-button.bg-accent:not([class*="/"]) *,
-button.bg-accent:not([class*="/"]) svg,
-[data-variant="primary"] *,
-[data-variant="primary"] svg {
-  color: #06090e !important;
-  stroke: #06090e !important;
-}
-

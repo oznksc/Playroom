@@ -34,6 +34,7 @@ import {
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
 import { cn } from "@/ui";
+import workspaceStyles from "./Workspace.module.css";
 
 type SceneCanvasProps = {
   scene?: GameKitScene;
@@ -602,7 +603,8 @@ export function SceneCanvas({
     <section
       id="tour-canvas-stage"
       className={cn(
-        "canvas-panel relative min-h-0 overflow-hidden bg-bg-base",
+        workspaceStyles["canvas-panel"],
+        "relative min-h-0 overflow-hidden bg-bg-base",
         isPlaying && "shadow-[inset_0_0_0_2px_var(--accent-green)]"
       )}
     >
@@ -614,7 +616,7 @@ export function SceneCanvas({
       <ContextMenu items={getCanvasContextMenuItems()} fill>
         <div
           ref={viewportRef}
-          className="canvas-viewport"
+          className={workspaceStyles["canvas-viewport"]}
           data-canvas-shell
           data-canvas-workspace
         >
@@ -962,8 +964,8 @@ export function SceneCanvas({
       </ContextMenu>
 
       {isPlaying && onVirtualInput && (
-        <div className="canvas-virtual-pad" aria-label="Virtual game controls">
-          <div className="canvas-virtual-pad-move" aria-label="Movement">
+        <div className={workspaceStyles["canvas-virtual-pad"]} aria-label="Virtual game controls">
+          <div className={workspaceStyles["canvas-virtual-pad-move"]} aria-label="Movement">
             {(
               [
                 ["left", "◀"],
@@ -973,7 +975,7 @@ export function SceneCanvas({
               <button
                 key={action}
                 type="button"
-                className="canvas-virtual-btn"
+                className={workspaceStyles["canvas-virtual-btn"]}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
@@ -993,7 +995,7 @@ export function SceneCanvas({
               </button>
             ))}
           </div>
-          <div className="canvas-virtual-pad-actions" aria-label="Actions">
+          <div className={workspaceStyles["canvas-virtual-pad-actions"]} aria-label="Actions">
             {(
               [
                 ["jump", "A", "Jump"],
@@ -1008,8 +1010,9 @@ export function SceneCanvas({
                   type="button"
                   title={title}
                   className={cn(
-                    "canvas-virtual-btn canvas-virtual-btn-action",
-                    action === "jump" && "canvas-virtual-btn-primary",
+                    workspaceStyles["canvas-virtual-btn"],
+                    workspaceStyles["canvas-virtual-btn-action"],
+                    action === "jump" && workspaceStyles["canvas-virtual-btn-primary"],
                   )}
                   onPointerDown={(e) => {
                     e.preventDefault();
@@ -1026,8 +1029,8 @@ export function SceneCanvas({
                   }}
                   onPointerCancel={() => onVirtualInput(action, false)}
                 >
-                  <span className="canvas-virtual-btn-label">{label}</span>
-                  <span className="canvas-virtual-btn-sub">{title}</span>
+                  <span className={workspaceStyles["canvas-virtual-btn-label"]}>{label}</span>
+                  <span className={workspaceStyles["canvas-virtual-btn-sub"]}>{title}</span>
                 </button>
               ))}
           </div>

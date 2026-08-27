@@ -1,6 +1,7 @@
 import type { GameKitAsset, GameKitScene, TilemapComponent } from "@gamekit/schema";
 import { Eraser, Paintbrush, Pipette, Square, PaintBucket } from "lucide-react";
 import { findComponent } from "../lib/components.js";
+import styles from "./TilePalette.module.css";
 import type { TilePaintMode } from "../lib/editor-tools.js";
 import { tileSrcRect, tilesetTileCount } from "../lib/tile-paint.js";
 import { cn } from "@/ui";
@@ -72,15 +73,15 @@ export function TilePalette({
   const tilesetName = assets.find((a) => a.id === tilemap?.tilesetId)?.id ?? tilemap?.tilesetId ?? "no tileset";
 
   return (
-    <div className="tile-palette" role="toolbar" aria-label="Tile palette">
-      <div className="tile-palette-tools">
+    <div className={styles["tile-palette"]} role="toolbar" aria-label="Tile palette">
+      <div className={styles["tile-palette-tools"]}>
         {MODES.map((mode) => {
           const Icon = mode.icon;
           return (
             <button
               key={mode.id}
               type="button"
-              className={cn("tile-tool", paintMode === mode.id && "active")}
+              className={cn(styles["tile-tool"], paintMode === mode.id && styles.active)}
               title={`${mode.label} (${mode.hint})`}
               aria-label={mode.label}
               aria-pressed={paintMode === mode.id}
@@ -90,12 +91,12 @@ export function TilePalette({
             </button>
           );
         })}
-        <span className="tile-palette-sep" aria-hidden />
+        <span className={styles["tile-palette-sep"]} aria-hidden />
         {[1, 2, 3].map((size) => (
           <button
             key={size}
             type="button"
-            className={cn("tile-tool", brushSize === size && "active")}
+            className={cn(styles["tile-tool"], brushSize === size && styles.active)}
             title={`Brush size ${size}`}
             aria-label={`Brush size ${size}`}
             onClick={() => onBrushSizeChange(size)}
@@ -104,16 +105,16 @@ export function TilePalette({
           </button>
         ))}
       </div>
-      <span className="tile-palette-label">
+      <span className={styles["tile-palette-label"]}>
         {paintMode === "erase" ? "Erase" : paintMode === "fill" ? "Fill" : paintMode === "rect" ? "Rect" : paintMode === "eyedropper" ? "Pick" : "Brush"}
         {tilemap ? ` · ${tilesetName}` : " · select a tilemap"}
       </span>
-      <div className="tile-palette-preview" aria-hidden>
+      <div className={styles["tile-palette-preview"]} aria-hidden>
         {paintTileId === 0 || !tileset || !preview ? (
-          <span className="tile-palette-preview-empty">{paintTileId === 0 ? "·" : paintTileId}</span>
+          <span className={styles["tile-palette-preview-empty"]}>{paintTileId === 0 ? "·" : paintTileId}</span>
         ) : (
           <span
-            className="tile-palette-preview-chip"
+            className={styles["tile-palette-preview-chip"]}
             style={{
               backgroundImage: `url(${tileset.src})`,
               backgroundSize: `${(tileset.width / preview.sw) * 100}% ${(tileset.height / preview.sh) * 100}%`,
@@ -122,7 +123,7 @@ export function TilePalette({
           />
         )}
       </div>
-      <div className="tile-palette-swatches">
+      <div className={styles["tile-palette-swatches"]}>
         {ids.map((id) => {
           const src = tileSrcRect(id, tilemap?.columns ?? 8, tilemap?.tileWidth ?? 32, tilemap?.tileHeight ?? 32);
           const active = paintTileId === id && paintMode !== "erase" ? id !== 0 : paintMode === "erase" && id === 0;
@@ -130,7 +131,7 @@ export function TilePalette({
             <button
               key={id}
               type="button"
-              className={cn("tile-swatch", active && "active", id === 0 && "empty")}
+              className={cn(styles["tile-swatch"], active && styles.active, id === 0 && styles.empty)}
               title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
               onClick={() => {
                 onPaintTileIdChange(id);
@@ -142,7 +143,7 @@ export function TilePalette({
                 id === 0 ? "·" : id
               ) : (
                 <span
-                  className="tile-swatch-chip"
+                  className={styles["tile-swatch-chip"]}
                   style={{
                     backgroundImage: `url(${tileset.src})`,
                     backgroundSize: `${(tileset.width / src.sw) * 100}% ${(tileset.height / src.sh) * 100}%`,

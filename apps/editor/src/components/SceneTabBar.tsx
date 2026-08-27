@@ -9,6 +9,8 @@ import {
   type SplitMode,
 } from "../lib/scene-workspace.js";
 import { cn } from "@/ui";
+import styles from "./SceneTabBar.module.css";
+import workspaceStyles from "./Workspace.module.css";
 
 type SceneTabBarProps = {
   workspace: SceneWorkspaceState;
@@ -31,8 +33,8 @@ export function SceneTabBar({
   const canSplit = scenes.length > 1 || workspace.openTabs.length > 1;
 
   return (
-    <div className="scene-tab-bar" role="tablist" aria-label="Open scenes">
-      <div className="scene-tab-bar-tabs">
+    <div className={styles["scene-tab-bar"]} role="tablist" aria-label="Open scenes">
+      <div className={styles["scene-tab-bar-tabs"]}>
         {workspace.openTabs.map((file) => {
           const selected = file === active;
           return (
@@ -42,15 +44,15 @@ export function SceneTabBar({
               role="tab"
               aria-selected={selected}
               data-testid={`scene-tab-${file}`}
-              className={cn("scene-tab", selected && "active")}
+              className={cn(styles["scene-tab"], selected && styles.active)}
               onClick={() => onSelectTab(file)}
               title={file}
             >
-              <span className="scene-tab-label">{sceneTabLabel(file)}</span>
-              {dirtyFiles.has(file) && <span className="scene-tab-dirty" aria-label="Unsaved" />}
+              <span className={styles["scene-tab-label"]}>{sceneTabLabel(file)}</span>
+              {dirtyFiles.has(file) && <span className={styles["scene-tab-dirty"]} aria-label="Unsaved" />}
               {workspace.openTabs.length > 1 && (
                 <span
-                  className="scene-tab-close"
+                  className={styles["scene-tab-close"]}
                   role="button"
                   tabIndex={0}
                   title="Close tab"
@@ -73,7 +75,7 @@ export function SceneTabBar({
           );
         })}
       </div>
-      <div className="scene-tab-bar-split" role="group" aria-label="Split view">
+      <div className={styles["scene-tab-bar-split"]} role="group" aria-label="Split view">
         <SplitButton
           label="Single"
           active={workspace.split === "none"}
@@ -119,7 +121,7 @@ function SplitButton({
   return (
     <button
       type="button"
-      className={cn("scene-split-btn", active && "active")}
+      className={cn(styles["scene-split-btn"], active && styles.active)}
       title={label}
       aria-label={label}
       aria-pressed={active}
@@ -145,9 +147,9 @@ export function ScenePanes({ workspace, onFocusPane, renderPane }: ScenePanesPro
   return (
     <div
       className={cn(
-        "scene-panes",
-        workspace.split === "horizontal" && "split-h",
-        workspace.split === "vertical" && "split-v",
+        workspaceStyles["scene-panes"],
+        workspace.split === "horizontal" && workspaceStyles["split-h"],
+        workspace.split === "vertical" && workspaceStyles["split-v"],
       )}
     >
       {panes.map(({ id, file }) => {
@@ -159,14 +161,14 @@ export function ScenePanes({ workspace, onFocusPane, renderPane }: ScenePanesPro
         return (
           <div
             key={id}
-            className={cn("scene-pane", focused && "focused")}
+            className={cn(workspaceStyles["scene-pane"], focused && workspaceStyles.focused)}
             data-testid={`scene-pane-${id}`}
             onPointerDownCapture={() => {
               if (!focused) onFocusPane(id);
             }}
           >
             {workspace.split !== "none" && (
-              <span className="scene-pane-caption type-label">{sceneTabLabel(file)}</span>
+              <span className={`${workspaceStyles["scene-pane-caption"]} type-label`}>{sceneTabLabel(file)}</span>
             )}
             {renderPane(id, file, focused)}
           </div>

@@ -41,6 +41,7 @@ import {
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
 import type { CanvasTool } from "../lib/editor-tools.js";
+import styles from "./AppTabBar.module.css";
 export type { CanvasTool } from "../lib/editor-tools.js";
 
 /** Left workspace destinations (shown on tab bar). */
@@ -240,8 +241,8 @@ export function AppTabBar({
                 : { label: "Hierarchy", icon: <Layers size={18} strokeWidth={1.75} /> };
 
   return (
-    <nav ref={barRef} className="app-tabbar" aria-label="Editor">
-      <div className="app-tabbar-scroll">
+    <nav ref={barRef} className={styles["app-tabbar"]} aria-label="Editor">
+      <div className={styles["app-tabbar-scroll"]}>
         {/* Project workspace — Hierarchy / Scenes / Prefabs / Levels */}
         <TabGroup
           id="project"
@@ -346,7 +347,7 @@ export function AppTabBar({
           icon={<Globe size={18} strokeWidth={1.75} />}
         />
 
-        <span className="app-tabbar-sep" aria-hidden />
+        <span className={styles["app-tabbar-sep"]} aria-hidden />
 
         {/* Tools group — current tool icon on the face */}
         <TabGroup
@@ -371,7 +372,7 @@ export function AppTabBar({
               icon={TOOL_META[tool].icon(16)}
             />
           ))}
-          <span className="app-tabbar-flyout-sep" aria-hidden />
+          <span className={styles["app-tabbar-flyout-sep"]} aria-hidden />
           <TabItem
             label="Snap"
             active={snap}
@@ -380,7 +381,7 @@ export function AppTabBar({
             icon={<Magnet size={16} strokeWidth={1.75} />}
           />
           {snap && (
-            <label className="app-tabbar-select" title="Snap size">
+            <label className={styles["app-tabbar-select"]} title="Snap size">
               <select
                 value={snapSize}
                 onChange={(e) => onSnapSizeChange(Number(e.target.value))}
@@ -431,7 +432,7 @@ export function AppTabBar({
             onClick={() => runAndClose(onCenterView)}
             icon={<Focus size={16} strokeWidth={1.75} />}
           />
-          <span className="app-tabbar-flyout-sep" aria-hidden />
+          <span className={styles["app-tabbar-flyout-sep"]} aria-hidden />
           <TabItem
             label="Zoom −"
             active={false}
@@ -439,7 +440,7 @@ export function AppTabBar({
             onClick={() => onZoomChange(Math.max(MIN_ZOOM, zoom - 0.1))}
             icon={<ZoomOut size={16} strokeWidth={1.75} />}
           />
-          <span className="app-tabbar-zoom" title="Zoom">
+          <span className={styles["app-tabbar-zoom"]} title="Zoom">
             {Math.round(zoom * 100)}%
           </span>
           <TabItem
@@ -510,7 +511,7 @@ export function AppTabBar({
           />
         </TabGroup>
 
-        <span className="app-tabbar-sep" aria-hidden />
+        <span className={styles["app-tabbar-sep"]} aria-hidden />
 
         <TabItem
           label="Save"
@@ -620,25 +621,25 @@ function TabGroup({
 }) {
   return (
     <div
-      className={cn("app-tabbar-group", open && "open", active && "has-active")}
+      className={cn(styles["app-tabbar-group"], open && styles.open, active && styles["has-active"])}
       data-group={id}
     >
       <button
         type="button"
-        className={cn("app-tabbar-item", "app-tabbar-group-trigger", open && "active")}
+        className={cn(styles["app-tabbar-item"], styles["app-tabbar-group-trigger"], open && styles.active)}
         onClick={onToggle}
         title={label}
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="app-tabbar-icon">{icon}</span>
-        <span className="app-tabbar-label">
+        <span className={styles["app-tabbar-icon"]}>{icon}</span>
+        <span className={styles["app-tabbar-label"]}>
           {label}
           <ChevronUp
             size={8}
             strokeWidth={2.5}
-            className={cn("app-tabbar-chevron", open && "open")}
+            className={cn(styles["app-tabbar-chevron"], open && styles.open)}
             aria-hidden
           />
         </span>
@@ -646,9 +647,9 @@ function TabGroup({
       {open && (
         <div
           className={cn(
-            "app-tabbar-flyout",
-            layout === "column" && "column",
-            align === "end" && "align-end"
+            styles["app-tabbar-flyout"],
+            layout === "column" && styles.column,
+            align === "end" && styles["align-end"]
           )}
           role="menu"
           aria-label={label}
@@ -683,20 +684,20 @@ function TabItem({
       type="button"
       role={compact ? "menuitem" : undefined}
       className={cn(
-        "app-tabbar-item",
-        compact && "compact",
-        row && "row",
-        active && "active",
-        tone === "success" && "tone-success",
-        tone === "error" && "tone-error"
+        styles["app-tabbar-item"],
+        compact && styles.compact,
+        row && styles.row,
+        active && styles.active,
+        tone === "success" && styles["tone-success"],
+        tone === "error" && styles["tone-error"]
       )}
       onClick={onClick}
       title={label}
       aria-label={label}
       aria-current={active ? "true" : undefined}
     >
-      <span className="app-tabbar-icon">{icon}</span>
-      <span className="app-tabbar-label">{label}</span>
+      <span className={styles["app-tabbar-icon"]}>{icon}</span>
+      <span className={styles["app-tabbar-label"]}>{label}</span>
     </button>
   );
 }

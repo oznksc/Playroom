@@ -105,8 +105,10 @@ first if you intend to use the desktop shell.
   Editor chrome is **canvas-first floating**: full-bleed stage, floating
   top bar, left activity rail (`SidebarRail`), left/right float sheets,
   bottom sheet for content. Never force a fixed 3-column grid that
-  shrinks the canvas. Shared primitives: `apps/editor/src/ui/`. Layout:
-  `apps/editor/src/styles/editor.css`. Prefer `@/` imports. Avoid new SCSS.
+  shrinks the canvas. Shared primitives: `apps/editor/src/ui/`. Global CSS
+  is limited to `apps/editor/src/styles/globals.css` and its base/utility
+  imports; feature styling belongs in colocated CSS Modules. Prefer `@/`
+  imports and Tailwind for small composition rules. Avoid new SCSS.
 
 ## Where to look
 

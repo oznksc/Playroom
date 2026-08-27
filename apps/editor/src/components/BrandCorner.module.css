@@ -1,0 +1,61 @@
+/* Bottom-left brand — same vertical band as the tab bar */
+.brand-corner {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 53px;
+  padding: 0;
+  border: none;
+  border-radius: 22px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.brand-corner:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.35), var(--glass-ring), var(--glass-inset);
+}
+
+.brand-corner:active {
+  transform: scale(0.96);
+}
+
+.brand-corner-logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 53px;
+  height: 53px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.brand-corner-logo img {
+  width: 53px;
+  height: 53px;
+  object-fit: contain;
+}
+
+.brand-corner-dirty {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+@media (max-width: 768px) {
+  .brand-corner {
+    bottom: 10px;
+    left: 8px;
+    height: 52px;
+  }
+}

@@ -101,6 +101,10 @@ import { initializePlayCamera } from "./lib/play-camera.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { displacementFromVelocity, velocityFromDisplacement, computeSceneWorldBounds, clampPlayCamera } from "./lib/physics.js";
 import logoUrl from "../../../logo.png";
+import { cn } from "@/ui";
+import shellStyles from "./components/AppShell.module.css";
+import sheetStyles from "./components/SheetChrome.module.css";
+import workspaceStyles from "./components/Workspace.module.css";
 
 // GameKit Runtime physics & logic imports
 import { createPlayerController } from "@gamekit/runtime/player";
@@ -2620,10 +2624,12 @@ export function App() {
 
   return (
     <main
-      className={`shell${bottomDrawerCollapsed ? " drawer-collapsed" : ""}${!bottomDrawerCollapsed ? " has-bottom-sheet" : ""}`}
+      className={shellStyles.shell}
+      data-drawer-collapsed={bottomDrawerCollapsed ? "true" : "false"}
+      data-bottom-sheet-open={!bottomDrawerCollapsed ? "true" : "false"}
     >
       {/* Full-bleed canvas — primary focus */}
-      <div className="canvas-stage relative">
+      <div className={cn(workspaceStyles["canvas-stage"], "relative")}>
         <QuickStartBanner
           onPlayTest={handlePlayToggle}
           onOpenAssetStudio={() => openContent("studio")}
@@ -2640,10 +2646,17 @@ export function App() {
           onSplitChange={handleSplitChange}
         />
         <div
-          className={`scene-panes${workspace.split === "horizontal" ? " split-h" : ""}${workspace.split === "vertical" ? " split-v" : ""}`}
+          className={cn(
+            workspaceStyles["scene-panes"],
+            workspace.split === "horizontal" && workspaceStyles["split-h"],
+            workspace.split === "vertical" && workspaceStyles["split-v"],
+          )}
         >
           <div
-            className={`scene-pane${workspace.split === "none" || workspace.focused === "a" ? " focused" : ""}`}
+            className={cn(
+              workspaceStyles["scene-pane"],
+              (workspace.split === "none" || workspace.focused === "a") && workspaceStyles.focused,
+            )}
             data-testid="scene-pane-a"
             onPointerDownCapture={() => {
               if (workspace.split !== "none" && workspace.focused !== "a") activateScene(workspace.paneA, "a");
@@ -2959,7 +2972,7 @@ export function App() {
           </div>
           {workspace.split !== "none" && workspace.paneB && (
             <div
-              className={`scene-pane${workspace.focused === "b" ? " focused" : ""}`}
+              className={cn(workspaceStyles["scene-pane"], workspace.focused === "b" && workspaceStyles.focused)}
               data-testid="scene-pane-b"
               onPointerDownCapture={() => {
                 if (workspace.focused !== "b") activateScene(workspace.paneB!, "b");
@@ -3250,12 +3263,16 @@ export function App() {
 
       {/* Left floating sheet */}
       <div
-        className={`float-sheet-left${sidebarOpen ? " open" : ""}${sidebarOpen && activeTab === "agent" && agentExpanded ? " expanded" : ""}`}
+        className={cn(
+          shellStyles["float-sheet-left"],
+          sidebarOpen && shellStyles.open,
+          sidebarOpen && activeTab === "agent" && agentExpanded && shellStyles.expanded,
+        )}
         role="dialog"
         aria-label="Workspace panel"
       >
-        <div className="sidebar-content">
-          <div key={activeTab} className="sheet-panel-pane">
+        <div className={shellStyles["sidebar-content"]}>
+          <div key={activeTab} className={shellStyles["sheet-panel-pane"]}>
             {activeTab === "entities" && (
               <Sidebar
                 entities={scene?.entities ?? []}
@@ -3430,11 +3447,11 @@ export function App() {
       </div>
 
       {/* Right floating inspector sheet — entity / GUI properties only */}
-      <div className={`float-sheet-right${inspectorOpen ? " open" : ""}`} role="dialog" aria-label="Inspector">
-        <div className="inspector-column" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className={cn(shellStyles["float-sheet-right"], inspectorOpen && shellStyles.open)} role="dialog" aria-label="Inspector">
+        <div className={shellStyles["inspector-column"]} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           <div
             key={selectedComponentInstanceId ? `comp-${selectedComponentInstanceId}` : selectedGuiNodeId ? `gui-${selectedGuiNodeId}` : `entity-${selectedEntityId ?? "none"}`}
-            className="sheet-panel-pane"
+            className={shellStyles["sheet-panel-pane"]}
           >
             {selectedComponentInstanceId && scene ? (
               <GuiInstanceInspector
@@ -3471,14 +3488,18 @@ export function App() {
       {/* Content drawer — docks just above the tab bar */}
       {scene && (
         <section
-          className={`bottom-sheet${!bottomDrawerCollapsed ? " open" : ""}${activeBottomTab === "studio" ? " studio-view" : ""}`}
+          className={cn(
+            shellStyles["bottom-sheet"],
+            !bottomDrawerCollapsed && shellStyles.open,
+            activeBottomTab === "studio" && shellStyles["studio-view"],
+          )}
           aria-hidden={bottomDrawerCollapsed}
           aria-label="Content browser"
         >
-          <div className="bottom-sheet-handle" aria-hidden />
-          <div className="bottom-sheet-header">
+          <div className={sheetStyles["bottom-sheet-handle"]} aria-hidden />
+          <div className={sheetStyles["bottom-sheet-header"]}>
             {(MVP_SHOW_TIMELINE || MVP_SHOW_CONSOLE) ? (
-              <div className="bottom-sheet-tabs">
+              <div className={shellStyles["bottom-sheet-tabs"]}>
                 {(
                   [
                     ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
@@ -3494,7 +3515,7 @@ export function App() {
                   <button
                     key={id}
                     type="button"
-                    className={activeBottomTab === id ? "bottom-sheet-tab active" : "bottom-sheet-tab"}
+                    className={cn(shellStyles["bottom-sheet-tab"], activeBottomTab === id && shellStyles.active)}
                     onClick={() => setActiveBottomTab(id as BottomTab)}
                   >
                     {icon}
@@ -3503,7 +3524,7 @@ export function App() {
                 ))}
               </div>
             ) : (
-              <h2 className="bottom-sheet-title">
+              <h2 className={sheetStyles["bottom-sheet-title"]}>
                 <Folder size={14} strokeWidth={1.75} />
                 Content
                 <span>{snapshot.assets.length} assets</span>
@@ -3511,7 +3532,7 @@ export function App() {
             )}
             <button
               type="button"
-              className="bottom-sheet-close"
+              className={shellStyles["bottom-sheet-close"]}
               title="Close"
               aria-label="Close content drawer"
               onClick={() => setBottomDrawerCollapsed(true)}
@@ -3519,8 +3540,8 @@ export function App() {
               <X size={16} strokeWidth={1.75} />
             </button>
           </div>
-          <div className="drawer-content-box">
-            <div key={activeBottomTab} className="drawer-tab-pane">
+          <div className={shellStyles["drawer-content-box"]}>
+            <div key={activeBottomTab} className={shellStyles["drawer-tab-pane"]}>
               {activeBottomTab === "assets" && (
                 <AssetsPanel
                   assets={snapshot.assets}

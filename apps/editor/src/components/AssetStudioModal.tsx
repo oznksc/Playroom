@@ -45,6 +45,7 @@ import {
   Select,
   Field,
   Badge,
+  SegmentedControl,
   cn,
 } from "@/ui";
 import { getApiUrl } from "../lib/api.js";
@@ -52,6 +53,8 @@ import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import { AgentMessage } from "./AgentMessage.js";
 import { AgentToolTrace } from "./AgentToolTrace.js";
+import styles from "./AssetStudioModal.module.css";
+import sheetStyles from "./SheetChrome.module.css";
 import {
   parseAiPrompt,
   enhanceAiPrompt,
@@ -538,27 +541,27 @@ export function AssetStudioModal({
   if (!isOpen) return null;
 
   return (
-    <div className={cn(embedded ? "asset-studio-embedded" : "asset-studio-scrim", isOpen && "open")}>
+    <div className={cn(embedded ? styles["asset-studio-embedded"] : styles["asset-studio-scrim"], isOpen && styles.open)}>
       <div
         className={cn(
-          embedded ? "asset-studio-workspace" : "asset-studio-sheet",
-          isOpen && "open",
-          studioMode === "sheet" && "mode-sheet",
-          studioMode === "expanded" && "mode-expanded",
-          studioMode === "fullscreen" && "mode-fullscreen"
+          embedded ? styles["asset-studio-workspace"] : styles["asset-studio-sheet"],
+          isOpen && styles.open,
+          studioMode === "sheet" && styles["mode-sheet"],
+          studioMode === "expanded" && styles["mode-expanded"],
+          studioMode === "fullscreen" && styles["mode-fullscreen"]
         )}
       >
         {/* Content-sheet chrome: the Studio is an extension of Content, not a separate surface. */}
-        <div className={cn("asset-studio-internal-header bottom-sheet-header relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4", embedded && "hidden")}>
+        <div className={cn(styles["asset-studio-internal-header"], sheetStyles["bottom-sheet-header"], "relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4", embedded && "hidden")}>
           {/* Drag Handle */}
           <div
-            className="bottom-sheet-handle !top-2 flex items-center justify-center cursor-pointer"
+            className={cn(sheetStyles["bottom-sheet-handle"], "!top-2 flex items-center justify-center cursor-pointer")}
             onClick={() =>
               setStudioMode((prev) => (prev === "sheet" ? "expanded" : prev === "expanded" ? "fullscreen" : "sheet"))
             }
             title="Toggle Studio Size"
           >
-            <div className="asset-studio-handle" />
+            <div className={styles["asset-studio-handle"]} />
           </div>
 
           {/* Top Header Bar */}
@@ -569,7 +572,7 @@ export function AssetStudioModal({
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h2 className="bottom-sheet-title !p-0">Asset Studio</h2>
+                  <h2 className={cn(sheetStyles["bottom-sheet-title"], "!p-0")}>Asset Studio</h2>
                   <Badge variant="accent" className="text-[9px] uppercase font-mono px-1.5 py-0.5 tracking-wider bg-cyan-500/20 text-cyan-300 border-cyan-500/40">
                     Agent Powered • {resolvedProvider}
                   </Badge>
@@ -582,50 +585,17 @@ export function AssetStudioModal({
 
             {/* Sizing & Close */}
             <div className="flex items-center gap-1.5">
-              <div className="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08] mr-2">
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("sheet")}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] rounded-md font-medium transition-all flex items-center gap-1",
-                    studioMode === "sheet"
-                      ? "bg-white/[0.12] text-white shadow-sm"
-                      : "text-text-muted hover:text-white"
-                  )}
-                  title="Compact Sheet Mode"
-                >
-                  <Sliders size={12} />
-                  Sheet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("expanded")}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] rounded-md font-medium transition-all flex items-center gap-1",
-                    studioMode === "expanded"
-                      ? "bg-white/[0.12] text-white shadow-sm"
-                      : "text-text-muted hover:text-white"
-                  )}
-                  title="Studio Mode"
-                >
-                  <Maximize2 size={12} />
-                  Studio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("fullscreen")}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] rounded-md font-medium transition-all flex items-center gap-1",
-                    studioMode === "fullscreen"
-                      ? "bg-cyan-500/20 text-cyan-300 shadow-sm"
-                      : "text-text-muted hover:text-white"
-                  )}
-                  title="Fullscreen Workstation (F)"
-                >
-                  <Radio size={12} />
-                  Full
-                </button>
-              </div>
+              <SegmentedControl
+                value={studioMode}
+                onValueChange={setStudioMode}
+                ariaLabel="Asset Studio size"
+                className="mr-2"
+                options={[
+                  { value: "sheet", label: <span className="flex items-center gap-1"><Sliders size={12} /> Sheet</span> },
+                  { value: "expanded", label: <span className="flex items-center gap-1"><Maximize2 size={12} /> Studio</span> },
+                  { value: "fullscreen", label: <span className="flex items-center gap-1"><Radio size={12} /> Full</span> },
+                ]}
+              />
 
               <IconButton
                 size="sm"
@@ -803,7 +773,7 @@ export function AssetStudioModal({
 
           {/* ZONE 2: Middle Parameter Deck & Chat Stream */}
           <div className="flex-1 flex flex-col border-r border-white/[0.06] bg-black/20 overflow-hidden min-h-0">
-            <div key={activeTab} className="studio-station-pane flex-1 flex flex-col min-h-0">
+            <div key={activeTab} className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col min-h-0")}>
               {/* 1. COPILOT CHAT VIEW */}
               {activeTab === "copilot" && (
                 <div className="flex-1 flex flex-col min-h-0">
@@ -1151,7 +1121,7 @@ export function AssetStudioModal({
             </div>
 
             {/* Stage Center Viewport */}
-            <div key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab} className="studio-station-pane flex-1 flex flex-col items-center justify-center my-3 gap-3">
+            <div key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab} className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col items-center justify-center my-3 gap-3")}>
               {/* STAGE A: AUDIO EQUALIZER (SFX & MUSIC) */}
               {activeTab === "sfx" || activeTab === "music" ? (
                 <div className="flex flex-col items-center justify-center gap-5 w-full">

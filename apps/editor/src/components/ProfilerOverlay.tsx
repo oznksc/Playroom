@@ -6,6 +6,7 @@ import {
   sparklinePath,
   type PlayProfilerSample,
 } from "../lib/play-profiler.js";
+import styles from "./ProfilerOverlay.module.css";
 
 type ProfilerOverlayProps = {
   sample: PlayProfilerSample | null;
@@ -44,21 +45,21 @@ export function ProfilerOverlay({ sample, open }: ProfilerOverlayProps) {
   if (current.jsHeapMb != null) rows.push(["JS heap", `${current.jsHeapMb} MB`]);
 
   return (
-    <aside className="profiler-overlay" data-testid="profiler-overlay" aria-label="Play profiler">
-      <header className="profiler-overlay-head">
+    <aside className={styles["profiler-overlay"]} data-testid="profiler-overlay" aria-label="Play profiler">
+      <header className={styles["profiler-overlay-head"]}>
         <Activity size={12} strokeWidth={1.75} />
         <span>Profiler</span>
-        <span className="profiler-overlay-fps type-mono">
+        <span className={`${styles["profiler-overlay-fps"]} type-mono`}>
           {current.fps || "—"} fps · {current.frameMs || "—"} ms
         </span>
       </header>
-      <svg className="profiler-spark" viewBox="0 0 216 36" aria-hidden>
-        <path d={fpsPath} className="profiler-spark-fps" />
-        <path d={drawPath} className="profiler-spark-draws" />
+      <svg className={styles["profiler-spark"]} viewBox="0 0 216 36" aria-hidden>
+        <path d={fpsPath} className={styles["profiler-spark-fps"]} />
+        <path d={drawPath} className={styles["profiler-spark-draws"]} />
       </svg>
-      <dl className="profiler-rows">
+      <dl className={styles["profiler-rows"]}>
         {rows.map(([label, value]) => (
-          <div key={label} className="profiler-row">
+          <div key={label} className={styles["profiler-row"]}>
             <dt>{label}</dt>
             <dd className="type-mono">{value}</dd>
           </div>

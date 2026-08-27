@@ -10,6 +10,13 @@ Dense dark IDE chrome for the game editor. Visual rules: repo-root `brief.md`.
 - **lucide-react** icons
 - **Fonts**: IBM Plex Sans (UI) + IBM Plex Mono (data) via Google Fonts in `index.html`. Chosen for dense tool chrome; avoid soft SaaS geometric faces.
 
+## Style ownership
+
+- `styles/globals.css` is the only application-level stylesheet entry. It owns Tailwind, tokens, resets, and documented utilities.
+- Feature layout and visual rules live beside their React owner in `*.module.css` files.
+- Shared feature CSS Modules are reserved for real multi-component boundaries such as the canvas workspace and sheet chrome.
+- Keep stable DOM hooks in `id`, `data-*`, ARIA, or test attributes. CSS class names are private implementation details.
+
 ## Type scale
 
 | Token / class | Size | Use |
@@ -34,6 +41,9 @@ import { Button, Panel, NumberField, Dialog, cn } from "@/ui";
 | `Button` / `IconButton` | Actions (ghost default, compact heights) |
 | `Input` / `Textarea` / `Select` / `Checkbox` | Form controls |
 | `Field` / `NumberField` / `CheckboxField` / `ColorField` | Inspector badge + control rows |
+| `NumberScrubberField` / `PropertyRow` / `PropertyGroup` | Game-editor numeric and inspector controls |
+| `SegmentedControl` / `Kbd` | Mode selection and shortcut hints |
+| `ModalShell` | Standard modal header, scroll body, and sticky footer |
 | `Badge` / `StatusDot` | Type + status signal |
 | `Panel` / `PanelHeader` / `PanelTitle` / `PanelBody` | Sidebar/inspector shells |
 | `AccordionSection` | Collapsible component cards |
@@ -49,3 +59,6 @@ import { Button, Panel, NumberField, Dialog, cn } from "@/ui";
 1. Feature code under `components/` composes `ui/*` — no new raw button/input styling.
 2. Use brief accents for state (cyan select, green play, red danger), not decoration.
 3. Densities: ~22–30px controls, 9–13px type, monospace for IDs/numbers.
+4. Prefer semantic CSS variables (`--surface-*`, `--border-*`, `--signal-*`) over raw colours in new primitives.
+5. Review primitives at `?view=ui-gallery` before composing them into feature screens.
+6. Prefer Tailwind for small composition rules and CSS Modules for selectors, state variants, responsive layout, or descendant styling. Do not add SCSS.

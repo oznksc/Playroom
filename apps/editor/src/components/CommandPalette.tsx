@@ -10,6 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import { Search, CornerDownLeft } from "lucide-react";
 import { cn } from "@/ui";
+import styles from "./CommandPalette.module.css";
 
 export type CommandItem = {
   id: string;
@@ -173,26 +174,26 @@ export function CommandPalette({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="command-palette" role="presentation">
+    <div className={styles["command-palette"]} role="presentation">
       <button
         type="button"
-        className="command-palette-scrim"
+        className={styles["command-palette-scrim"]}
         aria-label="Dismiss command menu"
         onClick={close}
       />
       <div
-        className="command-palette-panel glass-surface"
+        className={`${styles["command-palette-panel"]} glass-surface`}
         role="dialog"
         aria-modal="true"
         aria-label="Command menu"
         onKeyDown={onKeyDown}
       >
-        <div className="command-palette-search">
-          <Search size={16} className="command-palette-search-icon" aria-hidden />
+        <div className={styles["command-palette-search"]}>
+          <Search size={16} className={styles["command-palette-search-icon"]} aria-hidden />
           <input
             ref={inputRef}
             type="search"
-            className="command-palette-input"
+            className={styles["command-palette-input"]}
             placeholder={placeholder}
             value={query}
             onChange={(e) => {
@@ -209,23 +210,23 @@ export function CommandPalette({
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="command-palette-esc">esc</kbd>
+          <kbd className={styles["command-palette-esc"]}>esc</kbd>
         </div>
 
         <div
           ref={listRef}
           id={listboxId}
-          className="command-palette-list"
+          className={styles["command-palette-list"]}
           role="listbox"
           aria-label="Commands"
         >
           {selectable.length === 0 ? (
-            <div className="command-palette-empty">No matching commands</div>
+            <div className={styles["command-palette-empty"]}>No matching commands</div>
           ) : (
             rows.map((row) => {
               if (row.kind === "section") {
                 return (
-                  <div key={row.id} className="command-palette-section" role="presentation">
+                  <div key={row.id} className={styles["command-palette-section"]} role="presentation">
                     {row.label}
                   </div>
                 );
@@ -239,21 +240,21 @@ export function CommandPalette({
                   role="option"
                   aria-selected={isActive}
                   data-command-index={row.flatIndex}
-                  className={cn("command-palette-item", isActive && "active")}
+                  className={cn(styles["command-palette-item"], isActive && styles.active)}
                   onMouseEnter={() => setActiveIndex(row.flatIndex)}
                   onClick={() => runItem(row.item)}
                 >
-                  <span className="command-palette-item-icon" aria-hidden>
+                  <span className={styles["command-palette-item-icon"]} aria-hidden>
                     {row.item.icon}
                   </span>
-                  <span className="command-palette-item-label">{row.item.label}</span>
+                  <span className={styles["command-palette-item-label"]}>{row.item.label}</span>
                   {row.item.shortcut && (
-                    <kbd className="command-palette-shortcut">{row.item.shortcut}</kbd>
+                    <kbd className={styles["command-palette-shortcut"]}>{row.item.shortcut}</kbd>
                   )}
                   {isActive && (
                     <CornerDownLeft
                       size={12}
-                      className="command-palette-enter"
+                      className={styles["command-palette-enter"]}
                       aria-hidden
                     />
                   )}
@@ -263,7 +264,7 @@ export function CommandPalette({
           )}
         </div>
 
-        <div className="command-palette-footer">
+        <div className={styles["command-palette-footer"]}>
           <span>
             <kbd>↑</kbd>
             <kbd>↓</kbd> navigate

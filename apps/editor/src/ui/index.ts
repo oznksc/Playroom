@@ -74,3 +74,20 @@ export {
 export { ScrollArea, ScrollBar } from "./scroll-area";
 export { Separator } from "./separator";
 export { EmptyState, type EmptyStateProps } from "./empty-state";
+export { Kbd, type KbdProps } from "./kbd";
+export {
+  SegmentedControl,
+  type SegmentedControlOption,
+  type SegmentedControlProps,
+} from "./segmented-control";
+export {
+  NumberScrubberField,
+  type NumberScrubberFieldProps,
+} from "./number-scrubber-field";
+export {
+  PropertyGroup,
+  PropertyRow,
+  type PropertyGroupProps,
+  type PropertyRowProps,
+} from "./property";
+export { ModalShell, type ModalShellProps } from "./modal-shell";

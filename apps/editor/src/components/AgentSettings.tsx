@@ -39,7 +39,9 @@ import {
   TabsContent,
   Select,
   CheckboxField,
+  cn,
 } from "@/ui";
+import styles from "./AgentSettings.module.css";
 
 type AgentSettingsProps = {
   open: boolean;
@@ -219,7 +221,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
           <DialogTitle className="text-[12px]">Agent Settings</DialogTitle>
         </DialogHeader>
         <DialogBody className="p-0">
-          <Tabs value={tab} onValueChange={setTab} className="agent-settings-tabs">
+          <Tabs value={tab} onValueChange={setTab} className={styles["agent-settings-tabs"]}>
             <div className="px-4 pt-3 pb-2">
               <TabsList>
                 <TabsTrigger value="providers">
@@ -237,7 +239,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
             {/* ─── Providers Tab ─── */}
             <TabsContent value="providers" className="overflow-auto px-4 pb-4">
               <div className="space-y-1.5">
-                <p className="agent-settings-section-desc">
+                <p className={styles["agent-settings-section-desc"]}>
                   Connect at least one provider. Keys stay on this machine
                   {osKeychain ? " (OS keychain)" : " (encrypted in the browser)"}.
                 </p>
@@ -248,20 +250,20 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     return (
                       <div key={p.id}>
                         <div
-                          className={`provider-card ${entry ? "connected" : ""} ${isEditing ? "editing" : ""}`}
+                          className={cn(styles["provider-card"], entry && styles.connected, isEditing && styles.editing)}
                           style={isEditing ? { borderRadius: "12px 12px 0 0" } : undefined}
                         >
                           <div
-                            className="provider-card-avatar"
+                            className={styles["provider-card-avatar"]}
                             style={{ background: p.bg, color: p.color }}
                           >
                             {PROVIDER_ICONS[p.id]
                               ? PROVIDER_ICONS[p.id]({ size: 18 })
                               : p.label[0]}
                           </div>
-                          <div className="provider-card-info">
-                            <div className="provider-card-name">{p.label}</div>
-                            <div className="provider-card-hint">
+                          <div className={styles["provider-card-info"]}>
+                            <div className={styles["provider-card-name"]}>{p.label}</div>
+                            <div className={styles["provider-card-hint"]}>
                               {entry ? (
                                 <span className="font-mono text-[10px] text-text-muted">{entry.model ?? p.defaultModel}</span>
                               ) : (
@@ -269,7 +271,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                               )}
                             </div>
                           </div>
-                          <div className="provider-card-actions">
+                          <div className={styles["provider-card-actions"]}>
                             {entry ? (
                               <>
                                 <Badge variant="green" className="mr-1">
@@ -305,9 +307,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                         </div>
 
                         {isEditing && (
-                          <div className="provider-card-form">
+                          <div className={styles["provider-card-form"]}>
                             {needsKey && (
-                              <label className="provider-card-form-label">
+                              <label className={styles["provider-card-form-label"]}>
                                 <span>
                                   API Key {existing && !apiKey ? "(leave blank to keep)" : ""}
                                 </span>
@@ -320,7 +322,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                                 />
                               </label>
                             )}
-                            <label className="provider-card-form-label">
+                            <label className={styles["provider-card-form-label"]}>
                               <span>Model</span>
                               <Input
                                 type="text"
@@ -329,7 +331,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                                 placeholder={currentProviderCatalog?.defaultModel}
                               />
                             </label>
-                            <label className="provider-card-form-label">
+                            <label className={styles["provider-card-form-label"]}>
                               <span>Base URL</span>
                               <Input
                                 type="text"
@@ -339,7 +341,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                               />
                             </label>
                             {needsPassphrase && (
-                              <label className="provider-card-form-label">
+                              <label className={styles["provider-card-form-label"]}>
                                 <span>Passphrase</span>
                                 <Input
                                   type="password"
@@ -390,8 +392,8 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
             <TabsContent value="model" className="overflow-auto px-4 pb-4">
               <div className="space-y-4">
                 {/* Active Provider */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Active Provider</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Active Provider</h4>
                   <Select
                     value={resolvedProvider}
                     onChange={(e) => {
@@ -420,8 +422,8 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                 </div>
 
                 {/* Model Selection */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Model</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Model</h4>
                   {modelsList.length > 0 ? (
                     <Select
                       value={activeModel || resolvedProvider && PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel || ""}
@@ -448,20 +450,20 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       placeholder="Enter model name"
                     />
                   )}
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     {modelsList.length > 0
                       ? `${modelsList.length} models available from ${PROVIDERS.find((p) => p.id === resolvedProvider)?.label ?? resolvedProvider}.`
                       : "Type a model name or connect a provider to see available models."}
                   </p>
                 </div>
 
-                <div className="agent-settings-divider" />
+                <div className={styles["agent-settings-divider"]} />
 
                 {/* Temperature */}
-                <div className="agent-range">
-                  <div className="agent-range-header">
-                    <span className="agent-range-label">Temperature</span>
-                    <span className="agent-range-value">{temperature.toFixed(2)}</span>
+                <div className={styles["agent-range"]}>
+                  <div className={styles["agent-range-header"]}>
+                    <span className={styles["agent-range-label"]}>Temperature</span>
+                    <span className={styles["agent-range-value"]}>{temperature.toFixed(2)}</span>
                   </div>
                   <input
                     type="range"
@@ -475,14 +477,14 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       persistModelSetting("gamekit:agent:temperature", v.toString());
                     }}
                   />
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Lower values produce more focused output; higher values increase creativity.
                   </p>
                 </div>
 
                 {/* Max Tokens */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Max Output Tokens</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Max Output Tokens</h4>
                   <Input
                     type="number"
                     value={maxTokens.toString()}
@@ -493,16 +495,16 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     }}
                     placeholder="4096"
                   />
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Maximum number of tokens in a single response (256 – 16,384).
                   </p>
                 </div>
 
                 {/* Top-p */}
-                <div className="agent-range">
-                  <div className="agent-range-header">
-                    <span className="agent-range-label">Top-p (Nucleus Sampling)</span>
-                    <span className="agent-range-value">{topP.toFixed(2)}</span>
+                <div className={styles["agent-range"]}>
+                  <div className={styles["agent-range-header"]}>
+                    <span className={styles["agent-range-label"]}>Top-p (Nucleus Sampling)</span>
+                    <span className={styles["agent-range-value"]}>{topP.toFixed(2)}</span>
                   </div>
                   <input
                     type="range"
@@ -516,7 +518,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       persistModelSetting("gamekit:agent:topP", v.toString());
                     }}
                   />
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Controls diversity by limiting tokens to the top-p probability mass.
                   </p>
                 </div>
@@ -527,24 +529,24 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
             <TabsContent value="agent" className="overflow-auto px-4 pb-4">
               <div className="space-y-4">
                 {/* Approval Mode */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Tool Approval Mode</h4>
-                  <div className="radio-card-group">
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Tool Approval Mode</h4>
+                  <div className={styles["radio-card-group"]}>
                     {APPROVAL_MODES.map((mode) => (
                       <button
                         key={mode.value}
                         type="button"
-                        className={`radio-card ${approvalMode === mode.value ? "active" : ""}`}
+                        className={cn(styles["radio-card"], approvalMode === mode.value && styles.active)}
                         onClick={() => {
                           setApprovalMode(mode.value);
                           localStorage.setItem("gamekit:agent:approvalMode", mode.value);
                           window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
                         }}
                       >
-                        <div className="radio-card-icon">{mode.icon}</div>
+                        <div className={styles["radio-card-icon"]}>{mode.icon}</div>
                         <div>
-                          <div className="radio-card-label">{mode.label}</div>
-                          <div className="radio-card-desc">{mode.desc}</div>
+                          <div className={styles["radio-card-label"]}>{mode.label}</div>
+                          <div className={styles["radio-card-desc"]}>{mode.desc}</div>
                         </div>
                       </button>
                     ))}
@@ -552,7 +554,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                 </div>
 
                 {/* Plan First */}
-                <div className="agent-settings-section">
+                <div className={styles["agent-settings-section"]}>
                   <CheckboxField
                     label="Plan first — propose steps before executing tools"
                     checked={planMode}
@@ -564,11 +566,11 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   />
                 </div>
 
-                <div className="agent-settings-divider" />
+                <div className={styles["agent-settings-divider"]} />
 
                 {/* Max Tool Turns */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Max Tool Turns</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Max Tool Turns</h4>
                   <Input
                     type="number"
                     value={maxTurns.toString()}
@@ -579,14 +581,14 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     }}
                     placeholder="25"
                   />
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Maximum number of tool call rounds per agent response (1 – 50).
                   </p>
                 </div>
 
                 {/* Response Language */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Response Language</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Response Language</h4>
                   <Select
                     value={responseLanguage}
                     onChange={(e) => {
@@ -598,18 +600,18 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       <option key={lang.value} value={lang.value}>{lang.label}</option>
                     ))}
                   </Select>
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Language for agent responses. "Auto" matches the language you write in.
                   </p>
                 </div>
 
-                <div className="agent-settings-divider" />
+                <div className={styles["agent-settings-divider"]} />
 
                 {/* Custom Instructions */}
-                <div className="agent-settings-section">
-                  <h4 className="agent-settings-section-title">Custom Instructions</h4>
+                <div className={styles["agent-settings-section"]}>
+                  <h4 className={styles["agent-settings-section-title"]}>Custom Instructions</h4>
                   <textarea
-                    className="agent-instructions-textarea"
+                    className={styles["agent-instructions-textarea"]}
                     value={customInstructions}
                     onChange={(e) => {
                       setCustomInstructions(e.target.value);
@@ -618,7 +620,7 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     placeholder={"Add custom rules or context for the agent...\n\nExamples:\n- Always use pixel-art style sprites\n- Place all platforms at y=300\n- Prefer dark backgrounds"}
                     rows={4}
                   />
-                  <p className="agent-settings-section-desc">
+                  <p className={styles["agent-settings-section-desc"]}>
                     Additional instructions appended to the agent's system prompt. Use this for project-specific rules, style preferences, or recurring patterns.
                   </p>
                 </div>

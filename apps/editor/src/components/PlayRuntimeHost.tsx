@@ -3,6 +3,7 @@ import type { GameKitLevel, GameKitScene, GuiComponent } from "@gamekit/schema";
 import type { ScriptContext } from "@gamekit/runtime/script";
 import { createGameKitGame } from "@gamekit/runtime-web";
 import { installDrawCallCounter, samplePhaserProfiler, type PlayProfilerSample } from "../lib/play-profiler.js";
+import styles from "./PlayRuntimeHost.module.css";
 
 export type PlayRuntimeHostProps = {
   scene: GameKitScene;
@@ -138,19 +139,19 @@ export function PlayRuntimeHost({
 
   return (
     <div
-      className="play-runtime-host"
+      className={styles["play-runtime-host"]}
       data-testid="play-runtime-host"
       aria-label="Play-in-editor runtime"
     >
-      <div className="play-runtime-frame">
+      <div className={styles["play-runtime-frame"]}>
         <div
           ref={containerRef}
-          className="play-runtime-canvas"
+          className={styles["play-runtime-canvas"]}
           style={{
             aspectRatio: `${scene.viewport.width} / ${scene.viewport.height}`,
           }}
         />
-        <div className="play-runtime-badge type-label">
+        <div className={`${styles["play-runtime-badge"]} type-label`}>
           Phaser · {scene.name || scene.id}
         </div>
       </div>

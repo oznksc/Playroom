@@ -1,5 +1,6 @@
 import { Play, Pause, Square, Cpu, Activity } from "lucide-react";
 import { cn } from "@/ui";
+import styles from "./PlayControls.module.css";
 
 type PlayControlsProps = {
   isPlaying: boolean;
@@ -33,11 +34,11 @@ export function PlayControls({
   const live = isPlaying && !isPaused;
 
   return (
-    <div id="tour-topbar-play" className="play-controls" role="toolbar" aria-label="Simulation">
+    <div id="tour-topbar-play" className={styles["play-controls"]} role="toolbar" aria-label="Simulation">
       <button
         type="button"
         data-testid="play-toggle"
-        className={cn("play-controls-btn play", live && "live", isPaused && "paused")}
+        className={cn(styles["play-controls-btn"], styles.play, live && styles.live, isPaused && styles.paused)}
         title={live ? "Pause" : isPlaying ? "Resume" : "Play"}
         aria-label={live ? "Pause" : "Play"}
         onClick={onPlayToggle}
@@ -52,7 +53,7 @@ export function PlayControls({
       <button
         type="button"
         data-testid="play-stop"
-        className="play-controls-btn stop"
+        className={cn(styles["play-controls-btn"], styles.stop)}
         title="Stop"
         aria-label="Stop simulation"
         disabled={!isPlaying}
@@ -62,31 +63,31 @@ export function PlayControls({
       </button>
 
       {isPlaying && (
-        <div className="play-controls-telemetry" title="WASD · Arrows · Space">
-          <Cpu size={11} className="play-controls-cpu" aria-hidden />
-          <span className="play-controls-stat">
+        <div className={styles["play-controls-telemetry"]} title="WASD · Arrows · Space">
+          <Cpu size={11} className={styles["play-controls-cpu"]} aria-hidden />
+          <span className={styles["play-controls-stat"]}>
             <strong>{playFps || "—"}</strong>
             <em>fps</em>
           </span>
-          <span className="play-controls-dot" aria-hidden />
-          <span className="play-controls-stat">
+          <span className={styles["play-controls-dot"]} aria-hidden />
+          <span className={styles["play-controls-stat"]}>
             <strong>{playFrameMs || "—"}</strong>
             <em>ms</em>
           </span>
-          <span className="play-controls-dot" aria-hidden />
-          <span className="play-controls-stat">
+          <span className={styles["play-controls-dot"]} aria-hidden />
+          <span className={styles["play-controls-stat"]}>
             <strong>{entityCount}</strong>
             <em>ent</em>
           </span>
-          <span className="play-controls-dot" aria-hidden />
-          <span className="play-controls-stat" title="GPU draw calls (pipeline flushes)">
+          <span className={styles["play-controls-dot"]} aria-hidden />
+          <span className={styles["play-controls-stat"]} title="GPU draw calls (pipeline flushes)">
             <strong>{drawCalls || "—"}</strong>
             <em>dc</em>
           </span>
           {onToggleProfiler && (
             <button
               type="button"
-              className={cn("play-controls-btn profiler", profilerOpen && "live")}
+              className={cn(styles["play-controls-btn"], styles.profiler, profilerOpen && styles.live)}
               title={profilerOpen ? "Hide profiler" : "Show profiler"}
               aria-label="Toggle profiler"
               aria-pressed={profilerOpen}

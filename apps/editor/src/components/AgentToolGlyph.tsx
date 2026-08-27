@@ -29,6 +29,7 @@ import {
   resolveToolStage,
   type ToolStageKind,
 } from "../lib/agent-tool-stage.js";
+import styles from "./AgentToolGlyph.module.css";
 import { cn } from "@/ui";
 
 const KIND_ICON: Record<ToolStageKind, LucideIcon> = {
@@ -78,7 +79,7 @@ export function AgentToolGlyph({ tool, status, size = 12 }: AgentToolGlyphProps)
 
   return (
     <span
-      className={cn("agent-tool-glyph inline-flex shrink-0 items-center justify-center", tone)}
+      className={cn(styles["agent-tool-glyph"], "inline-flex shrink-0 items-center justify-center", tone)}
       data-kind={stage.kind}
       data-status={status}
       data-motion={motion}

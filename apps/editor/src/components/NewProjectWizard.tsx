@@ -21,11 +21,7 @@ import {
 import { getApiUrl } from "../lib/api.js";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogBody,
-  DialogTitle,
-  DialogDescription,
+  ModalShell,
   Button,
   Input,
   Field,
@@ -309,53 +305,32 @@ export function NewProjectWizard({
     }
   }
 
+  const footerActions = (
+    <>
+      {step > 1 && step < 4 ? (
+        <Button type="button" variant="secondary" size="md" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} className="gap-1.5"><ChevronLeft size={14} /> Back</Button>
+      ) : (
+        <Button type="button" variant="secondary" size="md" disabled={isBuilding} onClick={onClose}>Cancel</Button>
+      )}
+      {step < 3 && <Button variant="primary" size="md" onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}>Next Step <ChevronRight size={14} /></Button>}
+      {step === 3 && <Button variant="primary" size="md" onClick={handleCreateProject}><Sparkles size={14} /> Create & Launch Game</Button>}
+      {step === 4 && buildError && <Button variant="primary" size="md" onClick={() => setStep(1)}>Try Again</Button>}
+    </>
+  );
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && !isBuilding && onClose()}>
-      <DialogContent className="w-[min(680px,calc(100vw-32px))] max-h-[85vh] overflow-hidden flex flex-col p-0 bg-[#0c1017] border-border-strong shadow-2xl rounded-2xl">
-        {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-border-default bg-[#080c12]/80 backdrop-blur-md flex flex-row items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="size-8 rounded-lg border border-accent/30 bg-accent/15 flex items-center justify-center text-accent">
-              <Sparkles size={16} />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-semibold text-text-primary tracking-tight">
-                Create New Game Project
-              </DialogTitle>
-              <DialogDescription className="text-xs text-text-muted">
-                {step === 1
-                  ? "Step 1 of 3: Name & Target Platform"
-                  : step === 2
-                    ? "Step 2 of 3: Select Gameplay Genre"
-                    : step === 3
-                      ? "Step 3 of 3: Package Setup & Options"
-                      : "Generating Project..."}
-              </DialogDescription>
-            </div>
-          </div>
-
-          {/* Stepper Indicator */}
-          {step < 4 && (
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-200",
-                    step === s
-                      ? "w-7 bg-accent"
-                      : step > s
-                        ? "w-2 bg-accent/40"
-                        : "w-2 bg-white/10"
-                  )}
-                />
-              ))}
-            </div>
-          )}
-        </DialogHeader>
-
-        {/* Body Content */}
-        <DialogBody className="p-6 overflow-y-auto flex-1 max-h-[60vh] space-y-5">
+      <ModalShell
+        className="w-[min(680px,calc(100vw-32px))] rounded-2xl border-border-strong bg-surface-overlay"
+        title="Create New Game Project"
+        description={step === 1 ? "Step 1 of 3: Name & Target Platform" : step === 2 ? "Step 2 of 3: Select Gameplay Genre" : step === 3 ? "Step 3 of 3: Package Setup & Options" : "Generating Project..."}
+        icon={<Sparkles size={16} />}
+        onClose={isBuilding ? undefined : onClose}
+        bodyClassName="max-h-[60vh] space-y-5 p-6"
+        footerClassName="justify-between bg-surface-sunken px-6 py-4"
+        headerEnd={step < 4 ? <div className="flex items-center gap-1.5">{[1, 2, 3].map((s) => <div key={s} className={cn("h-1.5 rounded-full transition-all duration-200", step === s ? "w-7 bg-accent" : step > s ? "w-2 bg-accent/40" : "w-2 bg-bg-active")} />)}</div> : undefined}
+        footer={footerActions}
+      >
           {/* STEP 1: Name, Location & Platform */}
           {step === 1 && (
             <div className="space-y-5">
@@ -687,66 +662,7 @@ export function NewProjectWizard({
               )}
             </div>
           )}
-        </DialogBody>
-
-        {/* Footer Navigation */}
-        <div className="px-6 py-4 border-t border-border-default bg-[#080c12]/90 flex items-center justify-between">
-          {step > 1 && step < 4 ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-              className="gap-1.5"
-            >
-              <ChevronLeft size={14} />
-              Back
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={isBuilding}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-          )}
-
-          {step < 3 && (
-            <button
-              type="button"
-              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
-              className="flex items-center gap-1.5 rounded-[10px] bg-accent px-4 py-2 text-xs font-semibold text-[#06090e] hover:bg-accent-hover transition-colors shadow-[0_0_12px_rgba(0,240,255,0.25)]"
-            >
-              Next Step
-              <ChevronRight size={14} className="text-[#06090e]" />
-            </button>
-          )}
-
-          {step === 3 && (
-            <button
-              type="button"
-              onClick={handleCreateProject}
-              className="flex items-center gap-2 rounded-[10px] bg-accent px-5 py-2.5 text-xs font-semibold text-[#06090e] hover:bg-accent-hover transition-colors shadow-[0_0_16px_rgba(0,240,255,0.35)]"
-            >
-              <Sparkles size={14} className="text-[#06090e]" />
-              Create & Launch Game
-            </button>
-          )}
-
-          {step === 4 && buildError && (
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="rounded-[10px] bg-accent px-4 py-2 text-xs font-semibold text-[#06090e] hover:bg-accent-hover transition-colors"
-            >
-              Try Again
-            </button>
-          )}
-        </div>
-      </DialogContent>
+      </ModalShell>
     </Dialog>
   );
 }
