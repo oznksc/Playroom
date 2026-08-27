@@ -198,7 +198,7 @@ const RecipeApplySchema = z.object({
 const ProjectCreateSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   targetDir: z.string().min(1, "Target directory is required"),
-  platform: z.enum(["expo", "web", "tauri"]).default("web"),
+  platform: z.enum(["expo", "web", "tauri", "libgdx"]).default("web"),
   genre: z.enum(["platformer", "topdown", "puzzle", "topdown-shooter", "endless-runner", "physics-puzzle", "blank"]).default("platformer"),
   packageManager: z.enum(["pnpm", "bun", "yarn", "npm"]).optional(),
   runInstall: z.boolean().default(true),

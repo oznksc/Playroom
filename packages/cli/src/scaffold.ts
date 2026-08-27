@@ -18,7 +18,7 @@ import {
   generateWebMain,
 } from "./export-bootstrap.js";
 
-export type ProjectPlatform = "expo" | "web" | "tauri";
+export type ProjectPlatform = "expo" | "web" | "tauri" | "libgdx";
 export type ProjectGenre =
   | "platformer"
   | "topdown"
@@ -153,7 +153,7 @@ function getPlayroomRoot(): string {
   return fileURLToPath(new URL("../../..", import.meta.url));
 }
 
-function getTemplateDir(name: "expo-game" | "web-game"): string {
+function getTemplateDir(name: "expo-game" | "web-game" | "libgdx-game"): string {
   return join(getPlayroomRoot(), "templates", name);
 }
 
@@ -362,6 +362,19 @@ fn main() {
 `;
       await writeFile(join(tauriDir, "src", "main.rs"), rustMain);
     }
+  } else if (platform === "libgdx") {
+    // LibGDX (Java/Kotlin, Gradle) — copy the pre-built template wholesale
+    const templateDir = getTemplateDir("libgdx-game");
+    const { cp } = await import("node:fs/promises");
+    try {
+      if (existsSync(templateDir)) {
+        await cp(templateDir, targetDir, { recursive: true });
+      } else {
+        warnings.push("LibGDX template directory not found; only the gamekit/ folder will be generated.");
+      }
+    } catch (err) {
+      warnings.push(`Could not copy LibGDX template: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   // ── Step 2: Initialize GameKit Folder & Genre Gameplay ────────────────
@@ -384,7 +397,7 @@ fn main() {
     try {
       const createRes = await createGameFromSkill(targetDir, genre, {
         name: projectName,
-        platform: platform === "expo" ? "mobile" : "web",
+        platform: platform === "expo" ? "mobile" : platform === "libgdx" ? "mobile" : "web",
       });
       primarySceneFile = createRes.gameplayFile;
       sceneId = createRes.sceneId;

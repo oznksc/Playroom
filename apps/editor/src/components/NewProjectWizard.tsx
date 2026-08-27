@@ -30,7 +30,7 @@ import {
   cn,
 } from "@/ui";
 
-export type ProjectPlatform = "web" | "expo" | "tauri";
+export type ProjectPlatform = "web" | "expo" | "tauri" | "libgdx";
 export type ProjectGenre =
   | "platformer"
   | "topdown"
@@ -379,7 +379,7 @@ export function NewProjectWizard({
                 <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
                   Select Target Platform
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Web */}
                   <button
                     type="button"
@@ -464,6 +464,35 @@ export function NewProjectWizard({
                     </span>
                     <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
                       Tauri v2 + Rust. Native macOS/Windows/Linux app.
+                    </span>
+                  </button>
+
+                  {/* LibGDX */}
+                  <button
+                    type="button"
+                    onClick={() => setPlatform("libgdx")}
+                    className={cn(
+                      "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
+                      platform === "libgdx"
+                        ? "border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.12)]"
+                        : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <div className="size-9 rounded-lg border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400">
+                        <Monitor size={18} />
+                      </div>
+                      {platform === "libgdx" && (
+                        <div className="size-5 rounded-full bg-amber-400 text-[#06090e] flex items-center justify-center">
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold text-text-primary block">
+                      LibGDX Native
+                    </span>
+                    <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
+                      Java/Kotlin + Gradle. Android, Desktop &amp; iOS.
                     </span>
                   </button>
                 </div>
