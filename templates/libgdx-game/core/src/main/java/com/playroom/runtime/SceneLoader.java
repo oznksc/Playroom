@@ -2,14 +2,17 @@ package com.playroom.runtime;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
+import com.playroom.runtime.components.*;
+import com.playroom.runtime.scene.Entity;
+import com.playroom.runtime.scene.SceneData;
 
 public class SceneLoader {
     private String projectName = "Playroom Game";
-    private String activeScene = "main.scene.json";
+    private String activeSceneFile = "main.scene.json";
     private JsonValue projectJson;
-    private JsonValue currentSceneJson;
 
     public void loadProject(String path) {
         FileHandle file = Gdx.files.internal(path);
@@ -22,27 +25,247 @@ public class SceneLoader {
                         projectName = projectJson.getString("name");
                     }
                     if (projectJson.has("activeScene")) {
-                        activeScene = projectJson.getString("activeScene");
+                        activeSceneFile = projectJson.getString("activeScene");
                     }
                 }
             } catch (Exception e) {
                 Gdx.app.error("SceneLoader", "Failed to parse project json at: " + path, e);
             }
-        } else {
-            Gdx.app.log("SceneLoader", "Project file not found at " + path + ", using default configuration");
         }
     }
 
-    public void loadScene(String scenePath) {
+    public SceneData loadScene(String scenePath) {
+        SceneData sceneData = new SceneData();
         FileHandle file = Gdx.files.internal(scenePath);
-        if (file.exists()) {
-            try {
-                JsonReader reader = new JsonReader();
-                currentSceneJson = reader.parse(file);
-                Gdx.app.log("SceneLoader", "Loaded scene: " + scenePath);
-            } catch (Exception e) {
-                Gdx.app.error("SceneLoader", "Failed to parse scene json at: " + scenePath, e);
+        if (!file.exists()) {
+            Gdx.app.log("SceneLoader", "Scene file not found at " + scenePath + ", returning empty scene");
+            return sceneData;
+        }
+
+        try {
+            JsonReader reader = new JsonReader();
+            JsonValue root = reader.parse(file);
+            if (root == null) return sceneData;
+
+            if (root.has("id")) sceneData.id = root.getString("id");
+            if (root.has("name")) sceneData.name = root.getString("name");
+
+            if (root.has("viewport")) {
+                JsonValue vp = root.get("viewport");
+                if (vp.has("width")) sceneData.viewportWidth = vp.getFloat("width");
+                if (vp.has("height")) sceneData.viewportHeight = vp.getFloat("height");
+                if (vp.has("background")) {
+                    try {
+                        sceneData.backgroundColor = Color.valueOf(vp.getString("background"));
+                    } catch (Exception ignored) {}
+                }
             }
+
+            if (root.has("gravity")) {
+                JsonValue grav = root.get("gravity");
+                float gx = grav.has("x") ? grav.getFloat("x") : 0f;
+                float gy = grav.has("y") ? grav.getFloat("y") : 1800f;
+                sceneData.gravity.set(gx, gy);
+            }
+
+            if (root.has("entities")) {
+                JsonValue entitiesArray = root.get("entities");
+                for (JsonValue entityJson = entitiesArray.child; entityJson != null; entityJson = entityJson.next) {
+                    Entity entity = parseEntity(entityJson);
+                    if (entity != null) {
+                        sceneData.entities.add(entity);
+                    }
+                }
+            }
+
+            Gdx.app.log("SceneLoader", "Successfully loaded scene: " + sceneData.name + " (" + sceneData.entities.size() + " entities)");
+        } catch (Exception e) {
+            Gdx.app.error("SceneLoader", "Error loading scene from: " + scenePath, e);
+        }
+
+        return sceneData;
+    }
+
+    private Entity parseEntity(JsonValue json) {
+        String id = json.has("id") ? json.getString("id") : "entity";
+        String name = json.has("name") ? json.getString("name") : id;
+        Entity entity = new Entity(id, name);
+
+        if (json.has("components")) {
+            JsonValue comps = json.get("components");
+            for (JsonValue compJson = comps.child; compJson != null; compJson = compJson.next) {
+                Component comp = parseComponent(compJson);
+                if (comp != null) {
+                    entity.addComponent(comp);
+                }
+            }
+        }
+
+        return entity;
+    }
+
+    private Component parseComponent(JsonValue json) {
+        if (!json.has("type")) return null;
+        String type = json.getString("type");
+
+        switch (type) {
+            case "Transform": {
+                TransformComponent tc = new TransformComponent();
+                if (json.has("position")) {
+                    JsonValue pos = json.get("position");
+                    tc.position.set(pos.getFloat("x", 0f), pos.getFloat("y", 0f));
+                }
+                tc.rotation = json.getFloat("rotation", 0f);
+                if (json.has("scale")) {
+                    JsonValue sc = json.get("scale");
+                    tc.scale.set(sc.getFloat("x", 1f), sc.getFloat("y", 1f));
+                }
+                return tc;
+            }
+            case "Sprite": {
+                SpriteComponent sc = new SpriteComponent();
+                sc.assetId = json.getString("assetId", "");
+                sc.width = json.getFloat("width", 32f);
+                sc.height = json.getFloat("height", 32f);
+                if (json.has("anchor")) {
+                    JsonValue anc = json.get("anchor");
+                    sc.anchor.set(anc.getFloat("x", 0.5f), anc.getFloat("y", 0.5f));
+                }
+                if (json.has("tint")) {
+                    try { sc.tint = Color.valueOf(json.getString("tint")); } catch (Exception ignored) {}
+                }
+                sc.flipX = json.getBoolean("flipX", false);
+                sc.flipY = json.getBoolean("flipY", false);
+                return sc;
+            }
+            case "RigidBody": {
+                RigidBodyComponent rbc = new RigidBodyComponent();
+                if (json.has("velocity")) {
+                    JsonValue vel = json.get("velocity");
+                    rbc.velocity.set(vel.getFloat("x", 0f), vel.getFloat("y", 0f));
+                }
+                rbc.angularVelocity = json.getFloat("angularVelocity", 0f);
+                rbc.mass = json.getFloat("mass", 1f);
+                rbc.drag = json.getFloat("drag", 0f);
+                rbc.isKinematic = json.getBoolean("isKinematic", false);
+                rbc.gravityScale = json.getFloat("gravityScale", 1f);
+                rbc.useGravity = json.getBoolean("useGravity", true);
+                return rbc;
+            }
+            case "AabbCollider": {
+                AabbColliderComponent ac = new AabbColliderComponent();
+                if (json.has("offset")) {
+                    JsonValue off = json.get("offset");
+                    ac.offset.set(off.getFloat("x", 0f), off.getFloat("y", 0f));
+                }
+                if (json.has("size")) {
+                    JsonValue sz = json.get("size");
+                    ac.size.set(sz.getFloat("x", 32f), sz.getFloat("y", 32f));
+                }
+                ac.isStatic = json.getBoolean("isStatic", false);
+                ac.isTrigger = json.getBoolean("isTrigger", false);
+                ac.layer = json.getInt("layer", 1);
+                ac.mask = json.getInt("mask", 1);
+                return ac;
+            }
+            case "CircleCollider": {
+                CircleColliderComponent cc = new CircleColliderComponent();
+                if (json.has("offset")) {
+                    JsonValue off = json.get("offset");
+                    cc.offset.set(off.getFloat("x", 0f), off.getFloat("y", 0f));
+                }
+                cc.radius = json.getFloat("radius", 16f);
+                cc.isStatic = json.getBoolean("isStatic", false);
+                cc.isTrigger = json.getBoolean("isTrigger", false);
+                cc.layer = json.getInt("layer", 1);
+                cc.mask = json.getInt("mask", 1);
+                return cc;
+            }
+            case "PolygonCollider": {
+                PolygonColliderComponent pc = new PolygonColliderComponent();
+                if (json.has("offset")) {
+                    JsonValue off = json.get("offset");
+                    pc.offset.set(off.getFloat("x", 0f), off.getFloat("y", 0f));
+                }
+                if (json.has("points")) {
+                    JsonValue pts = json.get("points");
+                    float[] verts = new float[pts.size * 2];
+                    int i = 0;
+                    for (JsonValue pt = pts.child; pt != null; pt = pt.next) {
+                        verts[i++] = pt.getFloat("x", 0f);
+                        verts[i++] = pt.getFloat("y", 0f);
+                    }
+                    pc.vertices = verts;
+                }
+                pc.isStatic = json.getBoolean("isStatic", false);
+                pc.isTrigger = json.getBoolean("isTrigger", false);
+                pc.layer = json.getInt("layer", 1);
+                pc.mask = json.getInt("mask", 1);
+                return pc;
+            }
+            case "PlayerController": {
+                PlayerControllerComponent pcc = new PlayerControllerComponent();
+                pcc.speed = json.getFloat("speed", 180f);
+                pcc.jumpVelocity = json.getFloat("jumpVelocity", 420f);
+                pcc.gravity = json.getFloat("gravity", 1200f);
+                return pcc;
+            }
+            case "CameraFollow": {
+                CameraFollowComponent cfc = new CameraFollowComponent();
+                cfc.targetId = json.getString("targetId", "");
+                cfc.smoothing = json.getFloat("smoothing", 0.2f);
+                if (json.has("offset")) {
+                    JsonValue off = json.get("offset");
+                    cfc.offset.set(off.getFloat("x", 0f), off.getFloat("y", 0f));
+                }
+                return cfc;
+            }
+            case "Text": {
+                TextComponent tc = new TextComponent();
+                tc.text = json.getString("text", "");
+                tc.fontAssetId = json.getString("fontAssetId", "");
+                tc.size = json.getFloat("size", 16f);
+                tc.align = json.getString("align", "left");
+                if (json.has("color")) {
+                    try { tc.color = Color.valueOf(json.getString("color")); } catch (Exception ignored) {}
+                }
+                return tc;
+            }
+            case "AudioSource": {
+                AudioSourceComponent asc = new AudioSourceComponent();
+                asc.assetId = json.getString("assetId", "");
+                asc.volume = json.getFloat("volume", 1f);
+                asc.loop = json.getBoolean("loop", false);
+                asc.playOnStart = json.getBoolean("playOnStart", false);
+                return asc;
+            }
+            case "Script": {
+                ScriptComponent sc = new ScriptComponent();
+                if (json.has("handlers")) {
+                    JsonValue handlersJson = json.get("handlers");
+                    for (JsonValue h = handlersJson.child; h != null; h = h.next) {
+                        ScriptComponent.ScriptHandler handler = new ScriptComponent.ScriptHandler();
+                        handler.event = h.getString("event", "start");
+                        if (h.has("actions")) {
+                            JsonValue actionsJson = h.get("actions");
+                            for (JsonValue a = actionsJson.child; a != null; a = a.next) {
+                                String actType = a.getString("type", "");
+                                ScriptComponent.ScriptAction action = new ScriptComponent.ScriptAction(actType);
+                                for (JsonValue prop = a.child; prop != null; prop = prop.next) {
+                                    if (!"type".equals(prop.name)) {
+                                        action.params.put(prop.name, prop.asString());
+                                    }
+                                }
+                                handler.actions.add(action);
+                            }
+                        }
+                        sc.handlers.add(handler);
+                    }
+                }
+                return sc;
+            }
+            default:
+                return null;
         }
     }
 
@@ -50,15 +273,11 @@ public class SceneLoader {
         return projectName;
     }
 
-    public String getActiveScene() {
-        return activeScene;
+    public String getActiveSceneFile() {
+        return activeSceneFile;
     }
 
     public JsonValue getProjectJson() {
         return projectJson;
-    }
-
-    public JsonValue getCurrentSceneJson() {
-        return currentSceneJson;
     }
 }
