@@ -30,6 +30,7 @@ import {
 } from "./scaffold.js";
 import { startEditorServer } from "./server.js";
 import { startMcpServer } from "@gamekit/mcp/server";
+import { defaultNativeRunner } from "./native-runner.js";
 
 export {
   initProject,
@@ -304,6 +305,33 @@ async function main(argv: string[]): Promise<void> {
           console.log(`Run 'cd ${output} && pnpm install && pnpm dev' to start.`);
         }
       }
+      return;
+    }
+    case "play": {
+      const platform = (readOption(args, "--platform") as "libgdx" | "web" | undefined) ?? "libgdx";
+      if (platform !== "libgdx" && platform !== "web") {
+        throw new Error("--platform must be 'libgdx' or 'web'");
+      }
+      if (platform === "web") {
+        console.log("For web play, run: gamekit editor or use the editor web canvas.");
+        return;
+      }
+      await initProject(cwd);
+      console.log("Starting Playroom native play mode (libGDX / Desktop)...");
+      const unsubscribe = defaultNativeRunner.addLogListener((line) => {
+        console.log(line);
+      });
+      const state = await defaultNativeRunner.start(cwd);
+      console.log(`Native process started (PID: ${state.pid ?? "unknown"}). Press Ctrl+C to stop.`);
+
+      const cleanExit = async () => {
+        unsubscribe();
+        console.log("\nStopping native game process...");
+        await defaultNativeRunner.stop();
+        process.exit(0);
+      };
+      process.on("SIGINT", cleanExit);
+      process.on("SIGTERM", cleanExit);
       return;
     }
     case "save": {
@@ -701,6 +729,7 @@ Usage:
   gamekit import <file>
   gamekit remove <asset-id>
   gamekit export [path] [--platform web|mobile|libgdx]
+  gamekit play [--platform libgdx|web]
   gamekit generate [--platform web|mobile]
   gamekit mcp [project-path]
   gamekit skills list

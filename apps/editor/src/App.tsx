@@ -11,6 +11,7 @@ import { WelcomeHub } from "./components/WelcomeHub.js";
 import { NewProjectWizard } from "./components/NewProjectWizard.js";
 import { AgentSettings } from "./components/AgentSettings.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
+import { getApiUrl } from "./lib/api.js";
 import shellStyles from "./components/AppShell.module.css";
 
 // Modular Domain Hooks
@@ -66,6 +67,58 @@ export function App() {
 
   // Project & Document State
   const project = useProjectState();
+
+  // Native Desktop Runner State
+  const [nativeRunning, setNativeRunning] = useState(false);
+  const [nativeLaunching, setNativeLaunching] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(getApiUrl("/api/native/status"));
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.state) {
+            setNativeRunning(Boolean(data.state.running));
+            if (!data.state.running && data.state.status !== "launching") {
+              setNativeLaunching(false);
+            }
+          }
+        }
+      } catch (_) {}
+    };
+    pollStatus();
+    const interval = setInterval(pollStatus, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleNativePlayToggle = useCallback(async () => {
+    if (nativeRunning) {
+      try {
+        await fetch(getApiUrl("/api/native/stop"), { method: "POST" });
+        setNativeRunning(false);
+      } catch (err) {
+        console.error("Failed to stop native game:", err);
+      }
+    } else {
+      setNativeLaunching(true);
+      try {
+        const res = await fetch(getApiUrl("/api/native/play"), { method: "POST" });
+        const data = await res.json();
+        if (data.ok) {
+          setNativeRunning(true);
+        }
+      } catch (err) {
+        console.error("Failed to start native game:", err);
+      } finally {
+        setNativeLaunching(false);
+      }
+    }
+  }, [nativeRunning]);
 
   // Navigation callbacks
   const openLeftPanel = useCallback((tab: SidebarTabId) => {
@@ -392,9 +445,12 @@ export function App() {
         entityCount={project.scene?.entities.length ?? 0}
         drawCalls={play.playDrawCalls}
         profilerOpen={play.profilerOpen}
+        isNativeRunning={nativeRunning}
+        isNativeLaunching={nativeLaunching}
         onPlayToggle={play.handlePlayToggle}
         onStop={play.handleStop}
         onToggleProfiler={() => play.setProfilerOpen((open) => !open)}
+        onNativePlayToggle={handleNativePlayToggle}
       />
 
       {/* Bottom tab bar — navigation, tools, project */}

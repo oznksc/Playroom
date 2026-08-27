@@ -38,6 +38,7 @@ import { runDoctor } from "./doctor.js";
 import { buildProject } from "./build.js";
 import { validateScene } from "@gamekit/schema";
 import { z } from "zod";
+import { defaultNativeRunner } from "./native-runner.js";
 import { handleAgentRoute } from "./agent/routes.js";
 import {
   generateSprite,
@@ -156,10 +157,12 @@ export async function startEditorServer(options: EditorServerOptions): Promise<E
     protocol,
     mtls,
     url: `${protocol}://${host}:${port}`,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
+    close: async () => {
+      await defaultNativeRunner.stop();
+      return new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
-      }),
+      });
+    },
   };
 }
 
@@ -671,6 +674,32 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         error: error instanceof Error ? error.message : "Apply recipe failed",
       });
     }
+    return;
+  }
+
+  // Native runner routes
+  if (url.pathname === "/api/native/play" && request.method === "POST") {
+    try {
+      const state = await defaultNativeRunner.start(options.root);
+      sendJson(response, 200, { ok: true, state });
+    } catch (err) {
+      sendJson(response, 500, { error: err instanceof Error ? err.message : String(err) });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/native/stop" && request.method === "POST") {
+    try {
+      await defaultNativeRunner.stop();
+      sendJson(response, 200, { ok: true, state: defaultNativeRunner.getState() });
+    } catch (err) {
+      sendJson(response, 500, { error: err instanceof Error ? err.message : String(err) });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/native/status" && request.method === "GET") {
+    sendJson(response, 200, { ok: true, state: defaultNativeRunner.getState() });
     return;
   }
 

@@ -87,9 +87,56 @@ public class GameKitGame implements ApplicationListener {
         viewport.update(width, height);
     }
 
+    private long lastSceneMtime = 0L;
+    private float mtimePollTimer = 0f;
+
+    public void reloadScene() {
+        if (sceneLoader == null) return;
+        sceneLoader.loadProject("gamekit/project.json");
+        String scenePath = "gamekit/scenes/" + sceneLoader.getActiveSceneFile();
+        currentSceneData = sceneLoader.loadScene(scenePath);
+
+        com.badlogic.gdx.files.FileHandle fh = Gdx.files.internal(scenePath);
+        if (fh.exists()) {
+            lastSceneMtime = fh.lastModified();
+        }
+
+        if (physicsSystem != null) {
+            physicsSystem.init(currentSceneData);
+        }
+        if (actionExecutor != null) {
+            actionExecutor.triggerEvent(currentSceneData, "start");
+        }
+        Gdx.app.log("GameKit", "Hot-reloaded scene: " + currentSceneData.name);
+    }
+
     @Override
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
+
+        // Hot-reload check: F5, Ctrl+R, or file change
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.F5) ||
+            ((Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.CONTROL_RIGHT)) &&
+             Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.R))) {
+            reloadScene();
+        }
+
+        mtimePollTimer += delta;
+        if (mtimePollTimer >= 1.0f) {
+            mtimePollTimer = 0f;
+            if (sceneLoader != null) {
+                String scenePath = "gamekit/scenes/" + sceneLoader.getActiveSceneFile();
+                com.badlogic.gdx.files.FileHandle fh = Gdx.files.internal(scenePath);
+                if (fh.exists()) {
+                    long currentMtime = fh.lastModified();
+                    if (lastSceneMtime > 0 && currentMtime > lastSceneMtime) {
+                        reloadScene();
+                    } else if (lastSceneMtime == 0) {
+                        lastSceneMtime = currentMtime;
+                    }
+                }
+            }
+        }
 
         // 1. Process player controls
         playerControllerSystem.update(currentSceneData, physicsSystem, delta);

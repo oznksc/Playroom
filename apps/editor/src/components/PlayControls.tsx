@@ -1,4 +1,4 @@
-import { Play, Pause, Square, Cpu, Activity } from "lucide-react";
+import { Play, Pause, Square, Cpu, Activity, MonitorPlay, Loader2 } from "lucide-react";
 import { cn } from "@/ui";
 import styles from "./PlayControls.module.css";
 
@@ -10,9 +10,12 @@ type PlayControlsProps = {
   entityCount?: number;
   drawCalls?: number;
   profilerOpen?: boolean;
+  isNativeRunning?: boolean;
+  isNativeLaunching?: boolean;
   onPlayToggle: () => void;
   onStop: () => void;
   onToggleProfiler?: () => void;
+  onNativePlayToggle?: () => void;
 };
 
 /**
@@ -27,9 +30,12 @@ export function PlayControls({
   entityCount = 0,
   drawCalls = 0,
   profilerOpen = false,
+  isNativeRunning = false,
+  isNativeLaunching = false,
   onPlayToggle,
   onStop,
   onToggleProfiler,
+  onNativePlayToggle,
 }: PlayControlsProps) {
   const live = isPlaying && !isPaused;
 
@@ -61,6 +67,38 @@ export function PlayControls({
       >
         <Square size={11} fill="currentColor" strokeWidth={0} />
       </button>
+
+      {onNativePlayToggle && (
+        <>
+          <div className="h-3.5 w-px bg-white/10 mx-0.5" aria-hidden />
+          <button
+            type="button"
+            data-testid="native-play-toggle"
+            className={cn(
+              styles["play-controls-btn"],
+              isNativeRunning && styles.live,
+              isNativeLaunching && "animate-pulse"
+            )}
+            title={
+              isNativeLaunching
+                ? "Launching Native Desktop..."
+                : isNativeRunning
+                  ? "Stop Native Desktop (libGDX)"
+                  : "Run Native Desktop (libGDX)"
+            }
+            aria-label={isNativeRunning ? "Stop Native Game" : "Run Native Desktop"}
+            onClick={onNativePlayToggle}
+          >
+            {isNativeLaunching ? (
+              <Loader2 size={13} className="animate-spin text-amber-400" />
+            ) : isNativeRunning ? (
+              <Square size={10} fill="currentColor" className="text-red-400" />
+            ) : (
+              <MonitorPlay size={13} className="text-cyan-400" />
+            )}
+          </button>
+        </>
+      )}
 
       {isPlaying && (
         <div className={styles["play-controls-telemetry"]} title="WASD · Arrows · Space">
