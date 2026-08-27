@@ -2,6 +2,7 @@ import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import {
   access,
   copyFile,
+  cp,
   mkdir,
   readFile,
   readdir,
@@ -269,7 +270,7 @@ export async function removeAsset(root: string, assetId: string): Promise<void> 
   await generateAssetRegistry(root);
 }
 
-export async function generateAssetRegistry(root: string, platform: "mobile" | "web" = "mobile"): Promise<string> {
+export async function generateAssetRegistry(root: string, platform: "mobile" | "web" | "libgdx" = "mobile"): Promise<string> {
   const generatedRoot = join(getGameKitRoot(root), "generated");
   await mkdir(generatedRoot, { recursive: true });
 
@@ -278,6 +279,12 @@ export async function generateAssetRegistry(root: string, platform: "mobile" | "
     project = await readProject(root);
   } catch {
     project = createProject("Playroom Game");
+  }
+
+  if (platform === "libgdx") {
+    const output = join(generatedRoot, "assets.json");
+    await writeFile(output, JSON.stringify({ assets: project.assets }, null, 2) + "\n");
+    return relative(root, output);
   }
 
   const output = join(generatedRoot, "assets.ts");
@@ -1029,15 +1036,91 @@ export async function buildExportBootstrapInput(root: string): Promise<Bootstrap
   };
 }
 
-export async function exportProject(root: string, outputDir: string, platform: "mobile" | "web" = "mobile"): Promise<string> {
+export async function exportProject(root: string, outputDir: string, platform: "mobile" | "web" | "libgdx" = "mobile"): Promise<string> {
   const { project, scenes, assets } = await getProjectSnapshot(root);
   const gamekitRoot = getGameKitRoot(root);
-  const outputGamekit = join(outputDir, "gamekit");
   const playroomRoot = fileURLToPath(new URL("../../..", import.meta.url));
   const pkgJson = JSON.parse(await readFile(join(playroomRoot, "package.json"), "utf8")) as Record<string, unknown>;
-  const bootstrap = await buildExportBootstrapInput(root);
 
   await mkdir(outputDir, { recursive: true });
+
+  if (platform === "libgdx") {
+    const templateDir = join(playroomRoot, "templates", "libgdx-game");
+    await cp(templateDir, outputDir, {
+      recursive: true,
+      filter: (src) => basename(src) !== ".gradle" && basename(src) !== "node_modules",
+    });
+
+    const sanitizedAppName = project.name.replace(/[^a-zA-Z0-9]/g, "");
+    const settingsPath = join(outputDir, "settings.gradle");
+    if (await exists(settingsPath)) {
+      const settingsContent = await readFile(settingsPath, "utf8");
+      await writeFile(
+        settingsPath,
+        settingsContent.replace(/rootProject\.name = 'PlayroomGame'/, `rootProject.name = '${sanitizedAppName || "PlayroomGame"}'`),
+      );
+    }
+
+    const stringsPath = join(outputDir, "android", "res", "values", "strings.xml");
+    if (await exists(stringsPath)) {
+      const pgsAppId = project.gameServices?.achievements?.find((a) => a.providers.googlePlay)?.providers.googlePlay ?? "";
+      await writeFile(
+        stringsPath,
+        `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">${project.name}</string>
+    <string name="game_services_project_id">${pgsAppId}</string>
+</resources>
+`,
+      );
+    }
+
+    const gdxAssetsGamekit = join(outputDir, "assets", "gamekit");
+    await mkdir(join(gdxAssetsGamekit, "scenes"), { recursive: true });
+    await mkdir(join(gdxAssetsGamekit, "assets"), { recursive: true });
+    await mkdir(join(gdxAssetsGamekit, "generated"), { recursive: true });
+
+    for (const sceneFile of scenes) {
+      const scenePath = join(gamekitRoot, "scenes", sceneFile);
+      await writeFile(join(gdxAssetsGamekit, "scenes", sceneFile), await readFile(scenePath, "utf8"));
+    }
+
+    for (const asset of assets) {
+      const assetSrc = join(gamekitRoot, "assets", asset.file);
+      if (await exists(assetSrc)) {
+        await writeFile(join(gdxAssetsGamekit, "assets", asset.file), await readFile(assetSrc));
+      }
+    }
+
+    const prefabsRoot = join(gamekitRoot, "prefabs");
+    if (await exists(prefabsRoot)) {
+      await mkdir(join(gdxAssetsGamekit, "prefabs"), { recursive: true });
+      try {
+        const prefabFiles = (await readdir(prefabsRoot)).filter((f) => f.endsWith(".prefab.json"));
+        for (const file of prefabFiles) {
+          await writeFile(join(gdxAssetsGamekit, "prefabs", file), await readFile(join(prefabsRoot, file)));
+        }
+      } catch {
+        // ignore empty / unreadable prefabs dir
+      }
+    }
+
+    await writeProject(join(outputDir, "assets"), project);
+    await generateAssetRegistry(join(outputDir, "assets"), platform);
+
+    try {
+      const { chmod } = await import("node:fs/promises");
+      await chmod(join(outputDir, "gradlew"), 0o755);
+    } catch {
+      // ignore on systems where chmod isn't supported
+    }
+
+    return outputDir;
+  }
+
+  const outputGamekit = join(outputDir, "gamekit");
+  const bootstrap = await buildExportBootstrapInput(root);
+
   await mkdir(join(outputGamekit, "scenes"), { recursive: true });
   await mkdir(join(outputGamekit, "assets"), { recursive: true });
   await mkdir(join(outputGamekit, "generated"), { recursive: true });

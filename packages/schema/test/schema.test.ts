@@ -1,23 +1,40 @@
 import { describe, expect, it } from "vitest";
 import {
+  createAchievement,
+  createDefaultGameServices,
   createDefaultGuiComponents,
   createDefaultMenuTransitions,
   createEmptyScene,
   createEntity,
+  createIncrementAchievementAction,
+  createLeaderboard,
   createLevel,
   createMenuScene,
   createPrefab,
   createProject,
+  createSetAchievementStepsAction,
   createSettingsScene,
+  createShowGameServicesUIAction,
   createStarterGameplayScene,
+  createSubmitLeaderboardAction,
+  createUnlockAchievementAction,
   findLevelForScene,
+  GameServiceAchievementSchema,
+  GameServiceLeaderboardSchema,
+  GameServicesDefSchema,
   GUI_MENU_EVENTS,
+  IncrementAchievementActionSchema,
   parsePrefab,
   parseScene,
   prefabToJson,
+  projectToJson,
   resolveFallDeathY,
   resolveGameRules,
   sceneToJson,
+  SetAchievementStepsActionSchema,
+  ShowGameServicesUIActionSchema,
+  SubmitLeaderboardActionSchema,
+  UnlockAchievementActionSchema,
   validatePrefab,
   validateProject,
   validateScene,
@@ -776,5 +793,196 @@ describe("prefab schema (comprehensive)", () => {
     };
     const result = validatePrefab(input);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("game services schema", () => {
+  it("createDefaultGameServices returns disabled default config", () => {
+    const services = createDefaultGameServices();
+    expect(services.enabled).toBe(false);
+    expect(services.achievements).toEqual([]);
+    expect(services.leaderboards).toEqual([]);
+    expect(GameServicesDefSchema.safeParse(services).success).toBe(true);
+  });
+
+  it("createAchievement scaffolds valid standard achievement", () => {
+    const ach = createAchievement("First Win", "First Win", {
+      description: "Win your first match",
+      providers: { googlePlay: "CgkI_test", gameCenter: "grp.first_win" },
+    });
+    expect(ach.id).toBe("first-win");
+    expect(ach.type).toBe("standard");
+    expect(ach.description).toBe("Win your first match");
+    expect(ach.providers.googlePlay).toBe("CgkI_test");
+    expect(GameServiceAchievementSchema.safeParse(ach).success).toBe(true);
+  });
+
+  it("createAchievement scaffolds incremental achievement with steps", () => {
+    const ach = createAchievement("coin-100", "Coin Collector", {
+      type: "incremental",
+      steps: 100,
+      providers: { googlePlay: "CgkI_coins" },
+    });
+    expect(ach.type).toBe("incremental");
+    expect(ach.steps).toBe(100);
+    expect(GameServiceAchievementSchema.safeParse(ach).success).toBe(true);
+  });
+
+  it("rejects incremental achievement without positive integer steps", () => {
+    const missingSteps = GameServiceAchievementSchema.safeParse({
+      id: "inc-1",
+      name: "Inc 1",
+      type: "incremental",
+    });
+    expect(missingSteps.success).toBe(false);
+
+    const zeroSteps = GameServiceAchievementSchema.safeParse({
+      id: "inc-2",
+      name: "Inc 2",
+      type: "incremental",
+      steps: 0,
+    });
+    expect(zeroSteps.success).toBe(false);
+
+    const negativeSteps = GameServiceAchievementSchema.safeParse({
+      id: "inc-3",
+      name: "Inc 3",
+      type: "incremental",
+      steps: -10,
+    });
+    expect(negativeSteps.success).toBe(false);
+  });
+
+  it("rejects duplicate achievement IDs", () => {
+    const result = GameServicesDefSchema.safeParse({
+      enabled: true,
+      achievements: [
+        { id: "duplicate_id", name: "Ach 1", type: "standard", description: "", hidden: false, providers: {} },
+        { id: "duplicate_id", name: "Ach 2", type: "standard", description: "", hidden: false, providers: {} },
+      ],
+      leaderboards: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects duplicate leaderboard IDs", () => {
+    const result = GameServicesDefSchema.safeParse({
+      enabled: true,
+      achievements: [],
+      leaderboards: [
+        { id: "high_score", name: "High Score", order: "descending", providers: {} },
+        { id: "high_score", name: "Top Score", order: "descending", providers: {} },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("createProject initializes gameServices and passes validateProject", () => {
+    const project = createProject("Game Services Test");
+    expect(project.gameServices).toBeDefined();
+    expect(project.gameServices?.enabled).toBe(false);
+
+    const validation = validateProject(project);
+    expect(validation.ok).toBe(true);
+  });
+
+  it("round-trips full gameServices configuration through projectToJson/validateProject", () => {
+    const project = createProject("Full Services Project");
+    project.gameServices = {
+      enabled: true,
+      achievements: [
+        createAchievement("first-win", "First Win", {
+          description: "Complete your first run",
+          providers: { googlePlay: "CgkI_first_win", gameCenter: "grp.first_win", steam: "ACH_FIRST_WIN" },
+        }),
+        createAchievement("coin-hoarder", "Coin Hoarder", {
+          type: "incremental",
+          steps: 500,
+          description: "Collect 500 gold coins",
+          providers: { googlePlay: "CgkI_coins_500" },
+        }),
+      ],
+      leaderboards: [
+        createLeaderboard("high-score", "High Score", {
+          order: "descending",
+          providers: { googlePlay: "CgkI_high_score", steam: "LEADERBOARD_HIGH_SCORE" },
+        }),
+      ],
+    };
+
+    const json = projectToJson(project);
+    const parsed = JSON.parse(json);
+    const validated = validateProject(parsed);
+    expect(validated.ok).toBe(true);
+    if (validated.ok) {
+      expect(validated.value.gameServices?.enabled).toBe(true);
+      expect(validated.value.gameServices?.achievements).toHaveLength(2);
+      expect(validated.value.gameServices?.achievements[1].steps).toBe(500);
+      expect(validated.value.gameServices?.leaderboards).toHaveLength(1);
+    }
+  });
+
+  it("maintains backward compatibility with projects omitting gameServices", () => {
+    const legacy = {
+      schemaVersion: 1,
+      name: "Legacy Game",
+      scenes: ["main.scene.json"],
+      levels: [],
+      assets: [],
+      guiComponents: [],
+    };
+    const result = validateProject(legacy);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.gameServices).toBeUndefined();
+    }
+  });
+});
+
+describe("game service script actions", () => {
+  it("creates and validates achievement.unlock action", () => {
+    const action = createUnlockAchievementAction("first-win");
+    expect(action).toEqual({ type: "achievement.unlock", achievementId: "first-win" });
+    expect(UnlockAchievementActionSchema.safeParse(action).success).toBe(true);
+  });
+
+  it("creates and validates achievement.increment action", () => {
+    const defaultInc = createIncrementAchievementAction("coins");
+    expect(defaultInc).toEqual({ type: "achievement.increment", achievementId: "coins", amount: 1 });
+    expect(IncrementAchievementActionSchema.safeParse(defaultInc).success).toBe(true);
+
+    const customInc = createIncrementAchievementAction("coins", 5);
+    expect(customInc.amount).toBe(5);
+    expect(IncrementAchievementActionSchema.safeParse(customInc).success).toBe(true);
+
+    expect(IncrementAchievementActionSchema.safeParse({ type: "achievement.increment", achievementId: "c", amount: 0 }).success).toBe(false);
+  });
+
+  it("creates and validates achievement.setSteps action", () => {
+    const action = createSetAchievementStepsAction("xp", 42);
+    expect(action).toEqual({ type: "achievement.setSteps", achievementId: "xp", steps: 42 });
+    expect(SetAchievementStepsActionSchema.safeParse(action).success).toBe(true);
+
+    expect(SetAchievementStepsActionSchema.safeParse({ type: "achievement.setSteps", achievementId: "xp", steps: -1 }).success).toBe(false);
+  });
+
+  it("creates and validates leaderboard.submit action", () => {
+    const numSubmit = createSubmitLeaderboardAction("high-score", 9999);
+    expect(numSubmit).toEqual({ type: "leaderboard.submit", leaderboardId: "high-score", value: 9999 });
+    expect(SubmitLeaderboardActionSchema.safeParse(numSubmit).success).toBe(true);
+
+    const varSubmit = createSubmitLeaderboardAction("high-score", "$playerScore");
+    expect(varSubmit.value).toBe("$playerScore");
+    expect(SubmitLeaderboardActionSchema.safeParse(varSubmit).success).toBe(true);
+  });
+
+  it("creates and validates services.showUI action", () => {
+    const defaultUI = createShowGameServicesUIAction();
+    expect(defaultUI).toEqual({ type: "services.showUI", target: "all" });
+    expect(ShowGameServicesUIActionSchema.safeParse(defaultUI).success).toBe(true);
+
+    const achUI = createShowGameServicesUIAction("achievements");
+    expect(achUI.target).toBe("achievements");
+    expect(ShowGameServicesUIActionSchema.safeParse(achUI).success).toBe(true);
   });
 });

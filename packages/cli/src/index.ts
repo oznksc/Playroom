@@ -288,15 +288,21 @@ async function main(argv: string[]): Promise<void> {
     }
     case "export": {
       const path = args.find((arg) => !arg.startsWith("--")) ?? join(cwd, "build");
-      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
-      if (platform !== "web" && platform !== "mobile") {
-        throw new Error("--platform must be 'web' or 'mobile'");
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
+        throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
       await initProject(cwd);
       const output = await exportProject(cwd, resolve(cwd, path), platform);
-      console.log(`Exported runnable ${platform === "web" ? "web" : "Expo"} app: ${output}`);
-      if (platform === "web") {
-        console.log(`Run 'cd ${output} && pnpm install && pnpm dev' to start.`);
+      if (platform === "libgdx") {
+        console.log(`Exported runnable libGDX project: ${output}`);
+        console.log(`Run 'cd ${output} && ./gradlew lwjgl3:run' for desktop preview.`);
+        console.log(`Run 'cd ${output} && ./gradlew android:assembleDebug' to build Android APK.`);
+      } else {
+        console.log(`Exported runnable ${platform === "web" ? "web" : "Expo"} app: ${output}`);
+        if (platform === "web") {
+          console.log(`Run 'cd ${output} && pnpm install && pnpm dev' to start.`);
+        }
       }
       return;
     }
@@ -694,7 +700,7 @@ Usage:
            [--tls-cert path] [--tls-key path] [--tls-ca path] [--mtls]
   gamekit import <file>
   gamekit remove <asset-id>
-  gamekit export [path] [--platform web|mobile]
+  gamekit export [path] [--platform web|mobile|libgdx]
   gamekit generate [--platform web|mobile]
   gamekit mcp [project-path]
   gamekit skills list

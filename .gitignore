@@ -41,5 +41,36 @@ blob-report/
 
 # Generated asset references (keep starter template)
 **/gamekit/generated/assets.ts
+**/gamekit/generated/assets.json
 !templates/expo-game/gamekit/generated/assets.ts
+!templates/web-game/gamekit/generated/assets.ts
 !examples/**/gamekit/generated/assets.ts
+
+# Gradle & Java / libGDX
+.gradle/
+**/.gradle/
+bin/
+**/bin/
+*.class
+**/*.class
+gradle-app.setting
+
+# Android
+**/local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+.externalNativeBuild/
+.cxx/
+
+# IDEs & Tooling
+.idea/
+**/.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+**/.settings/

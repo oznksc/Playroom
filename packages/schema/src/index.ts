@@ -216,6 +216,79 @@ export const ScriptActionSchema = z.object({
 }).catchall(z.unknown());
 export type ScriptAction = z.infer<typeof ScriptActionSchema>;
 
+export const UnlockAchievementActionSchema = z.object({
+  type: z.literal("achievement.unlock"),
+  achievementId: z.string().min(1),
+});
+export type UnlockAchievementAction = z.infer<typeof UnlockAchievementActionSchema>;
+
+export const IncrementAchievementActionSchema = z.object({
+  type: z.literal("achievement.increment"),
+  achievementId: z.string().min(1),
+  amount: z.number().int().positive().default(1),
+});
+export type IncrementAchievementAction = z.infer<typeof IncrementAchievementActionSchema>;
+
+export const SetAchievementStepsActionSchema = z.object({
+  type: z.literal("achievement.setSteps"),
+  achievementId: z.string().min(1),
+  steps: z.number().int().nonnegative(),
+});
+export type SetAchievementStepsAction = z.infer<typeof SetAchievementStepsActionSchema>;
+
+export const SubmitLeaderboardActionSchema = z.object({
+  type: z.literal("leaderboard.submit"),
+  leaderboardId: z.string().min(1),
+  value: z.union([z.number(), z.string().min(1)]),
+});
+export type SubmitLeaderboardAction = z.infer<typeof SubmitLeaderboardActionSchema>;
+
+export const ShowGameServicesUIActionSchema = z.object({
+  type: z.literal("services.showUI"),
+  target: z.enum(["achievements", "leaderboards", "all"]).default("all"),
+});
+export type ShowGameServicesUIAction = z.infer<typeof ShowGameServicesUIActionSchema>;
+
+export const GameServiceActionSchema = z.union([
+  UnlockAchievementActionSchema,
+  IncrementAchievementActionSchema,
+  SetAchievementStepsActionSchema,
+  SubmitLeaderboardActionSchema,
+  ShowGameServicesUIActionSchema,
+]);
+export type GameServiceAction = z.infer<typeof GameServiceActionSchema>;
+
+export function createUnlockAchievementAction(achievementId: string): UnlockAchievementAction {
+  return { type: "achievement.unlock", achievementId };
+}
+
+export function createIncrementAchievementAction(
+  achievementId: string,
+  amount = 1,
+): IncrementAchievementAction {
+  return { type: "achievement.increment", achievementId, amount };
+}
+
+export function createSetAchievementStepsAction(
+  achievementId: string,
+  steps: number,
+): SetAchievementStepsAction {
+  return { type: "achievement.setSteps", achievementId, steps };
+}
+
+export function createSubmitLeaderboardAction(
+  leaderboardId: string,
+  value: number | string,
+): SubmitLeaderboardAction {
+  return { type: "leaderboard.submit", leaderboardId, value };
+}
+
+export function createShowGameServicesUIAction(
+  target: "achievements" | "leaderboards" | "all" = "all",
+): ShowGameServicesUIAction {
+  return { type: "services.showUI", target };
+}
+
 export const StateMachineStateSchema = z.object({
   name: z.string().min(1),
   on: z.record(z.string().min(1)).optional(),
@@ -658,6 +731,85 @@ export const SceneTransitionDefSchema = z.object({
 });
 export type SceneTransitionDef = z.infer<typeof SceneTransitionDefSchema>;
 
+export const GameServiceProviderMapSchema = z
+  .object({
+    googlePlay: z.string().optional(),
+    gameCenter: z.string().optional(),
+    steam: z.string().optional(),
+  })
+  .catchall(z.string().optional());
+export type GameServiceProviderMap = z.infer<typeof GameServiceProviderMapSchema>;
+
+export const GameServiceAchievementTypeSchema = z.enum(["standard", "incremental"]);
+export type GameServiceAchievementType = z.infer<typeof GameServiceAchievementTypeSchema>;
+
+export const GameServiceAchievementSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string().default(""),
+    type: GameServiceAchievementTypeSchema.default("standard"),
+    steps: z.number().int().positive().optional(),
+    hidden: z.boolean().default(false),
+    providers: GameServiceProviderMapSchema.default({}),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "incremental" && (data.steps === undefined || data.steps <= 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Incremental achievements must specify a positive integer 'steps' target",
+        path: ["steps"],
+      });
+    }
+  });
+export type GameServiceAchievement = z.infer<typeof GameServiceAchievementSchema>;
+
+export const GameServiceLeaderboardOrderSchema = z.enum(["ascending", "descending"]);
+export type GameServiceLeaderboardOrder = z.infer<typeof GameServiceLeaderboardOrderSchema>;
+
+export const GameServiceLeaderboardSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  order: GameServiceLeaderboardOrderSchema.default("descending"),
+  providers: GameServiceProviderMapSchema.default({}),
+});
+export type GameServiceLeaderboard = z.infer<typeof GameServiceLeaderboardSchema>;
+
+export const GameServicesDefSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    achievements: z.array(GameServiceAchievementSchema).default([]),
+    leaderboards: z.array(GameServiceLeaderboardSchema).default([]),
+  })
+  .superRefine((data, ctx) => {
+    const seenAchievements = new Set<string>();
+    for (let i = 0; i < data.achievements.length; i++) {
+      const ach = data.achievements[i];
+      if (seenAchievements.has(ach.id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate achievement id "${ach.id}"`,
+          path: ["achievements", i, "id"],
+        });
+      }
+      seenAchievements.add(ach.id);
+    }
+
+    const seenLeaderboards = new Set<string>();
+    for (let i = 0; i < data.leaderboards.length; i++) {
+      const lb = data.leaderboards[i];
+      if (seenLeaderboards.has(lb.id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate leaderboard id "${lb.id}"`,
+          path: ["leaderboards", i, "id"],
+        });
+      }
+      seenLeaderboards.add(lb.id);
+    }
+  });
+export type GameServicesDef = z.infer<typeof GameServicesDefSchema>;
+
 export const GameKitProjectSchema = z.object({
   schemaVersion: z.literal(GAMEKIT_SCHEMA_VERSION),
   name: z.string().min(1),
@@ -667,6 +819,7 @@ export const GameKitProjectSchema = z.object({
   guiComponents: z.array(GuiComponentSchema).default([]),
   transitions: z.array(SceneTransitionDefSchema).optional(),
   activeScene: z.string().min(1).optional(),
+  gameServices: GameServicesDefSchema.optional(),
 });
 export type GameKitProject = z.infer<typeof GameKitProjectSchema>;
 
@@ -739,6 +892,7 @@ export function createProject(name = "Playroom Game"): GameKitProject {
     assets: [],
     guiComponents: createDefaultGuiComponents(),
     transitions: createDefaultMenuTransitions(),
+    gameServices: createDefaultGameServices(),
   };
 }
 
@@ -764,6 +918,43 @@ export function createLevel(name: string, order: number, sceneIds: string[] = []
     order,
     sceneIds,
     unlocked: order === 1,
+  };
+}
+
+export function createDefaultGameServices(): GameServicesDef {
+  return {
+    enabled: false,
+    achievements: [],
+    leaderboards: [],
+  };
+}
+
+export function createAchievement(
+  id: string,
+  name: string,
+  options?: Partial<Omit<GameServiceAchievement, "id" | "name">>,
+): GameServiceAchievement {
+  return {
+    id: slugify(id) || id,
+    name,
+    description: options?.description ?? "",
+    type: options?.type ?? "standard",
+    ...(options?.steps !== undefined ? { steps: options.steps } : {}),
+    hidden: options?.hidden ?? false,
+    providers: options?.providers ?? {},
+  };
+}
+
+export function createLeaderboard(
+  id: string,
+  name: string,
+  options?: Partial<Omit<GameServiceLeaderboard, "id" | "name">>,
+): GameServiceLeaderboard {
+  return {
+    id: slugify(id) || id,
+    name,
+    order: options?.order ?? "descending",
+    providers: options?.providers ?? {},
   };
 }
 

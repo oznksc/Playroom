@@ -173,4 +173,62 @@ describe("exportProject multi-scene bootstrap", () => {
     expect(input.scenes.find((s) => s.file === "main.scene.json")?.hasPlayerController).toBe(true);
     expect(input.scenes.find((s) => s.file === "menu.scene.json")?.hasPlayerController).toBe(false);
   });
+
+  it("exports a complete runnable libGDX multi-module project", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gamekit-gdx-"));
+    await initProject(root, { name: "Pixel Odyssey" });
+
+    const gdxOut = join(root, "out-libgdx");
+    await exportProject(root, gdxOut, "libgdx");
+
+    // Root gradle files
+    const buildGradle = await readFile(join(gdxOut, "build.gradle"), "utf8");
+    expect(buildGradle).toContain("appName = 'Playroom Game'");
+    expect(buildGradle).toContain("gdxVersion = '1.13.1'");
+
+    const settingsGradle = await readFile(join(gdxOut, "settings.gradle"), "utf8");
+    expect(settingsGradle).toContain("PixelOdyssey");
+
+    const gradlew = await readFile(join(gdxOut, "gradlew"), "utf8");
+    expect(gradlew).toContain("GradleWrapperMain");
+
+    // Core java sources
+    const gameClass = await readFile(
+      join(gdxOut, "core", "src", "main", "java", "com", "playroom", "runtime", "GameKitGame.java"),
+      "utf8",
+    );
+    expect(gameClass).toContain("public class GameKitGame implements ApplicationListener");
+
+    const servicesInterface = await readFile(
+      join(gdxOut, "core", "src", "main", "java", "com", "playroom", "runtime", "services", "GameServices.java"),
+      "utf8",
+    );
+    expect(servicesInterface).toContain("public interface GameServices");
+    expect(servicesInterface).toContain("void setAchievementSteps(String logicalId, int steps);");
+
+    // Desktop launcher
+    const lwjglLauncher = await readFile(
+      join(gdxOut, "lwjgl3", "src", "main", "java", "com", "playroom", "runtime", "lwjgl3", "Lwjgl3Launcher.java"),
+      "utf8",
+    );
+    expect(lwjglLauncher).toContain("Lwjgl3Application");
+
+    // Android launcher + Google Play Games v2
+    const playGamesServices = await readFile(
+      join(gdxOut, "android", "src", "main", "java", "com", "playroom", "runtime", "android", "PlayGamesServicesV2.java"),
+      "utf8",
+    );
+    expect(playGamesServices).toContain("PlayGames.getAchievementsClient");
+    expect(playGamesServices).toContain("PlayGames.getGamesSignInClient");
+
+    // Assets and scenes bundled under assets/gamekit
+    const copiedProject = await readFile(join(gdxOut, "assets", "gamekit", "project.json"), "utf8");
+    expect(copiedProject).toContain("Pixel Odyssey");
+
+    const copiedScene = await readFile(join(gdxOut, "assets", "gamekit", "scenes", "main.scene.json"), "utf8");
+    expect(copiedScene).toContain('"id": "main"');
+
+    const assetsJson = await readFile(join(gdxOut, "assets", "gamekit", "generated", "assets.json"), "utf8");
+    expect(assetsJson).toContain('"assets":');
+  });
 });

@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://s01.oss.sonatype.org' }
+        google()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$androidGradlePluginVersion"
+    }
+}
+
+allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+}
+
+configure(subprojects) {
+    repositories {
+        mavenCentral()
+        maven { url 'https://s01.oss.sonatype.org' }
+        google()
+    }
+}
+
+subprojects {
+    version = '1.0.0'
+    ext {
+        appName = 'Playroom Game'
+        gdxVersion = '1.13.1'
+        box2dVersion = '1.13.1'
+    }
+}
