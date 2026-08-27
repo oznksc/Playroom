@@ -1,2056 +1,74 @@
-import type { GameKitScene, GameKitLevel, GameKitAsset, GameKitEntity, TransformComponent, PlayerControllerComponent, CameraFollowComponent, GuiNode, GuiComponent, AnimationComponent, AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, RigidBodyComponent, TilemapComponent, Vector2, TweenComponent, FollowPathComponent, ScriptComponent, StateMachineComponent } from "@gamekit/schema";
-import { DEFAULT_INPUT_MAP } from "@gamekit/schema";
-import { createEntity, createEmptyScene, createId, createGuiComponent, createGuiComponentInstance, resolveGameRules, parseScene, findLevelForScene, GameKitSceneSchema, GameKitEntitySchema, GameKitComponentSchema } from "@gamekit/schema";
-import { z } from "zod";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  FolderOpen,
-  Folder,
-  Clock3,
-  Terminal,
-  X,
-  Layers,
-  Sparkles,
-  Save,
-  RefreshCw,
-  Plus,
-  LayoutTemplate,
-  Settings,
-  LogOut,
-  MousePointer,
-  Move,
-  RefreshCcw,
-  Maximize,
-  Paintbrush,
-  Eraser,
-  Magnet,
-  Grid3x3,
-  Eye,
-  EyeOff,
-  Focus,
-  ZoomIn,
-  ZoomOut,
-  Undo2,
-  Redo2,
-  Play,
-  Square,
-  Box,
-  FileText,
-  Command,
-  Route,
-  Columns2,
-  Activity,
-  Wand2,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
 import { PlayControls } from "./components/PlayControls.js";
-import { CommandPalette, type CommandItem } from "./components/CommandPalette.js";
-import { Sidebar } from "./components/Sidebar.js";
+import { CommandPalette } from "./components/CommandPalette.js";
 import type { SidebarTabId } from "./components/SidebarRail.js";
-import { SceneCanvas } from "./components/SceneCanvas.js";
-import { PlayRuntimeHost } from "./components/PlayRuntimeHost.js";
-import { TilePalette } from "./components/TilePalette.js";
-import { ProfilerOverlay } from "./components/ProfilerOverlay.js";
-import { SceneTabBar } from "./components/SceneTabBar.js";
 import { EditorTour, useEditorTour } from "./components/EditorTour.js";
-import { useImageCache } from "./hooks/useImageCache.js";
 import type { CanvasTool, TilePaintMode } from "./lib/editor-tools.js";
-import { isTilePaintTool } from "./lib/editor-tools.js";
-import {
-  closeSceneTab,
-  createSceneWorkspace,
-  focusedSceneFile,
-  focusScenePane,
-  openSceneTab,
-  setSceneSplit,
-  syncWorkspaceScenes,
-  type ScenePaneId,
-  type SceneWorkspaceState,
-  type SplitMode,
-} from "./lib/scene-workspace.js";
-import { EMPTY_PROFILER_SAMPLE, type PlayProfilerSample } from "./lib/play-profiler.js";
-import { Inspector } from "./components/Inspector.js";
-import { ScenePanel } from "./components/ScenePanel.js";
-import { LevelPanel } from "./components/LevelPanel.js";
-import { SceneSettings } from "./components/SceneSettings.js";
-import { TimelinePanel } from "./components/TimelinePanel.js";
-import { AssetsPanel } from "./components/AssetsPanel.js";
-import { ConsolePanel, type ConsoleLog } from "./components/ConsolePanel.js";
-import { GuiPanel } from "./components/GuiPanel.js";
-import { AgentPanel } from "./components/AgentPanel.js";
-import { AgentSettings } from "./components/AgentSettings.js";
-import { PrefabPanel } from "./components/PrefabPanel.js";
 import { ProjectWizard } from "./components/ProjectWizard.js";
 import { WelcomeHub } from "./components/WelcomeHub.js";
 import { NewProjectWizard } from "./components/NewProjectWizard.js";
-import { QuickStartBanner } from "./components/QuickStartBanner.js";
-import { AssetStudioModal } from "./components/AssetStudioModal.js";
-import { GuiInspector } from "./components/GuiInspector.js";
-import { GuiComponentPanel } from "./components/GuiComponentPanel.js";
-import { GuiInstanceInspector } from "./components/GuiInstanceInspector.js";
-import { RecipesPanel } from "./components/RecipesPanel.js";
-import type { ProjectSnapshot, SaveState } from "./types.js";
-import { findComponent } from "./lib/components.js";
-import { useUndo } from "./hooks/useUndo.js";
-import { getApiUrl } from "./lib/api.js";
-import { executeEditorConsoleCommand } from "./lib/editor-console.js";
-import { resetPlaySession } from "./lib/play-session.js";
-import { createPlayPhysicsState } from "./lib/play-physics-state.js";
-import { initializePlayCamera } from "./lib/play-camera.js";
+import { AgentSettings } from "./components/AgentSettings.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
-import { displacementFromVelocity, velocityFromDisplacement, computeSceneWorldBounds, clampPlayCamera } from "./lib/physics.js";
-import logoUrl from "../../../logo.png";
-import { cn } from "@/ui";
 import shellStyles from "./components/AppShell.module.css";
-import sheetStyles from "./components/SheetChrome.module.css";
-import workspaceStyles from "./components/Workspace.module.css";
 
-// GameKit Runtime physics & logic imports
-import { createPlayerController } from "@gamekit/runtime/player";
-import { createRigidBody } from "@gamekit/runtime/rigid-body";
-import {
-  applyAabbCollisions,
-  applyCircleCollisions,
-  applyPolygonCollisions,
-  getEntityAabb,
-  getEntityCircle,
-  getEntityPolygon,
-  updateCollisionEvents,
-  updateTriggerEvents
-} from "@gamekit/runtime/collision";
-import type { CollisionEvent, TriggerState, CollisionState, CollisionSolid, TriggerEvent } from "@gamekit/runtime/collision";
-import { updateAnimation } from "@gamekit/runtime/animate";
-import { playTimeline } from "@gamekit/runtime/timeline";
-import type { TimelineState } from "@gamekit/runtime/timeline";
-import { createAudioController, type AudioController } from "@gamekit/runtime/audio";
-import {
-  resolveActionKeys,
-  extendedInputFromPressedKeys,
-  mergeGamepadIntoInput,
-} from "@gamekit/runtime/input-map";
-import { SceneManager, InMemoryStorage } from "@gamekit/runtime/manager";
-import { pollGamepad } from "@gamekit/runtime/gamepad";
-import { updateTween } from "@gamekit/runtime/tween";
-import { updateFollowPath } from "@gamekit/runtime/path";
-import { evaluateScriptEvent, transitionFsm } from "@gamekit/runtime/script";
-import { RulesEngine } from "@gamekit/runtime/rules-engine";
-import { loadScene } from "@gamekit/runtime/scene";
-import { createCameraFollow } from "@gamekit/runtime/camera";
+// Modular Domain Hooks
+import { useProjectState } from "./hooks/useProjectState.js";
+import { useSceneEntities } from "./hooks/useSceneEntities.js";
+import { useSceneGui } from "./hooks/useSceneGui.js";
+import { useLevels } from "./hooks/useLevels.js";
+import { usePlaySimulation } from "./hooks/usePlaySimulation.js";
+import { useEditorCommands } from "./hooks/useEditorCommands.js";
 
-const AUTO_SAVE_DELAY_MS = 1500;
+// Modular Layout Components
+import { CanvasWorkspace } from "./components/layout/CanvasWorkspace.js";
+import { LeftSidebarSheet } from "./components/layout/LeftSidebarSheet.js";
+import { RightInspectorSheet } from "./components/layout/RightInspectorSheet.js";
+import { BottomContentDrawer, type BottomTab } from "./components/layout/BottomContentDrawer.js";
+
 const MVP_SHOW_GUI_TOOLS = true;
 const MVP_SHOW_LEVELS = true;
 const MVP_SHOW_TIMELINE = true;
 const MVP_SHOW_CONSOLE = true;
-/** Use real Phaser (`@gamekit/runtime-web`) for play-in-editor instead of the canvas sim loop. */
-const USE_PHASER_PLAY_HOST = true;
-
-type SidebarTab = SidebarTabId;
-type BottomTab = "assets" | "studio" | "timeline" | "console";
-
-const ApiErrorSchema = z.object({ error: z.string().optional() });
-const SaveErrorSchema = z.object({ error: z.string().optional(), errors: z.array(z.string()).optional() });
 
 export function App() {
-  const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
   const { isTourOpen, openTour, closeTour } = useEditorTour();
-  const [projectPath, setProjectPath] = useState<string | null>(null);
-  const [recentProjects, setRecentProjects] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("gamekit_recent_projects");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
 
-  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [], guiComponents: [] });
-  /** Empty until /api/project resolves activeScene (create/skills may have no main.scene.json). */
-  const [currentSceneFile, setCurrentSceneFile] = useState<string>("");
-  const {
-    current: scene,
-    setCurrent: setScene,
-    push,
-    undo,
-    redo,
-    reset,
-    canUndo,
-    canRedo,
-    bypassRef: undoBypassRef,
-  } = useUndo<GameKitScene | undefined>(undefined);
-  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(new Set());
-  const selectedEntityId = [...selectedEntityIds][0]; // first selected for single-entity operations
-  const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
-  const [selectedGuiNodeId, setSelectedGuiNodeId] = useState<string | null>(null);
-  const [selectedComponentInstanceId, setSelectedComponentInstanceId] = useState<string | null>(null);
-  const [editingComponentId, setEditingComponentId] = useState<string | null>(null);
-  const [status, setStatus] = useState("Loading");
-  const [zoom, setZoom] = useState(1);
-  const [viewResetKey, setViewResetKey] = useState(0);
-  const [isDirty, setIsDirty] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [activeTab, setActiveTab] = useState<SidebarTab>("entities");
-  const [snap, setSnap] = useState(false);
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const clipboardRef = useRef<GameKitEntity | null>(null);
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const selectedEntityIdsRef = useRef(selectedEntityIds);
-  selectedEntityIdsRef.current = selectedEntityIds;
-  const selectedGuiNodeIdRef = useRef(selectedGuiNodeId);
-  selectedGuiNodeIdRef.current = selectedGuiNodeId;
-  const selectedComponentInstanceIdRef = useRef(selectedComponentInstanceId);
-  selectedComponentInstanceIdRef.current = selectedComponentInstanceId;
-
-  // Experimental play-in-editor state is preserved, but hidden for MVP.
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>("assets");
-  const isDesktop = useMemo(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
-    []
-  );
-  const [activeTool, setActiveTool] = useState<CanvasTool>("translate");
-  const [paintTileId, setPaintTileId] = useState(1);
-  const [tilePaintMode, setTilePaintMode] = useState<TilePaintMode>("brush");
-  const [brushSize, setBrushSize] = useState(1);
-  const [playFps, setPlayFps] = useState(0);
-  const [playFrameMs, setPlayFrameMs] = useState(0);
-  const [playDrawCalls, setPlayDrawCalls] = useState(0);
-  const [profilerSample, setProfilerSample] = useState<PlayProfilerSample>(EMPTY_PROFILER_SAMPLE);
-  const [profilerOpen, setProfilerOpen] = useState(false);
-  const [workspace, setWorkspace] = useState<SceneWorkspaceState>(() => createSceneWorkspace(""));
-  const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(() => new Set());
-  const [paneScenes, setPaneScenes] = useState<Record<string, GameKitScene>>({});
-  const sceneCacheRef = useRef<Map<string, GameKitScene>>(new Map());
-  const skipNextSceneLoadRef = useRef(false);
-  /**
-   * Play-mode game camera (world top-left of the locked screen).
-   * Scrolls only inside the design viewport frame — never the editor workspace pan.
-   */
-  const [playViewPan, setPlayViewPan] = useState<{ x: number; y: number } | null>(null);
-  /** Play session end state (fall death / win). */
-  const [playOutcome, setPlayOutcome] = useState<null | {
-    kind: "gameOver" | "win";
-    message: string;
-    livesLeft?: number;
-  }>(null);
-  const [playLives, setPlayLives] = useState<number | null>(null);
-  /** Active scene for Phaser play host (null when not using host / not playing). */
-  const [playHostScene, setPlayHostScene] = useState<GameKitScene | null>(null);
-  const [playHostKey, setPlayHostKey] = useState(0);
-  const [showGrid, setShowGrid] = useState(true);
-  const [showColliders, setShowColliders] = useState(true);
-  const sceneMtimeRef = useRef<number | null>(null);
+  // Layout and Drawer UI State
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<SidebarTabId>("entities");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
+  const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>("assets");
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [agentExpanded, setAgentExpanded] = useState(
     () => localStorage.getItem("gamekit:agent:expanded") === "1",
   );
-  const paletteImages = useImageCache(snapshot.assets);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [welcomeHubOpen, setWelcomeHubOpen] = useState(false);
   const [newProjectWizardOpen, setNewProjectWizardOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const commandPaletteOpenRef = useRef(false);
   commandPaletteOpenRef.current = commandPaletteOpen;
+
+  // Viewport and Tool Settings
+  const [activeTool, setActiveTool] = useState<CanvasTool>("translate");
+  const [paintTileId, setPaintTileId] = useState(1);
+  const [tilePaintMode, setTilePaintMode] = useState<TilePaintMode>("brush");
+  const [brushSize, setBrushSize] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [snap, setSnap] = useState(false);
   const [snapSize, setSnapSize] = useState(32);
-  const [logs, setLogs] = useState<ConsoleLog[]>([
-    { type: "system", message: "Playroom editor initialized.", timestamp: new Date() },
-    { type: "system", message: "Ready to edit scenes and image assets.", timestamp: new Date() }
-  ]);
-
-  const preSimulationSceneRef = useRef<GameKitScene | undefined>(undefined);
-  const pressedKeysRef = useRef<Set<string>>(new Set());
-
-  // GameKit physics loop refs
-  const controllersRef = useRef<Map<string, ReturnType<typeof createPlayerController>>>(new Map());
-  const rigidBodyRefs = useRef<Map<string, ReturnType<typeof createRigidBody>>>(new Map());
-  const animationStatesRef = useRef<Map<string, { currentFrame: number; elapsed: number }>>(new Map());
-  const timelineRef = useRef<TimelineState>({ elapsed: 0, playing: false });
-  const triggerStateRef = useRef<TriggerState>(new Set());
-  const collisionStateRef = useRef<CollisionState>(new Set());
-  const audioControllerRef = useRef<AudioController | null>(null);
-  const cameraFollowRef = useRef<ReturnType<typeof createCameraFollow> | null>(null);
-  const playViewPanRef = useRef<{ x: number; y: number } | null>(null);
-  const playSpawnRef = useRef<Vector2>({ x: 80, y: 300 });
-  const playLivesRef = useRef(3);
-  const playOutcomeRef = useRef<"none" | "gameOver" | "win">("none");
-  const fallCooldownRef = useRef(0);
-  const rulesEngineRef = useRef<RulesEngine | null>(null);
-  /** Entities mutated during the current physics step (for RulesEngine host). */
-  const playEntitiesRef = useRef<GameKitEntity[]>([]);
-  const playVarsRef = useRef<Record<string, unknown>>({});
-  const playSceneManagerRef = useRef<SceneManager | null>(null);
-  const playUnlockedLevelIdsRef = useRef<string[]>([]);
-  /** Full scene JSON cache for play-mode switchScene (menu → main, etc.). */
-  const playScenesCacheRef = useRef<Map<string, GameKitScene>>(new Map());
-  const playHotSwapRef = useRef<(sceneId: string) => boolean>(() => false);
-
-  const addConsoleLog = useCallback((type: ConsoleLog["type"], message: string) => {
-    setLogs((prev) => [...prev, { type, message, timestamp: new Date() }]);
-  }, []);
-
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => {
-      saveScene(sceneRef.current);
-    }, AUTO_SAVE_DELAY_MS);
-  }, []);
-
-  type ExampleProject = {
-    id: string;
-    name: string;
-    description: string;
-    path: string;
-  };
-
-  const [exampleProjects, setExampleProjects] = useState<ExampleProject[]>([]);
-  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
-  const [isLoadingProject, setIsLoadingProject] = useState(false);
-
-  useEffect(() => {
-    if (!isTauri) return;
-    import("@tauri-apps/api/core")
-      .then(({ invoke }) => invoke<ExampleProject[]>("list_example_projects"))
-      .then((list) => setExampleProjects(list ?? []))
-      .catch(() => setExampleProjects([]));
-  }, [isTauri]);
-
-  async function waitForEditorApi(timeoutMs = 10_000): Promise<void> {
-    const start = Date.now();
-    let lastError = "Editor API not reachable";
-    while (Date.now() - start < timeoutMs) {
-      try {
-        const res = await fetch(getApiUrl("/api/project"), { cache: "no-store" });
-        if (res.ok) {
-          await res.json();
-          return;
-        }
-        lastError = `API returned ${res.status}`;
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : "Connection failed";
-      }
-      await new Promise((r) => setTimeout(r, 150));
-    }
-    throw new Error(`${lastError}. Is the CLI built? Run \`pnpm build\` then retry.`);
-  }
-
-  const handleOpenProject = async () => {
-    try {
-      setProjectLoadError(null);
-      setStatus("Opening dialog...");
-      if (isTauri) {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const selected = await invoke<string | null>("select_directory");
-        if (selected) {
-          await loadProjectFolder(selected);
-        } else {
-          setStatus("Select a project folder to get started.");
-        }
-      } else {
-        const res = await fetch(getApiUrl("/api/system/pick-directory"), { method: "POST" });
-        if (res.ok) {
-          const data = (await res.json()) as { path?: string | null };
-          if (data.path) {
-            await loadProjectFolder(data.path);
-            return;
-          }
-        }
-        setStatus("Select a project folder to get started.");
-      }
-    } catch (e) {
-      console.error(e);
-      const msg = e instanceof Error ? e.message : String(e);
-      setStatus(msg);
-      setProjectLoadError(msg);
-    }
-  };
-
-  const loadProjectFolder = async (path: string) => {
-    setIsLoadingProject(true);
-    setProjectLoadError(null);
-    try {
-      if (isTauri) {
-        setStatus("Starting server…");
-        const { invoke } = await import("@tauri-apps/api/core");
-        const resolved = await invoke<string>("start_server", { projectPath: path });
-        setStatus("Waiting for editor API…");
-        await waitForEditorApi();
-        setStatus("Loading project…");
-        await refresh();
-        setProjectPath(resolved);
-        addToRecentProjects(resolved);
-        addConsoleLog("system", `Loaded project: ${resolved}`);
-      } else {
-        setStatus("Loading project…");
-        await refresh();
-        setProjectPath(path);
-        addToRecentProjects(path);
-        addConsoleLog("system", `Loaded project: ${path}`);
-      }
-      setWelcomeHubOpen(false);
-    } catch (e) {
-      console.error(e);
-      const msg =
-        typeof e === "string"
-          ? e
-          : e instanceof Error
-            ? e.message
-            : "Failed to load project";
-      setStatus(msg);
-      setProjectLoadError(msg);
-      if (isTauri) {
-        setProjectPath(null);
-      }
-    } finally {
-      setIsLoadingProject(false);
-    }
-  };
-
-  const handleCloseProject = async () => {
-    try {
-      if (isTauri) {
-        const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("stop_server");
-      }
-      setProjectPath(null);
-      setWelcomeHubOpen(true);
-      setStatus("Select a project folder to get started.");
-      addConsoleLog("system", "Closed project folder.");
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const addToRecentProjects = (path: string) => {
-    setRecentProjects((prev) => {
-      const filtered = prev.filter((p) => p !== path);
-      const updated = [path, ...filtered].slice(0, 5);
-      localStorage.setItem("gamekit_recent_projects", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  useEffect(() => () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); }, []);
-
-  async function refresh() {
-    const projectResponse = await fetch(getApiUrl("/api/project"));
-    const rawSnapshot = await projectResponse.json() as {
-      project?: { activeScene?: string };
-      scenes: string[];
-      assets: GameKitAsset[];
-      levels?: GameKitLevel[];
-      guiComponents?: import("@gamekit/schema").GuiComponent[];
-    };
-    const nextSnapshot: ProjectSnapshot = {
-      scenes: rawSnapshot.scenes ?? [],
-      assets: rawSnapshot.assets ?? [],
-      levels: rawSnapshot.levels ?? [],
-      guiComponents: rawSnapshot.guiComponents ?? []
-    };
-
-    // Honor project.activeScene, then current file if still listed, else first scene.
-    const activeFromProject = rawSnapshot.project?.activeScene;
-    const sceneFile =
-      (activeFromProject && nextSnapshot.scenes.includes(activeFromProject)
-        ? activeFromProject
-        : null) ??
-      (currentSceneFile && nextSnapshot.scenes.includes(currentSceneFile)
-        ? currentSceneFile
-        : null) ??
-      nextSnapshot.scenes[0] ??
-      "menu.scene.json";
-
-    setCurrentSceneFile(sceneFile);
-
-    const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(sceneFile)}`));
-    if (!sceneResponse.ok) {
-      throw new Error(`Failed to load scene ${sceneFile} (${sceneResponse.status})`);
-    }
-    const nextScene = parseScene(await sceneResponse.json());
-    setSnapshot(nextSnapshot);
-    reset(nextScene);
-    setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
-    setSelectedAssetId(nextSnapshot.assets[0]?.id);
-    setIsDirty(false);
-    setLastSaved(new Date());
-    setStatus("Ready");
-  }
-
-  useEffect(() => {
-    if (!isTauri) {
-      refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Load failed"));
-    } else {
-      setStatus("Select a project folder to get started.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (scene && currentSceneFile) {
-      sceneCacheRef.current.set(currentSceneFile, scene);
-      setPaneScenes((prev) =>
-        prev[currentSceneFile] === scene ? prev : { ...prev, [currentSceneFile]: scene },
-      );
-    }
-  }, [scene, currentSceneFile]);
-
-  useEffect(() => {
-    if (!currentSceneFile) return;
-    setWorkspace((ws) => {
-      const next = ws.openTabs.length === 0 ? createSceneWorkspace(currentSceneFile) : openSceneTab(ws, currentSceneFile);
-      return next.paneA === ws.paneA && next.openTabs.join() === ws.openTabs.join() && next.focused === ws.focused
-        ? ws
-        : next;
-    });
-  }, [currentSceneFile]);
-
-  useEffect(() => {
-    if (snapshot.scenes.length === 0) return;
-    setWorkspace((ws) => syncWorkspaceScenes(ws, snapshot.scenes, currentSceneFile || snapshot.scenes[0]));
-  }, [snapshot.scenes, currentSceneFile]);
-
-  useEffect(() => {
-    if (isTauri && !projectPath) return;
-    if (!currentSceneFile) return;
-    if (skipNextSceneLoadRef.current) {
-      skipNextSceneLoadRef.current = false;
-      return;
-    }
-
-    let cancelled = false;
-    fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(currentSceneFile)}`))
-      .then(async (r) => {
-        if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
-          throw new Error(
-            typeof (body as { error?: string }).error === "string"
-              ? (body as { error: string }).error
-              : `Failed to load ${currentSceneFile}`,
-          );
-        }
-        return r.json() as Promise<GameKitScene>;
-      })
-      .then((nextScene) => {
-        if (cancelled) return;
-        reset(nextScene);
-        setSelectedEntityIds(new Set(nextScene.entities[0]?.id ? [nextScene.entities[0].id] : []));
-        setSelectedGuiNodeId(null);
-        setSelectedComponentInstanceId(null);
-        setIsDirty(false);
-        setLastSaved(new Date());
-        setStatus("Ready");
-      })
-      .catch((e) => {
-        if (!cancelled) setStatus(e instanceof Error ? e.message : "Load failed");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [currentSceneFile, projectPath]);
-
-  // Keyboard shortcuts — command palette hotkey & editor gizmo/nudge shortcuts
-  useKeyboardShortcuts({
-    commandPaletteOpenRef,
-    isPlaying,
-    isPaused,
-    pressedKeysRef,
-    undo,
-    redo,
-    push,
-    saveScene,
-    sceneRef,
-    setActiveTool,
-    setTilePaintMode,
-    setBrushSize,
-    onToggleProfiler: () => setProfilerOpen((open) => !open),
-    selectedEntityIdsRef,
-    setIsDirty,
-    triggerAutoSave,
-    deleteEntity,
-    duplicateEntity,
-    pasteEntity,
-    clipboardRef,
-    selectedGuiNodeIdRef,
-    selectedComponentInstanceIdRef,
-    setSelectedEntityIds,
-    setSelectedGuiNodeId,
-    setSelectedComponentInstanceId,
-    snap,
-    snapSize,
-    setCommandPaletteOpen,
-  });
-
-  // Hot-reload scene when file changes on disk (agent / external edits)
-  useEffect(() => {
-    if (isPlaying || isDirty || !currentSceneFile) return;
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const res = await fetch(getApiUrl(`/api/scene/meta?file=${encodeURIComponent(currentSceneFile)}`));
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { mtimeMs?: number };
-        if (typeof data.mtimeMs !== "number") return;
-        if (sceneMtimeRef.current === null) {
-          sceneMtimeRef.current = data.mtimeMs;
-          return;
-        }
-        if (data.mtimeMs > sceneMtimeRef.current + 1) {
-          sceneMtimeRef.current = data.mtimeMs;
-          addConsoleLog("system", `Hot-reload: ${currentSceneFile} changed on disk`);
-          await refresh();
-        }
-      } catch {
-        // ignore
-      }
-    };
-    const id = window.setInterval(() => void poll(), 1500);
-    void poll();
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [currentSceneFile, isPlaying, isDirty, addConsoleLog]);
-
-  // Reset mtime baseline when scene file changes via UI
-  useEffect(() => {
-    sceneMtimeRef.current = null;
-  }, [currentSceneFile]);
-
-  useEffect(() => {
-    const other =
-      workspace.split === "none"
-        ? null
-        : workspace.focused === "b"
-          ? workspace.paneA
-          : workspace.paneB;
-    if (!other || sceneCacheRef.current.has(other) || paneScenes[other]) return;
-    let cancelled = false;
-    fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(other)}`))
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => {
-        if (cancelled) return;
-        const parsed = parseScene(data);
-        sceneCacheRef.current.set(other, parsed);
-        setPaneScenes((prev) => ({ ...prev, [other]: parsed }));
-      })
-      .catch(() => {
-        /* secondary pane can stay empty until fetch succeeds */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workspace.split, workspace.paneA, workspace.paneB, workspace.focused, paneScenes]);
-
-  // Legacy canvas physics loop (kept as fallback when Phaser host is disabled)
-  useEffect(() => {
-    if (USE_PHASER_PLAY_HOST) return;
-    if (!isPlaying || isPaused) return;
-
-    let frameId: number;
-    let lastTime = performance.now();
-    let accumulator = 0;
-    const fixedDt = 1 / 60;
-    const maxSteps = 10;
-    let fpsFrames = 0;
-    let fpsWindowStart = performance.now();
-
-    const tick = (timestamp: number) => {
-      const frameDt = Math.min((timestamp - lastTime) / 1000, 0.25);
-      lastTime = timestamp;
-      setPlayFrameMs(Math.round(frameDt * 1000 * 10) / 10);
-      fpsFrames += 1;
-      if (timestamp - fpsWindowStart >= 500) {
-        const fps = Math.round((fpsFrames * 1000) / (timestamp - fpsWindowStart));
-        setPlayFps(fps);
-        fpsFrames = 0;
-        fpsWindowStart = timestamp;
-      }
-
-      // Freeze simulation when the run has ended
-      if (playOutcomeRef.current !== "none") {
-        frameId = requestAnimationFrame(tick);
-        return;
-      }
-
-      accumulator += frameDt;
-
-      let steps = 0;
-      if (!sceneRef.current) {
-        frameId = requestAnimationFrame(tick);
-        return;
-      }
-      let workingScene: GameKitScene = sceneRef.current;
-
-      const baseInput = extendedInputFromPressedKeys(
-        pressedKeysRef.current,
-        sceneRef.current?.inputMap,
-      );
-      const input = mergeGamepadIntoInput(
-        baseInput,
-        sceneRef.current?.inputMap,
-        pollGamepad(),
-      );
-
-      let changed = false;
-
-      while (accumulator >= fixedDt && steps < maxSteps) {
-        const dt = fixedDt;
-        const solids: CollisionSolid[] = [];
-        const collisionContacts: CollisionEvent[] = [];
-
-        // 1. Gather all static non-trigger colliders
-        for (const entity of workingScene.entities) {
-          const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-          if (aabbCollider && aabbCollider.isStatic && !aabbCollider.isTrigger) {
-            const aabb = getEntityAabb(entity);
-            if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1, entityId: entity.id });
-          }
-          const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
-          if (circleCollider && circleCollider.isStatic && !circleCollider.isTrigger) {
-            const circle = getEntityCircle(entity);
-            if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1, entityId: entity.id });
-          }
-          const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
-          if (polygonCollider && polygonCollider.isStatic && !polygonCollider.isTrigger) {
-            const polygon = getEntityPolygon(entity);
-            if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
-          }
-        }
-
-        // 2. Map and update entities
-        const nextEntities: GameKitEntity[] = workingScene.entities.map((entity) => {
-          const ent = structuredClone(entity);
-          const transform = ent.components.find((c): c is TransformComponent => c.type === "Transform");
-          if (!transform) return ent;
-
-          const rb = rigidBodyRefs.current.get(ent.id);
-          const controller = controllersRef.current.get(ent.id);
-
-          if (rb) {
-            if (controller && (input.left || input.right || input.jump)) rb.wake();
-            if (rb.state.sleeping) return ent;
-
-            if (controller) {
-              controller.update(input, dt);
-              rb.state.velocity.x = controller.state.velocity.x;
-              rb.state.velocity.y = controller.state.velocity.y;
-              controller.state.velocity = rb.state.velocity;
-              controller.setGrounded(false);
-            }
-
-            rb.integrateForces(dt, workingScene.gravity || { x: 0, y: 9.8 * 60 });
-
-            transform.rotation = (transform.rotation ?? 0) + rb.state.angularVelocity * dt;
-
-            const aabbCollider = ent.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-            const circleCollider = ent.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
-            const polygonCollider = ent.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
-
-            if (aabbCollider) {
-              const movingAabb = getEntityAabb(ent);
-              if (movingAabb) {
-                const mask = aabbCollider.mask;
-                const disp = displacementFromVelocity(rb.state.velocity, dt);
-                const result = applyAabbCollisions(movingAabb, disp, solids, mask);
-                transform.position.x = result.position.x - aabbCollider.offset.x;
-                transform.position.y = result.position.y - aabbCollider.offset.y;
-                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                rb.updateSleep(dt, result.grounded);
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                if (controller && result.grounded) {
-                  controller.setGrounded(true);
-                }
-              }
-            } else if (circleCollider) {
-              const circle = getEntityCircle(ent);
-              if (circle) {
-                const mask = circleCollider.mask;
-                const disp = displacementFromVelocity(rb.state.velocity, dt);
-                const result = applyCircleCollisions(circle, disp, solids, mask);
-                transform.position.x = result.position.x - circleCollider.offset.x;
-                transform.position.y = result.position.y - circleCollider.offset.y;
-                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                rb.updateSleep(dt, result.grounded);
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                if (controller && result.grounded) {
-                  controller.setGrounded(true);
-                }
-              }
-            } else if (polygonCollider) {
-              const polygon = getEntityPolygon(ent);
-              if (polygon) {
-                const disp = displacementFromVelocity(rb.state.velocity, dt);
-                const result = applyPolygonCollisions(polygon, disp, solids, polygonCollider.mask);
-                transform.position.x = result.position.x - polygonCollider.offset.x;
-                transform.position.y = result.position.y - polygonCollider.offset.y;
-                rb.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                rb.updateSleep(dt, result.grounded);
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                if (controller && result.grounded) {
-                  controller.setGrounded(true);
-                }
-              }
-            } else {
-              transform.position.x += rb.state.velocity.x * dt;
-              transform.position.y += rb.state.velocity.y * dt;
-              rb.updateSleep(dt, false);
-            }
-
-            // Sync RigidBody state back to component
-            const rbComp = ent.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
-            if (rbComp) {
-              rbComp.velocity = { ...rb.state.velocity };
-              rbComp.angularVelocity = rb.state.angularVelocity;
-            }
-          } else if (controller) {
-            controller.update(input, dt);
-
-            const collider = ent.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-            const circleCollider = ent.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
-            const polygonCollider = ent.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
-
-            if (collider) {
-              const movingAabb = getEntityAabb(ent);
-              if (movingAabb) {
-                const disp = displacementFromVelocity(controller.state.velocity, dt);
-                const result = applyAabbCollisions(movingAabb, disp, solids, collider.mask);
-                transform.position.x = result.position.x - collider.offset.x;
-                transform.position.y = result.position.y - collider.offset.y;
-                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                // Keep horizontal intent from controller next frame; restore speed magnitude when grounded air-control
-                if (input.left || input.right) {
-                  const dir = Number(input.right) - Number(input.left);
-                  const pc = ent.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
-                  if (pc) controller.state.velocity.x = dir * pc.speed;
-                }
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                controller.setGrounded(result.grounded);
-              }
-            } else if (circleCollider) {
-              const circle = getEntityCircle(ent);
-              if (circle) {
-                const disp = displacementFromVelocity(controller.state.velocity, dt);
-                const result = applyCircleCollisions(circle, disp, solids, circleCollider.mask);
-                transform.position.x = result.position.x - circleCollider.offset.x;
-                transform.position.y = result.position.y - circleCollider.offset.y;
-                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                controller.setGrounded(result.grounded);
-              }
-            } else if (polygonCollider) {
-              const polygon = getEntityPolygon(ent);
-              if (polygon) {
-                const disp = displacementFromVelocity(controller.state.velocity, dt);
-                const result = applyPolygonCollisions(polygon, disp, solids, polygonCollider.mask);
-                transform.position.x = result.position.x - polygonCollider.offset.x;
-                transform.position.y = result.position.y - polygonCollider.offset.y;
-                controller.state.velocity = velocityFromDisplacement(result.velocity, dt);
-                for (const otherEntityId of result.collisionEntityIds) {
-                  collisionContacts.push({ entityId: ent.id, otherEntityId });
-                }
-                controller.setGrounded(result.grounded);
-              }
-            } else {
-              transform.position.x += controller.state.velocity.x * dt;
-              transform.position.y += controller.state.velocity.y * dt;
-            }
-          }
-
-          // Tweens + FollowPath (parity with mobile/web runtimes)
-          const tweens = ent.components.filter((c): c is TweenComponent => c.type === "Tween");
-          for (const tween of tweens) {
-            updateTween(tween, transform, dt);
-          }
-          const followPath = ent.components.find((c): c is FollowPathComponent => c.type === "FollowPath");
-          if (followPath) {
-            updateFollowPath(followPath, transform, dt);
-          }
-
-          // Update animations
-          const anim = ent.components.find((c): c is AnimationComponent => c.type === "Animation");
-          if (anim) {
-            let state = animationStatesRef.current.get(ent.id);
-            if (!state) {
-              state = { currentFrame: anim.currentFrame ?? 0, elapsed: 0 };
-              animationStatesRef.current.set(ent.id, state);
-            }
-            anim.currentFrame = updateAnimation(anim, state, dt);
-          }
-
-          return ent;
-        });
-
-        // Trigger enter/exit + script/FSM parity + rules engine collect/reach
-        playEntitiesRef.current = nextEntities;
-        const triggerUpdate = updateTriggerEvents(nextEntities, triggerStateRef.current);
-        triggerStateRef.current = triggerUpdate.active;
-        for (const event of triggerUpdate.events) {
-          addConsoleLog("physics", `Trigger ${event.type}: ${event.triggerEntityId} with ${event.otherEntityId}`);
-          if (event.type === "enter") {
-            rulesEngineRef.current?.handleTriggerEnter(event.triggerEntityId, event.otherEntityId);
-            for (const entityId of [event.triggerEntityId, event.otherEntityId]) {
-              const entity = nextEntities.find((e) => e.id === entityId);
-              if (!entity) continue;
-              const context =
-                rulesEngineRef.current?.scriptContext(entity.id, {
-                  rigidBodies: rigidBodyRefs.current,
-                  playSound: (assetId: string) => audioControllerRef.current?.playAsset?.(assetId),
-                  destroyEntity: (id: string) => {
-                    const idx = nextEntities.findIndex((e) => e.id === id);
-                    if (idx >= 0) nextEntities.splice(idx, 1);
-                  },
-                }) ?? {
-                  entityId: entity.id,
-                  entities: nextEntities,
-                  rigidBodies: rigidBodyRefs.current,
-                  playSound: (assetId: string) => audioControllerRef.current?.playAsset?.(assetId),
-                  destroyEntity: (id: string) => {
-                    const idx = nextEntities.findIndex((e) => e.id === id);
-                    if (idx >= 0) nextEntities.splice(idx, 1);
-                  },
-                };
-              const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
-              if (sm) {
-                if (!sm.currentState) sm.currentState = sm.initialState;
-                const stateObj = sm.states.find((s) => s.name === sm.currentState);
-                if (stateObj?.on?.["triggerEnter"]) {
-                  transitionFsm(sm, stateObj.on["triggerEnter"], context);
-                }
-              }
-              const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
-              if (script) {
-                evaluateScriptEvent("onTriggerEnter", script, context);
-                evaluateScriptEvent("triggerEnter", script, context);
-              }
-            }
-          }
-        }
-
-        // Collision enter/exit
-        const collisionUpdate = updateCollisionEvents(collisionContacts, collisionStateRef.current);
-        collisionStateRef.current = collisionUpdate.active;
-        for (const event of collisionUpdate.events) {
-          addConsoleLog("physics", `Collision contact: ${event.entityId} with ${event.otherEntityId}`);
-        }
-
-        workingScene = { ...workingScene, entities: nextEntities };
-        playTimeline(workingScene, timelineRef.current, dt);
-
-        // Side-scroller camera: follow CameraFollow target (or first player)
-        let followTargetId: string | undefined;
-        let followSmoothing = 0.2;
-        for (const entity of nextEntities) {
-          const cf = entity.components.find((c): c is CameraFollowComponent => c.type === "CameraFollow");
-          if (cf) {
-            followTargetId = cf.targetId || entity.id;
-            followSmoothing = cf.smoothing > 0 ? cf.smoothing : 0.2;
-            break;
-          }
-        }
-        if (!followTargetId) {
-          const playerEnt = nextEntities.find((e) =>
-            e.components.some((c) => c.type === "PlayerController"),
-          );
-          followTargetId = playerEnt?.id;
-        }
-        if (followTargetId) {
-          const target = nextEntities.find((e) => e.id === followTargetId);
-          const targetTransform = target?.components.find(
-            (c): c is TransformComponent => c.type === "Transform",
-          );
-          if (targetTransform) {
-            if (!cameraFollowRef.current) {
-              const initX = targetTransform.position.x - workingScene.viewport.width / 2;
-              const initY = targetTransform.position.y - workingScene.viewport.height / 2;
-              cameraFollowRef.current = createCameraFollow({
-                viewport: {
-                  x: workingScene.viewport.width,
-                  y: workingScene.viewport.height,
-                },
-                // Snappier in play so long levels don't leave the character off-screen
-                smoothing: Math.min(1, Math.max(0.18, followSmoothing)),
-                initial: {
-                  position: { x: initX, y: initY },
-                  zoom: 1,
-                },
-              });
-            }
-            const camState = cameraFollowRef.current.update(targetTransform.position);
-            const world = computeSceneWorldBounds(workingScene);
-            const clamped = clampPlayCamera(camState.position, workingScene, world);
-            cameraFollowRef.current.state.position = clamped;
-            playViewPanRef.current = clamped;
-          }
-        }
-
-        // Programmable game rules (fall hazards, objectives, win/lose)
-        playEntitiesRef.current = nextEntities;
-        rulesEngineRef.current?.update(dt);
-        const rulesState = rulesEngineRef.current?.getState();
-        if (rulesState) {
-          fallCooldownRef.current = rulesState.fallCooldown;
-          if (!rulesState.unlimitedLives) {
-            playLivesRef.current = rulesState.livesRemaining;
-          }
-        }
-
-        accumulator -= fixedDt;
-        steps++;
-        changed = true;
-      }
-
-      if (steps >= maxSteps) {
-        accumulator = 0;
-      }
-
-      if (changed && workingScene) {
-        setScene(workingScene);
-        if (playViewPanRef.current) {
-          setPlayViewPan({ ...playViewPanRef.current });
-        }
-      }
-
-      frameId = requestAnimationFrame(tick);
-    };
-
-    frameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, isPaused, setScene, addConsoleLog]);
-
-  async function saveScene(nextScene = scene) {
-    if (!nextScene) return;
-    setSaveState("saving");
-    try {
-      const response = await fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(nextScene)
-      });
-      if (!response.ok) {
-        const body = SaveErrorSchema.parse(await response.json());
-        throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
-      }
-      setSaveState("saved");
-      setIsDirty(false);
-      if (currentSceneFile) {
-        setDirtyFiles((prev) => {
-          if (!prev.has(currentSceneFile)) return prev;
-          const next = new Set(prev);
-          next.delete(currentSceneFile);
-          return next;
-        });
-      }
-      setLastSaved(new Date());
-      setStatus("Saved");
-      setTimeout(() => setSaveState("idle"), 2000);
-    } catch {
-      setSaveState("error");
-      setStatus("Save failed");
-      setTimeout(() => setSaveState("idle"), 3000);
-    }
-  }
-
-  async function deleteAsset(assetId: string) {
-    const usingSprites = scene?.entities.filter((e) =>
-      e.components.some((c) => c.type === "Sprite" && c.assetId === assetId)
-    );
-    if (usingSprites && usingSprites.length > 0) {
-      if (!confirm(`Asset "${assetId}" is used by ${usingSprites.length} entity(s). Delete anyway?`)) return;
-    }
-    setStatus("Deleting");
-    const response = await fetch(getApiUrl(`/api/assets?id=${encodeURIComponent(assetId)}`), { method: "DELETE" });
-    if (!response.ok) {
-      const body = ApiErrorSchema.parse(await response.json());
-      throw new Error(body.error ?? "Delete failed");
-    }
-    await refresh();
-    addConsoleLog("system", `Deleted asset ${assetId}`);
-  }
-
-  async function importAsset(file: File) {
-    setStatus("Importing");
-    const response = await fetch(getApiUrl(`/api/assets?filename=${encodeURIComponent(file.name)}`), { method: "POST", body: await file.arrayBuffer() });
-    if (!response.ok) throw new Error(ApiErrorSchema.parse(await response.json()).error ?? "Import failed");
-    await refresh();
-    addConsoleLog("system", `Imported asset from file: ${file.name}`);
-  }
-
-  function updateScene(mutator: (draft: GameKitScene) => void) {
-    push((draft) => {
-      if (draft) mutator(draft);
-    });
-    setIsDirty(true);
-    if (currentSceneFile) {
-      setDirtyFiles((prev) => {
-        if (prev.has(currentSceneFile)) return prev;
-        const next = new Set(prev);
-        next.add(currentSceneFile);
-        return next;
-      });
-    }
-    triggerAutoSave();
-  }
-
-  function activateScene(file: string, pane?: ScenePaneId) {
-    if (!file) return;
-    if (scene && currentSceneFile && currentSceneFile !== file) {
-      sceneCacheRef.current.set(currentSceneFile, structuredClone(scene));
-      setPaneScenes((prev) => ({ ...prev, [currentSceneFile]: scene }));
-    }
-    setWorkspace((ws) => {
-      const opened = openSceneTab(ws, file);
-      return pane ? focusScenePane(opened, pane) : opened;
-    });
-    if (file === currentSceneFile) return;
-    const cached = sceneCacheRef.current.get(file);
-    if (cached) {
-      skipNextSceneLoadRef.current = true;
-      reset(cached);
-      setSelectedEntityIds(new Set());
-      setSelectedGuiNodeId(null);
-      setSelectedComponentInstanceId(null);
-      setIsDirty(dirtyFiles.has(file));
-      setCurrentSceneFile(file);
-      return;
-    }
-    setCurrentSceneFile(file);
-  }
-
-  function handleCloseSceneTab(file: string) {
-    const next = closeSceneTab(workspace, file);
-    setWorkspace(next);
-    const focused = focusedSceneFile(next);
-    if (focused && focused !== currentSceneFile) activateScene(focused, next.focused);
-  }
-
-  function handleSplitChange(split: SplitMode) {
-    setWorkspace((ws) => setSceneSplit(ws, split, snapshot.scenes));
-  }
-
-  function addEntity() {
-    updateScene((draft) => {
-      const entity = createEntity("Entity", { x: 180, y: 240 });
-      const assetId = selectedAssetId ?? snapshot.assets[0]?.id;
-      if (assetId) {
-        entity.components.push({ type: "Sprite", assetId, width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } });
-      }
-      entity.components.push({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: false });
-      draft.entities.push(entity);
-      setSelectedEntityIds(new Set([entity.id]));
-      addConsoleLog("system", `Created standard entity ${entity.name}`);
-    });
-  }
-
-  function addTemplateEntity(templateType: "empty" | "sprite" | "collider" | "player" | "camera") {
-    updateScene((draft) => {
-      const entity = createEntity(templateType.charAt(0).toUpperCase() + templateType.slice(1), { x: 180, y: 240 });
-      if (templateType === "sprite" || templateType === "player") {
-        const assetId = selectedAssetId ?? snapshot.assets[0]?.id;
-        if (assetId) {
-          entity.components.push(GameKitComponentSchema.parse({ type: "Sprite", assetId, width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } }));
-        }
-      }
-      if (templateType === "collider" || templateType === "player") {
-        entity.components.push(GameKitComponentSchema.parse({ type: "AabbCollider", offset: { x: -32, y: -32 }, size: { x: 64, y: 64 }, isStatic: templateType === "collider" }));
-      }
-      if (templateType === "player") {
-        entity.components.push(GameKitComponentSchema.parse({ type: "PlayerController", speed: 320, jumpVelocity: 600, gravity: 1800 }));
-      }
-      if (templateType === "camera") {
-        entity.components.push(GameKitComponentSchema.parse({ type: "CameraFollow", targetId: entity.id, smoothing: 0.15 }));
-      }
-      draft.entities.push(entity);
-      setSelectedEntityIds(new Set([entity.id]));
-      addConsoleLog("system", `Added template entity: [${templateType.toUpperCase()}] ${entity.name}`);
-    });
-  }
-
-  function handleSpawnEntityWithSprite(assetId: string, width: number, height: number, category?: string) {
-    updateScene((draft) => {
-      const entity = createEntity(assetId, { x: 300, y: 200 });
-      entity.components.push(
-        GameKitComponentSchema.parse({
-          type: "Sprite",
-          assetId,
-          width,
-          height,
-          anchor: { x: 0.5, y: 0.5 },
-        })
-      );
-      if (category === "character" || category === "enemy" || category === "item" || category === "tile") {
-        entity.components.push(
-          GameKitComponentSchema.parse({
-            type: "AabbCollider",
-            offset: { x: -width / 2, y: -height / 2 },
-            size: { x: width, y: height },
-            isStatic: category === "tile",
-          })
-        );
-      }
-      draft.entities.push(entity);
-      setSelectedEntityIds(new Set([entity.id]));
-      addConsoleLog("system", `Spawned sprite entity "${entity.name}" in scene.`);
-    });
-  }
-
-  function handleSpawnEntityWithAnimation(
-    assetId: string,
-    frameWidth: number,
-    frameHeight: number,
-    totalFrames: number,
-    fps: number
-  ) {
-    updateScene((draft) => {
-      const entity = createEntity(assetId, { x: 300, y: 200 });
-      entity.components.push(
-        GameKitComponentSchema.parse({
-          type: "Sprite",
-          assetId,
-          width: frameWidth,
-          height: frameHeight,
-          anchor: { x: 0.5, y: 0.5 },
-        }),
-        GameKitComponentSchema.parse({
-          type: "Animation",
-          assetId,
-          frameWidth,
-          frameHeight,
-          totalFrames,
-          framesPerSecond: fps,
-          loop: true,
-        }),
-        GameKitComponentSchema.parse({
-          type: "AabbCollider",
-          offset: { x: -frameWidth / 2, y: -frameHeight / 2 },
-          size: { x: frameWidth, y: frameHeight },
-          isStatic: false,
-        })
-      );
-      draft.entities.push(entity);
-      setSelectedEntityIds(new Set([entity.id]));
-      addConsoleLog("system", `Spawned animated character "${entity.name}" (${totalFrames} frames) in scene.`);
-    });
-  }
-
-  function handleAttachAudioToEntity(assetId: string, isBgm?: boolean) {
-    updateScene((draft) => {
-      if (isBgm) {
-        let bgmEntity = draft.entities.find((e) => e.id === "bgm-music" || e.name === "bgm-music");
-        if (!bgmEntity) {
-          bgmEntity = createEntity("bgm-music", { x: 0, y: 0 });
-          bgmEntity.components.push(
-            GameKitComponentSchema.parse({
-              type: "AudioSource",
-              assetId,
-              volume: 0.8,
-              loop: true,
-              playOnStart: true,
-            })
-          );
-          draft.entities.push(bgmEntity);
-        } else {
-          bgmEntity.components = bgmEntity.components.filter((c) => c.type !== "AudioSource");
-          bgmEntity.components.push(
-            GameKitComponentSchema.parse({
-              type: "AudioSource",
-              assetId,
-              volume: 0.8,
-              loop: true,
-              playOnStart: true,
-            })
-          );
-        }
-        addConsoleLog("system", `Set scene background music track to "${assetId}".`);
-      } else if (selectedEntityId) {
-        const entity = draft.entities.find((e) => e.id === selectedEntityId);
-        if (entity) {
-          entity.components = entity.components.filter((c) => c.type !== "AudioSource");
-          entity.components.push(
-            GameKitComponentSchema.parse({
-              type: "AudioSource",
-              assetId,
-              volume: 1,
-              loop: false,
-              playOnStart: false,
-            })
-          );
-          addConsoleLog("system", `Attached sound "${assetId}" to entity "${entity.name}".`);
-        }
-      }
-    });
-  }
-
-  function deleteEntity(id: string) {
-    updateScene((draft) => {
-      const index = draft.entities.findIndex((e) => e.id === id);
-      if (index === -1) return;
-      const name = draft.entities[index].name;
-      draft.entities.splice(index, 1);
-      setSelectedEntityIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        if (next.size === 0) {
-          const fallback = draft.entities[Math.min(index, draft.entities.length - 1)]?.id;
-          if (fallback) next.add(fallback);
-        }
-        return next;
-      });
-      addConsoleLog("system", `Deleted entity ${name}`);
-    });
-  }
-
-  function duplicateEntity(id: string) {
-    const current = scene;
-    if (!current) return;
-    const source = current.entities.find((e) => e.id === id);
-    if (!source) return;
-    pasteEntity(source);
-  }
-
-  function pasteEntity(source: GameKitEntity) {
-    updateScene((draft) => {
-      const clone = GameKitEntitySchema.parse(structuredClone(source));
-      clone.id = crypto.randomUUID();
-      clone.name = `${source.name} (copy)`;
-      const transform = findComponent<TransformComponent>(clone, "Transform");
-      if (transform) {
-        transform.position.x += 32;
-        transform.position.y += 32;
-      }
-      const sourceIndex = draft.entities.findIndex((e) => e.id === source.id);
-      draft.entities.splice(sourceIndex + 1, 0, clone);
-      clipboardRef.current = GameKitEntitySchema.parse(structuredClone(clone));
-      setSelectedEntityIds(new Set([clone.id]));
-      addConsoleLog("system", `Duplicated entity to ${clone.name}`);
-    });
-  }
-
-  function handleCreateScene(name: string) {
-    const newScene = createEmptyScene(name);
-    const fileName = `${newScene.id}.scene.json`;
-    fetch(getApiUrl(`/api/scene?file=${fileName}`), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(newScene)
-    }).then(() => {
-      setSnapshot((prev) => ({ ...prev, scenes: [...prev.scenes, fileName] }));
-      setCurrentSceneFile(fileName);
-      refresh();
-      addConsoleLog("system", `Created new scene configuration file: ${fileName}`);
-    });
-  }
-
-  function handleDeleteScene(sceneId: string) {
-    if (snapshot.scenes.length <= 1) { alert("Cannot delete the last scene"); return; }
-    fetch(getApiUrl(`/api/scene?file=${sceneId}`), { method: "DELETE" }).then(() => {
-      const remaining = snapshot.scenes.filter((s) => s !== sceneId);
-      setSnapshot((prev) => ({ ...prev, scenes: remaining }));
-      setWorkspace((ws) => closeSceneTab(ws, sceneId));
-      if (currentSceneFile === sceneId) setCurrentSceneFile(remaining[0]);
-      refresh();
-      addConsoleLog("system", `Deleted scene configuration file ${sceneId}`);
-    });
-  }
-
-  /** Scene files are stored as `*.scene.json`; levels may legacy-store bare ids like `main`. */
-  function normalizeSceneFile(id: string): string {
-    if (!id) return id;
-    return id.endsWith(".scene.json") ? id : `${id}.scene.json`;
-  }
-
-  function sceneFileMatches(a: string, b: string): boolean {
-    return normalizeSceneFile(a) === normalizeSceneFile(b);
-  }
-
-  function commitLevels(levels: GameKitLevel[]) {
-    setSnapshot((prev) => ({ ...prev, levels }));
-    persistProject({ levels }).catch((e) => {
-      setStatus(e instanceof Error ? e.message : "Failed to save levels");
-    });
-  }
-
-  function handleCreateLevel(name: string) {
-    const baseId = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "") || "level";
-    const existing = new Set(snapshot.levels.map((l) => l.id));
-    let id = baseId;
-    let n = 2;
-    while (existing.has(id)) {
-      id = `${baseId}-${n++}`;
-    }
-    const newLevel: GameKitLevel = {
-      id,
-      name,
-      order: snapshot.levels.length + 1,
-      sceneIds: [],
-      unlocked: snapshot.levels.length === 0,
-    };
-    commitLevels([...snapshot.levels, newLevel]);
-    addConsoleLog("system", `Created new game level ${name}`);
-  }
-
-  function handleDeleteLevel(levelId: string) {
-    commitLevels(snapshot.levels.filter((l) => l.id !== levelId));
-    addConsoleLog("system", `Deleted game level ID: ${levelId}`);
-  }
-
-  function handleToggleUnlockLevel(levelId: string) {
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId ? { ...l, unlocked: !l.unlocked } : l
-      )
-    );
-  }
-
-  function handleReorderLevels(levels: GameKitLevel[]) {
-    commitLevels(levels);
-  }
-
-  function handleAssignSceneToLevel(levelId: string, sceneId: string) {
-    const file = normalizeSceneFile(sceneId);
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId && !l.sceneIds.some((s) => sceneFileMatches(s, file))
-          ? { ...l, sceneIds: [...l.sceneIds.map(normalizeSceneFile), file] }
-          : l.id === levelId
-            ? { ...l, sceneIds: l.sceneIds.map(normalizeSceneFile) }
-            : l
-      )
-    );
-  }
-
-  function handleRemoveSceneFromLevel(levelId: string, sceneId: string) {
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId
-          ? {
-              ...l,
-              sceneIds: l.sceneIds
-                .map(normalizeSceneFile)
-                .filter((s) => !sceneFileMatches(s, sceneId)),
-            }
-          : l
-      )
-    );
-  }
-
-  function handleUpdateLevel(levelId: string, patch: Partial<GameKitLevel>) {
-    commitLevels(
-      snapshot.levels.map((l) => (l.id === levelId ? { ...l, ...patch } : l)),
-    );
-  }
-
-  /** Sync unlock flags from play SceneManager back into the project. */
-  function syncPlayLevelUnlocksFromManager() {
-    const manager = playSceneManagerRef.current;
-    if (!manager) return;
-    const live = manager.getLevels();
-    const unlockedIds = live.filter((l) => l.unlocked).map((l) => l.id);
-    const prev = playUnlockedLevelIdsRef.current;
-    const newly = unlockedIds.filter((id) => !prev.includes(id));
-    const lost = prev.filter((id) => !unlockedIds.includes(id));
-    if (newly.length === 0 && lost.length === 0) return;
-    playUnlockedLevelIdsRef.current = unlockedIds;
-    setSnapshot((snap) => {
-      const nextLevels = snap.levels.map((l) => {
-        const liveLevel = live.find((x) => x.id === l.id);
-        return liveLevel ? { ...l, unlocked: liveLevel.unlocked } : l;
-      });
-      void persistProject({ levels: nextLevels }).catch((e) => {
-        setStatus(e instanceof Error ? e.message : "Failed to save levels");
-      });
-      return { ...snap, levels: nextLevels };
-    });
-    for (const id of newly) {
-      const level = live.find((l) => l.id === id);
-      addConsoleLog("system", `Unlocked level: ${level?.name ?? id}`);
-    }
-  }
-
-  // GUI node management
-  function addGuiNode(type: GuiNode["type"]) {
-    updateScene((draft) => {
-      const base = {
-        id: createId(type),
-        x: 20,
-        y: 20,
-        width: 200,
-        height: 40,
-        visible: true,
-        interactive: false
-      };
-      let node: GuiNode;
-      switch (type) {
-        case "Text":
-          node = { ...base, type: "Text", text: "Text", fontSize: 16, color: "#ffffff", align: "left" };
-          break;
-        case "Button":
-          node = { ...base, type: "Button", text: "Button", action: "", fontSize: 14, color: "#ffffff", backgroundColor: "#333333" };
-          break;
-        case "Image":
-          node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" };
-          break;
-      }
-      draft.gui.nodes.push(node);
-      setSelectedGuiNodeId(node.id);
-      addConsoleLog("system", `Created GUI ${type} node: ${node.id}`);
-    });
-  }
-
-  function deleteGuiNode(id: string) {
-    updateScene((draft) => {
-      const index = draft.gui.nodes.findIndex((n) => n.id === id);
-      if (index === -1) return;
-      draft.gui.nodes.splice(index, 1);
-      if (selectedGuiNodeId === id) {
-        setSelectedGuiNodeId(null);
-      }
-      addConsoleLog("system", `Deleted GUI node: ${id}`);
-    });
-  }
-
-  function updateGuiNode(mutator: (node: GuiNode) => void) {
-    if (!selectedGuiNodeId) return;
-    updateScene((draft) => {
-      const node = draft.gui.nodes.find((n) => n.id === selectedGuiNodeId);
-      if (node) mutator(node);
-    });
-  }
-
-  // GUI Component definition management
-  function addGuiComponent(name: string) {
-    const component = createGuiComponent(name);
-    const newComponents = [...snapshot.guiComponents, component];
-    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
-    setEditingComponentId(component.id);
-    persistProject({ guiComponents: newComponents });
-    addConsoleLog("system", `Created GUI component: ${name}`);
-  }
-
-  function deleteGuiComponent(componentId: string) {
-    const newComponents = snapshot.guiComponents.filter((c) => c.id !== componentId);
-    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
-    updateScene((draft) => {
-      draft.gui.componentInstances = (draft.gui.componentInstances ?? []).filter(
-        (inst) => inst.componentId !== componentId
-      );
-    });
-    if (editingComponentId === componentId) setEditingComponentId(null);
-    persistProject({ guiComponents: newComponents });
-    addConsoleLog("system", `Deleted GUI component`);
-  }
-
-  function addNodeToEditingComponent(type: GuiNode["type"]) {
-    if (!editingComponentId) return;
-    const base = { id: createId(type), x: 10, y: 10, width: 200, height: 40, visible: true, interactive: false };
-    let node: GuiNode;
-    switch (type) {
-      case "Text": node = { ...base, type: "Text", text: "Text", fontSize: 16, color: "#ffffff" }; break;
-      case "Button": node = { ...base, type: "Button", text: "Button", fontSize: 14, color: "#ffffff", backgroundColor: "#333333" }; break;
-      case "Image": node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" }; break;
-    }
-    const newComponents = snapshot.guiComponents.map((c) =>
-      c.id === editingComponentId ? { ...c, nodes: [...c.nodes, node] } : c
-    );
-    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
-    persistProject({ guiComponents: newComponents });
-  }
-
-  function deleteNodeFromEditingComponent(nodeId: string) {
-    if (!editingComponentId) return;
-    const newComponents = snapshot.guiComponents.map((c) =>
-      c.id === editingComponentId ? { ...c, nodes: c.nodes.filter((n) => n.id !== nodeId) } : c
-    );
-    setSnapshot((prev) => ({ ...prev, guiComponents: newComponents }));
-    persistProject({ guiComponents: newComponents });
-  }
-
-  // GUI Component instance management
-  function addGuiComponentInstance(componentId: string) {
-    updateScene((draft) => {
-      if (!draft.gui.componentInstances) draft.gui.componentInstances = [];
-      const instance = createGuiComponentInstance(componentId, { x: 20, y: 20 });
-      draft.gui.componentInstances.push(instance);
-      setSelectedComponentInstanceId(instance.id);
-      setSelectedEntityIds(new Set());
-      setSelectedGuiNodeId(null);
-    });
-    addConsoleLog("system", `Placed component instance`);
-  }
-
-  function deleteGuiComponentInstance(instanceId: string) {
-    updateScene((draft) => {
-      draft.gui.componentInstances = (draft.gui.componentInstances ?? []).filter(
-        (i) => i.id !== instanceId
-      );
-    });
-    if (selectedComponentInstanceId === instanceId) setSelectedComponentInstanceId(null);
-  }
-
-  function updateGuiComponentInstance(mutator: (inst: import("@gamekit/schema").GuiComponentInstance) => void) {
-    if (!selectedComponentInstanceId) return;
-    updateScene((draft) => {
-      const inst = (draft.gui.componentInstances ?? []).find((i) => i.id === selectedComponentInstanceId);
-      if (inst) mutator(inst);
-    });
-  }
-
-  async function persistProject(partial: Partial<import("@gamekit/schema").GameKitProject>) {
-    await fetch(getApiUrl("/api/project"), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(partial),
-    });
-  }
-
-  function applyPlaySceneRuntime(nextScene: GameKitScene, manager: SceneManager | null) {
-    playEntitiesRef.current = structuredClone(nextScene.entities);
-    animationStatesRef.current.clear();
-    triggerStateRef.current.clear();
-    collisionStateRef.current.clear();
-    timelineRef.current = { elapsed: 0, playing: nextScene.timeline?.playing ?? true };
-    playOutcomeRef.current = "none";
-    setPlayOutcome(null);
-    fallCooldownRef.current = 0;
-
-    const currentLevel =
-      findLevelForScene(snapshot.levels, nextScene.id) ??
-      findLevelForScene(snapshot.levels, `${nextScene.id}.scene.json`);
-    const rules = resolveGameRules(nextScene.gameRules);
-    playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
-    setPlayLives(rules.lives > 0 ? rules.lives : null);
-
-    const physicsState = createPlayPhysicsState(nextScene);
-    controllersRef.current = physicsState.controllers;
-    rigidBodyRefs.current = physicsState.rigidBodies;
-
-    const cameraState = initializePlayCamera(nextScene, rules);
-    if (cameraState.spawnPoint) playSpawnRef.current = cameraState.spawnPoint;
-    cameraFollowRef.current = cameraState.cameraFollow;
-    playViewPanRef.current = cameraState.pan;
-    setPlayViewPan(cameraState.pan);
-
-    const bindManagerApi = () => ({
-      switchScene: (sceneId: string) => playHotSwapRef.current(sceneId),
-      nextScene: () => {
-        const ok = manager?.nextScene() ?? false;
-        if (ok && manager) {
-          const id = manager.getState().currentSceneId;
-          if (id) playHotSwapRef.current(id);
-        }
-        return ok;
-      },
-      nextLevel: () => {
-        const ok = manager?.nextLevel() ?? false;
-        if (ok) {
-          syncPlayLevelUnlocksFromManager();
-          const id = manager?.getState().currentSceneId;
-          if (id) playHotSwapRef.current(id);
-        }
-        return ok;
-      },
-      unlockLevel: (levelId: string) => {
-        const ok = manager?.unlockLevel(levelId) ?? false;
-        if (ok) syncPlayLevelUnlocksFromManager();
-        return ok;
-      },
-      completeLevel: (levelId: string) => {
-        const unlocked = manager?.completeLevel(levelId) ?? null;
-        if (unlocked) {
-          addConsoleLog("system", `completeLevel("${levelId}") → unlocked "${unlocked}"`);
-          syncPlayLevelUnlocksFromManager();
-        } else {
-          addConsoleLog("system", `completeLevel("${levelId}") — no next level to unlock`);
-        }
-        return unlocked;
-      },
-      getState: () => ({ currentLevelId: manager?.getState().currentLevelId ?? null }),
-      setPersistentVar: (key: string, value: unknown) => {
-        manager?.setPersistentVar(key, value);
-        playVarsRef.current[key] = value;
-      },
-      getPersistentVar: (key: string, defaultValue?: unknown) =>
-        manager?.getPersistentVar(key, defaultValue) ?? playVarsRef.current[key] ?? defaultValue,
-    });
-
-    rulesEngineRef.current = new RulesEngine(nextScene, {
-      getEntities: () => playEntitiesRef.current,
-      destroyEntity: (id) => {
-        const idx = playEntitiesRef.current.findIndex((e) => e.id === id);
-        if (idx >= 0) playEntitiesRef.current.splice(idx, 1);
-      },
-      getPlayerTransforms: () =>
-        playEntitiesRef.current
-          .filter((e) => e.components.some((c) => c.type === "PlayerController"))
-          .map((e) => {
-            const t = e.components.find((c): c is TransformComponent => c.type === "Transform");
-            return t ? { entityId: e.id, position: { ...t.position } } : null;
-          })
-          .filter((p): p is { entityId: string; position: Vector2 } => p !== null),
-      setPlayerPosition: (entityId, position) => {
-        const entity = playEntitiesRef.current.find((e) => e.id === entityId);
-        const t = entity?.components.find((c): c is TransformComponent => c.type === "Transform");
-        if (t) {
-          t.position.x = position.x;
-          t.position.y = position.y;
-        }
-      },
-      resetPlayerMotion: (entityId) => {
-        const controller = controllersRef.current.get(entityId);
-        if (controller) {
-          controller.state.velocity = { x: 0, y: 0 };
-          controller.setGrounded(false);
-        }
-        const rb = rigidBodyRefs.current.get(entityId);
-        if (rb) rb.state.velocity = { x: 0, y: 0 };
-        const entity = playEntitiesRef.current.find((e) => e.id === entityId);
-        const rbComp = entity?.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
-        if (rbComp) rbComp.velocity = { x: 0, y: 0 };
-      },
-      sceneManager: bindManagerApi(),
-      playSound: (assetId) => audioControllerRef.current?.playAsset?.(assetId),
-      onOutcome: (kind, message) => {
-        if (kind === "won") {
-          playOutcomeRef.current = "win";
-          setPlayOutcome({ kind: "win", message, livesLeft: playLivesRef.current });
-          setIsPaused(true);
-          addConsoleLog("system", `WIN — ${message}`);
-          // Persist unlocks from completeLevel / level.onComplete
-          syncPlayLevelUnlocksFromManager();
-        } else {
-          playOutcomeRef.current = "gameOver";
-          setPlayOutcome({ kind: "gameOver", message, livesLeft: playLivesRef.current });
-          setIsPaused(true);
-          addConsoleLog("system", `GAME OVER — ${message}`);
-        }
-      },
-      onLivesChange: (lives) => {
-        if (lives === null) {
-          setPlayLives(null);
-        } else {
-          playLivesRef.current = lives;
-          setPlayLives(lives);
-        }
-      },
-      onCollectProgress: (tag, collected, target) => {
-        addConsoleLog("system", `Collect ${tag}: ${collected}/${target}`);
-      },
-    }, {
-      level: currentLevel
-        ? {
-            ...currentLevel,
-            sceneIds: currentLevel.sceneIds.map((s) => normalizeSceneFile(s)),
-          }
-        : null,
-      initialSpawn: cameraState.spawnPoint,
-    });
-    rulesEngineRef.current.start();
-
-    audioControllerRef.current?.dispose();
-    audioControllerRef.current = createAudioController(nextScene.entities ?? [], (assetId) => {
-      const asset = snapshot.assets.find((a) => a.id === assetId);
-      if (!asset) return undefined;
-      return getApiUrl(`/gamekit/assets/${asset.file}`);
-    });
-
-    // Show target scene GUI/entities without dirtying the editor document permanently.
-    undoBypassRef.current = true;
-    setScene(GameKitSceneSchema.parse(structuredClone(nextScene)));
-    undoBypassRef.current = false;
-  }
-
-  // Play controls
-  async function handlePlayToggle() {
-    if (!isPlaying) {
-      if (!scene) return;
-      preSimulationSceneRef.current = GameKitSceneSchema.parse(structuredClone(scene));
-
-      // Initialize all simulation states
-      controllersRef.current.clear();
-      rigidBodyRefs.current.clear();
-      animationStatesRef.current.clear();
-      timelineRef.current = { elapsed: 0, playing: scene?.timeline?.playing ?? true };
-      triggerStateRef.current.clear();
-      collisionStateRef.current.clear();
-      cameraFollowRef.current = null;
-      playViewPanRef.current = null;
-      setPlayViewPan(null);
-      playOutcomeRef.current = "none";
-      setPlayOutcome(null);
-      fallCooldownRef.current = 0;
-      playVarsRef.current = {};
-      rulesEngineRef.current = null;
-      playSceneManagerRef.current = null;
-      playEntitiesRef.current = structuredClone(scene.entities);
-
-      // Prefetch all scenes for menu shell navigation
-      const sceneMap: Record<string, ReturnType<typeof loadScene>> = {};
-      playScenesCacheRef.current = new Map();
-      const indexScene = (fileKey: string, data: GameKitScene) => {
-        const key = normalizeSceneFile(fileKey);
-        const bare = key.replace(/\.scene\.json$/i, "");
-        const loaded = loadScene(data);
-        playScenesCacheRef.current.set(key, data);
-        playScenesCacheRef.current.set(bare, data);
-        playScenesCacheRef.current.set(data.id, data);
-        sceneMap[key] = loaded;
-        sceneMap[bare] = loaded;
-        sceneMap[data.id] = loaded;
-      };
-      indexScene(currentSceneFile, scene);
-
-      await Promise.all(
-        snapshot.scenes.map(async (file) => {
-          const key = normalizeSceneFile(file);
-          if (sceneFileMatches(key, currentSceneFile)) return;
-          try {
-            const res = await fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(key)}`));
-            if (!res.ok) return;
-            const parsed = parseScene(await res.json());
-            indexScene(key, parsed);
-          } catch {
-            /* leave missing scenes out of the map */
-          }
-        }),
-      );
-
-      for (const level of snapshot.levels) {
-        for (const sid of level.sceneIds) {
-          const key = normalizeSceneFile(sid);
-          if (!sceneMap[key] && !sceneMap[sid]) {
-            sceneMap[key] = loadScene(createEmptyScene(key.replace(/\.scene\.json$/, "")));
-          }
-        }
-      }
-
-      const levelsClone = structuredClone(snapshot.levels).map((l) => ({
-        ...l,
-        sceneIds: l.sceneIds.map((s) => normalizeSceneFile(s)),
-      }));
-      const manager = new SceneManager(
-        {
-          scenes: sceneMap,
-          transition: { type: "none", duration: 0 },
-        },
-        levelsClone,
-        new InMemoryStorage(),
-      );
-      const currentLevel =
-        findLevelForScene(snapshot.levels, scene.id) ??
-        findLevelForScene(snapshot.levels, currentSceneFile);
-      if (currentLevel) {
-        manager.setActiveLevel(
-          currentLevel.id,
-          normalizeSceneFile(currentSceneFile || currentLevel.sceneIds[0] || scene.id),
-        );
-      }
-      playSceneManagerRef.current = manager;
-      playUnlockedLevelIdsRef.current = manager.getLevels().filter((l) => l.unlocked).map((l) => l.id);
-
-      playHotSwapRef.current = (sceneId: string) => {
-        const ok =
-          manager.switchScene(sceneId) ||
-          manager.switchScene(normalizeSceneFile(sceneId));
-        if (!ok) return false;
-        const resolved =
-          playScenesCacheRef.current.get(sceneId) ??
-          playScenesCacheRef.current.get(normalizeSceneFile(sceneId)) ??
-          playScenesCacheRef.current.get(manager.getState().currentSceneId ?? "");
-        if (!resolved) {
-          addConsoleLog("warn", `switchScene → ${sceneId} (no scene data cached)`);
-          return false;
-        }
-        if (USE_PHASER_PLAY_HOST) {
-          playOutcomeRef.current = "none";
-          setPlayOutcome(null);
-          setIsPaused(false);
-          const rules = resolveGameRules(resolved.gameRules);
-          playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
-          setPlayLives(rules.lives > 0 ? rules.lives : null);
-          playEntitiesRef.current = structuredClone(resolved.entities);
-          setPlayHostScene(GameKitSceneSchema.parse(structuredClone(resolved)));
-          setPlayHostKey((k) => k + 1);
-        } else {
-          applyPlaySceneRuntime(resolved, manager);
-        }
-        addConsoleLog("system", `switchScene → ${resolved.id} (${resolved.name})`);
-        return true;
-      };
-
-      if (USE_PHASER_PLAY_HOST) {
-        const rules = resolveGameRules(scene.gameRules);
-        playLivesRef.current = rules.lives > 0 ? rules.lives : 0;
-        setPlayLives(rules.lives > 0 ? rules.lives : null);
-        playOutcomeRef.current = "none";
-        setPlayOutcome(null);
-        playEntitiesRef.current = structuredClone(scene.entities);
-        setPlayHostScene(GameKitSceneSchema.parse(structuredClone(scene)));
-        setPlayHostKey((k) => k + 1);
-        const objCount = rules.objectives?.length ?? 0;
-        addConsoleLog(
-          "system",
-          `Game rules: onFall=${rules.onFall}` +
-            (rules.onFall === "respawn" ? `, lives=${rules.lives || "∞"}` : "") +
-            (objCount > 0 ? `, objectives=${objCount} (${rules.objectiveMode})` : "") +
-            (currentLevel ? `, level=${currentLevel.name}` : ", level=none"),
-        );
-      } else {
-        applyPlaySceneRuntime(scene, manager);
-        const engine = rulesEngineRef.current as RulesEngine | null;
-        const engineRules = engine?.rules ?? resolveGameRules(scene.gameRules);
-        const objCount = engineRules.objectives?.length ?? 0;
-        addConsoleLog(
-          "system",
-          `Game rules: onFall=${engineRules.onFall}, fallY≈${Math.round(engine?.getFallY() ?? 0)}` +
-            (engineRules.onFall === "respawn" ? `, lives=${engineRules.lives || "∞"}` : "") +
-            (objCount > 0 ? `, objectives=${objCount} (${engineRules.objectiveMode})` : "") +
-            (currentLevel ? `, level=${currentLevel.name}` : ", level=none"),
-        );
-        if (currentLevel?.onComplete?.length) {
-          addConsoleLog(
-            "system",
-            `Level onComplete: ${currentLevel.onComplete.map((a) => a.type).join(", ")}`,
-          );
-        }
-      }
-
-      setIsPlaying(true);
-      setIsPaused(false);
-      setPlayFps(0);
-      setPlayFrameMs(0);
-      if (USE_PHASER_PLAY_HOST) {
-        addConsoleLog("system", "PLAY HOST: Phaser runtime-web started (export parity).");
-        addConsoleLog("physics", "Arcade physics + RulesEngine via @gamekit/runtime-web.");
-        addConsoleLog("system", "Menu shell: GUI buttons switchScene (remounts play host).");
-      } else {
-        addConsoleLog("system", "IGNITE SIMULATOR: Sandboxed execution mode started.");
-        addConsoleLog("physics", "Real-time physics engine loop initialized.");
-        addConsoleLog("system", "Camera follows player inside the game screen only (canvas pan locked).");
-        addConsoleLog("system", "Menu shell: GUI buttons can switchScene during play.");
-        if ((audioControllerRef.current?.sources.length ?? 0) > 0) {
-          addConsoleLog("system", `Audio: ${audioControllerRef.current!.sources.length} source(s) armed.`);
-        }
-      }
-    } else {
-      setIsPaused((p) => {
-        const next = !p;
-        addConsoleLog("system", next ? "Simulation paused." : "Simulation resumed.");
-        return next;
-      });
-    }
-  }
-
-  function handleStop() {
-    if (isPlaying) {
-      setIsPlaying(false);
-      setIsPaused(false);
-      setPlayHostScene(null);
-      rulesEngineRef.current = null;
-      playSceneManagerRef.current = null;
-      playEntitiesRef.current = [];
-      playVarsRef.current = {};
-      reset(preSimulationSceneRef.current);
-      addConsoleLog(
-        "system",
-        USE_PHASER_PLAY_HOST
-          ? "PLAY HOST: Stopped. Editor viewport restored."
-          : "IGNITE SIMULATOR: Sandbox execution stopped. Viewport reverted.",
-      );
-      resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
-    }
-  }
-
-  function handlePlayRestart() {
-    if (!preSimulationSceneRef.current) return;
-    const snapshot = structuredClone(preSimulationSceneRef.current);
-    setIsPlaying(false);
-    setIsPaused(false);
-    setPlayHostScene(null);
-    reset(snapshot);
-    resetPlaySession({ controllers: controllersRef.current, rigidBodies: rigidBodyRefs.current, animationStates: animationStatesRef.current, triggerState: triggerStateRef.current, collisionState: collisionStateRef.current, cameraFollowRef, playViewPanRef, playOutcomeRef, fallCooldownRef, audioControllerRef, setPlayViewPan, setPlayOutcome, setPlayLives, noneOutcome: "none" });
-    // Fresh play after state settles
-    window.setTimeout(() => {
-      preSimulationSceneRef.current = structuredClone(snapshot);
-      handlePlayToggle();
-    }, 0);
-  }
-
-  const playAssetUrls = useMemo(() => {
-    const urls: Record<string, string> = {};
-    for (const asset of snapshot.assets) {
-      urls[asset.id] = getApiUrl(`/gamekit/assets/${asset.file}`);
-    }
-    return urls;
-  }, [snapshot.assets]);
-
-  const playHostLevel = useMemo(() => {
-    if (!playHostScene) return null;
-    return (
-      findLevelForScene(snapshot.levels, playHostScene.id) ??
-      findLevelForScene(snapshot.levels, `${playHostScene.id}.scene.json`) ??
-      null
-    );
-  }, [playHostScene, snapshot.levels]);
-
-  // Terminal slash commands
-  function executeConsoleCommand(cmdStr: string) {
-    if (cmdStr.trim().toLowerCase() === "/clear") {
-      setLogs([]);
-      return;
-    }
-    executeEditorConsoleCommand({
-      command: cmdStr,
-      selectedAssetId,
-      fallbackAssetId: snapshot.assets[0]?.id,
-      selectedEntityId,
-      updateScene,
-      setSelectedEntityIds,
-      addConsoleLog,
-    });
-  }
-
-  const selectedEntity = scene?.entities.find((entity) => entity.id === selectedEntityId);
-
-  // Inspector is selection-driven only (not on the tab bar)
-  useEffect(() => {
-    const hasSelection =
-      selectedEntityIds.size > 0 ||
-      !!selectedGuiNodeId ||
-      !!selectedComponentInstanceId;
-    setInspectorOpen(hasSelection);
-  }, [selectedEntityIds, selectedGuiNodeId, selectedComponentInstanceId]);
-
-
-  function formatLastSaved(): string {
-    if (!lastSaved) return "";
-    const now = new Date();
-    const diff = now.getTime() - lastSaved.getTime();
-    if (diff < 5000) return "just now";
-    if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    return lastSaved.toLocaleTimeString();
-  }
-
-  function setError(error: unknown) {
-    setStatus(error instanceof Error ? error.message : "Operation failed");
-    addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
-  }
-
-  const openLeftPanel = useCallback((tab: SidebarTab) => {
+  const [showGrid, setShowGrid] = useState(true);
+  const [showColliders, setShowColliders] = useState(true);
+  const [viewResetKey, setViewResetKey] = useState(0);
+
+  // Project & Document State
+  const project = useProjectState();
+
+  // Navigation callbacks
+  const openLeftPanel = useCallback((tab: SidebarTabId) => {
     setActiveTab(tab);
     setSidebarOpen(true);
     setBottomDrawerCollapsed(true);
@@ -2066,551 +84,207 @@ export function App() {
   const openGuiComponents = useCallback(() => openLeftPanel("components"), [openLeftPanel]);
   const openRecipes = useCallback(() => openLeftPanel("recipes"), [openLeftPanel]);
 
-  const virtualTouchControls = useMemo(() => {
-    const map = scene?.inputMap?.bindings?.length ? scene.inputMap : DEFAULT_INPUT_MAP;
-    const set = new Set<"jump" | "fire" | "action">();
-    for (const b of map.bindings) {
-      if (b.touchControl === "jump" || b.touchControl === "fire" || b.touchControl === "action") {
-        set.add(b.touchControl);
-      }
-    }
-    if (set.size === 0) set.add("jump");
-    return [...set];
-  }, [scene?.inputMap]);
-
   const openContent = useCallback((tab: BottomTab = "assets") => {
     setActiveBottomTab(tab);
     setBottomDrawerCollapsed(false);
     setSidebarOpen(false);
   }, []);
 
-  const saveEntityAsPrefab = useCallback(
-    async (entityId: string) => {
-      try {
-        const entity = sceneRef.current?.entities.find((e) => e.id === entityId);
-        const { createPrefabFromEntityApi } = await import("./components/PrefabPanel.js");
-        const result = await createPrefabFromEntityApi({
-          sceneFile: currentSceneFile,
-          entityId,
-          name: entity?.name,
-        });
-        setStatus(`Prefab saved: ${result.file}`);
-        addConsoleLog("system", `Prefab saved: ${result.file}`);
-        openPrefabs();
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Create prefab failed";
-        setStatus(msg);
-        addConsoleLog("error", msg);
-      }
-    },
-    [currentSceneFile, addConsoleLog, openPrefabs]
-  );
-
   const centerView = useCallback(() => {
     setZoom(1);
     setViewResetKey((k) => k + 1);
   }, []);
 
-  const commandItems = useMemo((): CommandItem[] => {
-    const ic = (node: ReactNode) => node;
-    const items: CommandItem[] = [
-      {
-        id: "nav-hierarchy",
-        label: "Open Hierarchy",
-        section: "Navigate",
-        keywords: ["entities", "panel", "sidebar"],
-        icon: ic(<Layers size={14} strokeWidth={1.75} />),
-        run: openHierarchy,
-      },
-      {
-        id: "nav-content",
-        label: "Open Content",
-        section: "Navigate",
-        keywords: ["assets", "drawer", "files"],
-        icon: ic(<Folder size={14} strokeWidth={1.75} />),
-        run: () => openContent("assets"),
-      },
-      {
-        id: "open-asset-studio",
-        label: "Open Asset Studio",
-        section: "Assets",
-        keywords: ["asset", "generate", "sprite", "sfx", "music", "character", "sound", "animation"],
-        icon: ic(<Wand2 size={14} strokeWidth={1.75} className="text-cyan-400" />),
-        shortcut: "Mod+Shift+G",
-        run: () => openContent("studio"),
-      },
-      {
-        id: "gen-sprite",
-        label: "Generate Sprite / Prop",
-        section: "Assets",
-        keywords: ["sprite", "pixel", "prop", "item", "tile", "generate"],
-        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => openContent("studio"),
-      },
-      {
-        id: "gen-animated-char",
-        label: "Generate Animated Character",
-        section: "Assets",
-        keywords: ["character", "animation", "spritesheet", "walk", "jump", "hero", "knight"],
-        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => openContent("studio"),
-      },
-      {
-        id: "gen-sfx",
-        label: "Generate Sound Effect (SFX)",
-        section: "Assets",
-        keywords: ["sfx", "sound", "jump", "coin", "laser", "explosion", "hit", "audio"],
-        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => openContent("studio"),
-      },
-      {
-        id: "gen-music",
-        label: "Generate Music Track (BGM)",
-        section: "Assets",
-        keywords: ["music", "bgm", "chiptune", "song", "theme", "audio", "soundtrack"],
-        icon: ic(<Wand2 size={14} strokeWidth={1.75} />),
-        run: () => openContent("studio"),
-      },
-      {
-        id: "nav-agent",
-        label: "Open Agent",
-        section: "Navigate",
-        keywords: ["ai", "assistant"],
-        icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
-        run: openAgent,
-      },
-      {
-        id: "nav-scenes",
-        label: "Open Scenes",
-        section: "Navigate",
-        keywords: ["files", "management"],
-        icon: ic(<FileText size={14} strokeWidth={1.75} />),
-        run: openScenes,
-      },
-      {
-        id: "nav-prefabs",
-        label: "Open Prefabs",
-        section: "Navigate",
-        keywords: ["templates", "instances", "reuse"],
-        icon: ic(<Box size={14} strokeWidth={1.75} />),
-        run: openPrefabs,
-      },
-      {
-        id: "create-prefab",
-        label: selectedEntity
-          ? `Save “${selectedEntity.name || selectedEntity.id}” as Prefab`
-          : "Save selection as Prefab",
-        section: "Create",
-        keywords: ["prefab", "template", "save"],
-        icon: ic(<Box size={14} strokeWidth={1.75} />),
-        disabled: !selectedEntity,
-        run: () => {
-          if (!selectedEntity) return;
-          void saveEntityAsPrefab(selectedEntity.id);
-        },
-      },
-      ...(MVP_SHOW_LEVELS
-        ? [
-            {
-              id: "nav-levels",
-              label: "Open Levels",
-              section: "Navigate",
-              keywords: ["levels", "order", "unlock"],
-              icon: ic(<Layers size={14} strokeWidth={1.75} />),
-              run: openLevels,
-            } satisfies CommandItem,
-          ]
-        : []),
-      {
-        id: "nav-world",
-        label: "Open World Settings",
-        section: "Navigate",
-        keywords: ["viewport", "gravity", "responsive", "scene", "input", "controls"],
-        icon: ic(<Settings size={14} strokeWidth={1.75} />),
-        run: openWorld,
-      },
-      ...(MVP_SHOW_GUI_TOOLS
-        ? ([
-            {
-              id: "nav-guis",
-              label: "Open GUI nodes",
-              section: "Navigate",
-              keywords: ["gui", "hud", "text", "button", "overlay"],
-              icon: ic(<LayoutTemplate size={14} strokeWidth={1.75} />),
-              run: openGuis,
-            },
-            {
-              id: "nav-gui-components",
-              label: "Open GUI components",
-              section: "Navigate",
-              keywords: ["gui", "component", "prefab", "widget"],
-              icon: ic(<Box size={14} strokeWidth={1.75} />),
-              run: openGuiComponents,
-            },
-          ] satisfies CommandItem[])
-        : []),
-      {
-        id: "nav-recipes",
-        label: "Open Recipes",
-        section: "Navigate",
-        keywords: ["recipe", "effect", "mechanic", "script", "animation", "gesture"],
-        icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
-        run: openRecipes,
-      },
-      {
-        id: "tool-select",
-        label: "Select tool",
-        section: "Tools",
-        shortcut: "Q",
-        icon: ic(<MousePointer size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("select"),
-      },
-      {
-        id: "tool-move",
-        label: "Move tool",
-        section: "Tools",
-        shortcut: "W",
-        icon: ic(<Move size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("translate"),
-      },
-      {
-        id: "tool-rotate",
-        label: "Rotate tool",
-        section: "Tools",
-        shortcut: "E",
-        icon: ic(<RefreshCcw size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("rotate"),
-      },
-      {
-        id: "tool-scale",
-        label: "Scale tool",
-        section: "Tools",
-        shortcut: "R",
-        icon: ic(<Maximize size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("scale"),
-      },
-      {
-        id: "tool-paint",
-        label: "Paint tool",
-        section: "Tools",
-        shortcut: "B",
-        keywords: ["tile", "brush"],
-        icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
-        run: () => {
-          setActiveTool("paint");
-          setTilePaintMode("brush");
-        },
-      },
-      {
-        id: "tool-erase",
-        label: "Erase tool",
-        section: "Tools",
-        shortcut: "X",
-        icon: ic(<Eraser size={14} strokeWidth={1.75} />),
-        run: () => {
-          setActiveTool("erase");
-          setTilePaintMode("erase");
-        },
-      },
-      {
-        id: "tool-fill",
-        label: "Fill tiles",
-        section: "Tools",
-        shortcut: "G",
-        keywords: ["bucket", "flood"],
-        icon: ic(<Paintbrush size={14} strokeWidth={1.75} />),
-        run: () => {
-          setActiveTool("paint");
-          setTilePaintMode("fill");
-        },
-      },
-      {
-        id: "tool-rect",
-        label: "Rect paint",
-        section: "Tools",
-        shortcut: "T",
-        icon: ic(<Maximize size={14} strokeWidth={1.75} />),
-        run: () => {
-          setActiveTool("paint");
-          setTilePaintMode("rect");
-        },
-      },
-      {
-        id: "view-split-h",
-        label: workspace.split === "horizontal" ? "Close split view" : "Split scenes left/right",
-        section: "View",
-        keywords: ["pane", "tabs"],
-        icon: ic(<Columns2 size={14} strokeWidth={1.75} />),
-        run: () => handleSplitChange(workspace.split === "horizontal" ? "none" : "horizontal"),
-      },
-      {
-        id: "view-profiler",
-        label: profilerOpen ? "Hide profiler" : "Show profiler",
-        section: "View",
-        shortcut: "`",
-        keywords: ["fps", "draw", "calls"],
-        icon: ic(<Activity size={14} strokeWidth={1.75} />),
-        run: () => setProfilerOpen((open) => !open),
-      },
-      {
-        id: "tool-polygon-edit",
-        label: "Polygon edit tool",
-        section: "Tools",
-        keywords: ["polygon", "collider", "points"],
-        shortcut: "P",
-        icon: ic(<Route size={14} strokeWidth={1.75} />),
-        run: () => setActiveTool("polygon-edit"),
-      },
-      {
-        id: "tool-snap",
-        label: snap ? "Disable snap" : "Enable snap",
-        section: "Tools",
-        keywords: ["grid", "magnet"],
-        icon: ic(<Magnet size={14} strokeWidth={1.75} />),
-        run: () => setSnap((v) => !v),
-      },
-      {
-        id: "view-grid",
-        label: showGrid ? "Hide grid" : "Show grid",
-        section: "View",
-        icon: ic(<Grid3x3 size={14} strokeWidth={1.75} />),
-        run: () => setShowGrid((v) => !v),
-      },
-      {
-        id: "view-colliders",
-        label: showColliders ? "Hide colliders" : "Show colliders",
-        section: "View",
-        icon: ic(
-          showColliders ? (
-            <EyeOff size={14} strokeWidth={1.75} />
-          ) : (
-            <Eye size={14} strokeWidth={1.75} />
-          )
-        ),
-        run: () => setShowColliders((v) => !v),
-      },
-      {
-        id: "view-center",
-        label: "Center view",
-        section: "View",
-        keywords: ["reset", "camera", "fit"],
-        icon: ic(<Focus size={14} strokeWidth={1.75} />),
-        run: centerView,
-      },
-      {
-        id: "view-zoom-in",
-        label: "Zoom in",
-        section: "View",
-        icon: ic(<ZoomIn size={14} strokeWidth={1.75} />),
-        run: () => setZoom((z) => Math.min(4, z + 0.1)),
-      },
-      {
-        id: "view-zoom-out",
-        label: "Zoom out",
-        section: "View",
-        icon: ic(<ZoomOut size={14} strokeWidth={1.75} />),
-        run: () => setZoom((z) => Math.max(0.25, z - 0.1)),
-      },
-      {
-        id: "view-zoom-100",
-        label: "Zoom to 100%",
-        section: "View",
-        icon: ic(<Focus size={14} strokeWidth={1.75} />),
-        run: () => setZoom(1),
-      },
-      {
-        id: "create-entity",
-        label: "Add entity",
-        section: "Create",
-        keywords: ["new", "object"],
-        icon: ic(<Plus size={14} strokeWidth={1.75} />),
-        run: addEntity,
-      },
-      {
-        id: "create-template",
-        label: "New from template…",
-        section: "Create",
-        keywords: ["wizard", "skill", "genre"],
-        icon: ic(<LayoutTemplate size={14} strokeWidth={1.75} />),
-        run: () => setWizardOpen(true),
-      },
-      {
-        id: "edit-undo",
-        label: "Undo",
-        section: "Edit",
-        shortcut: "⌘Z",
-        icon: ic(<Undo2 size={14} strokeWidth={1.75} />),
-        disabled: !canUndo,
-        run: () => undo(),
-      },
-      {
-        id: "edit-redo",
-        label: "Redo",
-        section: "Edit",
-        shortcut: "⇧⌘Z",
-        icon: ic(<Redo2 size={14} strokeWidth={1.75} />),
-        disabled: !canRedo,
-        run: () => redo(),
-      },
-      {
-        id: "project-save",
-        label: "Save scene",
-        section: "Project",
-        shortcut: "⌘S",
-        icon: ic(<Save size={14} strokeWidth={1.75} />),
-        run: () => saveScene(),
-      },
-      {
-        id: "project-refresh",
-        label: "Refresh project",
-        section: "Project",
-        icon: ic(<RefreshCw size={14} strokeWidth={1.75} />),
-        run: () => {
-          refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-        },
-      },
-      {
-        id: "project-settings",
-        label: "Agent settings",
-        section: "Project",
-        keywords: ["preferences", "config"],
-        icon: ic(<Settings size={14} strokeWidth={1.75} />),
-        run: () => setAgentSettingsOpen(true),
-      },
-      {
-        id: "sim-play",
-        label: isPlaying
-          ? isPaused
-            ? "Resume simulation"
-            : "Pause simulation"
-          : "Play simulation",
-        section: "Simulation",
-        keywords: ["run", "preview"],
-        icon: ic(<Play size={14} strokeWidth={1.75} />),
-        run: handlePlayToggle,
-      },
-      {
-        id: "sim-stop",
-        label: "Stop simulation",
-        section: "Simulation",
-        icon: ic(<Square size={14} strokeWidth={1.75} />),
-        disabled: !isPlaying,
-        run: handleStop,
-      },
-      {
-        id: "cmd-palette-hint",
-        label: "Command menu",
-        section: "Help",
-        shortcut: "⌘K",
-        keywords: ["spotlight", "search", "palette"],
-        icon: ic(<Command size={14} strokeWidth={1.75} />),
-        run: () => setCommandPaletteOpen(true),
-      },
-    ];
+  const setError = useCallback((error: unknown) => {
+    project.setStatus(error instanceof Error ? error.message : "Operation failed");
+    project.addConsoleLog("error", error instanceof Error ? error.message : "Operation execution failed.");
+  }, [project]);
 
-    items.push({
-      id: "project-new",
-      label: "New Game Project...",
-      section: "Project",
-      shortcut: "⌘N",
-      keywords: ["create", "new", "project", "scaffold", "expo", "web", "tauri"],
-      icon: ic(<Plus size={14} strokeWidth={1.75} />),
-      run: () => setNewProjectWizardOpen(true),
-    });
+  // Scene GUI State
+  const gui = useSceneGui({
+    snapshot: project.snapshot,
+    setSnapshot: project.setSnapshot,
+    updateScene: project.updateScene,
+    persistProject: project.persistProject,
+    addConsoleLog: project.addConsoleLog,
+    setSelectedEntityIds: () => {},
+  });
 
-    items.push({
-      id: "project-hub",
-      label: "Open Project Launch Hub",
-      section: "Project",
-      keywords: ["hub", "welcome", "home", "dashboard", "onboarding"],
-      icon: ic(<Sparkles size={14} strokeWidth={1.75} />),
-      run: () => setWelcomeHubOpen(true),
-    });
+  // Scene Entities State
+  const entities = useSceneEntities({
+    scene: project.scene,
+    updateScene: project.updateScene,
+    selectedAssetId: project.selectedAssetId,
+    snapshot: project.snapshot,
+    currentSceneFile: project.currentSceneFile,
+    addConsoleLog: project.addConsoleLog,
+    setStatus: project.setStatus,
+    openPrefabs,
+    clearGuiSelection: gui.clearGuiSelection,
+  });
 
-    if (isTauri && projectPath) {
-      items.push({
-        id: "project-close",
-        label: "Close project",
-        section: "Project",
-        icon: ic(<LogOut size={14} strokeWidth={1.75} />),
-        run: handleCloseProject,
-      });
-    }
+  // Levels State
+  const playSceneManagerRef = useRef<import("@gamekit/runtime/manager").SceneManager | null>(null);
+  const playUnlockedLevelIdsRef = useRef<string[]>([]);
+  const levels = useLevels({
+    snapshot: project.snapshot,
+    setSnapshot: project.setSnapshot,
+    persistProject: project.persistProject,
+    setStatus: project.setStatus,
+    addConsoleLog: project.addConsoleLog,
+    normalizeSceneFile: project.normalizeSceneFile,
+    sceneFileMatches: project.sceneFileMatches,
+    playSceneManagerRef,
+    playUnlockedLevelIdsRef,
+  });
 
-    for (const sceneFile of snapshot.scenes) {
-      items.push({
-        id: `scene-${sceneFile}`,
-        label: `Open scene “${sceneFile.replace(/\.scene\.json$/, "")}”`,
-        section: "Scenes",
-        keywords: ["goto", "switch", sceneFile],
-        icon: ic(<FileText size={14} strokeWidth={1.75} />),
-        run: () => activateScene(sceneFile),
-      });
-    }
+  // Simulation State
+  const pressedKeysRef = useRef<Set<string>>(new Set());
+  const play = usePlaySimulation({
+    scene: project.scene,
+    snapshot: project.snapshot,
+    currentSceneFile: project.currentSceneFile,
+    pressedKeysRef,
+    resetScene: project.reset,
+    setScene: project.setScene,
+    undoBypassRef: project.undoBypassRef,
+    addConsoleLog: project.addConsoleLog,
+    syncPlayLevelUnlocksFromManager: levels.syncPlayLevelUnlocksFromManager,
+    normalizeSceneFile: project.normalizeSceneFile,
+    sceneFileMatches: project.sceneFileMatches,
+  });
 
-    for (const entity of scene?.entities ?? []) {
-      items.push({
-        id: `entity-${entity.id}`,
-        label: entity.name || entity.id,
-        section: "Entities",
-        keywords: ["select", "goto", entity.id],
-        icon: ic(<Box size={14} strokeWidth={1.75} />),
-        run: () => {
-          setSelectedEntityIds(new Set([entity.id]));
-          setSelectedGuiNodeId(null);
-          setSelectedComponentInstanceId(null);
-          setInspectorOpen(true);
-          setSidebarOpen(true);
-          setActiveTab("entities");
-          setBottomDrawerCollapsed(true);
-        },
-      });
-    }
+  // Keep ref sync between play and levels
+  playSceneManagerRef.current = play.playSceneManagerRef.current;
 
-    return items;
-  }, [
+  // Global Commands
+  const commandItems = useEditorCommands({
+    scene: project.scene,
+    snapshot: project.snapshot,
+    currentSceneFile: project.currentSceneFile,
+    selectedEntity: entities.selectedEntity,
+    isTauri: project.isTauri,
+    projectPath: project.projectPath,
+    isPlaying: play.isPlaying,
+    isPaused: play.isPaused,
+    canUndo: project.canUndo,
+    canRedo: project.canRedo,
     snap,
     showGrid,
     showColliders,
-    canUndo,
-    canRedo,
-    isPlaying,
-    isPaused,
-    isTauri,
-    projectPath,
-    snapshot.scenes,
-    scene?.entities,
+    profilerOpen: play.profilerOpen,
+    splitMode: project.workspace.split,
     openHierarchy,
-    openContent,
-    openAgent,
     openScenes,
     openPrefabs,
     openLevels,
+    openAgent,
     openWorld,
+    openGuis,
+    openGuiComponents,
+    openRecipes,
+    openContent,
     centerView,
-    undo,
-    redo,
-    selectedEntity,
-    currentSceneFile,
-    saveEntityAsPrefab,
-    workspace.split,
-    profilerOpen,
-  ]);
+    saveEntityAsPrefab: entities.saveEntityAsPrefab,
+    setActiveTool,
+    setTilePaintMode,
+    handleSplitChange: project.handleSplitChange,
+    setProfilerOpen: play.setProfilerOpen,
+    setSnap,
+    setShowGrid,
+    setShowColliders,
+    setZoom,
+    addEntity: entities.addEntity,
+    setWizardOpen,
+    setNewProjectWizardOpen,
+    setWelcomeHubOpen,
+    setAgentSettingsOpen,
+    setCommandPaletteOpen,
+    undo: project.undo,
+    redo: project.redo,
+    saveScene: project.saveScene,
+    refresh: project.refresh,
+    handlePlayToggle: play.handlePlayToggle,
+    handleStop: play.handleStop,
+    handleCloseProject: project.handleCloseProject,
+    activateScene: project.activateScene,
+    selectEntity: (id) => {
+      entities.selectEntity(id);
+      setInspectorOpen(true);
+      setSidebarOpen(true);
+      setActiveTab("entities");
+      setBottomDrawerCollapsed(true);
+    },
+    setStatus: project.setStatus,
+    showLevels: MVP_SHOW_LEVELS,
+    showGuiTools: MVP_SHOW_GUI_TOOLS,
+  });
 
-  if ((isTauri && !projectPath) || welcomeHubOpen) {
+  // Global Keyboard Shortcuts
+  const selectedGuiNodeIdRef = useRef(gui.selectedGuiNodeId);
+  selectedGuiNodeIdRef.current = gui.selectedGuiNodeId;
+  const selectedComponentInstanceIdRef = useRef(gui.selectedComponentInstanceId);
+  selectedComponentInstanceIdRef.current = gui.selectedComponentInstanceId;
+
+  useKeyboardShortcuts({
+    commandPaletteOpenRef,
+    isPlaying: play.isPlaying,
+    isPaused: play.isPaused,
+    pressedKeysRef,
+    undo: project.undo,
+    redo: project.redo,
+    push: project.push,
+    saveScene: project.saveScene,
+    sceneRef: project.sceneRef,
+    setActiveTool,
+    setTilePaintMode,
+    setBrushSize,
+    onToggleProfiler: () => play.setProfilerOpen((open) => !open),
+    selectedEntityIdsRef: entities.selectedEntityIdsRef,
+    setIsDirty: project.setIsDirty,
+    triggerAutoSave: project.triggerAutoSave,
+    deleteEntity: entities.deleteEntity,
+    duplicateEntity: entities.duplicateEntity,
+    pasteEntity: entities.pasteEntity,
+    clipboardRef: entities.clipboardRef,
+    selectedGuiNodeIdRef,
+    selectedComponentInstanceIdRef,
+    setSelectedEntityIds: entities.setSelectedEntityIds,
+    setSelectedGuiNodeId: gui.setSelectedGuiNodeId,
+    setSelectedComponentInstanceId: gui.setSelectedComponentInstanceId,
+    snap,
+    snapSize,
+    setCommandPaletteOpen,
+  });
+
+  // Inspector is selection-driven only
+  useEffect(() => {
+    const hasSelection =
+      entities.selectedEntityIds.size > 0 ||
+      !!gui.selectedGuiNodeId ||
+      !!gui.selectedComponentInstanceId;
+    setInspectorOpen(hasSelection);
+  }, [entities.selectedEntityIds, gui.selectedGuiNodeId, gui.selectedComponentInstanceId]);
+
+  // Disk hot-reload polling
+  useEffect(() => {
+    return project.startHotReload(play.isPlaying);
+  }, [project.startHotReload, play.isPlaying]);
+
+  if ((project.isTauri && !project.projectPath) || welcomeHubOpen) {
     return (
       <WelcomeHub
-        recentProjects={recentProjects}
-        exampleProjects={exampleProjects.map((e) => e.path)}
-        isLoadingProject={isLoadingProject}
-        projectLoadError={projectLoadError}
-        onOpenFolder={handleOpenProject}
+        recentProjects={project.recentProjects}
+        exampleProjects={project.exampleProjects.map((e) => e.path)}
+        isLoadingProject={project.isLoadingProject}
+        projectLoadError={project.projectLoadError}
+        onOpenFolder={project.handleOpenProject}
         onSelectProject={async (path) => {
           setWelcomeHubOpen(false);
-          await loadProjectFolder(path);
+          await project.loadProjectFolder(path);
         }}
         onRemoveRecent={(path) => {
-          setRecentProjects((prev) => {
+          project.setRecentProjects((prev) => {
             const next = prev.filter((p) => p !== path);
             localStorage.setItem("gamekit_recent_projects", JSON.stringify(next));
             return next;
@@ -2620,533 +294,107 @@ export function App() {
     );
   }
 
-
-
   return (
     <main
       className={shellStyles.shell}
       data-drawer-collapsed={bottomDrawerCollapsed ? "true" : "false"}
       data-bottom-sheet-open={!bottomDrawerCollapsed ? "true" : "false"}
     >
-      {/* Full-bleed canvas — primary focus */}
-      <div className={cn(workspaceStyles["canvas-stage"], "relative")}>
-        <QuickStartBanner
-          onPlayTest={handlePlayToggle}
-          onOpenAssetStudio={() => openContent("studio")}
-          onOpenLevels={() => openLevels()}
-          onOpenTour={openTour}
-          onNewProject={() => setNewProjectWizardOpen(true)}
-        />
-        <SceneTabBar
-          workspace={workspace.openTabs.length ? workspace : createSceneWorkspace(currentSceneFile)}
-          dirtyFiles={dirtyFiles}
-          scenes={snapshot.scenes}
-          onSelectTab={(file) => activateScene(file)}
-          onCloseTab={handleCloseSceneTab}
-          onSplitChange={handleSplitChange}
-        />
-        <div
-          className={cn(
-            workspaceStyles["scene-panes"],
-            workspace.split === "horizontal" && workspaceStyles["split-h"],
-            workspace.split === "vertical" && workspaceStyles["split-v"],
-          )}
-        >
-          <div
-            className={cn(
-              workspaceStyles["scene-pane"],
-              (workspace.split === "none" || workspace.focused === "a") && workspaceStyles.focused,
-            )}
-            data-testid="scene-pane-a"
-            onPointerDownCapture={() => {
-              if (workspace.split !== "none" && workspace.focused !== "a") activateScene(workspace.paneA, "a");
-            }}
-          >
-        <SceneCanvas
-          scene={
-            workspace.split !== "none" && workspace.focused !== "a"
-              ? paneScenes[workspace.paneA] ?? scene
-              : scene
-          }
-          assets={snapshot.assets}
-          selectedEntityIds={workspace.split !== "none" && workspace.focused !== "a" ? new Set() : selectedEntityIds}
-          selectedGuiNodeId={selectedGuiNodeId}
-          guiComponents={snapshot.guiComponents}
-          selectedComponentInstanceId={selectedComponentInstanceId}
-          showGuiTools={MVP_SHOW_GUI_TOOLS}
-          zoom={zoom}
-          snap={snap}
-          hasClipboard={clipboardRef.current !== null}
-          activeTool={activeTool}
-          tilePaintMode={tilePaintMode}
-          brushSize={brushSize}
-          showGrid={showGrid}
-          showColliders={showColliders}
-          snapSize={snapSize}
-          isPlaying={isPlaying && (workspace.split === "none" || workspace.focused === "a")}
-          playViewPan={playViewPan}
-          paintTileId={paintTileId}
-          viewResetKey={viewResetKey}
-          virtualTouchControls={virtualTouchControls}
-          onVirtualInput={(action, pressed) => {
-            const keys = resolveActionKeys(sceneRef.current?.inputMap);
-            const map: Record<typeof action, string[]> = {
-              left: keys.left,
-              right: keys.right,
-              jump: keys.jump,
-              fire: keys.fire.length ? keys.fire : ["__fire__"],
-              action: keys.action.length ? keys.action : ["__action__"],
-            };
-            const list = map[action] ?? [];
-            for (const key of list) {
-              if (pressed) pressedKeysRef.current.add(key);
-              else pressedKeysRef.current.delete(key);
-            }
-          }}
-          onGuiAction={(action) => {
-            if (!isPlaying) return;
-            const entities = playEntitiesRef.current;
-            const manager = playSceneManagerRef.current;
-            for (const entity of entities) {
-              const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
-              if (!script) continue;
-              evaluateScriptEvent(action, script, {
-                entityId: entity.id,
-                entities,
-                sceneManager: {
-                  switchScene: (sceneId: string) => playHotSwapRef.current(sceneId),
-                  nextScene: () => manager?.nextScene() ?? false,
-                  nextLevel: () => manager?.nextLevel() ?? false,
-                  unlockLevel: (id: string) => manager?.unlockLevel(id) ?? false,
-                  completeLevel: (id: string) => manager?.completeLevel(id) ?? null,
-                  getState: () => ({ currentLevelId: manager?.getState().currentLevelId ?? null }),
-                  setPersistentVar: (key, value) => {
-                    manager?.setPersistentVar(key, value);
-                    playVarsRef.current[key] = value;
-                  },
-                  getPersistentVar: (key, defaultValue) =>
-                    manager?.getPersistentVar(key, defaultValue) ?? playVarsRef.current[key] ?? defaultValue,
-                },
-                playSound: (assetId) => audioControllerRef.current?.playAsset?.(assetId),
-                destroyEntity: (id) => {
-                  const idx = playEntitiesRef.current.findIndex((e) => e.id === id);
-                  if (idx >= 0) playEntitiesRef.current.splice(idx, 1);
-                },
-              });
-            }
-          }}
-          onZoomChange={setZoom}
-          onSnapToggle={setSnap}
-          onSnapSizeChange={setSnapSize}
-          onActiveToolChange={setActiveTool}
-          onToggleGrid={setShowGrid}
-          onToggleColliders={setShowColliders}
-          onPaintTiles={(entityId, tiles) => {
-            if (workspace.split !== "none" && workspace.focused !== "a") return;
-            updateScene((draft) => {
-              const entity = draft.entities.find((e) => e.id === entityId);
-              if (!entity) return;
-              const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
-              if (!tm) return;
-              tm.tiles = tiles;
-            });
-          }}
-          onSampleTile={(tileId) => {
-            setPaintTileId(tileId);
-            if (tileId === 0) {
-              setActiveTool("erase");
-              setTilePaintMode("erase");
-            } else {
-              setActiveTool("paint");
-              if (tilePaintMode === "erase") setTilePaintMode("brush");
-            }
-          }}
-          onSelect={(id, shift) => {
-            setSelectedGuiNodeId(null);
-            setSelectedComponentInstanceId(null);
-            if (!id) {
-              setSelectedEntityIds(new Set());
-              return;
-            }
-            setSelectedEntityIds((prev) => {
-              const next = new Set(shift ? prev : undefined);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              return next;
-            });
-          }}
-          onSelectGuiNode={(id) => {
-            setSelectedEntityIds(new Set());
-            setSelectedComponentInstanceId(null);
-            setSelectedGuiNodeId(id);
-          }}
-          onSelectComponentInstance={(id) => {
-            setSelectedEntityIds(new Set());
-            setSelectedGuiNodeId(null);
-            setSelectedComponentInstanceId(id);
-          }}
-          onTransform={(id, updates) => {
-            push((draft) => {
-              if (!draft) return;
-              const entity = draft.entities.find((candidate) => candidate.id === id);
-              const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
-              if (transform) {
-                if (updates.position) transform.position = updates.position;
-                if (updates.rotation !== undefined) transform.rotation = updates.rotation;
-                if (updates.scale) transform.scale = updates.scale;
-              }
-            });
-            setIsDirty(true);
-            triggerAutoSave();
-          }}
-          onPolygonPointsChange={(id, points) => {
-            push((draft) => {
-              if (!draft) return;
-              const entity = draft.entities.find((candidate) => candidate.id === id);
-              const polygon = entity?.components.find((c): c is import("@gamekit/schema").PolygonColliderComponent => c.type === "PolygonCollider");
-              if (polygon) {
-                polygon.points = points;
-              }
-            });
-            setIsDirty(true);
-            triggerAutoSave();
-          }}
-          onAddEntity={addEntity}
-          onPasteEntity={() => {
-            const entity = clipboardRef.current;
-            if (entity) pasteEntity(entity);
-          }}
-          onSelectAll={() => {
-            if (!scene) return;
-            setSelectedEntityIds(new Set(scene.entities.map((e) => e.id)));
-          }}
-          onCopyEntity={(id) => {
-            const entity = scene?.entities.find((e) => e.id === id);
-            if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-          }}
-          onCutEntity={(id) => {
-            const entity = scene?.entities.find((e) => e.id === id);
-            if (entity) {
-              clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-              deleteEntity(id);
-            }
-          }}
-          onDuplicateEntity={(id) => duplicateEntity(id)}
-          onDeleteEntity={(id) => deleteEntity(id)}
-          onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
-        />
+      <CanvasWorkspace
+        scene={project.scene}
+        snapshot={project.snapshot}
+        currentSceneFile={project.currentSceneFile}
+        workspace={project.workspace}
+        dirtyFiles={project.dirtyFiles}
+        paneScenes={project.paneScenes}
+        activateScene={project.activateScene}
+        handleCloseSceneTab={project.handleCloseSceneTab}
+        handleSplitChange={project.handleSplitChange}
+        updateScene={project.updateScene}
+        push={project.push}
+        setIsDirty={project.setIsDirty}
+        triggerAutoSave={project.triggerAutoSave}
+        zoom={zoom}
+        setZoom={setZoom}
+        snap={snap}
+        setSnap={setSnap}
+        snapSize={snapSize}
+        setSnapSize={setSnapSize}
+        activeTool={activeTool}
+        setActiveTool={setActiveTool}
+        tilePaintMode={tilePaintMode}
+        setTilePaintMode={setTilePaintMode}
+        brushSize={brushSize}
+        setBrushSize={setBrushSize}
+        paintTileId={paintTileId}
+        setPaintTileId={setPaintTileId}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        showColliders={showColliders}
+        setShowColliders={setShowColliders}
+        viewResetKey={viewResetKey}
+        showGuiTools={MVP_SHOW_GUI_TOOLS}
+        selectedEntityIds={entities.selectedEntityIds}
+        setSelectedEntityIds={entities.setSelectedEntityIds}
+        selectedGuiNodeId={gui.selectedGuiNodeId}
+        setSelectedGuiNodeId={gui.setSelectedGuiNodeId}
+        selectedComponentInstanceId={gui.selectedComponentInstanceId}
+        setSelectedComponentInstanceId={gui.setSelectedComponentInstanceId}
+        clipboardRef={entities.clipboardRef}
+        addEntity={entities.addEntity}
+        deleteEntity={entities.deleteEntity}
+        duplicateEntity={entities.duplicateEntity}
+        pasteEntity={entities.pasteEntity}
+        saveEntityAsPrefab={entities.saveEntityAsPrefab}
+        isPlaying={play.isPlaying}
+        isPaused={play.isPaused}
+        setIsPaused={play.setIsPaused}
+        playViewPan={play.playViewPan}
+        playOutcome={play.playOutcome}
+        setPlayOutcome={play.setPlayOutcome}
+        playLives={play.playLives}
+        setPlayLives={play.setPlayLives}
+        playHostScene={play.playHostScene}
+        playHostKey={play.playHostKey}
+        playAssetUrls={play.playAssetUrls}
+        playHostLevel={play.playHostLevel}
+        profilerOpen={play.profilerOpen}
+        profilerSample={play.profilerSample}
+        virtualTouchControls={play.virtualTouchControls}
+        handlePlayToggle={play.handlePlayToggle}
+        handleStop={play.handleStop}
+        handlePlayRestart={play.handlePlayRestart}
+        onVirtualInput={play.onVirtualInput}
+        onGuiAction={play.onGuiAction}
+        onPhaserOutcome={play.onPhaserOutcome}
+        onMetrics={play.onMetrics}
+        playHotSwapRef={play.playHotSwapRef}
+        playSceneManagerRef={play.playSceneManagerRef}
+        playLivesRef={play.playLivesRef}
+        playOutcomeRef={play.playOutcomeRef}
+        playVarsRef={play.playVarsRef}
+        syncPlayLevelUnlocksFromManager={levels.syncPlayLevelUnlocksFromManager}
+        addConsoleLog={project.addConsoleLog}
+        openContent={openContent}
+        openLevels={openLevels}
+        openTour={openTour}
+        setNewProjectWizardOpen={setNewProjectWizardOpen}
+      />
 
-        {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && (workspace.split === "none" || workspace.focused === "a") && (
-          <PlayRuntimeHost
-            remountKey={playHostKey}
-            scene={playHostScene}
-            assetUrls={playAssetUrls}
-            guiComponents={snapshot.guiComponents}
-            level={playHostLevel}
-            paused={isPaused || playOutcome !== null}
-            sceneManager={{
-              switchScene: (sceneId) => playHotSwapRef.current(sceneId),
-              nextScene: () => {
-                const manager = playSceneManagerRef.current;
-                const ok = manager?.nextScene() ?? false;
-                if (ok && manager) {
-                  const id = manager.getState().currentSceneId;
-                  if (id) playHotSwapRef.current(id);
-                }
-                return ok;
-              },
-              nextLevel: () => {
-                const manager = playSceneManagerRef.current;
-                const ok = manager?.nextLevel() ?? false;
-                if (ok) {
-                  syncPlayLevelUnlocksFromManager();
-                  const id = manager?.getState().currentSceneId;
-                  if (id) playHotSwapRef.current(id);
-                }
-                return ok;
-              },
-              unlockLevel: (levelId) => {
-                const ok = playSceneManagerRef.current?.unlockLevel(levelId) ?? false;
-                if (ok) syncPlayLevelUnlocksFromManager();
-                return ok;
-              },
-              completeLevel: (levelId) => {
-                const unlocked = playSceneManagerRef.current?.completeLevel(levelId) ?? null;
-                if (unlocked) {
-                  addConsoleLog("system", `completeLevel("${levelId}") → unlocked "${unlocked}"`);
-                  syncPlayLevelUnlocksFromManager();
-                }
-                return unlocked;
-              },
-              getState: () => ({
-                currentLevelId: playSceneManagerRef.current?.getState().currentLevelId ?? null,
-              }),
-              setPersistentVar: (key, value) => {
-                playSceneManagerRef.current?.setPersistentVar(key, value);
-                playVarsRef.current[key] = value;
-              },
-              getPersistentVar: (key, defaultValue) =>
-                playSceneManagerRef.current?.getPersistentVar(key, defaultValue) ??
-                playVarsRef.current[key] ??
-                defaultValue,
-            }}
-            onOutcome={(kind, message) => {
-              if (kind === "won") {
-                playOutcomeRef.current = "win";
-                setPlayOutcome({ kind: "win", message, livesLeft: playLivesRef.current });
-                setIsPaused(true);
-                addConsoleLog("system", `WIN — ${message}`);
-                syncPlayLevelUnlocksFromManager();
-              } else {
-                playOutcomeRef.current = "gameOver";
-                setPlayOutcome({ kind: "gameOver", message, livesLeft: playLivesRef.current });
-                setIsPaused(true);
-                addConsoleLog("system", `GAME OVER — ${message}`);
-              }
-            }}
-            onLivesChange={(lives) => {
-              if (lives === null) {
-                setPlayLives(null);
-              } else {
-                playLivesRef.current = lives;
-                setPlayLives(lives);
-              }
-            }}
-            onCollectProgress={(tag, collected, target) => {
-              addConsoleLog("system", `Collect ${tag}: ${collected}/${target}`);
-            }}
-            onGuiAction={(action) => {
-              // Phaser scene already evaluates Script handlers; log for editor console.
-              addConsoleLog("system", `GUI action: ${action}`);
-            }}
-            onMetrics={(sample) => {
-              setPlayFps(sample.fps);
-              setPlayFrameMs(sample.frameMs);
-              setPlayDrawCalls(sample.drawCalls);
-              setProfilerSample(sample);
-            }}
-          />
-        )}
-
-        {isPlaying && playLives !== null && !playOutcome && (
-          <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-md border border-white/10 bg-black/55 px-2.5 py-1 font-mono text-[11px] text-accent backdrop-blur-sm">
-            Lives {playLives}
-          </div>
-        )}
-
-        {isPlaying && playOutcome && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]">
-            <div className="w-[min(360px,calc(100%-32px))] rounded-2xl border border-white/10 bg-[rgba(10,14,20,0.95)] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-              <p
-                className={`m-0 text-lg font-bold tracking-[0.06em] ${
-                  playOutcome.kind === "win" ? "text-accent" : "text-[#ff6b8a]"
-                }`}
-              >
-                {playOutcome.message}
-              </p>
-              <p className="mt-2 text-[12px] text-text-muted">
-                {playOutcome.kind === "gameOver"
-                  ? "Adjust World → Game rules for hazards, lives, and lose actions."
-                  : "Objectives complete. Next level unlocks via completeLevel / level onComplete."}
-              </p>
-              <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-lg border border-accent/40 bg-accent/15 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/25"
-                  onClick={handlePlayRestart}
-                >
-                  Restart
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] font-semibold text-text-primary hover:bg-white/10"
-                  onClick={handleStop}
-                >
-                  Stop
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-          </div>
-          {workspace.split !== "none" && workspace.paneB && (
-            <div
-              className={cn(workspaceStyles["scene-pane"], workspace.focused === "b" && workspaceStyles.focused)}
-              data-testid="scene-pane-b"
-              onPointerDownCapture={() => {
-                if (workspace.focused !== "b") activateScene(workspace.paneB!, "b");
-              }}
-            >
-              <SceneCanvas
-                scene={
-                  workspace.focused === "b"
-                    ? scene
-                    : paneScenes[workspace.paneB]
-                }
-                assets={snapshot.assets}
-                selectedEntityIds={workspace.focused === "b" ? selectedEntityIds : new Set()}
-                selectedGuiNodeId={workspace.focused === "b" ? selectedGuiNodeId : null}
-                guiComponents={snapshot.guiComponents}
-                selectedComponentInstanceId={workspace.focused === "b" ? selectedComponentInstanceId : null}
-                showGuiTools={MVP_SHOW_GUI_TOOLS}
-                zoom={zoom}
-                snap={snap}
-                hasClipboard={clipboardRef.current !== null}
-                activeTool={activeTool}
-                tilePaintMode={tilePaintMode}
-                brushSize={brushSize}
-                showGrid={showGrid}
-                showColliders={showColliders}
-                snapSize={snapSize}
-                isPlaying={isPlaying && workspace.focused === "b"}
-                playViewPan={playViewPan}
-                paintTileId={paintTileId}
-                viewResetKey={viewResetKey}
-                onZoomChange={setZoom}
-                onSnapToggle={setSnap}
-                onSnapSizeChange={setSnapSize}
-                onActiveToolChange={setActiveTool}
-                onToggleGrid={setShowGrid}
-                onToggleColliders={setShowColliders}
-                onPaintTiles={(entityId, tiles) => {
-                  if (workspace.focused !== "b") return;
-                  updateScene((draft) => {
-                    const entity = draft.entities.find((e) => e.id === entityId);
-                    if (!entity) return;
-                    const tm = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
-                    if (!tm) return;
-                    tm.tiles = tiles;
-                  });
-                }}
-                onSampleTile={(tileId) => {
-                  setPaintTileId(tileId);
-                  if (tileId === 0) {
-                    setActiveTool("erase");
-                    setTilePaintMode("erase");
-                  } else {
-                    setActiveTool("paint");
-                    if (tilePaintMode === "erase") setTilePaintMode("brush");
-                  }
-                }}
-                onSelect={(id, shift) => {
-                  if (workspace.focused !== "b") return;
-                  setSelectedGuiNodeId(null);
-                  setSelectedComponentInstanceId(null);
-                  if (!id) {
-                    setSelectedEntityIds(new Set());
-                    return;
-                  }
-                  setSelectedEntityIds((prev) => {
-                    const next = new Set(shift ? prev : undefined);
-                    if (next.has(id)) next.delete(id);
-                    else next.add(id);
-                    return next;
-                  });
-                }}
-                onSelectGuiNode={(id) => {
-                  setSelectedEntityIds(new Set());
-                  setSelectedComponentInstanceId(null);
-                  setSelectedGuiNodeId(id);
-                }}
-                onSelectComponentInstance={(id) => {
-                  setSelectedEntityIds(new Set());
-                  setSelectedGuiNodeId(null);
-                  setSelectedComponentInstanceId(id);
-                }}
-                onTransform={(id, updates) => {
-                  if (workspace.focused !== "b") return;
-                  push((draft) => {
-                    if (!draft) return;
-                    const entity = draft.entities.find((candidate) => candidate.id === id);
-                    const transform = entity?.components.find((component): component is TransformComponent => component.type === "Transform");
-                    if (transform) {
-                      if (updates.position) transform.position = updates.position;
-                      if (updates.rotation !== undefined) transform.rotation = updates.rotation;
-                      if (updates.scale) transform.scale = updates.scale;
-                    }
-                  });
-                  setIsDirty(true);
-                  triggerAutoSave();
-                }}
-                onAddEntity={addEntity}
-                onPasteEntity={() => {
-                  const entity = clipboardRef.current;
-                  if (entity) pasteEntity(entity);
-                }}
-                onSelectAll={() => {
-                  if (!scene) return;
-                  setSelectedEntityIds(new Set(scene.entities.map((e) => e.id)));
-                }}
-                onCopyEntity={(id) => {
-                  const entity = scene?.entities.find((e) => e.id === id);
-                  if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-                }}
-                onCutEntity={(id) => {
-                  const entity = scene?.entities.find((e) => e.id === id);
-                  if (entity) {
-                    clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-                    deleteEntity(id);
-                  }
-                }}
-                onDuplicateEntity={(id) => duplicateEntity(id)}
-                onDeleteEntity={(id) => deleteEntity(id)}
-                onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
-              />
-              {USE_PHASER_PLAY_HOST && isPlaying && playHostScene && workspace.focused === "b" && (
-                <PlayRuntimeHost
-                  remountKey={playHostKey}
-                  scene={playHostScene}
-                  assetUrls={playAssetUrls}
-                  guiComponents={snapshot.guiComponents}
-                  level={playHostLevel}
-                  paused={isPaused || playOutcome !== null}
-                  onMetrics={(sample) => {
-                    setPlayFps(sample.fps);
-                    setPlayFrameMs(sample.frameMs);
-                    setPlayDrawCalls(sample.drawCalls);
-                    setProfilerSample(sample);
-                  }}
-                />
-              )}
-            </div>
-          )}
-        </div>
-
-        {isTilePaintTool(activeTool) && (
-          <TilePalette
-            scene={scene}
-            assets={snapshot.assets}
-            images={paletteImages}
-            selectedEntityIds={selectedEntityIds}
-            paintTileId={paintTileId}
-            paintMode={activeTool === "erase" ? "erase" : tilePaintMode}
-            brushSize={brushSize}
-            onPaintTileIdChange={setPaintTileId}
-            onPaintModeChange={(mode) => {
-              setTilePaintMode(mode);
-              setActiveTool(mode === "erase" ? "erase" : "paint");
-            }}
-            onBrushSizeChange={setBrushSize}
-          />
-        )}
-        {isPlaying && profilerOpen && <ProfilerOverlay sample={profilerSample} open={profilerOpen} />}
-      </div>
-
-      {/* Bottom-left logo, tab-bar level — every action is on the tab bar */}
-      <BrandCorner isDirty={isDirty} onClick={() => setWelcomeHubOpen(true)} />
+      {/* Bottom-left logo and state indicator */}
+      <BrandCorner isDirty={project.isDirty} onClick={() => setWelcomeHubOpen(true)} />
 
       <PlayControls
-        isPlaying={isPlaying}
-        isPaused={isPaused}
-        playFps={playFps}
-        playFrameMs={playFrameMs}
-        entityCount={scene?.entities.length ?? 0}
-        drawCalls={playDrawCalls}
-        profilerOpen={profilerOpen}
-        onPlayToggle={handlePlayToggle}
-        onStop={handleStop}
-        onToggleProfiler={() => setProfilerOpen((open) => !open)}
+        isPlaying={play.isPlaying}
+        isPaused={play.isPaused}
+        playFps={play.playFps}
+        playFrameMs={play.playFrameMs}
+        entityCount={project.scene?.entities.length ?? 0}
+        drawCalls={play.playDrawCalls}
+        profilerOpen={play.profilerOpen}
+        onPlayToggle={play.handlePlayToggle}
+        onStop={play.handleStop}
+        onToggleProfiler={() => play.setProfilerOpen((open) => !open)}
       />
 
       {/* Bottom tab bar — navigation, tools, project */}
@@ -3174,8 +422,8 @@ export function App() {
                               ? "hierarchy"
                               : null
         }
-        saveState={saveState}
-        projectPath={isTauri ? projectPath : null}
+        saveState={project.saveState}
+        projectPath={project.isTauri ? project.projectPath : null}
         showLevels={MVP_SHOW_LEVELS}
         showGuiTools={MVP_SHOW_GUI_TOOLS}
         onHierarchy={() => {
@@ -3233,14 +481,14 @@ export function App() {
           if (sidebarOpen && activeTab === "world") setSidebarOpen(false);
           else openWorld();
         }}
-        onSave={saveScene}
-        onRefresh={refresh}
-        onImport={importAsset}
-        onAddEntity={addEntity}
+        onSave={project.saveScene}
+        onRefresh={project.refresh}
+        onImport={project.importAsset}
+        onAddEntity={entities.addEntity}
         onOpenWizard={() => setWizardOpen(true)}
         onOpenAssetStudio={() => openContent("studio")}
         onSettings={() => setAgentSettingsOpen(true)}
-        onCloseProject={isTauri ? handleCloseProject : undefined}
+        onCloseProject={project.isTauri ? project.handleCloseProject : undefined}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         activeTool={activeTool}
         snap={snap}
@@ -3254,341 +502,122 @@ export function App() {
         onToggleGrid={setShowGrid}
         onToggleColliders={setShowColliders}
         onZoomChange={setZoom}
-        onCenterView={() => {
-          setZoom(1);
-          setViewResetKey((k) => k + 1);
-        }}
+        onCenterView={centerView}
         onOpenTour={openTour}
       />
 
       {/* Left floating sheet */}
-      <div
-        className={cn(
-          shellStyles["float-sheet-left"],
-          sidebarOpen && shellStyles.open,
-          sidebarOpen && activeTab === "agent" && agentExpanded && shellStyles.expanded,
-        )}
-        role="dialog"
-        aria-label="Workspace panel"
-      >
-        <div className={shellStyles["sidebar-content"]}>
-          <div key={activeTab} className={shellStyles["sheet-panel-pane"]}>
-            {activeTab === "entities" && (
-              <Sidebar
-                entities={scene?.entities ?? []}
-                selectedEntityIds={selectedEntityIds}
-                onSelectEntity={(id, shift) => {
-                  setSelectedEntityIds((prev) => {
-                    const next = new Set(shift ? prev : undefined);
-                    if (next.has(id)) next.delete(id);
-                    else next.add(id);
-                    return next;
-                  });
-                }}
-                onDeleteEntity={(id) => deleteEntity(id)}
-                onCopyEntity={(id) => {
-                  const entity = scene?.entities.find((e) => e.id === id);
-                  if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-                }}
-                onCutEntity={(id) => {
-                  const entity = scene?.entities.find((e) => e.id === id);
-                  if (entity) {
-                    clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
-                    deleteEntity(id);
-                  }
-                }}
-                onPasteEntity={() => {
-                  const entity = clipboardRef.current;
-                  if (entity) pasteEntity(entity);
-                }}
-                onDuplicateEntity={(id) => duplicateEntity(id)}
-                onSaveAsPrefab={(id) => void saveEntityAsPrefab(id)}
-                onAddEntity={addEntity}
-                onAddTemplate={addTemplateEntity}
-              />
-            )}
-            {activeTab === "scenes" && (
-              <ScenePanel
-                scenes={snapshot.scenes}
-                currentSceneId={currentSceneFile}
-                onSelectScene={(file) => activateScene(file)}
-                onCreateScene={handleCreateScene}
-                onDeleteScene={handleDeleteScene}
-              />
-            )}
-            {activeTab === "prefabs" && (
-              <PrefabPanel
-                sceneFile={currentSceneFile}
-                selectedEntityId={selectedEntityId}
-                selectedEntityName={selectedEntity?.name}
-                onInstantiated={() => {
-                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-                }}
-                onStatus={(message) => {
-                  setStatus(message);
-                  addConsoleLog(
-                    message.toLowerCase().includes("fail") || message.toLowerCase().includes("select")
-                      ? message.toLowerCase().includes("fail")
-                        ? "error"
-                        : "warn"
-                      : "system",
-                    message
-                  );
-                }}
-              />
-            )}
-            {activeTab === "agent" && (
-              <AgentPanel
-                sceneId={currentSceneFile}
-                isPlaying={isPlaying}
-                expanded={agentExpanded}
-                onToggleExpand={() => {
-                  setAgentExpanded((prev) => {
-                    const next = !prev;
-                    localStorage.setItem("gamekit:agent:expanded", next ? "1" : "0");
-                    if (next) setInspectorOpen(false);
-                    return next;
-                  });
-                }}
-                onSettings={() => setAgentSettingsOpen(true)}
-                onSceneMutated={() => {
-                  if (!isPlaying) {
-                    refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-                  }
-                }}
-              />
-            )}
-            {activeTab === "world" && scene && (
-              <SceneSettings scene={scene} onChange={updateScene} />
-            )}
-            {activeTab === "world" && !scene && (
-              <div className="flex h-full items-center justify-center p-4 text-center text-[12px] text-text-muted">
-                Load a scene to edit world settings.
-              </div>
-            )}
-            {MVP_SHOW_LEVELS && activeTab === "levels" && (
-              <LevelPanel
-                levels={snapshot.levels}
-                scenes={snapshot.scenes}
-                currentLevelId={
-                  findLevelForScene(snapshot.levels, currentSceneFile)?.id ?? null
-                }
-                onSelectLevel={(levelId) => {
-                  const level = snapshot.levels.find((l) => l.id === levelId);
-                  if (!level) return;
-                  // Prefer first attached scene; normalize legacy bare ids ("main" → "main.scene.json")
-                  const raw = level.sceneIds[0];
-                  if (!raw) {
-                    addConsoleLog("warn", `Level "${level.name}" has no scenes attached.`);
-                    return;
-                  }
-                  const file = normalizeSceneFile(raw);
-                  if (!snapshot.scenes.some((s) => sceneFileMatches(s, file))) {
-                    addConsoleLog(
-                      "error",
-                      `Level scene "${file}" not found. Attach a valid scene file first.`
-                    );
-                    setStatus(`Scene not found: ${file}`);
-                    return;
-                  }
-                  setCurrentSceneFile(file);
-                }}
-                onCreateLevel={handleCreateLevel}
-                onDeleteLevel={handleDeleteLevel}
-                onToggleUnlock={handleToggleUnlockLevel}
-                onReorderLevels={handleReorderLevels}
-                onAssignScene={handleAssignSceneToLevel}
-                onRemoveScene={handleRemoveSceneFromLevel}
-                onUpdateLevel={handleUpdateLevel}
-              />
-            )}
-            {MVP_SHOW_GUI_TOOLS && activeTab === "guis" && (
-              <GuiPanel
-                nodes={scene?.gui?.nodes ?? []}
-                selectedGuiNodeId={selectedGuiNodeId}
-                onSelectNode={(id) => {
-                  setSelectedGuiNodeId(id);
-                  setSelectedEntityIds(new Set());
-                  setSelectedComponentInstanceId(null);
-                }}
-                onAddNode={addGuiNode}
-                onDeleteNode={deleteGuiNode}
-              />
-            )}
-            {MVP_SHOW_GUI_TOOLS && activeTab === "components" && (
-              <GuiComponentPanel
-                components={snapshot.guiComponents}
-                editingComponentId={editingComponentId}
-                onAddComponent={addGuiComponent}
-                onDeleteComponent={deleteGuiComponent}
-                onStartEdit={setEditingComponentId}
-                onStopEdit={() => setEditingComponentId(null)}
-                onAddNodeToComponent={addNodeToEditingComponent}
-                onDeleteNodeFromComponent={deleteNodeFromEditingComponent}
-                onPlaceInstance={addGuiComponentInstance}
-              />
-            )}
-            {activeTab === "recipes" && (
-              <RecipesPanel
-                scenePath={currentSceneFile}
-                selectedEntityId={selectedEntityId}
-                selectedEntityName={selectedEntity?.name}
-                onApplied={() => {
-                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
-                }}
-                onStatus={(message) => {
-                  setStatus(message);
-                  addConsoleLog("system", message);
-                }}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      <LeftSidebarSheet
+        sidebarOpen={sidebarOpen}
+        activeTab={activeTab}
+        agentExpanded={agentExpanded}
+        setAgentExpanded={setAgentExpanded}
+        setInspectorOpen={setInspectorOpen}
+        setAgentSettingsOpen={setAgentSettingsOpen}
+        snapshot={project.snapshot}
+        currentSceneFile={project.currentSceneFile}
+        setCurrentSceneFile={project.setCurrentSceneFile}
+        scene={project.scene}
+        updateScene={project.updateScene}
+        refresh={project.refresh}
+        setStatus={project.setStatus}
+        addConsoleLog={project.addConsoleLog}
+        activateScene={project.activateScene}
+        handleCreateScene={project.handleCreateScene}
+        handleDeleteScene={project.handleDeleteScene}
+        normalizeSceneFile={project.normalizeSceneFile}
+        sceneFileMatches={project.sceneFileMatches}
+        selectedEntityIds={entities.selectedEntityIds}
+        setSelectedEntityIds={entities.setSelectedEntityIds}
+        selectedEntityId={entities.selectedEntityId}
+        selectedEntity={entities.selectedEntity}
+        clipboardRef={entities.clipboardRef}
+        deleteEntity={entities.deleteEntity}
+        duplicateEntity={entities.duplicateEntity}
+        pasteEntity={entities.pasteEntity}
+        saveEntityAsPrefab={entities.saveEntityAsPrefab}
+        addEntity={entities.addEntity}
+        addTemplateEntity={entities.addTemplateEntity}
+        isPlaying={play.isPlaying}
+        showLevels={MVP_SHOW_LEVELS}
+        handleCreateLevel={levels.handleCreateLevel}
+        handleDeleteLevel={levels.handleDeleteLevel}
+        handleToggleUnlockLevel={levels.handleToggleUnlockLevel}
+        handleReorderLevels={levels.handleReorderLevels}
+        handleAssignSceneToLevel={levels.handleAssignSceneToLevel}
+        handleRemoveSceneFromLevel={levels.handleRemoveSceneFromLevel}
+        handleUpdateLevel={levels.handleUpdateLevel}
+        showGuiTools={MVP_SHOW_GUI_TOOLS}
+        selectedGuiNodeId={gui.selectedGuiNodeId}
+        setSelectedGuiNodeId={gui.setSelectedGuiNodeId}
+        setSelectedComponentInstanceId={gui.setSelectedComponentInstanceId}
+        addGuiNode={gui.addGuiNode}
+        deleteGuiNode={gui.deleteGuiNode}
+        editingComponentId={gui.editingComponentId}
+        setEditingComponentId={gui.setEditingComponentId}
+        addGuiComponent={gui.addGuiComponent}
+        deleteGuiComponent={gui.deleteGuiComponent}
+        addNodeToEditingComponent={gui.addNodeToEditingComponent}
+        deleteNodeFromEditingComponent={gui.deleteNodeFromEditingComponent}
+        addGuiComponentInstance={gui.addGuiComponentInstance}
+      />
 
-      {/* Right floating inspector sheet — entity / GUI properties only */}
-      <div className={cn(shellStyles["float-sheet-right"], inspectorOpen && shellStyles.open)} role="dialog" aria-label="Inspector">
-        <div className={shellStyles["inspector-column"]} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          <div
-            key={selectedComponentInstanceId ? `comp-${selectedComponentInstanceId}` : selectedGuiNodeId ? `gui-${selectedGuiNodeId}` : `entity-${selectedEntityId ?? "none"}`}
-            className={shellStyles["sheet-panel-pane"]}
-          >
-            {selectedComponentInstanceId && scene ? (
-              <GuiInstanceInspector
-                instance={scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)!}
-                component={snapshot.guiComponents.find((c) => c.id === scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)?.componentId)}
-                assets={snapshot.assets}
-                onChange={updateGuiComponentInstance}
-                onDelete={() => deleteGuiComponentInstance(selectedComponentInstanceId)}
-              />
-            ) : selectedGuiNodeId && scene ? (
-              <GuiInspector
-                node={scene.gui.nodes.find((n) => n.id === selectedGuiNodeId)}
-                assets={snapshot.assets}
-                onChange={updateGuiNode}
-                onDelete={() => deleteGuiNode(selectedGuiNodeId)}
-              />
-            ) : (
-              <Inspector
-                entity={selectedEntity}
-                assets={snapshot.assets}
-                entityIds={scene?.entities.map((e) => e.id) ?? []}
-                multiCount={selectedEntityIds.size}
-                onChange={(mutator) => updateScene((draft) => {
-                  const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
-                  if (entity) mutator(entity);
-                })}
-                onDelete={selectedEntityIds.size > 0 ? () => selectedEntityIds.forEach((id) => deleteEntity(id)) : undefined}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Right floating inspector sheet */}
+      <RightInspectorSheet
+        inspectorOpen={inspectorOpen}
+        selectedComponentInstanceId={gui.selectedComponentInstanceId}
+        selectedGuiNodeId={gui.selectedGuiNodeId}
+        selectedEntityId={entities.selectedEntityId}
+        selectedEntity={entities.selectedEntity}
+        selectedEntityIds={entities.selectedEntityIds}
+        scene={project.scene}
+        assets={project.snapshot.assets}
+        guiComponents={project.snapshot.guiComponents}
+        updateGuiComponentInstance={gui.updateGuiComponentInstance}
+        deleteGuiComponentInstance={gui.deleteGuiComponentInstance}
+        updateGuiNode={gui.updateGuiNode}
+        deleteGuiNode={gui.deleteGuiNode}
+        updateScene={project.updateScene}
+        deleteEntity={entities.deleteEntity}
+      />
 
-      {/* Content drawer — docks just above the tab bar */}
-      {scene && (
-        <section
-          className={cn(
-            shellStyles["bottom-sheet"],
-            !bottomDrawerCollapsed && shellStyles.open,
-            activeBottomTab === "studio" && shellStyles["studio-view"],
-          )}
-          aria-hidden={bottomDrawerCollapsed}
-          aria-label="Content browser"
-        >
-          <div className={sheetStyles["bottom-sheet-handle"]} aria-hidden />
-          <div className={sheetStyles["bottom-sheet-header"]}>
-            {(MVP_SHOW_TIMELINE || MVP_SHOW_CONSOLE) ? (
-              <div className={shellStyles["bottom-sheet-tabs"]}>
-                {(
-                  [
-                    ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
-                    ["studio", "Studio", <Wand2 key="i" size={13} strokeWidth={1.75} />] as const,
-                    ...(MVP_SHOW_TIMELINE
-                      ? ([["timeline", "Timeline", <Clock3 key="i" size={13} strokeWidth={1.75} />]] as const)
-                      : []),
-                    ...(MVP_SHOW_CONSOLE
-                      ? ([["console", "Console", <Terminal key="i" size={13} strokeWidth={1.75} />]] as const)
-                      : []),
-                  ] as const
-                ).map(([id, label, icon]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={cn(shellStyles["bottom-sheet-tab"], activeBottomTab === id && shellStyles.active)}
-                    onClick={() => setActiveBottomTab(id as BottomTab)}
-                  >
-                    {icon}
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <h2 className={sheetStyles["bottom-sheet-title"]}>
-                <Folder size={14} strokeWidth={1.75} />
-                Content
-                <span>{snapshot.assets.length} assets</span>
-              </h2>
-            )}
-            <button
-              type="button"
-              className={shellStyles["bottom-sheet-close"]}
-              title="Close"
-              aria-label="Close content drawer"
-              onClick={() => setBottomDrawerCollapsed(true)}
-            >
-              <X size={16} strokeWidth={1.75} />
-            </button>
-          </div>
-          <div className={shellStyles["drawer-content-box"]}>
-            <div key={activeBottomTab} className={shellStyles["drawer-tab-pane"]}>
-              {activeBottomTab === "assets" && (
-                <AssetsPanel
-                  assets={snapshot.assets}
-                  selectedAssetId={selectedAssetId}
-                  onSelectAsset={setSelectedAssetId}
-                  onDeleteAsset={(id) => deleteAsset(id).catch(setError)}
-                  onImport={(file) => importAsset(file).catch(setError)}
-                  onOpenAssetStudio={() => openContent("studio")}
-                />
-              )}
-              {activeBottomTab === "studio" && (
-                <AssetStudioModal
-                  embedded
-                  isOpen
-                  onClose={() => setActiveBottomTab("assets")}
-                  onAssetCreated={async (asset) => {
-                    setSelectedAssetId(asset.id);
-                    await refresh();
-                  }}
-                  onSpawnEntityWithSprite={handleSpawnEntityWithSprite}
-                  onSpawnEntityWithAnimation={handleSpawnEntityWithAnimation}
-                  onAttachAudioToEntity={handleAttachAudioToEntity}
-                  selectedEntityId={selectedEntityId}
-                  activeSceneId={currentSceneFile}
-                />
-              )}
-              {MVP_SHOW_TIMELINE && activeBottomTab === "timeline" && (
-                <TimelinePanel scene={scene} onChange={updateScene} />
-              )}
-              {MVP_SHOW_CONSOLE && activeBottomTab === "console" && (
-                <ConsolePanel
-                  logs={logs}
-                  onExecuteCommand={executeConsoleCommand}
-                  onClearLogs={() => setLogs([])}
-                />
-              )}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Content drawer */}
+      <BottomContentDrawer
+        scene={project.scene}
+        bottomDrawerCollapsed={bottomDrawerCollapsed}
+        setBottomDrawerCollapsed={setBottomDrawerCollapsed}
+        activeBottomTab={activeBottomTab}
+        setActiveBottomTab={setActiveBottomTab}
+        snapshot={project.snapshot}
+        selectedAssetId={project.selectedAssetId}
+        setSelectedAssetId={project.setSelectedAssetId}
+        selectedEntityId={entities.selectedEntityId}
+        currentSceneFile={project.currentSceneFile}
+        logs={project.logs}
+        setLogs={project.setLogs}
+        deleteAsset={project.deleteAsset}
+        importAsset={project.importAsset}
+        openContent={openContent}
+        refresh={project.refresh}
+        setError={setError}
+        executeConsoleCommand={(cmd) =>
+          project.executeConsoleCommand(cmd, entities.selectedEntityId ?? null, entities.setSelectedEntityIds)
+        }
+        updateScene={project.updateScene}
+        handleSpawnEntityWithSprite={entities.handleSpawnEntityWithSprite}
+        handleSpawnEntityWithAnimation={entities.handleSpawnEntityWithAnimation}
+        handleAttachAudioToEntity={entities.handleAttachAudioToEntity}
+        showTimeline={MVP_SHOW_TIMELINE}
+        showConsole={MVP_SHOW_CONSOLE}
+      />
 
+      {/* Dialogs and Modals */}
       <NewProjectWizard
         open={newProjectWizardOpen}
         onClose={() => setNewProjectWizardOpen(false)}
         onProjectCreated={async (path) => {
           setNewProjectWizardOpen(false);
-          await loadProjectFolder(path);
+          await project.loadProjectFolder(path);
         }}
       />
       <AgentSettings open={agentSettingsOpen} onClose={() => setAgentSettingsOpen(false)} />
@@ -3596,21 +625,19 @@ export function App() {
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         onApplied={(sceneFile) => {
-          setCurrentSceneFile(sceneFile);
-          refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+          project.setCurrentSceneFile(sceneFile);
+          project.refresh().catch((e) => project.setStatus(e instanceof Error ? e.message : "Refresh failed"));
         }}
         onStatus={(message) => {
-          setStatus(message);
-          addConsoleLog("system", message);
+          project.setStatus(message);
+          project.addConsoleLog("system", message);
         }}
       />
-
       <CommandPalette
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         commands={commandItems}
       />
-
       <EditorTour isOpen={isTourOpen} onClose={closeTour} />
     </main>
   );
