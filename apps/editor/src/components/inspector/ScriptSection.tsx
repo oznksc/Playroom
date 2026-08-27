@@ -71,6 +71,11 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                     <option value="respawn">respawn</option>
                     <option value="completeObjective">completeObjective</option>
                     <option value="setCheckpoint">setCheckpoint</option>
+                    <option value="achievement.unlock">achievement.unlock</option>
+                    <option value="achievement.increment">achievement.increment</option>
+                    <option value="achievement.setSteps">achievement.setSteps</option>
+                    <option value="leaderboard.submit">leaderboard.submit</option>
+                    <option value="services.showUI">services.showUI</option>
                   </Select>
                   <IconButton size="sm" title="Add action" onClick={() => onChange((d) => {
                     findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.push({ type: "setVariable", key: "", value: true });
@@ -165,6 +170,66 @@ function ScriptActionFields({ action, onChange }: { action: { type: string; [key
       <div className="grid grid-cols-2 gap-1 pl-2">
         <NumberField label="Force X" value={force.x ?? 0} onChange={(value) => onChange({ ...action, force: { ...force, x: value } })} />
         <NumberField label="Force Y" value={force.y ?? 0} onChange={(value) => onChange({ ...action, force: { ...force, y: value } })} />
+      </div>
+    );
+  }
+  if (action.type === "achievement.unlock") {
+    return (
+      <div className="pl-2">
+        {textField("achievementId", "Achievement ID", "achievement id (e.g. first_win)")}
+      </div>
+    );
+  }
+  if (action.type === "achievement.increment") {
+    return (
+      <div className="grid grid-cols-2 gap-1 pl-2">
+        {textField("achievementId", "Achievement ID", "achievement id")}
+        <NumberField
+          label="Amount"
+          value={typeof action.amount === "number" ? action.amount : 1}
+          min={1}
+          onChange={(val) => onChange({ ...action, amount: Math.max(1, Math.round(val)) })}
+        />
+      </div>
+    );
+  }
+  if (action.type === "achievement.setSteps") {
+    return (
+      <div className="grid grid-cols-2 gap-1 pl-2">
+        {textField("achievementId", "Achievement ID", "achievement id")}
+        <NumberField
+          label="Steps"
+          value={typeof action.steps === "number" ? action.steps : 1}
+          min={1}
+          onChange={(val) => onChange({ ...action, steps: Math.max(1, Math.round(val)) })}
+        />
+      </div>
+    );
+  }
+  if (action.type === "leaderboard.submit") {
+    return (
+      <div className="grid grid-cols-2 gap-1 pl-2">
+        {textField("leaderboardId", "Leaderboard ID", "leaderboard id")}
+        <NumberField
+          label="Score"
+          value={typeof action.value === "number" ? action.value : 0}
+          onChange={(val) => onChange({ ...action, value: Math.round(val) })}
+        />
+      </div>
+    );
+  }
+  if (action.type === "services.showUI") {
+    return (
+      <div className="pl-2">
+        <Select
+          value={(action.target as string) || "all"}
+          className="h-7 text-[10px]"
+          onChange={(e) => onChange({ ...action, target: e.target.value })}
+        >
+          <option value="all">All Services</option>
+          <option value="achievements">Achievements UI</option>
+          <option value="leaderboards">Leaderboards UI</option>
+        </Select>
       </div>
     );
   }

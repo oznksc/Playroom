@@ -55,4 +55,35 @@ describe("ScriptSection (RTL)", () => {
     const updated = draft.components[0] as ScriptComponent;
     expect(updated.handlers).toHaveLength(2);
   });
+
+  it("renders Game Services actions with specialized form fields", () => {
+    const gameServicesScript: ScriptComponent = {
+      type: "Script",
+      handlers: [
+        {
+          event: "onTriggerEnter",
+          actions: [
+            { type: "achievement.unlock", achievementId: "boss_defeat" },
+            { type: "leaderboard.submit", leaderboardId: "speedrun", value: 120 },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <ScriptSection
+        script={gameServicesScript}
+        onChange={vi.fn()}
+        open={true}
+        onToggle={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByText("achievement.unlock").length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue("boss_defeat")).toBeInTheDocument();
+    expect(screen.getAllByText("leaderboard.submit").length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue("speedrun")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("120")).toBeInTheDocument();
+  });
 });

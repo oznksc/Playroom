@@ -239,6 +239,32 @@ export function GameServicesPanel({
           </div>
         </div>
 
+        {/* Project App IDs */}
+        <div className="rounded-md border border-border-default bg-bg-base/80 p-2.5 space-y-2">
+          <span className="text-[11px] font-semibold text-text-secondary block">
+            Google Play Console App ID
+          </span>
+          <div className="flex items-center gap-2">
+            <span title="Google Play Games">
+              <Gamepad2 size={14} className="text-green-400 shrink-0" />
+            </span>
+            <Input
+              value={gameServices.googlePlayAppId ?? ""}
+              onChange={(e) =>
+                onUpdateGameServices({
+                  ...gameServices,
+                  googlePlayAppId: e.target.value,
+                })
+              }
+              placeholder="e.g. 123456789012 (found in Play Console)"
+              className="text-xs font-mono"
+            />
+          </div>
+          <p className="text-[10px] text-text-muted">
+            Required for Android builds. Injected into AndroidManifest and strings.xml automatically on export.
+          </p>
+        </div>
+
         {/* Tab switchers */}
         <div className="flex rounded-md border border-border-default bg-bg-base p-0.5">
           <button

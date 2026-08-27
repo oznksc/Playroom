@@ -1063,7 +1063,10 @@ export async function exportProject(root: string, outputDir: string, platform: "
 
     const stringsPath = join(outputDir, "android", "res", "values", "strings.xml");
     if (await exists(stringsPath)) {
-      const pgsAppId = project.gameServices?.achievements?.find((a) => a.providers.googlePlay)?.providers.googlePlay ?? "";
+      const pgsAppId =
+        project.gameServices?.googlePlayAppId ??
+        project.gameServices?.achievements?.find((a) => a.providers.googlePlay)?.providers.googlePlay ??
+        "";
       await writeFile(
         stringsPath,
         `<?xml version="1.0" encoding="utf-8"?>
@@ -1073,6 +1076,35 @@ export async function exportProject(root: string, outputDir: string, platform: "
 </resources>
 `,
       );
+    }
+
+    const activeSceneFile = project.activeScene || scenes[0];
+    let orientation = "portrait";
+    if (activeSceneFile) {
+      const scenePath = join(gamekitRoot, "scenes", activeSceneFile);
+      if (await exists(scenePath)) {
+        try {
+          const sceneJson = JSON.parse(await readFile(scenePath, "utf8"));
+          if (
+            sceneJson.viewport?.orientation === "landscape" ||
+            (sceneJson.viewport?.width && sceneJson.viewport?.height && sceneJson.viewport.width > sceneJson.viewport.height)
+          ) {
+            orientation = "sensorLandscape";
+          }
+        } catch {
+          // default to portrait
+        }
+      }
+    }
+
+    const manifestPath = join(outputDir, "android", "AndroidManifest.xml");
+    if (await exists(manifestPath)) {
+      let manifestContent = await readFile(manifestPath, "utf8");
+      manifestContent = manifestContent.replace(
+        /android:screenOrientation="[^"]*"/,
+        `android:screenOrientation="${orientation}"`
+      );
+      await writeFile(manifestPath, manifestContent);
     }
 
     const gdxAssetsGamekit = join(outputDir, "assets", "gamekit");

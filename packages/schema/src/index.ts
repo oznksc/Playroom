@@ -778,6 +778,7 @@ export type GameServiceLeaderboard = z.infer<typeof GameServiceLeaderboardSchema
 export const GameServicesDefSchema = z
   .object({
     enabled: z.boolean().default(false),
+    googlePlayAppId: z.string().optional(),
     achievements: z.array(GameServiceAchievementSchema).default([]),
     leaderboards: z.array(GameServiceLeaderboardSchema).default([]),
   })
