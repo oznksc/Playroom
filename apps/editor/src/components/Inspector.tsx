@@ -341,9 +341,9 @@ export function Inspector({
           {/* Inspector Header: Entity name & actions */}
           <div className="flex h-[42px] shrink-0 items-center justify-between gap-2 px-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <input
+              <Input
                 type="text"
-                className="w-full rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-[13px] font-bold text-text-primary outline-none hover:border-border-strong hover:bg-bg-elevated focus:border-accent focus:bg-bg-elevated"
+                className="w-full h-6 border-transparent bg-transparent px-1 py-0.5 text-xs font-bold text-text-primary hover:border-border-strong hover:bg-bg-elevated focus:border-accent focus:bg-bg-elevated"
                 value={entity.name}
                 onChange={(e) =>
                   onChange((draft) => {

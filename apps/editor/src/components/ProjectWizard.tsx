@@ -10,6 +10,7 @@ import {
   DialogDescription,
   Button,
   EmptyState,
+  SelectableCard,
   Badge,
   cn,
 } from "@/ui";
@@ -96,36 +97,16 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
               />
             ) : (
               skills.map((skill) => (
-                <button
+                <SelectableCard
                   key={skill.id}
-                  type="button"
+                  selected={applying === skill.id}
                   disabled={applying !== null}
-                  onClick={() => apply(skill)}
-                  className={cn(
-                    "group flex w-full items-start gap-3 rounded-md border border-border-default bg-bg-base p-3 text-left transition-colors",
-                    "hover:border-accent/40 hover:bg-bg-hover",
-                    applying === skill.id && "border-accent/50 bg-accent-muted"
-                  )}
-                >
-                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border-default bg-bg-elevated text-accent">
-                    <LayoutTemplate size={14} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-semibold text-text-primary">
-                        {skill.name}
-                      </span>
-                      <Badge variant="muted">{skill.entityCount} entities</Badge>
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
-                      {skill.description}
-                    </p>
-                  </div>
-                  <ChevronRight
-                    size={14}
-                    className="mt-1 shrink-0 text-text-muted group-hover:text-accent"
-                  />
-                </button>
+                  onSelect={() => apply(skill)}
+                  icon={<LayoutTemplate size={14} />}
+                  title={skill.name}
+                  description={skill.description}
+                  badge={<Badge variant="muted">{skill.entityCount} entities</Badge>}
+                />
               ))
             )}
           </div>

@@ -17,6 +17,7 @@ import {
   Select,
   Input,
   CheckboxField,
+  ColorField,
   cn,
 } from "@/ui";
 
@@ -243,29 +244,27 @@ type OverrideFieldProps = {
 
 function OverrideField({ label, override, fallback, onChange, type = "text" }: OverrideFieldProps) {
   const hasOverride = override !== undefined && override !== null;
+  if (type === "color") {
+    return (
+      <ColorField
+        label={label}
+        value={hasOverride ? String(override) : fallback}
+        onChange={(val: string) => onChange(val)}
+      />
+    );
+  }
+
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
         {label}
       </span>
-      {type === "color" ? (
-        <input
-          type="color"
-          className={cn(
-            "h-7 w-full cursor-pointer rounded border border-border-default bg-transparent",
-            hasOverride && "ring-1 ring-inset ring-accent/35"
-          )}
-          value={hasOverride ? String(override) : fallback}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : (
-        <Input
-          type="text"
-          className={cn(hasOverride && "ring-1 ring-inset ring-accent/35")}
-          value={hasOverride ? String(override) : fallback}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )}
+      <Input
+        type="text"
+        className={cn(hasOverride && "ring-1 ring-inset ring-accent/35")}
+        value={hasOverride ? String(override) : fallback}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </label>
   );
 }

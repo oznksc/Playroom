@@ -19,6 +19,7 @@ import {
   Select,
   Textarea,
   CheckboxField,
+  Range,
   cn,
 } from "@gamekit/ui";
 import { ProvidersPanel, PROVIDERS } from "./ProvidersPanel.js";
@@ -259,14 +260,12 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     <span className={styles["agent-range-label"]}>Temperature</span>
                     <span className={styles["agent-range-value"]}>{temperature.toFixed(2)}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
+                  <Range
+                    min={0}
+                    max={2}
+                    step={0.05}
                     value={temperature}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
+                    onValueChange={(v) => {
                       setTemperature(v);
                       persistModelSetting("gamekit:agent:temperature", v.toString());
                     }}
@@ -303,14 +302,12 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     <span className={styles["agent-range-label"]}>Top-p (Nucleus Sampling)</span>
                     <span className={styles["agent-range-value"]}>{topP.toFixed(2)}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
+                  <Range
+                    min={0}
+                    max={1}
+                    step={0.05}
                     value={topP}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
+                    onValueChange={(v) => {
                       setTopP(v);
                       persistModelSetting("gamekit:agent:topP", v.toString());
                     }}

@@ -9,6 +9,7 @@ import {
   Select,
   Input,
   CheckboxField,
+  ColorField,
 } from "@/ui";
 
 type GuiInspectorProps = {
@@ -166,21 +167,15 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
                 })
               }
             />
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                Color
-              </span>
-              <input
-                type="color"
-                className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
-                value={(node as GuiText).color ?? "#ffffff"}
-                onChange={(e) =>
-                  onChange((d) => {
-                    (d as GuiText).color = e.target.value;
-                  })
-                }
-              />
-            </label>
+            <ColorField
+              label="Color"
+              value={(node as GuiText).color ?? "#ffffff"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiText).color = value;
+                })
+              }
+            />
             <label className="flex flex-col gap-1">
               <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
                 Align
@@ -246,36 +241,24 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
                 })
               }
             />
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                Text Color
-              </span>
-              <input
-                type="color"
-                className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
-                value={(node as GuiButton).color ?? "#ffffff"}
-                onChange={(e) =>
-                  onChange((d) => {
-                    (d as GuiButton).color = e.target.value;
-                  })
-                }
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
-                BG Color
-              </span>
-              <input
-                type="color"
-                className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
-                value={(node as GuiButton).backgroundColor ?? "#333333"}
-                onChange={(e) =>
-                  onChange((d) => {
-                    (d as GuiButton).backgroundColor = e.target.value;
-                  })
-                }
-              />
-            </label>
+            <ColorField
+              label="Text Color"
+              value={(node as GuiButton).color ?? "#ffffff"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiButton).color = value;
+                })
+              }
+            />
+            <ColorField
+              label="BG Color"
+              value={(node as GuiButton).backgroundColor ?? "#333333"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiButton).backgroundColor = value;
+                })
+              }
+            />
           </AccordionSection>
         )}
 

@@ -16,7 +16,7 @@ import {
   Zap,
   Crosshair,
 } from "lucide-react";
-import { Badge, Button, Field, Input, Select, cn } from "@/ui";
+import { Badge, Button, Field, Input, Range, Select, cn } from "@/ui";
 import type { AnimationAction, PaletteName } from "../lib/client-asset-generator.js";
 import type { AssetStudioTab } from "../hooks/useAssetStudioGeneration.js";
 import { AgentMessage } from "./AgentMessage.js";
@@ -209,7 +209,7 @@ function CopilotStation({
         </div>
       )}
       <div className="flex items-center gap-2 border-t border-white/[0.08] bg-black/40 p-3">
-        <input
+        <Input
           type="text"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
@@ -217,7 +217,7 @@ function CopilotStation({
             if (event.key === "Enter" && !isStreaming) sendMessage(prompt);
           }}
           placeholder="Ask the Agent to create or refine any game asset..."
-          className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.05] px-3.5 py-2 text-xs text-white placeholder:text-text-muted focus:border-cyan-400 focus:outline-none"
+          className="flex-1 text-xs"
         />
         {isStreaming ? (
           <Button
@@ -402,14 +402,13 @@ function SfxStation({ preset, volume, setVolume, playPreset }: AssetStudioStatio
         })}
       </div>
       <Field label="Master Volume">
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
+        <Range
+          min={0}
+          max={1}
+          step={0.05}
           value={volume}
-          onChange={(event) => setVolume(parseFloat(event.target.value))}
-          className="w-full accent-yellow-400"
+          onValueChange={(val) => setVolume(val)}
+          showValue
         />
       </Field>
     </div>

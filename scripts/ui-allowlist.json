@@ -15,7 +15,37 @@
     ],
     "input": [
       "apps/editor/src/components/AssetsPanel.tsx",
-      "apps/editor/src/components/AudioPanel.tsx"
+      "apps/editor/src/components/AudioPanel.tsx",
+      "apps/editor/src/components/AppTabBar.tsx"
+    ],
+    "button": [
+      "apps/editor/src/components/AppTabBar/TabPrimitives.tsx",
+      "apps/editor/src/components/SidebarRail.tsx",
+      "apps/editor/src/components/SceneCanvasOverlays.tsx",
+      "apps/editor/src/components/CommandPalette.tsx",
+      "apps/editor/src/components/PlayControls.tsx",
+      "apps/editor/src/components/SceneTabBar.tsx",
+      "apps/editor/src/components/BrandCorner.tsx",
+      "apps/editor/src/components/WelcomeHub.tsx",
+      "apps/editor/src/components/Topbar.tsx",
+      "apps/editor/src/components/AgentSettings.tsx",
+      "apps/editor/src/components/AgentToolTrace.tsx",
+      "apps/editor/src/components/AssetStudioModal/AssetStudioHeader.tsx",
+      "apps/editor/src/components/AssetStudioModal/AssetStudioNavRail.tsx",
+      "apps/editor/src/components/AssetStudioModal/AssetStudioPreviewStage.tsx",
+      "apps/editor/src/components/AssetStudioStations.tsx",
+      "apps/editor/src/components/GuiInstanceInspector.tsx",
+      "apps/editor/src/components/LevelPanel.tsx",
+      "apps/editor/src/components/NewProjectWizard/WizardStepPlatform.tsx",
+      "apps/editor/src/components/NewProjectWizard.tsx",
+      "apps/editor/src/components/TilePalette.tsx"
+    ],
+    "input": [
+      "apps/editor/src/components/AssetsPanel.tsx",
+      "apps/editor/src/components/AudioPanel.tsx",
+      "apps/editor/src/components/AppTabBar.tsx",
+      "apps/editor/src/components/Topbar.tsx",
+      "apps/editor/src/components/CommandPalette.tsx"
     ]
   }
 }

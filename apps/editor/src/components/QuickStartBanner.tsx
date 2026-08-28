@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sparkles, Play, Wand2, Gamepad2, Layers, X, Share2, Compass } from "lucide-react";
-import { Button, Badge, cn } from "@/ui";
+import { Button, IconButton, Badge, cn } from "@/ui";
 
 interface QuickStartBannerProps {
   onPlayTest: () => void;
@@ -98,14 +98,14 @@ export function QuickStartBanner({
             Tour
           </Button>
 
-          <button
-            type="button"
+          <IconButton
+            size="sm"
             onClick={handleDismiss}
-            className="size-7 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/10 flex items-center justify-center transition-colors ml-1"
             title="Dismiss quick start banner"
+            className="ml-1"
           >
             <X size={14} />
-          </button>
+          </IconButton>
         </div>
       </div>
     </div>
