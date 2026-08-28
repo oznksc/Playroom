@@ -2,21 +2,23 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
-  height: 48px;
-  padding: 0 8px 0 14px;
+  height: 44px;
+  padding: 0 12px 0 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .bottom-sheet-handle {
   position: absolute;
-  top: 8px;
+  top: 5px;
   left: 50%;
   width: 36px;
-  height: 4px;
+  height: 3px;
   transform: translateX(-50%);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.2);
   pointer-events: none;
   transition: opacity 160ms ease, background 160ms ease;
 }

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   Badge,
   EmptyState,
   cn,
@@ -342,26 +343,26 @@ export function WelcomeHub({
 
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {onRemoveRecent && (
-                          <button
-                            type="button"
+                          <IconButton
+                            size="sm"
+                            variant="danger"
                             onClick={(e) => {
                               e.stopPropagation();
                               onRemoveRecent(path);
                             }}
-                            className="size-7 rounded-md text-text-muted hover:text-error hover:bg-error/10 flex items-center justify-center transition-colors"
                             title="Remove from recents"
                           >
                             <Trash2 size={13} />
-                          </button>
+                          </IconButton>
                         )}
-                        <button
-                          type="button"
+                        <IconButton
+                          size="sm"
+                          variant="accent"
                           onClick={() => onSelectProject(path)}
-                          className="size-7 rounded-md text-accent hover:bg-accent/10 flex items-center justify-center transition-colors"
                           title="Open project"
                         >
-                          <ChevronRight size={15} />
-                        </button>
+                          <ChevronRight size={14} />
+                        </IconButton>
                       </div>
                     </div>
                   );

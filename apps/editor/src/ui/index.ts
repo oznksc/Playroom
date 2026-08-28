@@ -1,6 +1,8 @@
 export { cn } from "./cn";
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { IconButton, iconButtonVariants, type IconButtonProps } from "./icon-button";
+export { ButtonGroup, type ButtonGroupProps } from "./button-group";
+export { Switch, type SwitchProps } from "./switch";
 export { Input, type InputProps } from "./input";
 export { Textarea, type TextareaProps } from "./textarea";
 export { Checkbox, type CheckboxProps } from "./checkbox";
@@ -29,7 +31,18 @@ export {
   AccordionSection,
   type AccordionSectionProps,
 } from "./accordion";
-export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  type TabsProps,
+  type TabsListProps,
+  type TabsTriggerProps,
+  type TabsContentProps,
+  type TabVariant,
+  type TabSize,
+} from "./tabs";
 export {
   Dialog,
   DialogTrigger,

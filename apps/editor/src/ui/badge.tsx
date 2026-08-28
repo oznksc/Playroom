@@ -11,7 +11,9 @@ const badgeVariants = cva(
         accent: "bg-accent/15 text-accent",
         purple: "bg-[rgba(139,92,246,0.15)] text-accent-purple",
         green: "bg-[rgba(16,185,129,0.15)] text-accent-green",
+        success: "bg-[rgba(16,185,129,0.15)] text-accent-green",
         red: "bg-[rgba(239,68,68,0.15)] text-error",
+        danger: "bg-[rgba(239,68,68,0.15)] text-error",
         gold: "bg-selection-muted text-selection",
         muted:
           "bg-transparent text-[rgba(235,235,245,0.45)] border border-white/[0.08]",

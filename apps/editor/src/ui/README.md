@@ -31,23 +31,25 @@ Dense dark IDE chrome for the game editor. Visual rules: repo-root `brief.md`.
 ## Import
 
 ```ts
-import { Button, Panel, NumberField, Dialog, cn } from "@/ui";
+import { Button, IconButton, ButtonGroup, Switch, Panel, NumberField, Dialog, SegmentedControl, Tabs, cn } from "@/ui";
 ```
 
 ## Primitives
 
 | Export | Role |
 |--------|------|
-| `Button` / `IconButton` | Actions (ghost default, compact heights) |
+| `Button` / `IconButton` | Actions (unified variants: primary, secondary, solid, ghost, outline, danger, play, stop; sizes: xs, sm, md, lg) |
+| `ButtonGroup` | Joined button toolbars and segment sets |
+| `Switch` | Accessible toggle switches (sizes: sm, md; variants: accent, success) |
 | `Input` / `Textarea` / `Select` / `Checkbox` | Form controls |
 | `Field` / `NumberField` / `CheckboxField` / `ColorField` | Inspector badge + control rows |
 | `NumberScrubberField` / `PropertyRow` / `PropertyGroup` | Game-editor numeric and inspector controls |
-| `SegmentedControl` / `Kbd` | Mode selection and shortcut hints |
+| `SegmentedControl` / `Kbd` | Mode selection (variants: default, subtle, pills; sizes: xs, sm, md; icon/badge support) |
 | `ModalShell` | Standard modal header, scroll body, and sticky footer |
 | `Badge` / `StatusDot` | Type + status signal |
 | `Panel` / `PanelHeader` / `PanelTitle` / `PanelBody` | Sidebar/inspector shells |
 | `AccordionSection` | Collapsible component cards |
-| `Tabs*` | Uppercase tab strip |
+| `Tabs*` | Multi-style tab strip (variants: segmented, underline, cards; sizes: xs, sm, md) |
 | `Dialog*` | Modals (wizard, agent settings) |
 | `ContextMenu*` / `LegacyContextMenu` | Right-click menus |
 | `DropdownMenu*` | Menus |
@@ -58,7 +60,7 @@ import { Button, Panel, NumberField, Dialog, cn } from "@/ui";
 
 1. Feature code under `components/` composes `ui/*` — no new raw button/input styling.
 2. Use brief accents for state (cyan select, green play, red danger), not decoration.
-3. Densities: ~22–30px controls, 9–13px type, monospace for IDs/numbers.
+3. Densities: ~22–32px controls, 9–13px type, monospace for IDs/numbers.
 4. Prefer semantic CSS variables (`--surface-*`, `--border-*`, `--signal-*`) over raw colours in new primitives.
 5. Review primitives at `?view=ui-gallery` before composing them into feature screens.
 6. Prefer Tailwind for small composition rules and CSS Modules for selectors, state variants, responsive layout, or descendant styling. Do not add SCSS.

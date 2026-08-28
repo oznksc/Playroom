@@ -1,6 +1,6 @@
 import type { GameKitAsset, GameKitEntity, GameKitLevel, GameKitScene, GuiComponent, TilemapComponent, TransformComponent } from "@gamekit/schema";
 import { GameKitEntitySchema } from "@gamekit/schema";
-import { cn } from "@/ui";
+import { Button, cn } from "@/ui";
 import workspaceStyles from "../Workspace.module.css";
 import { QuickStartBanner } from "../QuickStartBanner.js";
 import { SceneTabBar } from "../SceneTabBar.js";
@@ -458,20 +458,20 @@ export function CanvasWorkspace({
                   : "Objectives complete. Next level unlocks via completeLevel / level onComplete."}
               </p>
               <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-lg border border-accent/40 bg-accent/15 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/25"
+                <Button
+                  variant="solid"
+                  size="sm"
                   onClick={handlePlayRestart}
                 >
                   Restart
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] font-semibold text-text-primary hover:bg-white/10"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={handleStop}
                 >
                   Stop
-                </button>
+                </Button>
               </div>
             </div>
           </div>

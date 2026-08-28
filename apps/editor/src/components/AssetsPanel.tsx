@@ -51,7 +51,7 @@ export function AssetsPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex shrink-0 items-center gap-2 p-2">
+      <div className="flex shrink-0 items-center gap-2 border-b border-white/[0.04] px-3 py-2">
         <div className="search-field min-w-0 flex-1">
           <Search size={12} />
           <Input
@@ -59,22 +59,28 @@ export function AssetsPanel({
             placeholder="Search assets…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-7 text-xs"
           />
         </div>
 
         {onOpenAssetStudio && (
           <Button
-            size="md"
+            size="sm"
             variant="solid"
+            leftIcon={<Sparkles size={13} className="text-accent" />}
             onClick={onOpenAssetStudio}
-            className="bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-400 hover:to-violet-500 text-black font-semibold shadow-md shadow-cyan-500/20"
           >
-            <Sparkles size={13} className="text-black" /> Studio
+            Studio
           </Button>
         )}
 
-        <Button size="md" variant="secondary" onClick={() => fileInputRef.current?.click()}>
-          <Upload size={13} /> Import
+        <Button
+          size="sm"
+          variant="secondary"
+          leftIcon={<Upload size={13} />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Import
         </Button>
         <input
           ref={fileInputRef}

@@ -29,6 +29,8 @@ import {
   Select,
   Badge,
   CheckboxField,
+  Switch,
+  SegmentedControl,
   cn,
 } from "@/ui";
 
@@ -198,24 +200,14 @@ export function GameServicesPanel({
           <PanelTitle className="text-sm font-semibold text-text-primary">Game Services</PanelTitle>
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleEnabled}
-          className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-            gameServices.enabled ? "bg-accent-green" : "bg-bg-elevated"
-          )}
-          role="switch"
-          aria-checked={gameServices.enabled}
+        <Switch
+          variant="success"
+          size="sm"
+          checked={gameServices.enabled}
+          onCheckedChange={handleToggleEnabled}
+          aria-label={gameServices.enabled ? "Disable Game Services" : "Enable Game Services"}
           title={gameServices.enabled ? "Disable Game Services" : "Enable Game Services"}
-        >
-          <span
-            className={cn(
-              "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
-              gameServices.enabled ? "translate-x-4" : "translate-x-0"
-            )}
-          />
-        </button>
+        />
       </PanelHeader>
 
       <PanelBody className="flex-1 overflow-y-auto p-3 space-y-4">
@@ -266,40 +258,26 @@ export function GameServicesPanel({
         </div>
 
         {/* Tab switchers */}
-        <div className="flex rounded-md border border-border-default bg-bg-base p-0.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab("achievements")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded transition-colors",
-              activeTab === "achievements"
-                ? "bg-bg-elevated text-text-primary shadow-sm"
-                : "text-text-muted hover:text-text-secondary"
-            )}
-          >
-            <Award size={13} />
-            <span>Achievements</span>
-            <Badge variant="muted" className="ml-1 text-[10px] px-1.5 py-0">
-              {achievements.length}
-            </Badge>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("leaderboards")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded transition-colors",
-              activeTab === "leaderboards"
-                ? "bg-bg-elevated text-text-primary shadow-sm"
-                : "text-text-muted hover:text-text-secondary"
-            )}
-          >
-            <ListOrdered size={13} />
-            <span>Leaderboards</span>
-            <Badge variant="muted" className="ml-1 text-[10px] px-1.5 py-0">
-              {leaderboards.length}
-            </Badge>
-          </button>
-        </div>
+        <SegmentedControl
+          fullWidth
+          size="md"
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as "achievements" | "leaderboards")}
+          options={[
+            {
+              value: "achievements",
+              label: "Achievements",
+              icon: <Award size={13} />,
+              badge: achievements.length,
+            },
+            {
+              value: "leaderboards",
+              label: "Leaderboards",
+              icon: <ListOrdered size={13} />,
+              badge: leaderboards.length,
+            },
+          ]}
+        />
 
         {/* Tab Content: Achievements */}
         {activeTab === "achievements" && (

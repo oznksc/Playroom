@@ -1,6 +1,6 @@
 import type { GameKitScene } from "@gamekit/schema";
 import { Folder, Wand2, Clock3, Terminal, X } from "lucide-react";
-import { cn } from "@/ui";
+import { IconButton, SegmentedControl, Badge, cn } from "@/ui";
 import shellStyles from "../AppShell.module.css";
 import sheetStyles from "../SheetChrome.module.css";
 import { AssetsPanel } from "../AssetsPanel.js";
@@ -85,46 +85,63 @@ export function BottomContentDrawer({
       <div className={sheetStyles["bottom-sheet-handle"]} aria-hidden />
       <div className={sheetStyles["bottom-sheet-header"]}>
         {showTimeline || showConsole ? (
-          <div className={shellStyles["bottom-sheet-tabs"]}>
-            {(
-              [
-                ["assets", "Content", <Folder key="i" size={13} strokeWidth={1.75} />] as const,
-                ["studio", "Studio", <Wand2 key="i" size={13} strokeWidth={1.75} />] as const,
-                ...(showTimeline
-                  ? ([["timeline", "Timeline", <Clock3 key="i" size={13} strokeWidth={1.75} />]] as const)
-                  : []),
-                ...(showConsole
-                  ? ([["console", "Console", <Terminal key="i" size={13} strokeWidth={1.75} />]] as const)
-                  : []),
-              ] as const
-            ).map(([id, label, icon]) => (
-              <button
-                key={id}
-                type="button"
-                className={cn(shellStyles["bottom-sheet-tab"], activeBottomTab === id && shellStyles.active)}
-                onClick={() => setActiveBottomTab(id as BottomTab)}
-              >
-                {icon}
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            size="sm"
+            variant="default"
+            value={activeBottomTab}
+            onValueChange={(tab) => setActiveBottomTab(tab as BottomTab)}
+            options={[
+              {
+                value: "assets",
+                label: "Content",
+                icon: <Folder size={13} strokeWidth={1.75} />,
+                badge: snapshot.assets.length,
+              },
+              {
+                value: "studio",
+                label: "Studio",
+                icon: <Wand2 size={13} strokeWidth={1.75} className="text-accent" />,
+              },
+              ...(showTimeline
+                ? [
+                    {
+                      value: "timeline" as const,
+                      label: "Timeline",
+                      icon: <Clock3 size={13} strokeWidth={1.75} />,
+                    },
+                  ]
+                : []),
+              ...(showConsole
+                ? [
+                    {
+                      value: "console" as const,
+                      label: "Console",
+                      icon: <Terminal size={13} strokeWidth={1.75} />,
+                      badge: logs.length > 0 ? logs.length : undefined,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         ) : (
-          <h2 className={sheetStyles["bottom-sheet-title"]}>
-            <Folder size={14} strokeWidth={1.75} />
-            Content
-            <span>{snapshot.assets.length} assets</span>
-          </h2>
+          <div className="flex items-center gap-2">
+            <Folder size={14} className="text-accent" />
+            <span className="text-xs font-semibold text-text-primary">Content</span>
+            <Badge variant="muted" className="font-mono text-[9px]">
+              {snapshot.assets.length}
+            </Badge>
+          </div>
         )}
-        <button
-          type="button"
-          className={shellStyles["bottom-sheet-close"]}
-          title="Close"
+        <IconButton
+          size="sm"
+          variant="ghost"
+          title="Close content drawer"
           aria-label="Close content drawer"
           onClick={() => setBottomDrawerCollapsed(true)}
+          className="ml-auto text-text-muted hover:text-text-primary"
         >
-          <X size={16} strokeWidth={1.75} />
-        </button>
+          <X size={14} strokeWidth={1.75} />
+        </IconButton>
       </div>
       <div className={shellStyles["drawer-content-box"]}>
         <div key={activeBottomTab} className={shellStyles["drawer-tab-pane"]}>

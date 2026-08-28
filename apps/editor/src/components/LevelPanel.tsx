@@ -252,16 +252,18 @@ export function LevelPanel({
                       className="flex items-center gap-1 rounded-[8px] bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-text-secondary"
                     >
                       <span className="min-w-0 flex-1 truncate">{sceneLabel(sceneId)}</span>
-                      <button
-                        type="button"
-                        className="text-text-muted hover:text-error"
+                      <IconButton
+                        size="xs"
+                        variant="ghost"
+                        className="hover:text-error"
                         onClick={(e) => {
                           e.stopPropagation();
                           onRemoveScene(level.id, sceneId);
                         }}
+                        title="Remove scene"
                       >
-                        ×
-                      </button>
+                        <X size={10} />
+                      </IconButton>
                     </div>
                   ))}
                   <Select
