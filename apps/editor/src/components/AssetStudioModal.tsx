@@ -1,34 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Sparkles,
-  Play,
-  Pause,
-  RotateCcw,
-  Volume2,
-  Music,
-  Image as ImageIcon,
-  Film,
-  Plus,
-  Download,
-  Skull,
-  Coins,
-  Maximize2,
-  Sliders,
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Grid,
-  ZoomIn,
-  ZoomOut,
-  Radio,
-  Bot,
-  Target,
-  CheckCircle2,
-} from "lucide-react";
-import { Button, IconButton, Badge, SegmentedControl, cn } from "@/ui";
+import { Button, cn } from "@/ui";
 import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import { AssetStudioStationDeck } from "./AssetStudioStations.js";
+import { AssetStudioHeader } from "./AssetStudioModal/AssetStudioHeader.js";
+import { AssetStudioNavRail } from "./AssetStudioModal/AssetStudioNavRail.js";
+import { AssetStudioPreviewStage } from "./AssetStudioModal/AssetStudioPreviewStage.js";
 import styles from "./AssetStudioModal.module.css";
 import sheetStyles from "./SheetChrome.module.css";
 import type { GameKitAsset } from "@gamekit/schema";
@@ -37,6 +14,7 @@ import {
   useAssetStudioGeneration,
   type AssetStudioTab,
 } from "../hooks/useAssetStudioGeneration.js";
+import type { PinpointSuggestion } from "./AssetStudioModal/AssetStudioHeader.js";
 
 type StudioMode = "sheet" | "expanded" | "fullscreen";
 type StudioTab = AssetStudioTab;
@@ -64,69 +42,6 @@ type AssetStudioModalProps = {
   activeSceneId?: string;
 };
 
-type PinpointSuggestion = {
-  id: string;
-  title: string;
-  desc: string;
-  tag: string;
-  icon: typeof Sparkles;
-  prompt: string;
-  kind: "sprite" | "spritesheet" | "sfx" | "music";
-};
-
-const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
-  {
-    id: "hero-character",
-    title: "Spawn Animated Player Hero",
-    desc: "4-frame walk & weapon slash cycle with collider and physics",
-    tag: "Character Pack",
-    icon: Sparkles,
-    prompt:
-      "Generate an animated 4-frame cyberpunk knight hero walk spritesheet (32x32) with a weapon slash cycle, then spawn it as a player entity with collider in the scene.",
-    kind: "spritesheet",
-  },
-  {
-    id: "slime-enemy",
-    title: "Spawn Bouncing Slime Enemy",
-    desc: "Radioactive green slime monster with hurt & death animations",
-    tag: "Enemy Pack",
-    icon: Skull,
-    prompt:
-      "Generate a radioactive emerald bouncing slime monster enemy with 4-frame squashing animation cycle, add collider and spawn in the active scene.",
-    kind: "spritesheet",
-  },
-  {
-    id: "essential-sfx",
-    title: "Synthesize Essential 8-Bit SFX Pack",
-    desc: "Jump sweep, Gem pickup chime, Laser blast, and Impact hit",
-    tag: "Audio Kit",
-    icon: Volume2,
-    prompt:
-      "Generate a full set of retro sound effects: jump sweep (sfx-jump), coin pickup chime (sfx-coin), laser blaster (sfx-laser), and explosion rumble (sfx-explosion).",
-    kind: "sfx",
-  },
-  {
-    id: "adventure-bgm",
-    title: "Compose 130 BPM Overworld Theme",
-    desc: "Upbeat loopable chiptune adventure soundtrack in C Major",
-    tag: "Music & BGM",
-    icon: Music,
-    prompt:
-      "Synthesize a loopable 130 BPM Chiptune Adventure soundtrack in C Major with lead synth, bassline, and 8-bit drums.",
-    kind: "music",
-  },
-  {
-    id: "collectible-gems",
-    title: "Create Legendary Astral Gems Pack",
-    desc: "Glowing gold coin, diamond gem, and heart container sprites",
-    tag: "Items & Props",
-    icon: Coins,
-    prompt:
-      "Generate 3 collectible item sprites: golden coin (32x32), sapphire diamond gem (32x32), and celestial heart container (32x32) with Cyberpunk neon palette.",
-    kind: "sprite",
-  },
-];
-
 export function AssetStudioModal({
   isOpen,
   embedded = false,
@@ -141,7 +56,7 @@ export function AssetStudioModal({
   const [studioMode, setStudioMode] = useState<StudioMode>("expanded");
   const [activeTab, setActiveTab] = useState<StudioTab>("copilot");
 
-  // --- Shared Agent Hooks & Settings (Identical to AgentPanel) ---
+  // --- Shared Agent Hooks & Settings ---
   const { keys, sessionKey } = useAgentKeys();
   const [activeProvider] = useState(
     () => localStorage.getItem("gamekit:agent:activeProvider") || ""
@@ -154,7 +69,6 @@ export function AssetStudioModal({
     activeKeyEntry?.model ||
     (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
 
-  // Dedicated Agent instance for Asset Studio
   const { messages, toolCalls, isStreaming, sendMessage, abort } = useAgent(
     activeSceneId || "main.scene.json",
     resolvedModel,
@@ -234,7 +148,6 @@ export function AssetStudioModal({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll agent message container
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolCalls, isStreaming]);
@@ -243,16 +156,6 @@ export function AssetStudioModal({
     setActiveTab("copilot");
     setAiPrompt(suggestion.prompt);
     await sendMessage(suggestion.prompt);
-  }
-
-  function handleDownloadAsset(dataUrl: string | null, filename: string) {
-    if (!dataUrl) return;
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   }
 
   if (!isOpen) return null;
@@ -273,282 +176,38 @@ export function AssetStudioModal({
           studioMode === "fullscreen" && styles["mode-fullscreen"]
         )}
       >
-        {/* Content-sheet chrome: the Studio is an extension of Content, not a separate surface. */}
-        <div
-          className={cn(
-            styles["asset-studio-internal-header"],
-            sheetStyles["bottom-sheet-header"],
-            "relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4",
-            embedded && "hidden"
-          )}
-        >
-          {/* Drag Handle */}
-          <div
-            className={cn(
-              sheetStyles["bottom-sheet-handle"],
-              "!top-2 flex items-center justify-center cursor-pointer"
-            )}
-            onClick={() =>
-              setStudioMode((prev) =>
-                prev === "sheet" ? "expanded" : prev === "expanded" ? "fullscreen" : "sheet"
-              )
-            }
-            title="Toggle Studio Size"
-          >
-            <div className={styles["asset-studio-handle"]} />
-          </div>
-
-          {/* Top Header Bar */}
-          <div className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 text-black">
-                <Target size={16} className="animate-pulse" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <h2 className={cn(sheetStyles["bottom-sheet-title"], "!p-0")}>Asset Studio</h2>
-                  <Badge
-                    variant="accent"
-                    className="text-[9px] uppercase font-mono px-1.5 py-0.5 tracking-wider bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
-                  >
-                    Agent Powered • {resolvedProvider}
-                  </Badge>
-                </div>
-                <span className="text-[11px] text-text-muted">
-                  Generate and prepare assets for the current scene
-                </span>
-              </div>
-            </div>
-
-            {/* Sizing & Close */}
-            <div className="flex items-center gap-1.5">
-              <SegmentedControl
-                value={studioMode}
-                onValueChange={setStudioMode}
-                ariaLabel="Asset Studio size"
-                className="mr-2"
-                options={[
-                  {
-                    value: "sheet",
-                    label: (
-                      <span className="flex items-center gap-1">
-                        <Sliders size={12} /> Sheet
-                      </span>
-                    ),
-                  },
-                  {
-                    value: "expanded",
-                    label: (
-                      <span className="flex items-center gap-1">
-                        <Maximize2 size={12} /> Studio
-                      </span>
-                    ),
-                  },
-                  {
-                    value: "fullscreen",
-                    label: (
-                      <span className="flex items-center gap-1">
-                        <Radio size={12} /> Full
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-
-              <IconButton
-                size="sm"
-                variant="ghost"
-                onClick={onClose}
-                title="Close Studio (Esc)"
-                className="hover:bg-white/[0.1] text-text-muted hover:text-white"
-              >
-                <X size={16} />
-              </IconButton>
-            </div>
-          </div>
-
-          {/* ── Pinpoint Spot-on Suggestions Carousel Bar ── */}
-          <div className="w-full pt-2">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-              <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 shrink-0 flex items-center gap-1 bg-cyan-500/10 border border-cyan-500/30 px-2 py-1 rounded-lg">
-                <Target size={12} /> Pinpoint Suggestions:
-              </span>
-              {PINPOINT_SUGGESTIONS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleExecutePinpointSuggestion(item)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-cyan-500/15 hover:border-cyan-500/40 border border-white/[0.08] transition-all shrink-0 text-left group"
-                  >
-                    <Icon
-                      size={13}
-                      className="text-cyan-400 group-hover:scale-110 transition-transform"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold text-white group-hover:text-cyan-300 leading-tight">
-                        {item.title}
-                      </span>
-                      <span className="text-[9px] text-text-muted">{item.tag}</span>
-                    </div>
-                    <Badge variant="accent" className="text-[8px] font-mono px-1 py-0 ml-1">
-                      1-Click
-                    </Badge>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <AssetStudioHeader
+          studioMode={studioMode}
+          setStudioMode={setStudioMode}
+          resolvedProvider={resolvedProvider}
+          onClose={onClose}
+          onExecutePinpointSuggestion={handleExecutePinpointSuggestion}
+          embedded={embedded}
+        />
 
         {/* ── 3-Zone Workspace Layout ── */}
         <div className="flex-1 flex overflow-hidden min-h-0 bg-transparent">
-          {/* ZONE 1: Navigation Rail */}
-          <nav className="w-56 border-r border-white/[0.06] bg-black/30 p-3 flex flex-col justify-between shrink-0 select-none">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-text-muted px-2 mb-1">
-                Studio Stations
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("copilot")}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
-                  activeTab === "copilot"
-                    ? "bg-gradient-to-r from-cyan-500/25 to-violet-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_20px_rgba(0,240,255,0.15)]"
-                    : "text-text-muted hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "copilot"
-                      ? "bg-cyan-500 text-black font-bold scale-105"
-                      : "bg-white/[0.06] text-cyan-400"
-                  )}
-                >
-                  <Bot size={13} />
-                </div>
-                <span>AI Asset Copilot</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("sprites");
-                  void handleGenerateWithAi(undefined, "sprites");
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
-                  activeTab === "sprites"
-                    ? "bg-gradient-to-r from-blue-500/20 to-cyan-500/10 text-blue-300 border border-blue-500/30"
-                    : "text-text-muted hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "sprites"
-                      ? "bg-blue-500 text-black font-bold scale-105"
-                      : "bg-white/[0.06] text-blue-400"
-                  )}
-                >
-                  <ImageIcon size={13} />
-                </div>
-                <span>Sprites & Props Matrix</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("animated");
-                  void handleGenerateWithAi(undefined, "animated");
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
-                  activeTab === "animated"
-                    ? "bg-gradient-to-r from-violet-500/20 to-fuchsia-500/10 text-violet-300 border border-violet-500/30"
-                    : "text-text-muted hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "animated"
-                      ? "bg-violet-500 text-white font-bold scale-105"
-                      : "bg-white/[0.06] text-violet-400"
-                  )}
-                >
-                  <Film size={13} />
-                </div>
-                <span>Animation Cycles</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("sfx");
-                  handlePlaySfxPreset("laser");
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
-                  activeTab === "sfx"
-                    ? "bg-gradient-to-r from-yellow-500/20 to-amber-500/10 text-yellow-300 border border-yellow-500/30"
-                    : "text-text-muted hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "sfx"
-                      ? "bg-yellow-500 text-black font-bold scale-105"
-                      : "bg-white/[0.06] text-yellow-400"
-                  )}
-                >
-                  <Volume2 size={13} />
-                </div>
-                <span>Sound FX (SFX)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("music");
-                  handleGenerateMusic("cyberpunk_pulse", true);
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
-                  activeTab === "music"
-                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-purple-300 border border-purple-500/30"
-                    : "text-text-muted hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "music"
-                      ? "bg-purple-500 text-white font-bold scale-105"
-                      : "bg-white/[0.06] text-purple-400"
-                  )}
-                >
-                  <Music size={13} />
-                </div>
-                <span>Chiptune BGM Studio</span>
-              </button>
-            </div>
-
-            {/* Agent Engine Status */}
-            <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-1.5 text-[10px] text-text-muted">
-              <div className="flex items-center gap-1.5 text-cyan-300 font-semibold">
-                <CheckCircle2 size={12} className="text-cyan-400" />
-                <span>Agent Connected</span>
-              </div>
-              <span className="text-white/60">Model: {resolvedModel}</span>
-              <span className="text-white/40">MCP Tools: Active</span>
-            </div>
-          </nav>
+          <AssetStudioNavRail
+            activeTab={activeTab}
+            resolvedModel={resolvedModel}
+            onSelectCopilot={() => setActiveTab("copilot")}
+            onSelectSprites={() => {
+              setActiveTab("sprites");
+              void handleGenerateWithAi(undefined, "sprites");
+            }}
+            onSelectAnimated={() => {
+              setActiveTab("animated");
+              void handleGenerateWithAi(undefined, "animated");
+            }}
+            onSelectSfx={() => {
+              setActiveTab("sfx");
+              handlePlaySfxPreset("laser");
+            }}
+            onSelectMusic={() => {
+              setActiveTab("music");
+              handleGenerateMusic("cyberpunk_pulse", true);
+            }}
+          />
 
           {/* ZONE 2: Middle Parameter Deck & Chat Stream */}
           <div className="flex-1 flex flex-col border-r border-white/[0.06] bg-black/20 overflow-hidden min-h-0">
@@ -615,296 +274,43 @@ export function AssetStudioModal({
             </div>
           </div>
 
-          {/* ZONE 3: Right Live Interactive Stage & Audio Visualizer */}
-          <div className="w-80 lg:w-96 flex flex-col justify-between p-4 bg-[#05080e] relative overflow-hidden shrink-0">
-            {/* Viewport Floating Controls */}
-            <div className="flex items-center justify-between z-10">
-              <Badge variant="muted" className="font-mono text-[10px] uppercase">
-                {activeTab === "sfx"
-                  ? `SFX: ${sfxPreset}`
-                  : activeTab === "music"
-                    ? `BGM: ${musicPreset}`
-                    : activeTab === "animated"
-                      ? `Cycle: ${sheetAnimation}`
-                      : "Active Preview"}
-              </Badge>
-
-              {activeTab !== "sfx" && activeTab !== "music" && (
-                <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08]">
-                  <IconButton
-                    size="sm"
-                    variant={showGrid ? "active" : "ghost"}
-                    onClick={() => setShowGrid(!showGrid)}
-                    title="Toggle Pixel Grid"
-                  >
-                    <Grid size={13} />
-                  </IconButton>
-                  <IconButton
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setZoomLevel((z) => Math.max(1, z - 1))}
-                    title="Zoom Out"
-                  >
-                    <ZoomOut size={13} />
-                  </IconButton>
-                  <span className="text-[10px] font-mono px-1.5 text-text-muted">{zoomLevel}x</span>
-                  <IconButton
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setZoomLevel((z) => Math.min(6, z + 1))}
-                    title="Zoom In"
-                  >
-                    <ZoomIn size={13} />
-                  </IconButton>
-                </div>
-              )}
-            </div>
-
-            {/* Stage Center Viewport */}
-            <div
-              key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab}
-              className={cn(
-                sheetStyles["studio-station-pane"],
-                "flex-1 flex flex-col items-center justify-center my-3 gap-3"
-              )}
-            >
-              {/* STAGE A: AUDIO EQUALIZER (SFX & MUSIC) */}
-              {activeTab === "sfx" || activeTab === "music" ? (
-                <div className="flex flex-col items-center justify-center gap-5 w-full">
-                  <div className="w-full h-32 rounded-2xl bg-black/60 border border-white/[0.08] p-4 flex items-end justify-center gap-1.5 shadow-inner">
-                    {audioVisualBars.map((height, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "w-2.5 rounded-full transition-all duration-75",
-                          activeTab === "sfx"
-                            ? "bg-gradient-to-t from-yellow-500 to-amber-300 shadow-[0_0_10px_rgba(234,179,8,0.4)]"
-                            : "bg-gradient-to-t from-purple-600 via-fuchsia-500 to-cyan-400 shadow-[0_0_12px_rgba(168,85,247,0.4)]"
-                        )}
-                        style={{ height: `${height}%` }}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {activeTab === "sfx" ? (
-                      <Button
-                        variant="solid"
-                        size="md"
-                        onClick={() => handlePlaySfxPreset(sfxPreset)}
-                        className="bg-yellow-500 text-black hover:bg-yellow-400 font-bold shadow-lg shadow-yellow-500/20"
-                      >
-                        <Volume2 size={14} /> Play {sfxPreset}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="solid"
-                        size="md"
-                        onClick={toggleMusicPlay}
-                        className="bg-purple-600 text-white hover:bg-purple-500 font-bold shadow-lg shadow-purple-500/20"
-                      >
-                        {isPlayingMusicPreview ? <Pause size={14} /> : <Play size={14} />}
-                        {isPlayingMusicPreview ? "Pause Track" : "Play Chiptune Loop"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ) : activeTab === "animated" ? (
-                /* STAGE B: ANIMATED CYCLES CANVAS */
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div
-                    className={cn(
-                      "relative rounded-2xl border-2 border-violet-500/40 p-4 bg-[#080d17] shadow-[0_0_50px_rgba(139,92,246,0.15)] flex items-center justify-center",
-                      showGrid &&
-                        "bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:16px_16px]"
-                    )}
-                    style={{
-                      width: `${Math.min(220, sheetFrameSize * zoomLevel * 3)}px`,
-                      height: `${Math.min(220, sheetFrameSize * zoomLevel * 3)}px`,
-                    }}
-                  >
-                    <canvas
-                      ref={canvasAnimRef}
-                      width={128}
-                      height={128}
-                      className="w-full h-full object-contain [image-rendering:pixelated]"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-full border border-white/[0.08]">
-                    <IconButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setSheetCurrentFrame((prev) => (prev - 1 + sheetFrames) % sheetFrames)
-                      }
-                      title="Previous Frame"
-                    >
-                      <ChevronLeft size={13} />
-                    </IconButton>
-                    <IconButton
-                      size="sm"
-                      variant={isPlayingSheetAnim ? "active" : "ghost"}
-                      onClick={() => setIsPlayingSheetAnim(!isPlayingSheetAnim)}
-                      title={isPlayingSheetAnim ? "Pause" : "Play"}
-                    >
-                      {isPlayingSheetAnim ? <Pause size={13} /> : <Play size={13} />}
-                    </IconButton>
-                    <IconButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSheetCurrentFrame((prev) => (prev + 1) % sheetFrames)}
-                      title="Next Frame"
-                    >
-                      <ChevronRight size={13} />
-                    </IconButton>
-                    <span className="text-[10px] font-mono text-text-muted px-1.5">
-                      {sheetCurrentFrame + 1} / {sheetFrames}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                /* STAGE C: SPRITE & 4-VARIATION GRID */
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div
-                    className={cn(
-                      "relative rounded-2xl border-2 border-dashed border-cyan-500/30 flex items-center justify-center p-4 bg-[#080d17] shadow-[0_0_40px_rgba(0,240,255,0.08)]",
-                      showGrid &&
-                        "bg-[radial-gradient(#00f0ff_1px,transparent_1px)] [background-size:16px_16px]"
-                    )}
-                    style={{
-                      width: `${Math.min(220, spriteSize * zoomLevel * 3)}px`,
-                      height: `${Math.min(220, spriteSize * zoomLevel * 3)}px`,
-                    }}
-                  >
-                    {activeVariation?.dataUrl ? (
-                      <img
-                        src={activeVariation.dataUrl}
-                        alt="Generated Sprite"
-                        className="w-full h-full object-contain [image-rendering:pixelated] drop-shadow-[0_0_20px_rgba(0,240,255,0.35)]"
-                      />
-                    ) : (
-                      <ImageIcon size={32} className="opacity-30 text-text-muted" />
-                    )}
-                  </div>
-
-                  {variations.length > 1 && (
-                    <div className="flex items-center gap-1.5">
-                      {variations.map((v, i) => (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setSelectedVariationIndex(i)}
-                          className={cn(
-                            "w-7 h-7 rounded-lg border text-[11px] font-mono font-bold flex items-center justify-center transition-all",
-                            selectedVariationIndex === i
-                              ? "bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/30"
-                              : "bg-white/[0.04] text-text-muted border-white/[0.08] hover:bg-white/[0.08]"
-                          )}
-                        >
-                          V{i + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Actions Dock */}
-            <div className="flex flex-col gap-2 pt-3 border-t border-white/[0.08]">
-              {/* Contextual Primary Action Button */}
-              {activeTab === "sfx" && onAttachAudioToEntity ? (
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => {
-                    onAttachAudioToEntity(sfxId, false);
-                    onClose();
-                  }}
-                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-bold shadow-lg shadow-yellow-500/20"
-                >
-                  <Plus size={14} /> Attach SFX to Selected Entity
-                </Button>
-              ) : activeTab === "music" && onAttachAudioToEntity ? (
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => {
-                    onAttachAudioToEntity(musicId, true);
-                    onClose();
-                  }}
-                  className="w-full bg-purple-600 text-white hover:bg-purple-500 font-bold shadow-lg shadow-purple-500/20"
-                >
-                  <Music size={14} /> Attach BGM Soundtrack to Scene
-                </Button>
-              ) : activeTab === "animated" && onSpawnEntityWithAnimation ? (
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => {
-                    onSpawnEntityWithAnimation(
-                      sheetId,
-                      sheetFrameSize,
-                      sheetFrameSize,
-                      sheetFrames,
-                      sheetFps
-                    );
-                    onClose();
-                  }}
-                  className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold shadow-lg shadow-violet-500/20"
-                >
-                  <Plus size={14} /> Spawn Animated Entity
-                </Button>
-              ) : activeVariation && onSpawnEntityWithSprite ? (
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => {
-                    onSpawnEntityWithSprite(
-                      activeVariation.id,
-                      spriteSize,
-                      spriteSize,
-                      activeVariation.category
-                    );
-                    onClose();
-                  }}
-                  className="w-full bg-cyan-500 text-black hover:bg-cyan-400 font-bold shadow-lg shadow-cyan-500/20"
-                >
-                  <Plus size={14} /> Spawn Sprite into Scene
-                </Button>
-              ) : null}
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    if (activeTab === "sfx") handlePlaySfxPreset(sfxPreset);
-                    else if (activeTab === "music") handleGenerateMusic(musicPreset, true);
-                    else handleGenerateWithAi();
-                  }}
-                  className="flex-1"
-                >
-                  <RotateCcw size={12} /> Re-roll
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (activeTab === "sfx") handleDownloadAsset(null, `${sfxId}.wav`);
-                    else if (activeTab === "animated")
-                      handleDownloadAsset(sheetPreviewUrl, `${sheetId}.png`);
-                    else if (activeVariation)
-                      handleDownloadAsset(activeVariation.dataUrl, `${activeVariation.id}.png`);
-                  }}
-                  className="flex-1"
-                >
-                  <Download size={12} /> Export
-                </Button>
-              </div>
-            </div>
-          </div>
+          <AssetStudioPreviewStage
+            activeTab={activeTab}
+            zoomLevel={zoomLevel}
+            setZoomLevel={setZoomLevel}
+            showGrid={showGrid}
+            setShowGrid={setShowGrid}
+            spriteSize={spriteSize}
+            variations={variations}
+            selectedVariationIndex={selectedVariationIndex}
+            setSelectedVariationIndex={setSelectedVariationIndex}
+            activeVariation={activeVariation}
+            sheetFrameSize={sheetFrameSize}
+            sheetFrames={sheetFrames}
+            sheetFps={sheetFps}
+            sheetCurrentFrame={sheetCurrentFrame}
+            setSheetCurrentFrame={setSheetCurrentFrame}
+            isPlayingSheetAnim={isPlayingSheetAnim}
+            setIsPlayingSheetAnim={setIsPlayingSheetAnim}
+            canvasAnimRef={canvasAnimRef}
+            sheetAnimation={sheetAnimation}
+            audioVisualBars={audioVisualBars}
+            sfxPreset={sfxPreset}
+            musicPreset={musicPreset}
+            isPlayingMusicPreview={isPlayingMusicPreview}
+            toggleMusicPlay={toggleMusicPlay}
+            handlePlaySfxPreset={handlePlaySfxPreset}
+            sfxId={sfxId}
+            musicId={musicId}
+            sheetId={sheetId}
+            sheetPreviewUrl={sheetPreviewUrl}
+            onAttachAudioToEntity={onAttachAudioToEntity}
+            onSpawnEntityWithAnimation={onSpawnEntityWithAnimation}
+            onSpawnEntityWithSprite={onSpawnEntityWithSprite}
+            onClose={onClose}
+            handleGenerateWithAi={() => void handleGenerateWithAi()}
+            handleGenerateMusic={handleGenerateMusic}
+          />
         </div>
       </div>
     </div>

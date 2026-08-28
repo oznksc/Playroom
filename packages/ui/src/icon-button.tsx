@@ -89,6 +89,9 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       );
     }
 
+    const accessibleLabel =
+      props["aria-label"] ?? (typeof props.title === "string" ? props.title : undefined);
+
     return (
       <button
         ref={ref}
@@ -97,6 +100,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         data-active={active ? "true" : undefined}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
+        aria-label={accessibleLabel}
         className={cn(iconButtonVariants({ variant: computedVariant, size }), className)}
         {...props}
       >

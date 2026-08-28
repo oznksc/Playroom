@@ -3,23 +3,17 @@ import {
   Sparkles,
   ChevronRight,
   ChevronLeft,
-  FolderOpen,
-  Globe,
-  Smartphone,
-  Monitor,
   Gamepad2,
   Compass,
   Crosshair,
   Boxes,
   Zap,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
   Check,
-  Package,
 } from "lucide-react";
 import { getApiUrl } from "../lib/api.js";
-import { Dialog, ModalShell, Button, Input, Field, Badge, Checkbox, cn } from "@/ui";
+import { Dialog, ModalShell, Button, Badge, Checkbox, cn } from "@/ui";
+import { WizardStepPlatform } from "./NewProjectWizard/WizardStepPlatform.js";
+import { WizardStepBuild } from "./NewProjectWizard/WizardStepBuild.js";
 
 export type ProjectPlatform = "web" | "expo" | "tauri" | "libgdx";
 export type ProjectGenre =
@@ -125,7 +119,6 @@ export function NewProjectWizard({
       return;
     }
 
-    // Detect system package managers and default path
     fetch(getApiUrl("/api/system/environment"))
       .then((r) => r.json())
       .then(
@@ -134,20 +127,12 @@ export function NewProjectWizard({
           preferredPackageManager?: PackageManager;
           cwd?: string;
         }) => {
-          if (data.packageManagers?.length) {
-            setDetectedPMs(data.packageManagers);
-          }
-          if (data.preferredPackageManager) {
-            setPackageManager(data.preferredPackageManager);
-          }
-          if (data.cwd && !projectLocation) {
-            setProjectLocation(`${data.cwd}/games`);
-          }
+          if (data.packageManagers?.length) setDetectedPMs(data.packageManagers);
+          if (data.preferredPackageManager) setPackageManager(data.preferredPackageManager);
+          if (data.cwd && !projectLocation) setProjectLocation(`${data.cwd}/games`);
         }
       )
-      .catch(() => {
-        // Fallback
-      });
+      .catch(() => {});
   }, [open, projectLocation]);
 
   const slug =
@@ -165,11 +150,8 @@ export function NewProjectWizard({
       if (isTauri) {
         const { invoke } = await import("@tauri-apps/api/core");
         const selected = await invoke<string | null>("pick_location_directory");
-        if (selected) {
-          setProjectLocation(selected);
-        }
+        if (selected) setProjectLocation(selected);
       } else {
-        // Try OS native file dialog via local dev server
         try {
           const res = await fetch(getApiUrl("/api/system/pick-directory"), { method: "POST" });
           if (res.ok) {
@@ -180,22 +162,20 @@ export function NewProjectWizard({
             }
           }
         } catch {
-          // fallback
+          /* fallback */
         }
 
-        // Browser showDirectoryPicker fallback
         if (typeof window !== "undefined" && "showDirectoryPicker" in window) {
           try {
             const handle = await (
               window as unknown as { showDirectoryPicker: () => Promise<{ name: string }> }
             ).showDirectoryPicker();
-            if (handle?.name) {
+            if (handle?.name)
               setProjectLocation(
                 projectLocation ? `${projectLocation}/${handle.name}` : handle.name
               );
-            }
           } catch {
-            // Cancelled
+            /* Cancelled */
           }
         }
       }
@@ -222,7 +202,6 @@ export function NewProjectWizard({
       if (isTauri) {
         const { invoke } = await import("@tauri-apps/api/core");
         setBuildLogs((prev) => [...prev, "Running project scaffolding engine..."]);
-
         const resolved = await invoke<string>("create_new_project", {
           name: projectName,
           targetDir: fullTargetPath,
@@ -231,7 +210,6 @@ export function NewProjectWizard({
           packageManager,
           runInstall,
         });
-
         setBuildLogs((prev) => [
           ...prev,
           "✔ Project files generated",
@@ -240,13 +218,11 @@ export function NewProjectWizard({
           `Project ready at ${resolved}`,
         ]);
         setBuildStepMsg("Launching workspace in Playroom Studio...");
-
         setTimeout(() => {
           onProjectCreated(resolved);
           onClose();
         }, 900);
       } else {
-        // Web mode: invoke /api/projects/create
         const res = await fetch(getApiUrl("/api/projects/create"), {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -260,17 +236,13 @@ export function NewProjectWizard({
             initGit,
           }),
         });
-
         const data = (await res.json()) as {
           success?: boolean;
           targetDir?: string;
           error?: string;
           warnings?: string[];
         };
-
-        if (!res.ok || !data.success) {
-          throw new Error(data.error ?? "Failed to create project");
-        }
+        if (!res.ok || !data.success) throw new Error(data.error ?? "Failed to create project");
 
         setBuildLogs((prev) => [
           ...prev,
@@ -281,13 +253,9 @@ export function NewProjectWizard({
           "✔ GameKit runtime initialized",
           `Project ready at ${data.targetDir ?? fullTargetPath}`,
         ]);
-
         if (data.warnings?.length) {
-          for (const w of data.warnings) {
-            setBuildLogs((prev) => [...prev, `⚠ ${w}`]);
-          }
+          for (const w of data.warnings) setBuildLogs((prev) => [...prev, `⚠ ${w}`]);
         }
-
         setBuildStepMsg("Opening workspace...");
         setTimeout(() => {
           onProjectCreated(data.targetDir ?? fullTargetPath);
@@ -378,165 +346,17 @@ export function NewProjectWizard({
       >
         {/* STEP 1: Name, Location & Platform */}
         {step === 1 && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 gap-4">
-              <Field label="Game Name">
-                <Input
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="e.g. Cyber Blade, Pixel Quest"
-                  className="h-10 text-sm bg-bg-elevated border-border-default focus:border-accent"
-                />
-              </Field>
-
-              <Field label="Destination Folder">
-                <div className="flex gap-2">
-                  <Input
-                    value={projectLocation}
-                    onChange={(e) => setProjectLocation(e.target.value)}
-                    placeholder="/Users/username/games or C:\Games"
-                    className="h-10 text-xs font-mono bg-bg-elevated border-border-default flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    disabled={isPickingFolder}
-                    onClick={handleBrowseFolder}
-                    className="gap-1.5 shrink-0 px-3 border-border-strong bg-bg-elevated hover:bg-bg-hover hover:border-accent/40 text-xs"
-                    title="Choose folder"
-                  >
-                    {isPickingFolder ? (
-                      <Loader2 size={14} className="animate-spin text-accent" />
-                    ) : (
-                      <FolderOpen size={14} className="text-accent" />
-                    )}
-                    {isPickingFolder ? "Choosing..." : "Browse..."}
-                  </Button>
-                </div>
-                <p className="text-[11px] text-text-muted mt-1 font-mono">
-                  Path: <span className="text-accent font-semibold">{fullTargetPath}</span>
-                </p>
-              </Field>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
-                Select Target Platform
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Web */}
-                <button
-                  type="button"
-                  onClick={() => setPlatform("web")}
-                  className={cn(
-                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                    platform === "web"
-                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
-                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="size-9 rounded-lg border border-accent/30 bg-accent/15 flex items-center justify-center text-accent">
-                      <Globe size={18} />
-                    </div>
-                    {platform === "web" && (
-                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-text-primary block">Web Game</span>
-                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                    Phaser 3 + Vite. Instant browser play at 60 FPS.
-                  </span>
-                </button>
-
-                {/* Expo */}
-                <button
-                  type="button"
-                  onClick={() => setPlatform("expo")}
-                  className={cn(
-                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                    platform === "expo"
-                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
-                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="size-9 rounded-lg border border-purple-400/30 bg-purple-500/15 flex items-center justify-center text-purple-400">
-                      <Smartphone size={18} />
-                    </div>
-                    {platform === "expo" && (
-                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-text-primary block">Expo Mobile</span>
-                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                    React Native + Skia. iOS & Android with touch pads.
-                  </span>
-                </button>
-
-                {/* Tauri */}
-                <button
-                  type="button"
-                  onClick={() => setPlatform("tauri")}
-                  className={cn(
-                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                    platform === "tauri"
-                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
-                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="size-9 rounded-lg border border-emerald-400/30 bg-emerald-500/15 flex items-center justify-center text-emerald-400">
-                      <Monitor size={18} />
-                    </div>
-                    {platform === "tauri" && (
-                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-text-primary block">Desktop App</span>
-                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                    Tauri v2 + Rust. Native macOS/Windows/Linux app.
-                  </span>
-                </button>
-
-                {/* LibGDX */}
-                <button
-                  type="button"
-                  onClick={() => setPlatform("libgdx")}
-                  className={cn(
-                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                    platform === "libgdx"
-                      ? "border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.12)]"
-                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="size-9 rounded-lg border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400">
-                      <Monitor size={18} />
-                    </div>
-                    {platform === "libgdx" && (
-                      <div className="size-5 rounded-full bg-amber-400 text-[#06090e] flex items-center justify-center">
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-text-primary block">
-                    LibGDX Native
-                  </span>
-                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                    Java/Kotlin + Gradle. Android, Desktop &amp; iOS.
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <WizardStepPlatform
+            projectName={projectName}
+            setProjectName={setProjectName}
+            projectLocation={projectLocation}
+            setProjectLocation={setProjectLocation}
+            platform={platform}
+            setPlatform={setPlatform}
+            isPickingFolder={isPickingFolder}
+            fullTargetPath={fullTargetPath}
+            onBrowseFolder={handleBrowseFolder}
+          />
         )}
 
         {/* STEP 2: Choose Genre */}
@@ -590,7 +410,6 @@ export function NewProjectWizard({
         {/* STEP 3: Setup & Options */}
         {step === 3 && (
           <div className="space-y-4">
-            {/* Summary box */}
             <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-accent uppercase tracking-wider font-mono">
@@ -617,7 +436,6 @@ export function NewProjectWizard({
               </div>
             </div>
 
-            {/* Package Manager Options */}
             <div className="p-4 rounded-xl border border-border-default bg-bg-elevated/40 space-y-3">
               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
                 Package Tooling
@@ -657,7 +475,6 @@ export function NewProjectWizard({
                     Install packages automatically with <strong>{packageManager}</strong>
                   </span>
                 </label>
-
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <Checkbox checked={initGit} onCheckedChange={(c) => setInitGit(Boolean(c))} />
                   <span className="text-xs text-text-primary">
@@ -671,62 +488,12 @@ export function NewProjectWizard({
 
         {/* STEP 4: Live Build Screen */}
         {step === 4 && (
-          <div className="space-y-5 py-4">
-            <div className="flex flex-col items-center justify-center text-center space-y-3">
-              {isBuilding ? (
-                <div className="relative size-14 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
-                  <Loader2 size={24} className="text-accent animate-spin" />
-                </div>
-              ) : buildError ? (
-                <div className="size-14 rounded-full bg-error/15 border border-error/30 flex items-center justify-center text-error">
-                  <AlertCircle size={28} />
-                </div>
-              ) : (
-                <div className="size-14 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success">
-                  <CheckCircle2 size={28} />
-                </div>
-              )}
-
-              <div>
-                <h3 className="text-base font-semibold text-text-primary">
-                  {isBuilding
-                    ? "Generating Your Game Playground..."
-                    : buildError
-                      ? "Project Creation Failed"
-                      : "Playground Created Successfully!"}
-                </h3>
-                <p className="text-xs text-text-muted mt-1">{buildStepMsg}</p>
-              </div>
-            </div>
-
-            {/* Terminal Log Box */}
-            <div className="rounded-xl border border-border-strong bg-black/60 p-4 font-mono text-xs max-h-48 overflow-y-auto space-y-1 text-text-secondary">
-              {buildLogs.map((log, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "leading-relaxed",
-                    log.startsWith("✔")
-                      ? "text-success font-semibold"
-                      : log.startsWith("✖")
-                        ? "text-error font-semibold"
-                        : log.startsWith("⚠")
-                          ? "text-warning"
-                          : "text-text-secondary"
-                  )}
-                >
-                  {log}
-                </div>
-              ))}
-            </div>
-
-            {buildError && (
-              <div className="p-3 rounded-lg border border-error/30 bg-error/10 text-xs text-error">
-                {buildError}
-              </div>
-            )}
-          </div>
+          <WizardStepBuild
+            isBuilding={isBuilding}
+            buildError={buildError}
+            buildStepMsg={buildStepMsg}
+            buildLogs={buildLogs}
+          />
         )}
       </ModalShell>
     </Dialog>

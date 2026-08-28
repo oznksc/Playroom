@@ -61,7 +61,9 @@ describe("@gamekit/ui primitives", () => {
 
   it("renders Checkbox and toggles checked", () => {
     const handleChange = vi.fn();
-    const { rerender } = render(<Checkbox aria-label="Enable sound" checked={false} onCheckedChange={handleChange} />);
+    const { rerender } = render(
+      <Checkbox aria-label="Enable sound" checked={false} onCheckedChange={handleChange} />
+    );
     const checkbox = screen.getByRole("checkbox", { name: /enable sound/i });
     expect(checkbox).toHaveAttribute("data-state", "unchecked");
 

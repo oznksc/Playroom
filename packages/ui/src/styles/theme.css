@@ -1,4 +1,19 @@
 @import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-sans/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+
+/* ── Tailwind source scanning ─────────────────────────────────────── */
+/* Explicitly tell Tailwind where to look for class names so that      */
+/* packages/ui and apps/studio are scanned even though they live        */
+/* outside whichever app's project root imported this file.             */
+@source "../**/*.{tsx,ts}";
+@source "../../../apps/editor/src/**/*.{tsx,ts}";
+@source "../../../apps/studio/src/**/*.{tsx,ts}";
 
 /* ── Playroom Canonical Design Tokens (Refined Glass) ─────────────── */
 

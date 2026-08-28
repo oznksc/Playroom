@@ -26,7 +26,6 @@ import {
   ZoomOut,
   ScanEye,
   MoreHorizontal,
-  ChevronUp,
   Command,
   Globe,
   FileCode,
@@ -43,6 +42,8 @@ import { cn, NativeSelect } from "@gamekit/ui";
 import type { SaveState } from "../types.js";
 import type { CanvasTool } from "../lib/editor-tools.js";
 import type { EditorTabBarDestination } from "../lib/editor-layout.js";
+import { TabGroup, TabItem } from "./AppTabBar/TabPrimitives.js";
+import type { GroupId } from "./AppTabBar/TabPrimitives.js";
 import styles from "./AppTabBar.module.css";
 export type { CanvasTool } from "../lib/editor-tools.js";
 
@@ -93,8 +94,6 @@ type AppTabBarProps = {
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
-
-type GroupId = "project" | "tools" | "view" | "create" | "more";
 
 const TOOL_META: Record<CanvasTool, { label: string; icon: (size?: number) => ReactNode }> = {
   select: {
@@ -598,117 +597,5 @@ export function AppTabBar({
         }}
       />
     </nav>
-  );
-}
-
-function TabGroup({
-  id,
-  label,
-  icon,
-  open,
-  active,
-  onToggle,
-  layout,
-  align = "center",
-  children,
-}: {
-  id: GroupId;
-  label: string;
-  icon: ReactNode;
-  open: boolean;
-  active: boolean;
-  onToggle: () => void;
-  layout: "row" | "column";
-  align?: "center" | "end";
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        styles["app-tabbar-group"],
-        open && styles.open,
-        active && styles["has-active"]
-      )}
-      data-group={id}
-    >
-      <button
-        type="button"
-        className={cn(
-          styles["app-tabbar-item"],
-          styles["app-tabbar-group-trigger"],
-          open && styles.active
-        )}
-        onClick={onToggle}
-        title={label}
-        aria-label={label}
-        aria-expanded={open}
-        aria-haspopup="menu"
-      >
-        <span className={styles["app-tabbar-icon"]}>{icon}</span>
-        <span className={styles["app-tabbar-label"]}>
-          {label}
-          <ChevronUp
-            size={8}
-            strokeWidth={2.5}
-            className={cn(styles["app-tabbar-chevron"], open && styles.open)}
-            aria-hidden
-          />
-        </span>
-      </button>
-      {open && (
-        <div
-          className={cn(
-            styles["app-tabbar-flyout"],
-            layout === "column" && styles.column,
-            align === "end" && styles["align-end"]
-          )}
-          role="menu"
-          aria-label={label}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TabItem({
-  label,
-  icon,
-  active,
-  onClick,
-  tone,
-  compact,
-  row,
-}: {
-  label: string;
-  icon: ReactNode;
-  active: boolean;
-  onClick: () => void;
-  tone?: "success" | "error";
-  compact?: boolean;
-  /** Horizontal row layout for list-style flyouts */
-  row?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role={compact ? "menuitem" : undefined}
-      className={cn(
-        styles["app-tabbar-item"],
-        compact && styles.compact,
-        row && styles.row,
-        active && styles.active,
-        tone === "success" && styles["tone-success"],
-        tone === "error" && styles["tone-error"]
-      )}
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      aria-current={active ? "true" : undefined}
-    >
-      <span className={styles["app-tabbar-icon"]}>{icon}</span>
-      <span className={styles["app-tabbar-label"]}>{label}</span>
-    </button>
   );
 }

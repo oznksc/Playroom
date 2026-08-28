@@ -18,6 +18,8 @@
     "build": "pnpm -r --filter './packages/**' build && pnpm --filter @gamekit/editor build && pnpm --filter @gamekit/studio build",
     "typecheck": "pnpm --filter @gamekit/schema build && pnpm -r --filter './packages/**' --filter './apps/**' typecheck",
     "ui:check": "tsx scripts/check-ui-contract.ts",
+    "ui:baseline": "tsx scripts/check-ui-contract.ts --update-baseline",
+    "bundle:check": "tsx scripts/check-bundle-size.ts",
     "lint": "pnpm typecheck && pnpm ui:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -34,6 +36,7 @@
     "gamekit": "pnpm --filter @gamekit/cli gamekit"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.51.0",
     "@types/node": "^22.10.2",
     "@vitejs/plugin-react": "^4.3.4",
