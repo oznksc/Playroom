@@ -1,101 +1,89 @@
 import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { cn } from "./cn";
 
 export type TabVariant = "segmented" | "underline" | "cards";
 export type TabSize = "xs" | "sm" | "md";
 
 type TabsContextValue = {
-  value: string;
+  value?: string;
   onValueChange?: (value: string) => void;
   variant: TabVariant;
   size: TabSize;
 };
 
-const TabsContext = React.createContext<TabsContextValue | null>(null);
+const TabsStyleContext = React.createContext<TabsContextValue>({
+  variant: "segmented",
+  size: "sm",
+});
 
-function useTabsContext() {
-  return React.useContext(TabsContext);
-}
-
-export type TabsProps = {
-  value: string;
-  onValueChange: (value: string) => void;
-  variant?: TabVariant;
-  size?: TabSize;
-  children: React.ReactNode;
-  className?: string;
-};
-
-export function Tabs({
-  value,
-  onValueChange,
-  variant = "segmented",
-  size = "sm",
-  children,
-  className,
-}: TabsProps) {
-  const contextValue = React.useMemo(
-    () => ({ value, onValueChange, variant, size }),
-    [value, onValueChange, variant, size]
-  );
-  return (
-    <TabsContext.Provider value={contextValue}>
-      <div className={cn("flex flex-col", className)} data-tabs-value={value} data-variant={variant}>
-        {children}
-      </div>
-    </TabsContext.Provider>
-  );
-}
-
-export type TabsListProps = React.HTMLAttributes<HTMLDivElement> & {
+export type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> & {
   variant?: TabVariant;
   size?: TabSize;
 };
 
-/** Segmented glass control or underline tab strip */
-export function TabsList({ className, variant: variantProp, size: sizeProp, children, ...props }: TabsListProps) {
-  const ctx = useTabsContext();
-  const variant = variantProp ?? ctx?.variant ?? "segmented";
-  const size = sizeProp ?? ctx?.size ?? "sm";
+export const Tabs = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Root>,
+  TabsProps
+>(({ className, value, onValueChange, variant = "segmented", size = "sm", ...props }, ref) => (
+  <TabsStyleContext.Provider value={{ value, onValueChange, variant, size }}>
+    <TabsPrimitive.Root
+      ref={ref}
+      value={value}
+      onValueChange={onValueChange}
+      className={cn("flex flex-col", className)}
+      data-variant={variant}
+      data-size={size}
+      {...props}
+    />
+  </TabsStyleContext.Provider>
+));
+Tabs.displayName = TabsPrimitive.Root.displayName;
+
+export type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & {
+  variant?: TabVariant;
+  size?: TabSize;
+};
+
+export const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  TabsListProps
+>(({ className, variant: variantProp, size: sizeProp, ...props }, ref) => {
+  const ctx = React.useContext(TabsStyleContext);
+  const variant = variantProp ?? ctx.variant;
+  const size = sizeProp ?? ctx.size;
 
   const listVariantStyles = {
-    segmented: "flex shrink-0 items-center gap-0.5 rounded-[12px] border border-white/[0.06] bg-white/[0.04] p-0.5",
+    segmented:
+      "flex shrink-0 items-center gap-0.5 rounded-[12px] border border-white/[0.06] bg-white/[0.04] p-0.5",
     underline: "flex shrink-0 items-center gap-1 border-b border-border-default px-1",
     cards: "flex shrink-0 items-center gap-1 border-b border-border-default px-2",
   }[variant];
 
   return (
-    <div
-      role="tablist"
+    <TabsPrimitive.List
+      ref={ref}
       data-variant={variant}
       data-size={size}
       className={cn(listVariantStyles, className)}
       {...props}
-    >
-      {children}
-    </div>
+    />
   );
-}
+});
+TabsList.displayName = TabsPrimitive.List.displayName;
 
-export type TabsTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  value: string;
+export type TabsTriggerProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
   icon?: React.ReactNode;
   badge?: React.ReactNode | number | string;
 };
 
-export function TabsTrigger({
-  value,
-  icon,
-  badge,
-  className,
-  children,
-  onClick,
-  ...props
-}: TabsTriggerProps) {
-  const ctx = useTabsContext();
-  const active = ctx?.value === value;
-  const variant = ctx?.variant ?? "segmented";
-  const size = ctx?.size ?? "sm";
+export const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  TabsTriggerProps
+>(({ className, icon, badge, children, onClick, ...props }, ref) => {
+  const ctx = React.useContext(TabsStyleContext);
+  const variant = ctx.variant;
+  const size = ctx.size;
 
   const sizeStyles = {
     segmented: {
@@ -119,32 +107,30 @@ export function TabsTrigger({
     segmented: cn(
       "relative flex-1 inline-flex items-center justify-center font-semibold tracking-[-0.01em] select-none transition-[color,background,box-shadow,transform] duration-150 active:scale-[0.97]",
       "text-[rgba(235,235,245,0.55)] hover:text-[rgba(245,245,247,0.9)] hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
-      active &&
-        "bg-white/[0.1] text-accent shadow-[inset_0_0_0_0.5px_rgba(0,240,255,0.25),0_0_12px_rgba(0,240,255,0.12)]"
+      "data-[state=active]:bg-white/[0.1] data-[state=active]:text-accent data-[state=active]:shadow-[inset_0_0_0_0.5px_rgba(0,240,255,0.25),0_0_12px_rgba(0,240,255,0.12)]"
     ),
     underline: cn(
       "relative inline-flex items-center justify-center font-medium select-none border-b-2 transition-[color,border-color] duration-150",
       "border-transparent text-text-muted hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
-      active && "border-accent text-accent font-semibold"
+      "data-[state=active]:border-accent data-[state=active]:text-accent data-[state=active]:font-semibold"
     ),
     cards: cn(
       "relative inline-flex items-center justify-center font-medium select-none border transition-[color,background,border-color] duration-150",
       "border-transparent text-text-muted hover:text-text-secondary hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
-      active && "bg-surface-raised border-border-default border-b-transparent text-accent font-semibold"
+      "data-[state=active]:bg-surface-raised data-[state=active]:border-border-default data-[state=active]:border-b-transparent data-[state=active]:text-accent data-[state=active]:font-semibold"
     ),
   }[variant];
 
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      data-state={active ? "active" : "inactive"}
+    <TabsPrimitive.Trigger
+      ref={ref}
+      className={cn(sizeStyles, variantStyles, className)}
       onClick={(e) => {
         onClick?.(e);
-        ctx?.onValueChange?.(value);
+        if (props.value && ctx.onValueChange && ctx.value !== props.value) {
+          ctx.onValueChange(props.value);
+        }
       }}
-      className={cn(sizeStyles, variantStyles, className)}
       {...props}
     >
       {icon && (
@@ -155,43 +141,29 @@ export function TabsTrigger({
       <span className="truncate">{children}</span>
       {badge !== undefined && (
         <span
-          className={cn(
-            "ml-0.5 rounded-full px-1.5 py-0 text-[8px] font-mono",
-            active
-              ? "bg-accent/20 text-accent font-semibold"
-              : "bg-white/[0.08] text-text-muted"
-          )}
+          className="ml-0.5 rounded-full px-1.5 py-0 text-[8px] font-mono bg-white/[0.08] text-text-muted group-data-[state=active]:bg-accent/20 group-data-[state=active]:text-accent group-data-[state=active]:font-semibold"
         >
           {badge}
         </span>
       )}
-    </button>
+    </TabsPrimitive.Trigger>
   );
-}
+});
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
-export type TabsContentProps = React.HTMLAttributes<HTMLDivElement> & {
-  value: string;
-};
+export type TabsContentProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>;
 
-export function TabsContent({
-  value,
-  className,
-  children,
-  ...props
-}: TabsContentProps) {
-  const ctx = useTabsContext();
-  if (ctx?.value !== value) return null;
-
-  return (
-    <div
-      role="tabpanel"
-      className={cn(
-        "min-h-0 flex-1 animate-[drawer-tab-in_220ms_cubic-bezier(0.16,1,0.3,1)_forwards]",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
+export const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  TabsContentProps
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "min-h-0 flex-1 outline-none animate-[drawer-tab-in_220ms_cubic-bezier(0.16,1,0.3,1)_forwards]",
+      className
+    )}
+    {...props}
+  />
+));
+TabsContent.displayName = TabsPrimitive.Content.displayName;

@@ -1,5 +1,7 @@
 import * as React from "react";
 import { cn } from "./cn";
+import { Checkbox } from "./checkbox";
+import { Label } from "./label";
 
 export type FieldProps = {
   label: string;
@@ -76,6 +78,7 @@ export type CheckboxFieldProps = {
   onChange: (checked: boolean) => void;
   className?: string;
   disabled?: boolean;
+  id?: string;
 };
 
 export function CheckboxField({
@@ -84,24 +87,35 @@ export function CheckboxField({
   onChange,
   className,
   disabled,
+  id: idProp,
 }: CheckboxFieldProps) {
+  const generatedId = React.useId();
+  const id = idProp || generatedId;
+
   return (
-    <label
+    <div
       className={cn(
-        "flex cursor-pointer select-none items-center gap-2 text-[12px] tracking-[-0.01em] text-[rgba(235,235,245,0.7)]",
+        "flex items-center gap-2 select-none",
         disabled && "cursor-not-allowed opacity-40",
         className
       )}
     >
-      <input
-        type="checkbox"
-        disabled={disabled}
+      <Checkbox
+        id={id}
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="size-3.5 cursor-pointer accent-accent"
+        disabled={disabled}
+        onCheckedChange={(checkedState) => onChange(checkedState === true)}
       />
-      <span>{label}</span>
-    </label>
+      <Label
+        htmlFor={id}
+        className={cn(
+          "cursor-pointer text-[12px] tracking-[-0.01em] text-[rgba(235,235,245,0.7)]",
+          disabled && "cursor-not-allowed"
+        )}
+      >
+        {label}
+      </Label>
+    </div>
   );
 }
 

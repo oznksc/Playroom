@@ -1,66 +1,94 @@
-# Playroom Design System
+# Playroom Design System & UI Architecture
 
-Dense dark IDE chrome for the game editor. Visual rules: repo-root `brief.md`.
+Dense dark IDE chrome for the Playroom game editor. Visual specification: repo-root `brief.md`.
+
+## Architecture & Hierarchy
+
+The design system is organized into a generic two-tier hierarchy:
+
+### 1. Atomic Primitives (Radix UI / Shadcn Core)
+Headless, accessible primitives powered by Radix UI and styled with Playroom dark cyber tokens (`cva` + `tailwind-merge`):
+- **Button / IconButton / ButtonGroup**: Unified button actions (variants: `primary`, `secondary`, `solid`, `ghost`, `outline`, `danger`, `play`, `stop`, `active`; sizes: `xs` (24px), `sm` (28px), `md` (32px), `lg` (36px)).
+- **Input / Textarea / Label**: Accessible form controls with `mono`, tabular numbers, and hairline borders.
+- **Checkbox / Switch**: Radix-powered boolean toggles with Cyber Cyan and emerald accents.
+- **Select / NativeSelect / SimpleSelect**: Radix-powered accessible dropdowns and dense native selects.
+- **Tabs**: Radix tab strip supporting multiple visual variants (`segmented`, `underline`, `cards`) and sizes (`xs`, `sm`, `md`).
+- **Accordion**: Radix collapsible accordion cards with animated chevron and smooth height transitions.
+- **Dialog / ModalShell**: Accessible modals with glass overlay, backdrop blur, and smooth scaling animations.
+- **DropdownMenu / ContextMenu**: Floating glass menus with submenus, checkboxes, radio items, shortcuts, and legacy adapters.
+- **Tooltip / SimpleTooltip**: Fast floating tooltips for dense icon buttons and property labels.
+- **ScrollArea / Separator**: Dense custom scrollbars and subtle hairline dividers.
+- **Badge / StatusDot / Kbd**: High-density signals, status indicators, and keyboard shortcut chips.
+
+### 2. Composite Components (Domain-Specific Editor Patterns)
+High-level layouts built by composing the atomic primitives:
+- **Field / NumberField / CheckboxField / ColorField**: Inspector rows with glass badge labels.
+- **NumberScrubberField**: Interactive numeric input with horizontal pointer drag scrub.
+- **PropertyGroup / PropertyRow**: Two-column inspector property tables with inline tooltip hints.
+- **Panel / PanelHeader / PanelTitle / PanelBody**: Dense sidebar and dock panel frames.
+- **SegmentedControl**: Multi-choice mode toggle (variants: `default`, `subtle`, `pills`).
+- **EmptyState**: Visual empty state placeholder cards with icons and actions.
 
 ## Stack
 
 - **Tailwind CSS v4** + CSS variables in `styles/globals.css`
-- **Radix UI** for dialog, menus, tooltip, checkbox, scroll area
-- **CVA** + `clsx` + `tailwind-merge` for variants (`cn`)
+- **Radix UI** for headless accessibility, ARIA roles, and keyboard navigation
+- **CVA** + `clsx` + `tailwind-merge` for variant dispatching (`cn`)
 - **lucide-react** icons
-- **Fonts**: IBM Plex Sans (UI) + IBM Plex Mono (data) via Google Fonts in `index.html`. Chosen for dense tool chrome; avoid soft SaaS geometric faces.
-
-## Style ownership
-
-- `styles/globals.css` is the only application-level stylesheet entry. It owns Tailwind, tokens, resets, and documented utilities.
-- Feature layout and visual rules live beside their React owner in `*.module.css` files.
-- Shared feature CSS Modules are reserved for real multi-component boundaries such as the canvas workspace and sheet chrome.
-- Keep stable DOM hooks in `id`, `data-*`, ARIA, or test attributes. CSS class names are private implementation details.
-
-## Type scale
-
-| Token / class | Size | Use |
-|---------------|------|-----|
-| `text-2xs` / `.type-label` | ~9px | Uppercase labels, badges, tabs |
-| `text-xs` / `.type-micro` | ~10px | Hints, footer, secondary meta |
-| `text-sm` / `.type-ui` | ~11px | Accordion headers, dense UI |
-| `text-base` / `.type-body` | ~12px | Controls, body, menus |
-| `text-md` / `.type-title` | 13px | Titles, primary controls |
-| `.type-mono` / `font-mono` | ~10–12px | IDs, numbers, JSON |
+- **Fonts**: IBM Plex Sans (UI) + IBM Plex Mono (data)
 
 ## Import
 
 ```ts
-import { Button, IconButton, ButtonGroup, Switch, Panel, NumberField, Dialog, SegmentedControl, Tabs, cn } from "@/ui";
+import {
+  Button,
+  IconButton,
+  ButtonGroup,
+  Label,
+  Input,
+  Select,
+  SimpleSelect,
+  Switch,
+  Checkbox,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  AccordionSection,
+  Dialog,
+  ModalShell,
+  DropdownMenu,
+  ContextMenu,
+  Tooltip,
+  SimpleTooltip,
+  Badge,
+  StatusDot,
+  Kbd,
+  Field,
+  NumberScrubberField,
+  PropertyGroup,
+  PropertyRow,
+  cn,
+} from "@/ui";
 ```
 
-## Primitives
+## Type Scale
 
-| Export | Role |
-|--------|------|
-| `Button` / `IconButton` | Actions (unified variants: primary, secondary, solid, ghost, outline, danger, play, stop; sizes: xs, sm, md, lg) |
-| `ButtonGroup` | Joined button toolbars and segment sets |
-| `Switch` | Accessible toggle switches (sizes: sm, md; variants: accent, success) |
-| `Input` / `Textarea` / `Select` / `Checkbox` | Form controls |
-| `Field` / `NumberField` / `CheckboxField` / `ColorField` | Inspector badge + control rows |
-| `NumberScrubberField` / `PropertyRow` / `PropertyGroup` | Game-editor numeric and inspector controls |
-| `SegmentedControl` / `Kbd` | Mode selection (variants: default, subtle, pills; sizes: xs, sm, md; icon/badge support) |
-| `ModalShell` | Standard modal header, scroll body, and sticky footer |
-| `Badge` / `StatusDot` | Type + status signal |
-| `Panel` / `PanelHeader` / `PanelTitle` / `PanelBody` | Sidebar/inspector shells |
-| `AccordionSection` | Collapsible component cards |
-| `Tabs*` | Multi-style tab strip (variants: segmented, underline, cards; sizes: xs, sm, md) |
-| `Dialog*` | Modals (wizard, agent settings) |
-| `ContextMenu*` / `LegacyContextMenu` | Right-click menus |
-| `DropdownMenu*` | Menus |
-| `Tooltip*` / `SimpleTooltip` | Toolbar tips |
-| `ScrollArea` / `Separator` / `EmptyState` | Structure |
+| Token / Class | Size | Role |
+|---|---|---|
+| `text-2xs` / `.type-label` | ~9px | Uppercase labels, badges, tabs |
+| `text-xs` / `.type-micro` | ~10px | Hints, secondary metadata |
+| `text-sm` / `.type-ui` | ~11px | Section headers, dense UI |
+| `text-base` / `.type-body` | ~12px | Controls, body text, menus |
+| `text-md` / `.type-title` | 13px | Modal titles, primary section headers |
+| `.type-mono` / `font-mono` | ~10–12px | Coordinates, IDs, numbers, JSON |
 
 ## Rules
 
-1. Feature code under `components/` composes `ui/*` — no new raw button/input styling.
-2. Use brief accents for state (cyan select, green play, red danger), not decoration.
-3. Densities: ~22–32px controls, 9–13px type, monospace for IDs/numbers.
-4. Prefer semantic CSS variables (`--surface-*`, `--border-*`, `--signal-*`) over raw colours in new primitives.
-5. Review primitives at `?view=ui-gallery` before composing them into feature screens.
-6. Prefer Tailwind for small composition rules and CSS Modules for selectors, state variants, responsive layout, or descendant styling. Do not add SCSS.
+1. Feature code under `components/` always composes `ui/*` — no raw unstyled buttons/inputs.
+2. Use accents purposefully for state (Cyber Cyan `#00f0ff` for selection, Emerald `#10b981` for play/success, Ruby `#ef4444` for danger).
+3. Review primitives and interactive states at `?view=ui-gallery`.

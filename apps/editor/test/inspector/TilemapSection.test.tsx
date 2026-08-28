@@ -48,7 +48,10 @@ describe("TilemapSection (RTL)", () => {
       />
     );
 
-    const solidCheckbox = container.querySelector("input[type='checkbox']")!;
+    const solidCheckbox =
+      container.querySelector("button[role='checkbox']") ||
+      container.querySelector("input[type='checkbox']") ||
+      screen.getByRole("checkbox");
     expect(solidCheckbox).toBeInTheDocument();
     fireEvent.click(solidCheckbox);
 
