@@ -12,10 +12,7 @@ export async function listTools(client: McpClient): Promise<McpTool[]> {
   return result.tools ?? [];
 }
 
-export function toModelTools(
-  tools: McpTool[],
-  providerId: string,
-): ModelTool[] {
+export function toModelTools(tools: McpTool[], providerId: string): ModelTool[] {
   return tools.map((t) => ({
     name: t.name,
     description: t.description,
@@ -25,7 +22,7 @@ export function toModelTools(
 
 function convertSchema(
   schema: Record<string, unknown>,
-  providerId: string,
+  providerId: string
 ): Record<string, unknown> {
   // Anthropic uses input_schema directly — same shape as JSON Schema
   // OpenAI uses "parameters" — same shape

@@ -32,8 +32,11 @@ jobs:
       - name: Build packages + editor
         run: pnpm build
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Typecheck & lint
+        run: pnpm lint
+
+      - name: UI contract check
+        run: pnpm ui:check
 
       - name: Unit / integration tests
         run: pnpm test

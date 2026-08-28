@@ -65,7 +65,10 @@ export function TimelinePanel({ scene, onChange }: TimelinePanelProps) {
 
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-2">
         {timeline.tracks.length === 0 && (
-          <EmptyState title="No animation tracks" description="Add a track to animate entity properties." />
+          <EmptyState
+            title="No animation tracks"
+            description="Add a track to animate entity properties."
+          />
         )}
         {timeline.tracks.map((track, ti) => (
           <div key={ti} className="rounded-[12px] border border-white/[0.08] bg-white/[0.05] p-2">
@@ -125,14 +128,17 @@ export function TimelinePanel({ scene, onChange }: TimelinePanelProps) {
                     placeholder="Time"
                     onChange={(e) =>
                       onChange((d) => {
-                        d.timeline.tracks[ti].keyframes[ki].time = Math.max(0, Number(e.target.value));
+                        d.timeline.tracks[ti].keyframes[ki].time = Math.max(
+                          0,
+                          Number(e.target.value)
+                        );
                       })
                     }
                   />
                   <Input
                     type="number"
                     className="h-[24px] w-[70px]"
-                    value={typeof kf.value === "number" ? kf.value : kf.value[0] ?? 0}
+                    value={typeof kf.value === "number" ? kf.value : (kf.value[0] ?? 0)}
                     placeholder="Value"
                     onChange={(e) =>
                       onChange((d) => {

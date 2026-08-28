@@ -74,8 +74,9 @@ export function createRigidBody(component: RigidBodyComponent): {
     }
 
     const linearSpeedSq = state.velocity.x * state.velocity.x + state.velocity.y * state.velocity.y;
-    const belowThreshold = linearSpeedSq <= RIGID_BODY_SLEEP_LINEAR_THRESHOLD ** 2
-      && Math.abs(state.angularVelocity) <= RIGID_BODY_SLEEP_ANGULAR_THRESHOLD;
+    const belowThreshold =
+      linearSpeedSq <= RIGID_BODY_SLEEP_LINEAR_THRESHOLD ** 2 &&
+      Math.abs(state.angularVelocity) <= RIGID_BODY_SLEEP_ANGULAR_THRESHOLD;
 
     if (!belowThreshold) {
       state.sleepTimer = 0;
@@ -100,7 +101,17 @@ export function createRigidBody(component: RigidBodyComponent): {
     state.angularVelocity = 0;
   }
 
-  return { state, component, integrateForces, applyImpulse, applyForce, integratePosition, updateSleep, wake, sleep };
+  return {
+    state,
+    component,
+    integrateForces,
+    applyImpulse,
+    applyForce,
+    integratePosition,
+    updateSleep,
+    wake,
+    sleep,
+  };
 }
 
 export const RIGID_BODY_FIXED_DT = FIXED_DT;

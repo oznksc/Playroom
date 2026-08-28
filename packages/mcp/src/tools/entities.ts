@@ -9,9 +9,18 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
     "add_entity",
     "Add a new entity to a scene. Returns the created entity with its auto-generated ID. Components are optional; if omitted the entity has no components. Each component object must include a 'type' field (Transform, Sprite, AabbCollider, etc.). An entity cannot have two components of the same type.",
     {
-      scenePath: z.string().describe("Scene filename including .scene.json extension (e.g., 'main.scene.json'). Resolves relative to gamekit/scenes/."),
+      scenePath: z
+        .string()
+        .describe(
+          "Scene filename including .scene.json extension (e.g., 'main.scene.json'). Resolves relative to gamekit/scenes/."
+        ),
       name: z.string().describe("Entity name (does not need to be unique)"),
-      components: z.array(ComponentInputSchema).optional().describe("Optional array of component objects. Each must include a 'type' field (Transform, Sprite, AabbCollider, etc.). An entity cannot have two components of the same type."),
+      components: z
+        .array(ComponentInputSchema)
+        .optional()
+        .describe(
+          "Optional array of component objects. Each must include a 'type' field (Transform, Sprite, AabbCollider, etc.). An entity cannot have two components of the same type."
+        ),
     },
     async ({ scenePath, name, components }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -28,7 +37,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -45,7 +54,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const index = scene.entities.findIndex((e) => e.id === entityId);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -56,7 +72,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, removed: removed.name }) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -74,7 +90,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -87,7 +110,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -105,7 +128,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -113,7 +143,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const existing = entity.components.find((c) => c.type === component.type);
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" already has a ${component.type} component. Use update_component to modify it, or remove_component first.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" already has a ${component.type} component. Use update_component to modify it, or remove_component first.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -124,7 +161,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -143,7 +180,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -151,7 +195,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const component = entity.components.find((c) => c.type === componentType);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no ${componentType} component. Use add_component to add one, or list_components to see available components.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" has no ${componentType} component. Use add_component to add one, or list_components to see available components.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -166,7 +217,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
         const targetExists = scene.entities.some((e) => e.id === props.targetId);
         if (!targetExists) {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: `Target entity "${props.targetId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  error: `Target entity "${props.targetId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+                }),
+              },
+            ],
             isError: true,
           };
         }
@@ -176,7 +234,7 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -194,7 +252,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -202,7 +267,14 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       const index = entity.components.findIndex((c) => c.type === componentType);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no ${componentType} component. Use list_components to see available components.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" has no ${componentType} component. Use list_components to see available components.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -211,8 +283,13 @@ export function registerEntityTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: componentType, entity: entity.name }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, removed: componentType, entity: entity.name }),
+          },
+        ],
       };
-    },
+    }
   );
 }

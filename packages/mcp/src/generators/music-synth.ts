@@ -152,7 +152,9 @@ export function getScaleMidiNotes(key: MusicalKey, scale: MusicalScale, baseOcta
  * Generates an audio WAV buffer containing lead melody, harmony chords, bass, and percussion.
  */
 export function synthesizeMusic(options: MusicOptions = {}): Uint8Array {
-  const presetDefaults = options.preset ? MUSIC_PRESETS[options.preset] || MUSIC_PRESETS.chiptune_adventure : MUSIC_PRESETS.chiptune_adventure;
+  const presetDefaults = options.preset
+    ? MUSIC_PRESETS[options.preset] || MUSIC_PRESETS.chiptune_adventure
+    : MUSIC_PRESETS.chiptune_adventure;
   const config = {
     bpm: options.bpm ?? presetDefaults.bpm,
     durationSec: options.durationSec ?? presetDefaults.durationSec,
@@ -364,7 +366,12 @@ function renderOscillatorNote(
   }
 }
 
-function renderKick(buffer: Float32Array, startTime: number, sampleRate: number, volume: number): void {
+function renderKick(
+  buffer: Float32Array,
+  startTime: number,
+  sampleRate: number,
+  volume: number
+): void {
   const startSample = Math.floor(startTime * sampleRate);
   const duration = 0.18;
   const numSamples = Math.floor(duration * sampleRate);
@@ -383,7 +390,12 @@ function renderKick(buffer: Float32Array, startTime: number, sampleRate: number,
   }
 }
 
-function renderSnare(buffer: Float32Array, startTime: number, sampleRate: number, volume: number): void {
+function renderSnare(
+  buffer: Float32Array,
+  startTime: number,
+  sampleRate: number,
+  volume: number
+): void {
   const startSample = Math.floor(startTime * sampleRate);
   const duration = 0.15;
   const numSamples = Math.floor(duration * sampleRate);
@@ -404,7 +416,13 @@ function renderSnare(buffer: Float32Array, startTime: number, sampleRate: number
   }
 }
 
-function renderHiHat(buffer: Float32Array, startTime: number, sampleRate: number, volume: number, accented: boolean): void {
+function renderHiHat(
+  buffer: Float32Array,
+  startTime: number,
+  sampleRate: number,
+  volume: number,
+  accented: boolean
+): void {
   const startSample = Math.floor(startTime * sampleRate);
   const duration = accented ? 0.04 : 0.025;
   const numSamples = Math.floor(duration * sampleRate);

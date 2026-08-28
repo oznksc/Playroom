@@ -25,7 +25,13 @@ export function registerDoctorTools(server: McpServer, fileIO: FileIO): void {
               type: "text",
               text: JSON.stringify({
                 ok: false,
-                issues: [{ level: "error", code: "PROJECT", message: e instanceof Error ? e.message : String(e) }],
+                issues: [
+                  {
+                    level: "error",
+                    code: "PROJECT",
+                    message: e instanceof Error ? e.message : String(e),
+                  },
+                ],
               }),
             },
           ],
@@ -100,12 +106,12 @@ export function registerDoctorTools(server: McpServer, fileIO: FileIO): void {
                 issues: filtered,
               },
               null,
-              2,
+              2
             ),
           },
         ],
         isError: errors > 0,
       };
-    },
+    }
   );
 }

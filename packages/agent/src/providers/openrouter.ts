@@ -14,11 +14,15 @@ export class OpenRouterAdapter implements ProviderAdapter {
   readonly defaultBaseUrl = DEFAULT_BASE_URL;
   readonly requiresApiKey = true;
 
-  async listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]> {
+  async listModels(input: {
+    apiKey: string;
+    baseUrl?: string;
+    signal: AbortSignal;
+  }): Promise<string[]> {
     try {
       const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/models`, {
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
@@ -39,7 +43,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
       const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/auth/key`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
@@ -56,7 +60,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
 
     const headers: Record<string, string> = {
       "content-type": "application/json",
-      "authorization": `Bearer ${input.apiKey}`,
+      authorization: `Bearer ${input.apiKey}`,
       "HTTP-Referer": "http://localhost:5173",
       "X-Title": "GameKit",
     };
@@ -171,7 +175,7 @@ async function* parseOpenAiSse(res: Response): AsyncGenerator<StreamEvent> {
                 name: tc.name,
                 args: JSON.parse(tc.argsJson || "{}"),
               })),
-            }
+            };
             currentToolCalls.clear();
           }
           yield { type: "done" };

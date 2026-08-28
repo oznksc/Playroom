@@ -109,9 +109,7 @@ export function Topbar({
         >
           <img src={logoUrl} alt="Playroom" className="size-7 object-contain" />
           <div className="hidden min-w-0 sm:block text-left">
-            <div className="text-[13px] font-semibold leading-none text-text-primary">
-              Playroom
-            </div>
+            <div className="text-[13px] font-semibold leading-none text-text-primary">Playroom</div>
             <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-text-muted">
               Editor
             </div>
@@ -123,20 +121,33 @@ export function Topbar({
         </span>
         {isDirty && <StatusDot status="dirty" title="Unsaved changes" />}
         {onNewProject && (
-          <Button size="sm" variant="secondary" onClick={onNewProject} className="ml-1 hidden md:inline-flex text-xs gap-1">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onNewProject}
+            className="ml-1 hidden md:inline-flex text-xs gap-1"
+          >
             <Plus size={12} className="text-accent" />
             New Game
           </Button>
         )}
         {projectPath && onCloseProject && (
-          <Button size="sm" variant="secondary" onClick={onCloseProject} className="ml-1 hidden lg:inline-flex text-xs">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onCloseProject}
+            className="ml-1 hidden lg:inline-flex text-xs"
+          >
             Close
           </Button>
         )}
       </div>
 
       {MVP_SHOW_PLAY_CONTROLS && (
-        <div id="tour-topbar-play" className="mx-auto flex items-center gap-1 rounded-md border border-border-default bg-bg-base p-0.5">
+        <div
+          id="tour-topbar-play"
+          className="mx-auto flex items-center gap-1 rounded-md border border-border-default bg-bg-base p-0.5"
+        >
           <IconButton
             size="md"
             variant={isPlaying && !isPaused ? "active" : "ghost"}
@@ -155,7 +166,13 @@ export function Topbar({
           >
             <Pause size={13} fill={isPaused ? "currentColor" : "none"} />
           </IconButton>
-          <IconButton size="md" variant="danger" onClick={onStop} disabled={!isPlaying} title="Stop & Reset">
+          <IconButton
+            size="md"
+            variant="danger"
+            onClick={onStop}
+            disabled={!isPlaying}
+            title="Stop & Reset"
+          >
             <Square size={12} />
           </IconButton>
           {isPlaying && (
@@ -203,7 +220,11 @@ export function Topbar({
           {saveState === "saved" ? <Check size={14} /> : <Save size={14} />}
         </IconButton>
         {onOpenAssetStudio && (
-          <IconButton size="md" onClick={onOpenAssetStudio} title="Open Asset Studio (Sprites, Animations, SFX, Music)">
+          <IconButton
+            size="md"
+            onClick={onOpenAssetStudio}
+            title="Open Asset Studio (Sprites, Animations, SFX, Music)"
+          >
             <Wand2 size={14} className="text-cyan-400" />
           </IconButton>
         )}

@@ -19,25 +19,11 @@ import {
   Package,
 } from "lucide-react";
 import { getApiUrl } from "../lib/api.js";
-import {
-  Dialog,
-  ModalShell,
-  Button,
-  Input,
-  Field,
-  Badge,
-  Checkbox,
-  cn,
-} from "@/ui";
+import { Dialog, ModalShell, Button, Input, Field, Badge, Checkbox, cn } from "@/ui";
 
 export type ProjectPlatform = "web" | "expo" | "tauri" | "libgdx";
 export type ProjectGenre =
-  | "platformer"
-  | "topdown"
-  | "topdown-shooter"
-  | "physics-puzzle"
-  | "endless-runner"
-  | "blank";
+  "platformer" | "topdown" | "topdown-shooter" | "physics-puzzle" | "endless-runner" | "blank";
 export type PackageManager = "pnpm" | "bun" | "yarn" | "npm";
 
 export interface GenreOption {
@@ -142,31 +128,36 @@ export function NewProjectWizard({
     // Detect system package managers and default path
     fetch(getApiUrl("/api/system/environment"))
       .then((r) => r.json())
-      .then((data: { packageManagers?: PackageManager[]; preferredPackageManager?: PackageManager; cwd?: string }) => {
-        if (data.packageManagers?.length) {
-          setDetectedPMs(data.packageManagers);
+      .then(
+        (data: {
+          packageManagers?: PackageManager[];
+          preferredPackageManager?: PackageManager;
+          cwd?: string;
+        }) => {
+          if (data.packageManagers?.length) {
+            setDetectedPMs(data.packageManagers);
+          }
+          if (data.preferredPackageManager) {
+            setPackageManager(data.preferredPackageManager);
+          }
+          if (data.cwd && !projectLocation) {
+            setProjectLocation(`${data.cwd}/games`);
+          }
         }
-        if (data.preferredPackageManager) {
-          setPackageManager(data.preferredPackageManager);
-        }
-        if (data.cwd && !projectLocation) {
-          setProjectLocation(`${data.cwd}/games`);
-        }
-      })
+      )
       .catch(() => {
         // Fallback
       });
   }, [open, projectLocation]);
 
-  const slug = projectName
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "my-game";
+  const slug =
+    projectName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "my-game";
 
-  const fullTargetPath = projectLocation
-    ? `${projectLocation.replace(/\/+$/, "")}/${slug}`
-    : slug;
+  const fullTargetPath = projectLocation ? `${projectLocation.replace(/\/+$/, "")}/${slug}` : slug;
 
   async function handleBrowseFolder() {
     setIsPickingFolder(true);
@@ -195,9 +186,13 @@ export function NewProjectWizard({
         // Browser showDirectoryPicker fallback
         if (typeof window !== "undefined" && "showDirectoryPicker" in window) {
           try {
-            const handle = await (window as unknown as { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
+            const handle = await (
+              window as unknown as { showDirectoryPicker: () => Promise<{ name: string }> }
+            ).showDirectoryPicker();
             if (handle?.name) {
-              setProjectLocation(projectLocation ? `${projectLocation}/${handle.name}` : handle.name);
+              setProjectLocation(
+                projectLocation ? `${projectLocation}/${handle.name}` : handle.name
+              );
             }
           } catch {
             // Cancelled
@@ -227,7 +222,7 @@ export function NewProjectWizard({
       if (isTauri) {
         const { invoke } = await import("@tauri-apps/api/core");
         setBuildLogs((prev) => [...prev, "Running project scaffolding engine..."]);
-        
+
         const resolved = await invoke<string>("create_new_project", {
           name: projectName,
           targetDir: fullTargetPath,
@@ -280,7 +275,9 @@ export function NewProjectWizard({
         setBuildLogs((prev) => [
           ...prev,
           "✔ Project structure created",
-          runInstall ? `✔ Dependencies installed via ${packageManager}` : "ℹ Dependency install skipped",
+          runInstall
+            ? `✔ Dependencies installed via ${packageManager}`
+            : "ℹ Dependency install skipped",
           "✔ GameKit runtime initialized",
           `Project ready at ${data.targetDir ?? fullTargetPath}`,
         ]);
@@ -308,13 +305,35 @@ export function NewProjectWizard({
   const footerActions = (
     <>
       {step > 1 && step < 4 ? (
-        <Button type="button" variant="secondary" size="md" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} className="gap-1.5"><ChevronLeft size={14} /> Back</Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+          className="gap-1.5"
+        >
+          <ChevronLeft size={14} /> Back
+        </Button>
       ) : (
-        <Button type="button" variant="secondary" size="md" disabled={isBuilding} onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="secondary" size="md" disabled={isBuilding} onClick={onClose}>
+          Cancel
+        </Button>
       )}
-      {step < 3 && <Button variant="primary" size="md" onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}>Next Step <ChevronRight size={14} /></Button>}
-      {step === 3 && <Button variant="primary" size="md" onClick={handleCreateProject}><Sparkles size={14} /> Create & Launch Game</Button>}
-      {step === 4 && buildError && <Button variant="primary" size="md" onClick={() => setStep(1)}>Try Again</Button>}
+      {step < 3 && (
+        <Button variant="primary" size="md" onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}>
+          Next Step <ChevronRight size={14} />
+        </Button>
+      )}
+      {step === 3 && (
+        <Button variant="primary" size="md" onClick={handleCreateProject}>
+          <Sparkles size={14} /> Create & Launch Game
+        </Button>
+      )}
+      {step === 4 && buildError && (
+        <Button variant="primary" size="md" onClick={() => setStep(1)}>
+          Try Again
+        </Button>
+      )}
     </>
   );
 
@@ -323,374 +342,392 @@ export function NewProjectWizard({
       <ModalShell
         className="w-[min(680px,calc(100vw-32px))] rounded-2xl border-border-strong bg-surface-overlay"
         title="Create New Game Project"
-        description={step === 1 ? "Step 1 of 3: Name & Target Platform" : step === 2 ? "Step 2 of 3: Select Gameplay Genre" : step === 3 ? "Step 3 of 3: Package Setup & Options" : "Generating Project..."}
+        description={
+          step === 1
+            ? "Step 1 of 3: Name & Target Platform"
+            : step === 2
+              ? "Step 2 of 3: Select Gameplay Genre"
+              : step === 3
+                ? "Step 3 of 3: Package Setup & Options"
+                : "Generating Project..."
+        }
         icon={<Sparkles size={16} />}
         onClose={isBuilding ? undefined : onClose}
         bodyClassName="max-h-[60vh] space-y-5 p-6"
         footerClassName="justify-between bg-surface-sunken px-6 py-4"
-        headerEnd={step < 4 ? <div className="flex items-center gap-1.5">{[1, 2, 3].map((s) => <div key={s} className={cn("h-1.5 rounded-full transition-all duration-200", step === s ? "w-7 bg-accent" : step > s ? "w-2 bg-accent/40" : "w-2 bg-bg-active")} />)}</div> : undefined}
+        headerEnd={
+          step < 4 ? (
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-200",
+                    step === s
+                      ? "w-7 bg-accent"
+                      : step > s
+                        ? "w-2 bg-accent/40"
+                        : "w-2 bg-bg-active"
+                  )}
+                />
+              ))}
+            </div>
+          ) : undefined
+        }
         footer={footerActions}
       >
-          {/* STEP 1: Name, Location & Platform */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-4">
-                <Field label="Game Name">
+        {/* STEP 1: Name, Location & Platform */}
+        {step === 1 && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-4">
+              <Field label="Game Name">
+                <Input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="e.g. Cyber Blade, Pixel Quest"
+                  className="h-10 text-sm bg-bg-elevated border-border-default focus:border-accent"
+                />
+              </Field>
+
+              <Field label="Destination Folder">
+                <div className="flex gap-2">
                   <Input
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="e.g. Cyber Blade, Pixel Quest"
-                    className="h-10 text-sm bg-bg-elevated border-border-default focus:border-accent"
+                    value={projectLocation}
+                    onChange={(e) => setProjectLocation(e.target.value)}
+                    placeholder="/Users/username/games or C:\Games"
+                    className="h-10 text-xs font-mono bg-bg-elevated border-border-default flex-1"
                   />
-                </Field>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    disabled={isPickingFolder}
+                    onClick={handleBrowseFolder}
+                    className="gap-1.5 shrink-0 px-3 border-border-strong bg-bg-elevated hover:bg-bg-hover hover:border-accent/40 text-xs"
+                    title="Choose folder"
+                  >
+                    {isPickingFolder ? (
+                      <Loader2 size={14} className="animate-spin text-accent" />
+                    ) : (
+                      <FolderOpen size={14} className="text-accent" />
+                    )}
+                    {isPickingFolder ? "Choosing..." : "Browse..."}
+                  </Button>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1 font-mono">
+                  Path: <span className="text-accent font-semibold">{fullTargetPath}</span>
+                </p>
+              </Field>
+            </div>
 
-                <Field label="Destination Folder">
-                  <div className="flex gap-2">
-                    <Input
-                      value={projectLocation}
-                      onChange={(e) => setProjectLocation(e.target.value)}
-                      placeholder="/Users/username/games or C:\Games"
-                      className="h-10 text-xs font-mono bg-bg-elevated border-border-default flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="md"
-                      disabled={isPickingFolder}
-                      onClick={handleBrowseFolder}
-                      className="gap-1.5 shrink-0 px-3 border-border-strong bg-bg-elevated hover:bg-bg-hover hover:border-accent/40 text-xs"
-                      title="Choose folder"
-                    >
-                      {isPickingFolder ? (
-                        <Loader2 size={14} className="animate-spin text-accent" />
-                      ) : (
-                        <FolderOpen size={14} className="text-accent" />
-                      )}
-                      {isPickingFolder ? "Choosing..." : "Browse..."}
-                    </Button>
+            <div>
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
+                Select Target Platform
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Web */}
+                <button
+                  type="button"
+                  onClick={() => setPlatform("web")}
+                  className={cn(
+                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
+                    platform === "web"
+                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
+                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="size-9 rounded-lg border border-accent/30 bg-accent/15 flex items-center justify-center text-accent">
+                      <Globe size={18} />
+                    </div>
+                    {platform === "web" && (
+                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[11px] text-text-muted mt-1 font-mono">
-                    Path: <span className="text-accent font-semibold">{fullTargetPath}</span>
-                  </p>
-                </Field>
+                  <span className="text-sm font-semibold text-text-primary block">Web Game</span>
+                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
+                    Phaser 3 + Vite. Instant browser play at 60 FPS.
+                  </span>
+                </button>
+
+                {/* Expo */}
+                <button
+                  type="button"
+                  onClick={() => setPlatform("expo")}
+                  className={cn(
+                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
+                    platform === "expo"
+                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
+                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="size-9 rounded-lg border border-purple-400/30 bg-purple-500/15 flex items-center justify-center text-purple-400">
+                      <Smartphone size={18} />
+                    </div>
+                    {platform === "expo" && (
+                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-text-primary block">Expo Mobile</span>
+                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
+                    React Native + Skia. iOS & Android with touch pads.
+                  </span>
+                </button>
+
+                {/* Tauri */}
+                <button
+                  type="button"
+                  onClick={() => setPlatform("tauri")}
+                  className={cn(
+                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
+                    platform === "tauri"
+                      ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
+                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="size-9 rounded-lg border border-emerald-400/30 bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                      <Monitor size={18} />
+                    </div>
+                    {platform === "tauri" && (
+                      <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-text-primary block">Desktop App</span>
+                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
+                    Tauri v2 + Rust. Native macOS/Windows/Linux app.
+                  </span>
+                </button>
+
+                {/* LibGDX */}
+                <button
+                  type="button"
+                  onClick={() => setPlatform("libgdx")}
+                  className={cn(
+                    "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
+                    platform === "libgdx"
+                      ? "border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.12)]"
+                      : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="size-9 rounded-lg border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400">
+                      <Monitor size={18} />
+                    </div>
+                    {platform === "libgdx" && (
+                      <div className="size-5 rounded-full bg-amber-400 text-[#06090e] flex items-center justify-center">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-text-primary block">
+                    LibGDX Native
+                  </span>
+                  <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
+                    Java/Kotlin + Gradle. Android, Desktop &amp; iOS.
+                  </span>
+                </button>
               </div>
+            </div>
+          </div>
+        )}
 
-              <div>
-                <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
-                  Select Target Platform
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Web */}
+        {/* STEP 2: Choose Genre */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
+              Choose Gameplay Starter
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {GENRES.map((g) => {
+                const Icon = g.icon;
+                const isSelected = genre === g.id;
+                return (
                   <button
+                    key={g.id}
                     type="button"
-                    onClick={() => setPlatform("web")}
+                    onClick={() => setGenre(g.id)}
                     className={cn(
-                      "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                      platform === "web"
-                        ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
+                      "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all relative",
+                      isSelected
+                        ? "border-accent bg-accent/10 shadow-[0_0_18px_rgba(0,240,255,0.12)]"
                         : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
                     )}
                   >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className="size-9 rounded-lg border border-accent/30 bg-accent/15 flex items-center justify-center text-accent">
-                        <Globe size={18} />
-                      </div>
-                      {platform === "web" && (
-                        <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
+                    <div className="size-9 rounded-lg border border-accent/20 bg-accent/15 flex items-center justify-center text-accent shrink-0 mt-0.5">
+                      <Icon size={18} />
                     </div>
-                    <span className="text-sm font-semibold text-text-primary block">
-                      Web Game
-                    </span>
-                    <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                      Phaser 3 + Vite. Instant browser play at 60 FPS.
-                    </span>
-                  </button>
-
-                  {/* Expo */}
-                  <button
-                    type="button"
-                    onClick={() => setPlatform("expo")}
-                    className={cn(
-                      "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                      platform === "expo"
-                        ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
-                        : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-text-primary">{g.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-muted font-mono">
+                          {g.tag}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-text-muted mt-1 leading-snug">
+                        {g.description}
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <div className="size-4 rounded-full bg-accent text-[#06090e] flex items-center justify-center shrink-0 mt-1">
+                        <Check size={10} strokeWidth={3} />
+                      </div>
                     )}
-                  >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className="size-9 rounded-lg border border-purple-400/30 bg-purple-500/15 flex items-center justify-center text-purple-400">
-                        <Smartphone size={18} />
-                      </div>
-                      {platform === "expo" && (
-                        <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold text-text-primary block">
-                      Expo Mobile
-                    </span>
-                    <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                      React Native + Skia. iOS & Android with touch pads.
-                    </span>
                   </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                  {/* Tauri */}
-                  <button
-                    type="button"
-                    onClick={() => setPlatform("tauri")}
-                    className={cn(
-                      "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                      platform === "tauri"
-                        ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,240,255,0.12)]"
-                        : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                    )}
+        {/* STEP 3: Setup & Options */}
+        {step === 3 && (
+          <div className="space-y-4">
+            {/* Summary box */}
+            <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-accent uppercase tracking-wider font-mono">
+                  Project Configuration
+                </span>
+                <Badge variant="accent" className="font-mono text-[10px] uppercase">
+                  {platform} • {genre}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-accent/10 text-text-secondary">
+                <div>
+                  <span className="text-text-muted text-[11px] block">Name</span>
+                  <strong className="text-text-primary">{projectName}</strong>
+                </div>
+                <div>
+                  <span className="text-text-muted text-[11px] block">Folder</span>
+                  <strong
+                    className="text-text-primary font-mono text-[11px] truncate block"
+                    title={fullTargetPath}
                   >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className="size-9 rounded-lg border border-emerald-400/30 bg-emerald-500/15 flex items-center justify-center text-emerald-400">
-                        <Monitor size={18} />
-                      </div>
-                      {platform === "tauri" && (
-                        <div className="size-5 rounded-full bg-accent text-[#06090e] flex items-center justify-center">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold text-text-primary block">
-                      Desktop App
-                    </span>
-                    <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                      Tauri v2 + Rust. Native macOS/Windows/Linux app.
-                    </span>
-                  </button>
-
-                  {/* LibGDX */}
-                  <button
-                    type="button"
-                    onClick={() => setPlatform("libgdx")}
-                    className={cn(
-                      "flex flex-col text-left p-4 rounded-xl border transition-all relative group",
-                      platform === "libgdx"
-                        ? "border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.12)]"
-                        : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className="size-9 rounded-lg border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400">
-                        <Monitor size={18} />
-                      </div>
-                      {platform === "libgdx" && (
-                        <div className="size-5 rounded-full bg-amber-400 text-[#06090e] flex items-center justify-center">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold text-text-primary block">
-                      LibGDX Native
-                    </span>
-                    <span className="text-[11px] text-text-muted mt-0.5 block leading-tight">
-                      Java/Kotlin + Gradle. Android, Desktop &amp; iOS.
-                    </span>
-                  </button>
+                    {fullTargetPath}
+                  </strong>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* STEP 2: Choose Genre */}
-          {step === 2 && (
-            <div className="space-y-4">
+            {/* Package Manager Options */}
+            <div className="p-4 rounded-xl border border-border-default bg-bg-elevated/40 space-y-3">
               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
-                Choose Gameplay Starter
+                Package Tooling
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {GENRES.map((g) => {
-                  const Icon = g.icon;
-                  const isSelected = genre === g.id;
+              <div className="grid grid-cols-4 gap-2">
+                {(["pnpm", "bun", "yarn", "npm"] as PackageManager[]).map((pm) => {
+                  const isSelected = packageManager === pm;
+                  const isDetected = detectedPMs.includes(pm);
                   return (
                     <button
-                      key={g.id}
+                      key={pm}
                       type="button"
-                      onClick={() => setGenre(g.id)}
+                      onClick={() => setPackageManager(pm)}
                       className={cn(
-                        "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all relative",
+                        "p-2.5 rounded-lg border text-center transition-all",
                         isSelected
-                          ? "border-accent bg-accent/10 shadow-[0_0_18px_rgba(0,240,255,0.12)]"
-                          : "border-border-default bg-bg-elevated/40 hover:bg-bg-elevated hover:border-border-strong"
+                          ? "border-accent bg-accent/15 text-accent font-semibold"
+                          : "border-border-default bg-bg-base text-text-primary hover:bg-bg-hover"
                       )}
                     >
-                      <div className="size-9 rounded-lg border border-accent/20 bg-accent/15 flex items-center justify-center text-accent shrink-0 mt-0.5">
-                        <Icon size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-text-primary">
-                            {g.name}
-                          </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-muted font-mono">
-                            {g.tag}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-1 leading-snug">
-                          {g.description}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <div className="size-4 rounded-full bg-accent text-[#06090e] flex items-center justify-center shrink-0 mt-1">
-                          <Check size={10} strokeWidth={3} />
-                        </div>
+                      <span className="text-xs font-mono uppercase block">{pm}</span>
+                      {isDetected && (
+                        <span className="text-[9px] text-text-muted block">Detected</span>
                       )}
                     </button>
                   );
                 })}
               </div>
-            </div>
-          )}
 
-          {/* STEP 3: Setup & Options */}
-          {step === 3 && (
-            <div className="space-y-4">
-              {/* Summary box */}
-              <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-accent uppercase tracking-wider font-mono">
-                    Project Configuration
+              <div className="space-y-2 pt-2 border-t border-white/[0.04]">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <Checkbox
+                    checked={runInstall}
+                    onCheckedChange={(c) => setRunInstall(Boolean(c))}
+                  />
+                  <span className="text-xs text-text-primary">
+                    Install packages automatically with <strong>{packageManager}</strong>
                   </span>
-                  <Badge variant="accent" className="font-mono text-[10px] uppercase">
-                    {platform} • {genre}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-accent/10 text-text-secondary">
-                  <div>
-                    <span className="text-text-muted text-[11px] block">Name</span>
-                    <strong className="text-text-primary">{projectName}</strong>
-                  </div>
-                  <div>
-                    <span className="text-text-muted text-[11px] block">Folder</span>
-                    <strong className="text-text-primary font-mono text-[11px] truncate block" title={fullTargetPath}>
-                      {fullTargetPath}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Package Manager Options */}
-              <div className="p-4 rounded-xl border border-border-default bg-bg-elevated/40 space-y-3">
-                <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
-                  Package Tooling
                 </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(["pnpm", "bun", "yarn", "npm"] as PackageManager[]).map((pm) => {
-                    const isSelected = packageManager === pm;
-                    const isDetected = detectedPMs.includes(pm);
-                    return (
-                      <button
-                        key={pm}
-                        type="button"
-                        onClick={() => setPackageManager(pm)}
-                        className={cn(
-                          "p-2.5 rounded-lg border text-center transition-all",
-                          isSelected
-                            ? "border-accent bg-accent/15 text-accent font-semibold"
-                            : "border-border-default bg-bg-base text-text-primary hover:bg-bg-hover"
-                        )}
-                      >
-                        <span className="text-xs font-mono uppercase block">{pm}</span>
-                        {isDetected && (
-                          <span className="text-[9px] text-text-muted block">Detected</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
 
-                <div className="space-y-2 pt-2 border-t border-white/[0.04]">
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <Checkbox
-                      checked={runInstall}
-                      onCheckedChange={(c) => setRunInstall(Boolean(c))}
-                    />
-                    <span className="text-xs text-text-primary">
-                      Install packages automatically with <strong>{packageManager}</strong>
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <Checkbox
-                      checked={initGit}
-                      onCheckedChange={(c) => setInitGit(Boolean(c))}
-                    />
-                    <span className="text-xs text-text-primary">
-                      Initialize Git repository (<code>git init</code>)
-                    </span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <Checkbox checked={initGit} onCheckedChange={(c) => setInitGit(Boolean(c))} />
+                  <span className="text-xs text-text-primary">
+                    Initialize Git repository (<code>git init</code>)
+                  </span>
+                </label>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* STEP 4: Live Build Screen */}
-          {step === 4 && (
-            <div className="space-y-5 py-4">
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                {isBuilding ? (
-                  <div className="relative size-14 flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
-                    <Loader2 size={24} className="text-accent animate-spin" />
-                  </div>
-                ) : buildError ? (
-                  <div className="size-14 rounded-full bg-error/15 border border-error/30 flex items-center justify-center text-error">
-                    <AlertCircle size={28} />
-                  </div>
-                ) : (
-                  <div className="size-14 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success">
-                    <CheckCircle2 size={28} />
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="text-base font-semibold text-text-primary">
-                    {isBuilding
-                      ? "Generating Your Game Playground..."
-                      : buildError
-                        ? "Project Creation Failed"
-                        : "Playground Created Successfully!"}
-                  </h3>
-                  <p className="text-xs text-text-muted mt-1">{buildStepMsg}</p>
+        {/* STEP 4: Live Build Screen */}
+        {step === 4 && (
+          <div className="space-y-5 py-4">
+            <div className="flex flex-col items-center justify-center text-center space-y-3">
+              {isBuilding ? (
+                <div className="relative size-14 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+                  <Loader2 size={24} className="text-accent animate-spin" />
                 </div>
-              </div>
-
-              {/* Terminal Log Box */}
-              <div className="rounded-xl border border-border-strong bg-black/60 p-4 font-mono text-xs max-h-48 overflow-y-auto space-y-1 text-text-secondary">
-                {buildLogs.map((log, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "leading-relaxed",
-                      log.startsWith("✔")
-                        ? "text-success font-semibold"
-                        : log.startsWith("✖")
-                          ? "text-error font-semibold"
-                          : log.startsWith("⚠")
-                            ? "text-warning"
-                            : "text-text-secondary"
-                    )}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </div>
-
-              {buildError && (
-                <div className="p-3 rounded-lg border border-error/30 bg-error/10 text-xs text-error">
-                  {buildError}
+              ) : buildError ? (
+                <div className="size-14 rounded-full bg-error/15 border border-error/30 flex items-center justify-center text-error">
+                  <AlertCircle size={28} />
+                </div>
+              ) : (
+                <div className="size-14 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success">
+                  <CheckCircle2 size={28} />
                 </div>
               )}
+
+              <div>
+                <h3 className="text-base font-semibold text-text-primary">
+                  {isBuilding
+                    ? "Generating Your Game Playground..."
+                    : buildError
+                      ? "Project Creation Failed"
+                      : "Playground Created Successfully!"}
+                </h3>
+                <p className="text-xs text-text-muted mt-1">{buildStepMsg}</p>
+              </div>
             </div>
-          )}
+
+            {/* Terminal Log Box */}
+            <div className="rounded-xl border border-border-strong bg-black/60 p-4 font-mono text-xs max-h-48 overflow-y-auto space-y-1 text-text-secondary">
+              {buildLogs.map((log, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "leading-relaxed",
+                    log.startsWith("✔")
+                      ? "text-success font-semibold"
+                      : log.startsWith("✖")
+                        ? "text-error font-semibold"
+                        : log.startsWith("⚠")
+                          ? "text-warning"
+                          : "text-text-secondary"
+                  )}
+                >
+                  {log}
+                </div>
+              ))}
+            </div>
+
+            {buildError && (
+              <div className="p-3 rounded-lg border border-error/30 bg-error/10 text-xs text-error">
+                {buildError}
+              </div>
+            )}
+          </div>
+        )}
       </ModalShell>
     </Dialog>
   );

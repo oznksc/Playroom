@@ -34,7 +34,7 @@ function clamp(v: number, min: number, max: number): number {
  */
 export function computeSpatialAudio(
   listener: SpatialAudioListener,
-  source: SpatialAudioSource,
+  source: SpatialAudioSource
 ): SpatialAudioResult {
   const dx = source.x - listener.x;
   const dy = source.y - listener.y;
@@ -58,14 +58,12 @@ export function computeSpatialAudio(
 }
 
 /** Position of the first enabled AudioListener entity, if any. */
-export function findAudioListenerPosition(
-  entities: GameKitEntity[],
-): SpatialAudioListener | null {
+export function findAudioListenerPosition(entities: GameKitEntity[]): SpatialAudioListener | null {
   for (const entity of entities) {
     const listener = entity.components.find((c) => c.type === "AudioListener");
     if (!listener || listener.enabled === false) continue;
     const transform = entity.components.find(
-      (c): c is TransformComponent => c.type === "Transform",
+      (c): c is TransformComponent => c.type === "Transform"
     );
     if (!transform) continue;
     return { x: transform.position.x, y: transform.position.y };

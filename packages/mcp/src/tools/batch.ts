@@ -62,7 +62,7 @@ export function registerBatchTools(server: McpServer, fileIO: FileIO): void {
               const entity = scene.entities.find((e) => e.id === op.entityId);
               if (!entity) throw new Error(`Entity not found: ${op.entityId}`);
               const transform = entity.components.find(
-                (c): c is TransformComponent => c.type === "Transform",
+                (c): c is TransformComponent => c.type === "Transform"
               );
               if (!transform) throw new Error(`No Transform on ${op.entityId}`);
               if (op.position) transform.position = { ...op.position };
@@ -119,7 +119,7 @@ export function registerBatchTools(server: McpServer, fileIO: FileIO): void {
                     results,
                   },
                   null,
-                  2,
+                  2
                 ),
               },
             ],
@@ -142,11 +142,11 @@ export function registerBatchTools(server: McpServer, fileIO: FileIO): void {
                 entityCount: scene.entities.length,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

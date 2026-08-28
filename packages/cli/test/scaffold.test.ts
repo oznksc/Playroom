@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import {
-  scaffoldProject,
-  detectPackageManagers,
-  GENRE_TEMPLATES,
-} from "../src/scaffold.js";
+import { scaffoldProject, detectPackageManagers, GENRE_TEMPLATES } from "../src/scaffold.js";
 import { readProject, readScene } from "../src/project.js";
 
 let root: string;

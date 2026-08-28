@@ -5,9 +5,7 @@ import { ProvidersPanel } from "../src/components/ProvidersPanel.js";
 // Mock useAgentKeys
 vi.mock("../src/hooks/useAgentKeys.js", () => ({
   useAgentKeys: () => ({
-    keys: [
-      { provider: "anthropic", model: "claude-sonnet-4-5", storage: "keychain" },
-    ],
+    keys: [{ provider: "anthropic", model: "claude-sonnet-4-5", storage: "keychain" }],
     addKey: vi.fn(),
     removeKey: vi.fn(),
     osKeychain: true,

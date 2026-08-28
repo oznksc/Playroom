@@ -29,12 +29,12 @@ export function registerRecipeTools(server: McpServer, fileIO: FileIO): void {
                 recipes,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -57,7 +57,7 @@ export function registerRecipeTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(recipe, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -102,9 +102,7 @@ export function registerRecipeTools(server: McpServer, fileIO: FileIO): void {
         result.scenePath = filename;
         await fileIO.writeScene(filename, scene);
 
-        const entity = entityId
-          ? scene.entities.find((e) => e.id === entityId)
-          : undefined;
+        const entity = entityId ? scene.entities.find((e) => e.id === entityId) : undefined;
 
         return {
           content: [
@@ -124,7 +122,7 @@ export function registerRecipeTools(server: McpServer, fileIO: FileIO): void {
                   inputMap: scene.inputMap ?? null,
                 },
                 null,
-                2,
+                2
               ),
             },
           ],
@@ -142,6 +140,6 @@ export function registerRecipeTools(server: McpServer, fileIO: FileIO): void {
           isError: true,
         };
       }
-    },
+    }
   );
 }

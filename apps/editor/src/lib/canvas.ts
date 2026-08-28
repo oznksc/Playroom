@@ -17,7 +17,7 @@ import type {
   TransformComponent,
   GuiNode,
   GuiComponent,
-  GuiComponentInstance
+  GuiComponentInstance,
 } from "@gamekit/schema";
 import { findComponent, colorForAsset } from "./components.js";
 import { offsetGuiNode, guiNodeOrigin } from "@gamekit/runtime/gui";
@@ -55,7 +55,7 @@ export function drawScene(
   guiComponents?: GuiComponent[],
   selectedComponentInstanceId?: string | null,
   showGuiOverlays = true,
-  options: DrawSceneOptions = {},
+  options: DrawSceneOptions = {}
 ) {
   if (!options.skipViewportChrome) {
     context.clearRect(0, 0, scene.viewport.width, scene.viewport.height);
@@ -119,10 +119,14 @@ export function drawScene(
         if (tileImage) {
           context.drawImage(
             tileImage,
-            srcX, srcY,
-            tilemap.tileWidth, tilemap.tileHeight,
-            x, y,
-            tilemap.tileWidth, tilemap.tileHeight
+            srcX,
+            srcY,
+            tilemap.tileWidth,
+            tilemap.tileHeight,
+            x,
+            y,
+            tilemap.tileWidth,
+            tilemap.tileHeight
           );
         } else {
           context.fillStyle = "#a78bfa";
@@ -149,7 +153,13 @@ export function drawScene(
       context.font = `${textComp.size}px sans-serif`;
       context.textAlign = textComp.align;
       context.textBaseline = "top";
-      drawWrappedText(context, textComp.text, textComp.width, transform.position.x, transform.position.y);
+      drawWrappedText(
+        context,
+        textComp.text,
+        textComp.width,
+        transform.position.x,
+        transform.position.y
+      );
       context.restore();
     }
 
@@ -195,7 +205,9 @@ export function drawScene(
           context.arc(
             transform.position.x + followPath.points[i].x,
             transform.position.y + followPath.points[i].y,
-            3, 0, Math.PI * 2
+            3,
+            0,
+            Math.PI * 2
           );
           context.fill();
         }
@@ -242,7 +254,7 @@ export function drawScene(
             transform.position.y + Math.sin(a) * r,
             Math.max(1, particles.sizeStart * 0.4),
             0,
-            Math.PI * 2,
+            Math.PI * 2
           );
           context.fill();
         }
@@ -268,11 +280,11 @@ export function drawScene(
           context.moveTo(transform.position.x, transform.position.y);
           context.lineTo(
             transform.position.x + Math.sin(rotation - half) * range,
-            transform.position.y - Math.cos(rotation - half) * range,
+            transform.position.y - Math.cos(rotation - half) * range
           );
           context.lineTo(
             transform.position.x + Math.sin(rotation + half) * range,
-            transform.position.y - Math.cos(rotation + half) * range,
+            transform.position.y - Math.cos(rotation + half) * range
           );
           context.closePath();
           context.fillStyle = "rgba(250,204,21,0.08)";
@@ -307,12 +319,20 @@ export function drawScene(
       const tweenComp = findComponent<TweenComponent>(entity, "Tween");
       if (tweenComp) {
         const delta = tweenComp.endValue - tweenComp.startValue;
-        let tx = 0, ty = 0;
-        if (tweenComp.property === "position.x") { tx = delta * 0.15; }
-        else if (tweenComp.property === "position.y") { ty = delta * 0.15; }
-        else if (tweenComp.property === "rotation") { tx = 20; ty = 0; }
-        else if (tweenComp.property === "scale.x") { tx = delta * 10; }
-        else if (tweenComp.property === "scale.y") { ty = delta * 10; }
+        let tx = 0,
+          ty = 0;
+        if (tweenComp.property === "position.x") {
+          tx = delta * 0.15;
+        } else if (tweenComp.property === "position.y") {
+          ty = delta * 0.15;
+        } else if (tweenComp.property === "rotation") {
+          tx = 20;
+          ty = 0;
+        } else if (tweenComp.property === "scale.x") {
+          tx = delta * 10;
+        } else if (tweenComp.property === "scale.y") {
+          ty = delta * 10;
+        }
 
         if (tx !== 0 || ty !== 0) {
           drawArrow(
@@ -331,8 +351,12 @@ export function drawScene(
   const paintOverlay = options.paintOverlay;
   if (paintOverlay) {
     const paintEntity = scene.entities.find((e) => e.id === paintOverlay.entityId);
-    const paintTm = paintEntity ? findComponent<TilemapComponent>(paintEntity, "Tilemap") : undefined;
-    const paintTr = paintEntity ? findComponent<TransformComponent>(paintEntity, "Transform") : undefined;
+    const paintTm = paintEntity
+      ? findComponent<TilemapComponent>(paintEntity, "Tilemap")
+      : undefined;
+    const paintTr = paintEntity
+      ? findComponent<TransformComponent>(paintEntity, "Transform")
+      : undefined;
     if (paintTm && paintTr) {
       drawTilemapPaintOverlay(
         context,
@@ -340,7 +364,7 @@ export function drawScene(
         paintTr.position,
         paintOverlay,
         images,
-        options.zoom ?? 1,
+        options.zoom ?? 1
       );
     }
   }
@@ -386,7 +410,12 @@ export function drawScene(
         context.strokeStyle = "#ffb300";
         context.lineWidth = 2;
         context.setLineDash([6, 3]);
-        context.strokeRect(instance.x + bounds.x, instance.y + bounds.y, bounds.width, bounds.height);
+        context.strokeRect(
+          instance.x + bounds.x,
+          instance.y + bounds.y,
+          bounds.width,
+          bounds.height
+        );
         context.setLineDash([]);
       }
 
@@ -406,9 +435,17 @@ export function drawScene(
   }
 }
 
-function computeComponentBounds(component: GuiComponent): { x: number; y: number; width: number; height: number } {
+function computeComponentBounds(component: GuiComponent): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
   if (component.nodes.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const node of component.nodes) {
     const origin = guiNodeOrigin(node);
     minX = Math.min(minX, origin.x);
@@ -429,10 +466,7 @@ export function hitComponentInstance(
   const bx = instance.x + bounds.x;
   const by = instance.y + bounds.y;
   return (
-    point.x >= bx &&
-    point.x <= bx + bounds.width &&
-    point.y >= by &&
-    point.y <= by + bounds.height
+    point.x >= bx && point.x <= bx + bounds.width && point.y >= by && point.y <= by + bounds.height
   );
 }
 
@@ -479,9 +513,7 @@ export function drawWorldGrid(
   context.save();
   for (let x = left; x <= right; x += step) {
     const major = Math.round(x / step) % majorEvery === 0;
-    context.strokeStyle = major
-      ? "rgba(255, 255, 255, 0.16)"
-      : "rgba(255, 255, 255, 0.08)";
+    context.strokeStyle = major ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.08)";
     context.lineWidth = major ? majorW : hair;
     context.beginPath();
     context.moveTo(x, top);
@@ -490,9 +522,7 @@ export function drawWorldGrid(
   }
   for (let y = top; y <= bottom; y += step) {
     const major = Math.round(y / step) % majorEvery === 0;
-    context.strokeStyle = major
-      ? "rgba(255, 255, 255, 0.16)"
-      : "rgba(255, 255, 255, 0.08)";
+    context.strokeStyle = major ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.08)";
     context.lineWidth = major ? majorW : hair;
     context.beginPath();
     context.moveTo(left, y);
@@ -527,7 +557,7 @@ export function drawSceneFrame(
   height: number,
   zoom: number,
   world?: SceneFrameOptions,
-  labelOverride?: string,
+  labelOverride?: string
 ) {
   const z = Math.max(0.0001, zoom);
   const hair = 1 / z;
@@ -620,10 +650,7 @@ export function drawSceneFrame(
 }
 
 /** Draw Text-only entities in fixed screen space (HUD, no camera offset). */
-export function drawScreenSpaceText(
-  context: CanvasRenderingContext2D,
-  scene: GameKitScene,
-) {
+export function drawScreenSpaceText(context: CanvasRenderingContext2D, scene: GameKitScene) {
   for (const entity of scene.entities) {
     const transform = findComponent<TransformComponent>(entity, "Transform");
     const textComp = findComponent<TextComponent>(entity, "Text");
@@ -634,7 +661,13 @@ export function drawScreenSpaceText(
     context.font = `${textComp.size}px sans-serif`;
     context.textAlign = textComp.align;
     context.textBaseline = "top";
-    drawWrappedText(context, textComp.text, textComp.width, transform.position.x, transform.position.y);
+    drawWrappedText(
+      context,
+      textComp.text,
+      textComp.width,
+      transform.position.x,
+      transform.position.y
+    );
     context.restore();
   }
 }
@@ -644,7 +677,7 @@ function drawWrappedText(
   text: string,
   wrapWidth: number | undefined,
   x: number,
-  y: number,
+  y: number
 ): void {
   if (!wrapWidth || wrapWidth <= 0) {
     context.fillText(text, x, y);
@@ -760,10 +793,7 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
     const bx = transform.position.x + aabb.offset.x;
     const by = transform.position.y + aabb.offset.y;
     return (
-      point.x >= bx &&
-      point.x <= bx + aabb.size.x &&
-      point.y >= by &&
-      point.y <= by + aabb.size.y
+      point.x >= bx && point.x <= bx + aabb.size.x && point.y >= by && point.y <= by + aabb.size.y
     );
   }
 
@@ -782,10 +812,14 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
     const pts = polygon.points.map((p) => ({ x: ox + p.x, y: oy + p.y }));
     let inside = false;
     for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-      const xi = pts[i].x, yi = pts[i].y;
-      const xj = pts[j].x, yj = pts[j].y;
-      if ((yi > point.y) !== (yj > point.y) &&
-          point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi) {
+      const xi = pts[i].x,
+        yi = pts[i].y;
+      const xj = pts[j].x,
+        yj = pts[j].y;
+      if (
+        yi > point.y !== yj > point.y &&
+        point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
+      ) {
         inside = !inside;
       }
     }
@@ -830,7 +864,11 @@ export function hitEntity(entity: GameKitEntity, point: { x: number; y: number }
 
 const VERTEX_HIT_RADIUS = 8;
 
-export function hitPolygonVertex(entity: GameKitEntity, point: { x: number; y: number }, zoom = 1): number {
+export function hitPolygonVertex(
+  entity: GameKitEntity,
+  point: { x: number; y: number },
+  zoom = 1
+): number {
   const transform = findComponent<TransformComponent>(entity, "Transform");
   const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
   if (!transform || !polygon) return -1;
@@ -871,8 +909,14 @@ function drawArrow(
 
   context.beginPath();
   context.moveTo(toX, toY);
-  context.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-  context.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+  context.lineTo(
+    toX - headlen * Math.cos(angle - Math.PI / 6),
+    toY - headlen * Math.sin(angle - Math.PI / 6)
+  );
+  context.lineTo(
+    toX - headlen * Math.cos(angle + Math.PI / 6),
+    toY - headlen * Math.sin(angle + Math.PI / 6)
+  );
   context.closePath();
   context.fill();
 }

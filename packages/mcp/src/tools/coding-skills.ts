@@ -18,37 +18,44 @@ interface CodingSkillMeta {
 const SKILL_REGISTRY: Record<string, { name: string; description: string; tags: string[] }> = {
   "shopify-skia": {
     name: "Shopify Skia",
-    description: "@shopify/react-native-skia — Canvas drawing, GPU-accelerated rendering, shaders, and animations",
+    description:
+      "@shopify/react-native-skia — Canvas drawing, GPU-accelerated rendering, shaders, and animations",
     tags: ["react-native", "skia", "canvas", "gpu", "graphics"],
   },
-  "reanimated": {
+  reanimated: {
     name: "Reanimated",
-    description: "react-native-reanimated — Worklets, shared values, layout animations, gesture-driven animations",
+    description:
+      "react-native-reanimated — Worklets, shared values, layout animations, gesture-driven animations",
     tags: ["react-native", "animation", "worklets", "shared-values", "gesture"],
   },
   "rn-performance": {
     name: "React Native Performance",
-    description: "React Native performance — FlatList optimization, Hermes engine, memoization, profiling",
+    description:
+      "React Native performance — FlatList optimization, Hermes engine, memoization, profiling",
     tags: ["react-native", "performance", "optimization", "hermes", "flatlist"],
   },
-  "react": {
+  react: {
     name: "React",
-    description: "React patterns — Hooks, composition, state management, memoization, error boundaries",
+    description:
+      "React patterns — Hooks, composition, state management, memoization, error boundaries",
     tags: ["react", "hooks", "state", "composition", "patterns"],
   },
   "react-native": {
     name: "React Native",
-    description: "React Native general — Navigation, styling, platform differences, debugging, build",
+    description:
+      "React Native general — Navigation, styling, platform differences, debugging, build",
     tags: ["react-native", "navigation", "styling", "platform", "mobile"],
   },
-  "vite": {
+  vite: {
     name: "Vite",
-    description: "Vite — Configuration, plugins, HMR, build optimization, environment variables, testing",
+    description:
+      "Vite — Configuration, plugins, HMR, build optimization, environment variables, testing",
     tags: ["vite", "bundler", "dev-server", "esm", "build"],
   },
-  "phaser": {
+  phaser: {
     name: "Phaser",
-    description: "Phaser general — Game setup, scene lifecycle, game objects, physics, audio, assets",
+    description:
+      "Phaser general — Game setup, scene lifecycle, game objects, physics, audio, assets",
     tags: ["phaser", "game", "2d", "physics", "scene"],
   },
   "phaser-canvas": {
@@ -58,12 +65,14 @@ const SKILL_REGISTRY: Record<string, { name: string; description: string; tags: 
   },
   "phaser-scene": {
     name: "Phaser Scene Management",
-    description: "Phaser scenes — Lifecycle, transitions, data passing, parallel scenes, state management",
+    description:
+      "Phaser scenes — Lifecycle, transitions, data passing, parallel scenes, state management",
     tags: ["phaser", "scene", "lifecycle", "transitions", "state"],
   },
   "phaser-physics": {
     name: "Phaser Physics",
-    description: "Phaser physics — Arcade physics, Matter.js, colliders, bodies, collision categories",
+    description:
+      "Phaser physics — Arcade physics, Matter.js, colliders, bodies, collision categories",
     tags: ["phaser", "physics", "arcade", "matter", "collision"],
   },
   "phaser-input": {
@@ -92,7 +101,10 @@ export function registerCodingSkillTools(server: McpServer): void {
     "list_coding_skills",
     "List available coding best-practice skills (React, React Native, Phaser, Vite, etc.)",
     {
-      tag: z.string().optional().describe("Filter skills by tag (e.g., 'react-native', 'phaser', 'vite')"),
+      tag: z
+        .string()
+        .optional()
+        .describe("Filter skills by tag (e.g., 'react-native', 'phaser', 'vite')"),
     },
     async ({ tag }) => {
       let files: string[];
@@ -100,7 +112,9 @@ export function registerCodingSkillTools(server: McpServer): void {
         files = await readdir(codingSkillsDir);
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Coding skills directory not found" }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: "Coding skills directory not found" }) },
+          ],
           isError: true,
         };
       }
@@ -123,7 +137,7 @@ export function registerCodingSkillTools(server: McpServer): void {
       return {
         content: [{ type: "text", text: JSON.stringify(skills, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -133,7 +147,7 @@ export function registerCodingSkillTools(server: McpServer): void {
       skillId: z
         .string()
         .describe(
-          "Skill ID (e.g., 'shopify-skia', 'reanimated', 'phaser', 'phaser-canvas', 'react-native')",
+          "Skill ID (e.g., 'shopify-skia', 'reanimated', 'phaser', 'phaser-canvas', 'react-native')"
         ),
     },
     async ({ skillId }) => {
@@ -169,11 +183,11 @@ export function registerCodingSkillTools(server: McpServer): void {
                 content,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

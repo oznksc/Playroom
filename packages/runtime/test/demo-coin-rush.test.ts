@@ -7,10 +7,7 @@ import { simulateSceneSteps } from "../src/simulate.js";
 import { loadScene } from "../src/scene.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
-const demoScenePath = join(
-  repoRoot,
-  "templates/web-game/gamekit/scenes/main.scene.json",
-);
+const demoScenePath = join(repoRoot, "templates/web-game/gamekit/scenes/main.scene.json");
 
 describe("Coin Rush demo scene", () => {
   const raw = JSON.parse(readFileSync(demoScenePath, "utf8"));
@@ -47,9 +44,9 @@ describe("Coin Rush demo scene", () => {
   it("lands the player on the ground under gravity", () => {
     const scene = parseScene(raw);
     const startY = (
-      scene.entities.find((e) => e.id === "player")!.components.find(
-        (c) => c.type === "Transform",
-      ) as { position: { y: number } }
+      scene.entities
+        .find((e) => e.id === "player")!
+        .components.find((c) => c.type === "Transform") as { position: { y: number } }
     ).position.y;
 
     const result = simulateSceneSteps(scene, { steps: 90 });
@@ -65,9 +62,9 @@ describe("Coin Rush demo scene", () => {
   it("moves right when right input is held", () => {
     const scene = parseScene(raw);
     const startX = (
-      scene.entities.find((e) => e.id === "player")!.components.find(
-        (c) => c.type === "Transform",
-      ) as { position: { x: number } }
+      scene.entities
+        .find((e) => e.id === "player")!
+        .components.find((c) => c.type === "Transform") as { position: { x: number } }
     ).position.x;
 
     const settled = simulateSceneSteps(scene, { steps: 60 });

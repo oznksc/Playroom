@@ -1,4 +1,13 @@
-import type { AabbColliderComponent, CircleColliderComponent, GameKitEntity, PolygonColliderComponent, TransformComponent, RigidBodyComponent, Vector2, TilemapComponent } from "@gamekit/schema";
+import type {
+  AabbColliderComponent,
+  CircleColliderComponent,
+  GameKitEntity,
+  PolygonColliderComponent,
+  TransformComponent,
+  RigidBodyComponent,
+  Vector2,
+  TilemapComponent,
+} from "@gamekit/schema";
 
 export type Aabb = {
   x: number;
@@ -41,7 +50,7 @@ export type TriggerState = Set<string>;
 
 export function updateCollisionEvents(
   contacts: CollisionEvent[],
-  previous: CollisionState = new Set(),
+  previous: CollisionState = new Set()
 ): { active: CollisionState; events: CollisionEvent[] } {
   const active: CollisionState = new Set();
   const events: CollisionEvent[] = [];
@@ -56,10 +65,7 @@ export function updateCollisionEvents(
 }
 
 export function intersectsAabb(a: Aabb, b: Aabb): boolean {
-  return a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y;
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
 export function intersectsCircleCircle(a: Circle, b: Circle): boolean {
@@ -90,7 +96,7 @@ export function getEntityAabb(entity: GameKitEntity): Aabb | undefined {
     x: transform.position.x + collider.offset.x,
     y: transform.position.y + collider.offset.y,
     width: collider.size.x * transform.scale.x,
-    height: collider.size.y * transform.scale.y
+    height: collider.size.y * transform.scale.y,
   };
 }
 
@@ -105,7 +111,7 @@ export function getEntityCircle(entity: GameKitEntity): Circle | undefined {
   return {
     x: transform.position.x + collider.offset.x,
     y: transform.position.y + collider.offset.y,
-    radius: collider.radius * Math.max(transform.scale.x, transform.scale.y)
+    radius: collider.radius * Math.max(transform.scale.x, transform.scale.y),
   };
 }
 
@@ -180,7 +186,10 @@ export function intersectsPolygonPolygon(a: Polygon, b: Polygon): boolean {
 }
 
 export function solidPolygonBounds(poly: Polygon): Aabb {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const p of poly.points) {
     if (p.x < minX) minX = p.x;
     if (p.y < minY) minY = p.y;
@@ -222,9 +231,8 @@ export function applyPolygonCollisions(
   let grounded = false;
   const collisionEntityIds = new Set<string>();
 
-  const effectiveSolids = mask !== undefined
-    ? solids.filter((solid) => (mask & solid.layer) !== 0)
-    : solids;
+  const effectiveSolids =
+    mask !== undefined ? solids.filter((solid) => (mask & solid.layer) !== 0) : solids;
 
   for (const solid of effectiveSolids) {
     const collision = polygonSolidCollision(next, solid);
@@ -240,7 +248,8 @@ export function applyPolygonCollisions(
       point.y += correctionY;
     }
 
-    const velocityIntoSurface = nextVelocity.x * collision.normal.x + nextVelocity.y * collision.normal.y;
+    const velocityIntoSurface =
+      nextVelocity.x * collision.normal.x + nextVelocity.y * collision.normal.y;
     if (velocityIntoSurface < 0) {
       nextVelocity.x -= velocityIntoSurface * collision.normal.x;
       nextVelocity.y -= velocityIntoSurface * collision.normal.y;
@@ -248,20 +257,30 @@ export function applyPolygonCollisions(
     if (collision.normal.y < -0.5) grounded = true;
   }
 
-  return { position: { x: next.x, y: next.y }, velocity: nextVelocity, grounded, collisionEntityIds: [...collisionEntityIds] };
+  return {
+    position: { x: next.x, y: next.y },
+    velocity: nextVelocity,
+    grounded,
+    collisionEntityIds: [...collisionEntityIds],
+  };
 }
 
 export function solidAabb(solid: CollisionSolid): Aabb {
   if ("width" in solid) return solid as Aabb;
   if ("radius" in solid) {
-    return { x: solid.x - (solid as Circle).radius, y: solid.y - (solid as Circle).radius, width: (solid as Circle).radius * 2, height: (solid as Circle).radius * 2 };
+    return {
+      x: solid.x - (solid as Circle).radius,
+      y: solid.y - (solid as Circle).radius,
+      width: (solid as Circle).radius * 2,
+      height: (solid as Circle).radius * 2,
+    };
   }
   return solidPolygonBounds(solid as Polygon);
 }
 
 export function updateTriggerEvents(
   entities: GameKitEntity[],
-  previous: TriggerState = new Set(),
+  previous: TriggerState = new Set()
 ): { active: TriggerState; events: TriggerEvent[] } {
   const colliders = entities.flatMap((entity) => {
     const collider = getEntityCollider(entity);
@@ -280,7 +299,11 @@ export function updateTriggerEvents(
       const key = triggerPairKey(trigger.entityId, other.entityId);
       active.add(key);
       if (!previous.has(key)) {
-        events.push({ type: "enter", triggerEntityId: trigger.entityId, otherEntityId: other.entityId });
+        events.push({
+          type: "enter",
+          triggerEntityId: trigger.entityId,
+          otherEntityId: other.entityId,
+        });
       }
     }
   }
@@ -305,17 +328,38 @@ function getEntityCollider(entity: GameKitEntity): {
   const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
   if (aabb) {
     const shape = getEntityAabb(entity);
-    return shape ? { shape, isTrigger: aabb.isTrigger ?? false, layer: aabb.layer ?? 1, mask: aabb.mask ?? 0xffffffff } : null;
+    return shape
+      ? {
+          shape,
+          isTrigger: aabb.isTrigger ?? false,
+          layer: aabb.layer ?? 1,
+          mask: aabb.mask ?? 0xffffffff,
+        }
+      : null;
   }
   const circle = findComponent<CircleColliderComponent>(entity, "CircleCollider");
   if (circle) {
     const shape = getEntityCircle(entity);
-    return shape ? { shape, isTrigger: circle.isTrigger ?? false, layer: circle.layer ?? 1, mask: circle.mask ?? 0xffffffff } : null;
+    return shape
+      ? {
+          shape,
+          isTrigger: circle.isTrigger ?? false,
+          layer: circle.layer ?? 1,
+          mask: circle.mask ?? 0xffffffff,
+        }
+      : null;
   }
   const polygon = findComponent<PolygonColliderComponent>(entity, "PolygonCollider");
   if (polygon) {
     const shape = getEntityPolygon(entity);
-    return shape ? { shape, isTrigger: polygon.isTrigger ?? false, layer: polygon.layer ?? 1, mask: polygon.mask ?? 0xffffffff } : null;
+    return shape
+      ? {
+          shape,
+          isTrigger: polygon.isTrigger ?? false,
+          layer: polygon.layer ?? 1,
+          mask: polygon.mask ?? 0xffffffff,
+        }
+      : null;
   }
   return null;
 }
@@ -414,9 +458,8 @@ export function applyCircleCollisions(
   let grounded = false;
   const collisionEntityIds = new Set<string>();
 
-  const effectiveSolids = mask !== undefined
-    ? solids.filter((s) => (mask & s.layer) !== 0)
-    : solids;
+  const effectiveSolids =
+    mask !== undefined ? solids.filter((s) => (mask & s.layer) !== 0) : solids;
 
   next.x += velocity.x;
   for (const solid of effectiveSolids) {
@@ -464,9 +507,8 @@ export function applyAabbCollisions(
   let grounded = false;
   const collisionEntityIds = new Set<string>();
 
-  const effectiveSolids = mask !== undefined
-    ? solids.filter((s) => (mask & s.layer) !== 0)
-    : solids;
+  const effectiveSolids =
+    mask !== undefined ? solids.filter((s) => (mask & s.layer) !== 0) : solids;
 
   next.x += velocity.x;
   for (const solid of effectiveSolids) {
@@ -505,7 +547,10 @@ export function applyAabbCollisions(
   };
 }
 
-function findComponent<T>(entity: GameKitEntity, type: T extends { type: infer Name } ? Name : never): T | undefined {
+function findComponent<T>(
+  entity: GameKitEntity,
+  type: T extends { type: infer Name } ? Name : never
+): T | undefined {
   return entity.components.find((component) => component.type === type) as T | undefined;
 }
 
@@ -549,7 +594,10 @@ function polygonCircleCollision(polygon: Polygon, circle: Circle): PolygonCollis
   for (const axis of axes) {
     const polyProjection = projectPolygon(polygon, axis);
     const circleCenter = circle.x * axis.x + circle.y * axis.y;
-    const circleProjection = { min: circleCenter - circle.radius, max: circleCenter + circle.radius };
+    const circleProjection = {
+      min: circleCenter - circle.radius,
+      max: circleCenter + circle.radius,
+    };
     const overlap = projectionOverlap(polyProjection, circleProjection);
     if (overlap <= 0) return null;
     if (overlap < smallestOverlap) {
@@ -559,7 +607,10 @@ function polygonCircleCollision(polygon: Polygon, circle: Circle): PolygonCollis
   }
 
   if (!smallestAxis) return null;
-  return orientCollision(smallestAxis, smallestOverlap, polygonCenter(polygon), { x: circle.x, y: circle.y });
+  return orientCollision(smallestAxis, smallestOverlap, polygonCenter(polygon), {
+    x: circle.x,
+    y: circle.y,
+  });
 }
 
 function collisionOnAxes(a: Polygon, b: Polygon, axes: Vector2[]): PolygonCollision | null {
@@ -577,11 +628,19 @@ function collisionOnAxes(a: Polygon, b: Polygon, axes: Vector2[]): PolygonCollis
   return orientCollision(smallestAxis, smallestOverlap, polygonCenter(a), polygonCenter(b));
 }
 
-function projectionOverlap(a: { min: number; max: number }, b: { min: number; max: number }): number {
+function projectionOverlap(
+  a: { min: number; max: number },
+  b: { min: number; max: number }
+): number {
   return Math.min(a.max, b.max) - Math.max(a.min, b.min);
 }
 
-function orientCollision(axis: Vector2, depth: number, movingCenter: Vector2, solidCenter: Vector2): PolygonCollision {
+function orientCollision(
+  axis: Vector2,
+  depth: number,
+  movingCenter: Vector2,
+  solidCenter: Vector2
+): PolygonCollision {
   const towardSolidX = solidCenter.x - movingCenter.x;
   const towardSolidY = solidCenter.y - movingCenter.y;
   const pointsTowardSolid = towardSolidX * axis.x + towardSolidY * axis.y > 0;
@@ -592,7 +651,10 @@ function orientCollision(axis: Vector2, depth: number, movingCenter: Vector2, so
 }
 
 function polygonCenter(polygon: Polygon): Vector2 {
-  const total = polygon.points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 });
+  const total = polygon.points.reduce(
+    (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
+    { x: 0, y: 0 }
+  );
   return { x: total.x / polygon.points.length, y: total.y / polygon.points.length };
 }
 
@@ -622,8 +684,12 @@ function getAxes(poly: Polygon): { x: number; y: number }[] {
   return axes;
 }
 
-function projectPolygon(poly: Polygon, axis: { x: number; y: number }): { min: number; max: number } {
-  let min = Infinity, max = -Infinity;
+function projectPolygon(
+  poly: Polygon,
+  axis: { x: number; y: number }
+): { min: number; max: number } {
+  let min = Infinity,
+    max = -Infinity;
   for (const p of poly.points) {
     const dot = p.x * axis.x + p.y * axis.y;
     if (dot < min) min = dot;
@@ -643,7 +709,7 @@ export type RaycastHit = {
 function intersectRayAabb(
   origin: Vector2,
   dir: Vector2,
-  aabb: Aabb,
+  aabb: Aabb
 ): { point: Vector2; distance: number; normal: Vector2 } | null {
   const invDirX = dir.x === 0 ? Infinity : 1 / dir.x;
   const invDirY = dir.y === 0 ? Infinity : 1 / dir.y;
@@ -669,9 +735,7 @@ function intersectRayAabb(
   const halfH = aabb.height / 2;
   const overlapX = halfW - Math.abs(dx);
   const overlapY = halfH - Math.abs(dy);
-  const normal = overlapX < overlapY
-    ? { x: Math.sign(dx), y: 0 }
-    : { x: 0, y: Math.sign(dy) };
+  const normal = overlapX < overlapY ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) };
 
   return { point, distance: t, normal };
 }
@@ -679,7 +743,7 @@ function intersectRayAabb(
 function intersectRayCircle(
   origin: Vector2,
   dir: Vector2,
-  circle: Circle,
+  circle: Circle
 ): { point: Vector2; distance: number; normal: Vector2 } | null {
   const cx = origin.x - circle.x;
   const cy = origin.y - circle.y;
@@ -707,7 +771,7 @@ function intersectRayCircle(
 function intersectRayPolygon(
   origin: Vector2,
   dir: Vector2,
-  polygon: Polygon,
+  polygon: Polygon
 ): { point: Vector2; distance: number; normal: Vector2 } | null {
   const pts = polygon.points;
   let minT = Infinity;
@@ -715,9 +779,12 @@ function intersectRayPolygon(
 
   for (let i = 0; i < pts.length; i++) {
     const j = (i + 1) % pts.length;
-    const ax = pts[i].x, ay = pts[i].y;
-    const bx = pts[j].x, by = pts[j].y;
-    const ex = bx - ax, ey = by - ay;
+    const ax = pts[i].x,
+      ay = pts[i].y;
+    const bx = pts[j].x,
+      by = pts[j].y;
+    const ex = bx - ax,
+      ey = by - ay;
 
     const denom = dir.x * ey - dir.y * ex;
     if (Math.abs(denom) < 1e-10) continue;
@@ -742,7 +809,7 @@ export function raycast(
   origin: Vector2,
   direction: Vector2,
   entities: GameKitEntity[],
-  options?: { maxDistance?: number; mask?: number; includeNonStatic?: boolean },
+  options?: { maxDistance?: number; mask?: number; includeNonStatic?: boolean }
 ): RaycastHit | null {
   const maxDist = options?.maxDistance ?? Infinity;
   const mask = options?.mask;

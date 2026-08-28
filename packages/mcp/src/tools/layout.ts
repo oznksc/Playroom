@@ -36,7 +36,10 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       position: z.object({ x: z.number(), y: z.number() }).optional(),
       rotation: z.number().optional().describe("Degrees"),
       scale: z.object({ x: z.number(), y: z.number() }).optional(),
-      relative: z.boolean().optional().describe("If true, add to the current transform (default false)"),
+      relative: z
+        .boolean()
+        .optional()
+        .describe("If true, add to the current transform (default false)"),
     },
     async ({ scenePath, entityId, position, rotation, scale, relative }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -47,7 +50,10 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       }
       const transform = getTransform(entity);
       if (!transform) {
-        return toolJson({ error: `Entity "${entity.name}" has no Transform. Use add_component.` }, true);
+        return toolJson(
+          { error: `Entity "${entity.name}" has no Transform. Use add_component.` },
+          true
+        );
       }
       if (position) {
         transform.position = relative
@@ -64,7 +70,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, entity: summarizeEntity(entity), transform });
-    },
+    }
   );
 
   server.tool(
@@ -74,7 +80,9 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity to move"),
       targetId: z.string().describe("Anchor entity to place relative to"),
-      side: z.enum(["left", "right", "above", "below", "center"]).describe("Which side of the target to occupy"),
+      side: z
+        .enum(["left", "right", "above", "below", "center"])
+        .describe("Which side of the target to occupy"),
       gap: z.number().optional().describe("Pixels between bounds (default 0; ignored for center)"),
     },
     async ({ scenePath, entityId, targetId, side, gap }) => {
@@ -123,7 +131,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
         side,
         gap: spacing,
       });
-    },
+    }
   );
 
   server.tool(
@@ -133,9 +141,17 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       entityIds: z.array(z.string()).min(1).describe("Entities to arrange, in order"),
       mode: LayoutModeSchema.describe("Layout mode"),
-      origin: z.object({ x: z.number(), y: z.number() }).optional().describe("Top-left origin for row/column/grid (world pixels)"),
+      origin: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("Top-left origin for row/column/grid (world pixels)"),
       gap: z.number().optional().describe("Pixels between bounds (default 8)"),
-      columns: z.number().int().min(1).optional().describe("Column count for grid mode (default 3)"),
+      columns: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe("Column count for grid mode (default 3)"),
     },
     async ({ scenePath, entityIds, mode, origin, gap, columns }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -149,7 +165,8 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
 
       const spacing = gap ?? 8;
       const firstBounds = getEntityBounds(entities[0]);
-      if (!firstBounds) return toolJson({ error: `Entity "${entities[0].name}" has no Transform.` }, true);
+      if (!firstBounds)
+        return toolJson({ error: `Entity "${entities[0].name}" has no Transform.` }, true);
       const originX = origin?.x ?? firstBounds.minX;
       const originY = origin?.y ?? firstBounds.minY;
 
@@ -201,7 +218,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
           break;
         case "align-right": {
           const maxRight = Math.max(
-            ...entities.map((e) => getEntityBounds(e)?.maxX ?? Number.NEGATIVE_INFINITY),
+            ...entities.map((e) => getEntityBounds(e)?.maxX ?? Number.NEGATIVE_INFINITY)
           );
           for (const entity of entities) {
             const bounds = getEntityBounds(entity);
@@ -219,7 +236,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
           break;
         case "align-bottom": {
           const maxBottom = Math.max(
-            ...entities.map((e) => getEntityBounds(e)?.maxY ?? Number.NEGATIVE_INFINITY),
+            ...entities.map((e) => getEntityBounds(e)?.maxY ?? Number.NEGATIVE_INFINITY)
           );
           for (const entity of entities) {
             const bounds = getEntityBounds(entity);
@@ -229,7 +246,9 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
           break;
         }
         case "align-center-x": {
-          const xs = entities.map((e) => getEntityBounds(e)?.x).filter((n): n is number => n !== undefined);
+          const xs = entities
+            .map((e) => getEntityBounds(e)?.x)
+            .filter((n): n is number => n !== undefined);
           const mid = xs.reduce((a, b) => a + b, 0) / xs.length;
           for (const entity of entities) {
             const transform = getTransform(entity);
@@ -238,7 +257,9 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
           break;
         }
         case "align-center-y": {
-          const ys = entities.map((e) => getEntityBounds(e)?.y).filter((n): n is number => n !== undefined);
+          const ys = entities
+            .map((e) => getEntityBounds(e)?.y)
+            .filter((n): n is number => n !== undefined);
           const mid = ys.reduce((a, b) => a + b, 0) / ys.length;
           for (const entity of entities) {
             const transform = getTransform(entity);
@@ -255,7 +276,8 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
               const step = span / (entities.length - 1);
               entities.forEach((entity, i) => {
                 const transform = getTransform(entity);
-                if (transform) transform.position = { ...transform.position, x: first.x + step * i };
+                if (transform)
+                  transform.position = { ...transform.position, x: first.x + step * i };
               });
             }
           }
@@ -270,7 +292,8 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
               const step = span / (entities.length - 1);
               entities.forEach((entity, i) => {
                 const transform = getTransform(entity);
-                if (transform) transform.position = { ...transform.position, y: first.y + step * i };
+                if (transform)
+                  transform.position = { ...transform.position, y: first.y + step * i };
               });
             }
           }
@@ -285,7 +308,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
         gap: spacing,
         arranged: entities.map(summarizeEntity),
       });
-    },
+    }
   );
 
   server.tool(
@@ -298,7 +321,9 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       offset: z
         .object({ x: z.number(), y: z.number() })
         .optional()
-        .describe("World offset applied per copy index (copy i gets i * offset). Default {x: 48, y: 0}"),
+        .describe(
+          "World offset applied per copy index (copy i gets i * offset). Default {x: 48, y: 0}"
+        ),
       nameSuffix: z.string().optional().describe("Appended to the clone name (default ' Copy')"),
     },
     async ({ scenePath, entityId, count, offset, nameSuffix }) => {
@@ -327,7 +352,10 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
           };
         }
         for (const comp of clone.components) {
-          if (comp.type === "CameraFollow" && (comp.targetId === source.id || comp.targetId === "self")) {
+          if (
+            comp.type === "CameraFollow" &&
+            (comp.targetId === source.id || comp.targetId === "self")
+          ) {
             comp.targetId = clone.id;
           }
         }
@@ -341,7 +369,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
         sourceId: source.id,
         created: created.map(summarizeEntity),
       });
-    },
+    }
   );
 
   server.tool(
@@ -351,10 +379,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
       to: z
-        .union([
-          z.enum(["front", "back", "forward", "backward"]),
-          z.number().int().min(0),
-        ])
+        .union([z.enum(["front", "back", "forward", "backward"]), z.number().int().min(0)])
         .describe("Target index, or front/back/forward/backward"),
     },
     async ({ scenePath, entityId, to }) => {
@@ -378,7 +403,7 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
         to: nextIndex,
         order: scene.entities.map((e) => ({ id: e.id, name: e.name })),
       });
-    },
+    }
   );
 
   server.tool(
@@ -388,7 +413,10 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       role: z.enum(ENTITY_ROLES).describe("Role kit to spawn"),
       name: z.string().optional().describe("Entity name (defaults to the role, capitalized)"),
-      position: z.object({ x: z.number(), y: z.number() }).optional().describe("World position (defaults to the kit's template)"),
+      position: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("World position (defaults to the kit's template)"),
       assetId: z.string().optional().describe("Override Sprite.assetId"),
       tags: z.array(z.string()).optional().describe("Override gameplay tags"),
     },
@@ -405,6 +433,6 @@ export function registerLayoutTools(server: McpServer, fileIO: FileIO): void {
         entity,
         summary: summarizeEntity(entity),
       });
-    },
+    }
   );
 }

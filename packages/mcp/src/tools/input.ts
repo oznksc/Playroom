@@ -6,16 +6,24 @@ import { DEFAULT_INPUT_MAP, type InputActionBinding } from "@gamekit/schema";
 const INPUT_PRESETS: Record<string, InputActionBinding[]> = {
   platformer: DEFAULT_INPUT_MAP.bindings,
   topdown: [
-    { action: "move_left", keys: ["ArrowLeft", "a", "A"], touchControl: "left", gamepad: "LEFT_STICK_X_NEG" },
-    { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right", gamepad: "LEFT_STICK_X_POS" },
+    {
+      action: "move_left",
+      keys: ["ArrowLeft", "a", "A"],
+      touchControl: "left",
+      gamepad: "LEFT_STICK_X_NEG",
+    },
+    {
+      action: "move_right",
+      keys: ["ArrowRight", "d", "D"],
+      touchControl: "right",
+      gamepad: "LEFT_STICK_X_POS",
+    },
     { action: "move_up", keys: ["ArrowUp", "w", "W"], gamepad: "LEFT_STICK_Y_NEG" },
     { action: "move_down", keys: ["ArrowDown", "s", "S"], gamepad: "LEFT_STICK_Y_POS" },
     { action: "fire", keys: ["j", "J"], touchControl: "fire", gamepad: "B" },
     { action: "action", keys: ["k", "K"], touchControl: "action", gamepad: "X" },
   ],
-  shooter: [
-    ...DEFAULT_INPUT_MAP.bindings,
-  ],
+  shooter: [...DEFAULT_INPUT_MAP.bindings],
 };
 
 export function registerInputTools(server: McpServer, fileIO: FileIO): void {
@@ -29,7 +37,9 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
       touchControl: z
         .enum(["left", "right", "jump", "fire", "action"])
         .optional()
-        .describe("Virtual touch control: left/right for stick, jump/fire/action for on-screen buttons"),
+        .describe(
+          "Virtual touch control: left/right for stick, jump/fire/action for on-screen buttons"
+        ),
       gamepad: z.string().optional().describe("Gamepad binding (e.g., 'A', 'LEFT_STICK_X')"),
     },
     async ({ scenePath, action, keys, touchControl, gamepad }) => {
@@ -56,9 +66,11 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, action, binding }, null, 2) }],
+        content: [
+          { type: "text", text: JSON.stringify({ success: true, action, binding }, null, 2) },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -72,12 +84,21 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
       const scene = await fileIO.readScene(filename);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({
-          scenePath: filename,
-          inputMap: scene.inputMap ?? DEFAULT_INPUT_MAP,
-        }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                scenePath: filename,
+                inputMap: scene.inputMap ?? DEFAULT_INPUT_MAP,
+              },
+              null,
+              2
+            ),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -94,16 +115,27 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
       const next = bindings.filter((b) => b.action !== action);
       if (next.length === bindings.length) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Action "${action}" not found.` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Action "${action}" not found.` }) },
+          ],
           isError: true,
         };
       }
       scene.inputMap = { bindings: next };
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: action, remaining: next.map((b) => b.action) }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              { success: true, removed: action, remaining: next.map((b) => b.action) },
+              null,
+              2
+            ),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -122,10 +154,14 @@ export function registerInputTools(server: McpServer, fileIO: FileIO): void {
         content: [
           {
             type: "text",
-            text: JSON.stringify({ success: true, preset, actions: scene.inputMap.bindings.map((b) => b.action) }, null, 2),
+            text: JSON.stringify(
+              { success: true, preset, actions: scene.inputMap.bindings.map((b) => b.action) },
+              null,
+              2
+            ),
           },
         ],
       };
-    },
+    }
   );
 }

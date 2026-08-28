@@ -36,22 +36,39 @@ type AgentPanelProps = {
   onSceneMutated?: () => void;
 };
 
-export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSettings, onSceneMutated }: AgentPanelProps) {
+export function AgentPanel({
+  sceneId,
+  isPlaying,
+  expanded,
+  onToggleExpand,
+  onSettings,
+  onSceneMutated,
+}: AgentPanelProps) {
   const [input, setInput] = useState("");
   const { keys, sessionKey } = useAgentKeys();
 
   // Read settings from localStorage (set by AgentSettings modal)
-  const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
-  const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
-  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
-  const [planMode, setPlanMode] = useState(() => localStorage.getItem("gamekit:agent:planMode") === "1");
+  const [activeProvider, setActiveProvider] = useState(
+    () => localStorage.getItem("gamekit:agent:activeProvider") || ""
+  );
+  const [activeModel, setActiveModel] = useState(
+    () => localStorage.getItem("gamekit:agent:activeModel") || ""
+  );
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(
+    () => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only"
+  );
+  const [planMode, setPlanMode] = useState(
+    () => localStorage.getItem("gamekit:agent:planMode") === "1"
+  );
 
   // Sync when settings change in the modal
   useEffect(() => {
     const handleSync = () => {
       setActiveProvider(localStorage.getItem("gamekit:agent:activeProvider") || "");
       setActiveModel(localStorage.getItem("gamekit:agent:activeModel") || "");
-      setApprovalMode((localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
+      setApprovalMode(
+        (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only"
+      );
       setPlanMode(localStorage.getItem("gamekit:agent:planMode") === "1");
     };
     window.addEventListener("gamekit:agent:keys-updated", handleSync);
@@ -64,7 +81,10 @@ export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSet
 
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
   const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
-  const resolvedModel = activeModel || activeKeyEntry?.model || (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
+  const resolvedModel =
+    activeModel ||
+    activeKeyEntry?.model ||
+    (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -88,7 +108,7 @@ export function AgentPanel({ sceneId, isPlaying, expanded, onToggleExpand, onSet
     onSceneMutated,
     planMode,
     sessionKey(resolvedProvider),
-    activeKeyEntry?.baseUrl,
+    activeKeyEntry?.baseUrl
   );
 
   useEffect(() => {

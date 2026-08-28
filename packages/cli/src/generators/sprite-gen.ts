@@ -91,7 +91,8 @@ export type GeneratedSprite = {
  * Procedural Sprite & Pixel Art Generator.
  */
 export function generateSprite(options: SpriteOptions = {}): GeneratedSprite {
-  const category = options.category ?? inferCategoryFromPrompt(options.prompt || options.archetype || "character");
+  const category =
+    options.category ?? inferCategoryFromPrompt(options.prompt || options.archetype || "character");
   const archetype = (options.archetype || options.prompt || "hero").toLowerCase();
   const paletteName = options.palette ?? "pico8";
   const palette = PALETTES[paletteName] || PALETTES.pico8;
@@ -119,22 +120,60 @@ export function generateSprite(options: SpriteOptions = {}): GeneratedSprite {
     setPixel(gridRes - 1 - x, y, color);
   }
 
-  const primaryColor = palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
-  const accentColor = palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
+  const primaryColor =
+    palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
+  const accentColor =
+    palette[Math.min(palette.length - 1, 1 + Math.floor(rand() * (palette.length - 1)))];
   const skinTone = palette[palette.length - 1]; // Lightest tone
   const outlineColor = palette[0]; // Darkest tone
 
   // Build procedural pixel matrix by category
   if (category === "character" || category === "enemy") {
-    generateCharacterMatrix(setSymmetricPixel, gridRes, archetype, primaryColor, accentColor, skinTone, outlineColor, rand);
+    generateCharacterMatrix(
+      setSymmetricPixel,
+      gridRes,
+      archetype,
+      primaryColor,
+      accentColor,
+      skinTone,
+      outlineColor,
+      rand
+    );
   } else if (category === "item") {
-    generateItemMatrix(setPixel, setSymmetricPixel, gridRes, archetype, primaryColor, accentColor, outlineColor, rand);
+    generateItemMatrix(
+      setPixel,
+      setSymmetricPixel,
+      gridRes,
+      archetype,
+      primaryColor,
+      accentColor,
+      outlineColor,
+      rand
+    );
   } else if (category === "tile") {
     generateTileMatrix(setPixel, gridRes, archetype, primaryColor, accentColor, outlineColor, rand);
   } else if (category === "prop") {
-    generatePropMatrix(setPixel, setSymmetricPixel, gridRes, archetype, primaryColor, accentColor, outlineColor, rand);
+    generatePropMatrix(
+      setPixel,
+      setSymmetricPixel,
+      gridRes,
+      archetype,
+      primaryColor,
+      accentColor,
+      outlineColor,
+      rand
+    );
   } else {
-    generateIconMatrix(setPixel, setSymmetricPixel, gridRes, archetype, primaryColor, accentColor, outlineColor, rand);
+    generateIconMatrix(
+      setPixel,
+      setSymmetricPixel,
+      gridRes,
+      archetype,
+      primaryColor,
+      accentColor,
+      outlineColor,
+      rand
+    );
   }
 
   // Scale grid into full targetSize RGBA pixel array
@@ -262,11 +301,22 @@ function generateItemMatrix(
 
   if (isHeart) {
     const heartShape = [
-      [mid - 2, 4], [mid - 1, 3], [mid, 4],
-      [mid - 3, 5], [mid - 2, 5], [mid - 1, 5], [mid, 5],
-      [mid - 3, 6], [mid - 2, 6], [mid - 1, 6], [mid, 6],
-      [mid - 2, 7], [mid - 1, 7], [mid, 7],
-      [mid - 1, 8], [mid, 8],
+      [mid - 2, 4],
+      [mid - 1, 3],
+      [mid, 4],
+      [mid - 3, 5],
+      [mid - 2, 5],
+      [mid - 1, 5],
+      [mid, 5],
+      [mid - 3, 6],
+      [mid - 2, 6],
+      [mid - 1, 6],
+      [mid, 6],
+      [mid - 2, 7],
+      [mid - 1, 7],
+      [mid, 7],
+      [mid - 1, 8],
+      [mid, 8],
       [mid, 9],
     ];
     for (const [x, y] of heartShape) {
@@ -435,11 +485,51 @@ function generateIconMatrix(
 
 function inferCategoryFromPrompt(text: string): SpriteCategory {
   const t = text.toLowerCase();
-  if (t.includes("enemy") || t.includes("monster") || t.includes("slime") || t.includes("boss") || t.includes("zombie")) return "enemy";
-  if (t.includes("character") || t.includes("hero") || t.includes("player") || t.includes("knight") || t.includes("wizard") || t.includes("ninja")) return "character";
-  if (t.includes("sword") || t.includes("shield") || t.includes("coin") || t.includes("gem") || t.includes("potion") || t.includes("heart") || t.includes("item")) return "item";
-  if (t.includes("tile") || t.includes("brick") || t.includes("grass") || t.includes("ground") || t.includes("wall") || t.includes("floor")) return "tile";
-  if (t.includes("tree") || t.includes("rock") || t.includes("crate") || t.includes("chest") || t.includes("door") || t.includes("prop")) return "prop";
+  if (
+    t.includes("enemy") ||
+    t.includes("monster") ||
+    t.includes("slime") ||
+    t.includes("boss") ||
+    t.includes("zombie")
+  )
+    return "enemy";
+  if (
+    t.includes("character") ||
+    t.includes("hero") ||
+    t.includes("player") ||
+    t.includes("knight") ||
+    t.includes("wizard") ||
+    t.includes("ninja")
+  )
+    return "character";
+  if (
+    t.includes("sword") ||
+    t.includes("shield") ||
+    t.includes("coin") ||
+    t.includes("gem") ||
+    t.includes("potion") ||
+    t.includes("heart") ||
+    t.includes("item")
+  )
+    return "item";
+  if (
+    t.includes("tile") ||
+    t.includes("brick") ||
+    t.includes("grass") ||
+    t.includes("ground") ||
+    t.includes("wall") ||
+    t.includes("floor")
+  )
+    return "tile";
+  if (
+    t.includes("tree") ||
+    t.includes("rock") ||
+    t.includes("crate") ||
+    t.includes("chest") ||
+    t.includes("door") ||
+    t.includes("prop")
+  )
+    return "prop";
   return "character";
 }
 

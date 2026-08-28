@@ -8,7 +8,11 @@ import "./styles/globals.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <TooltipProvider delayDuration={300}>
-      {new URLSearchParams(window.location.search).get("view") === "ui-gallery" ? <UiGallery /> : <App />}
+      {new URLSearchParams(window.location.search).get("view") === "ui-gallery" ? (
+        <UiGallery />
+      ) : (
+        <App />
+      )}
     </TooltipProvider>
   </React.StrictMode>
 );

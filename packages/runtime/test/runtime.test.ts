@@ -5,7 +5,18 @@ import { updateTween } from "../src/tween.js";
 import { updateFollowPath } from "../src/path.js";
 import { executeActions, transitionFsm, updateFsm } from "../src/script.js";
 import { createCameraFollow } from "../src/camera.js";
-import { getEntityPolygon, intersectsAabb, intersectsPolygonAabb, intersectsPolygonCircle, applyAabbCollisions, applyCircleCollisions, applyPolygonCollisions, updateCollisionEvents, updateTriggerEvents, type CollisionSolid } from "../src/collision.js";
+import {
+  getEntityPolygon,
+  intersectsAabb,
+  intersectsPolygonAabb,
+  intersectsPolygonCircle,
+  applyAabbCollisions,
+  applyCircleCollisions,
+  applyPolygonCollisions,
+  updateCollisionEvents,
+  updateTriggerEvents,
+  type CollisionSolid,
+} from "../src/collision.js";
 import { createPlayerController } from "../src/player.js";
 import { computeNineSliceRegions } from "../src/nineslice.js";
 import { createRigidBody, RIGID_BODY_SLEEP_DELAY } from "../src/rigid-body.js";
@@ -21,18 +32,15 @@ describe("runtime scene loading", () => {
 
 describe("aabb collision", () => {
   it("detects intersections", () => {
-    expect(intersectsAabb(
-      { x: 0, y: 0, width: 10, height: 10 },
-      { x: 9, y: 9, width: 10, height: 10 }
-    )).toBe(true);
+    expect(
+      intersectsAabb({ x: 0, y: 0, width: 10, height: 10 }, { x: 9, y: 9, width: 10, height: 10 })
+    ).toBe(true);
   });
 
   it("resolves vertical ground collisions", () => {
-    const result = applyAabbCollisions(
-      { x: 0, y: 0, width: 10, height: 10 },
-      { x: 0, y: 10 },
-      [{ x: 0, y: 15, width: 100, height: 10, layer: 1 }]
-    );
+    const result = applyAabbCollisions({ x: 0, y: 0, width: 10, height: 10 }, { x: 0, y: 10 }, [
+      { x: 0, y: 15, width: 100, height: 10, layer: 1 },
+    ]);
 
     expect(result.position.y).toBe(5);
     expect(result.velocity.y).toBe(0);
@@ -46,7 +54,7 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 620,
-      gravity: 1800
+      gravity: 1800,
     });
     player.setGrounded(true);
 
@@ -58,10 +66,12 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 620,
-      gravity: 1800
+      gravity: 1800,
     });
 
-    expect(player.update({ left: false, right: true, jump: false }, 1 / 60).velocity.x).toBe(240 * 0.85);
+    expect(player.update({ left: false, right: true, jump: false }, 1 / 60).velocity.x).toBe(
+      240 * 0.85
+    );
   });
 
   it("grants coyote time after leaving the ground", () => {
@@ -69,7 +79,7 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 620,
-      gravity: 1800
+      gravity: 1800,
     });
     player.setGrounded(true);
     player.update({ left: false, right: false, jump: false }, 1 / 60);
@@ -87,7 +97,7 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 620,
-      gravity: 1800
+      gravity: 1800,
     });
     // Press jump while airborne (buffer starts), then land within the buffer window.
     player.update({ left: false, right: false, jump: true }, 1 / 60);
@@ -102,7 +112,7 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 620,
-      gravity: 1800
+      gravity: 1800,
     });
     player.setGrounded(true);
     const first = player.update({ left: false, right: false, jump: true }, 1 / 60);
@@ -119,7 +129,7 @@ describe("player and camera helpers", () => {
       type: "PlayerController",
       speed: 240,
       jumpVelocity: 100,
-      gravity: 1800
+      gravity: 1800,
     });
     player.setGrounded(true);
     // An external impulse (e.g. launch pad) below the cap floor is clamped to -200.
@@ -138,7 +148,7 @@ describe("player and camera helpers", () => {
     });
     const moved = player.update(
       { left: false, right: true, jump: false, up: true, down: false },
-      1 / 60,
+      1 / 60
     );
     expect(moved.velocity.x).toBeCloseTo(200 / Math.SQRT2, 5);
     expect(moved.velocity.y).toBeCloseTo(-200 / Math.SQRT2, 5);
@@ -216,7 +226,6 @@ describe("polygon collision", () => {
     expect(poly.points[3].y).toBeCloseTo(156, 5);
   });
 
-
   it("intersectsPolygonAabb returns true for overlapping polygon and AABB", () => {
     const poly = {
       x: 100,
@@ -240,7 +249,11 @@ describe("polygon collision", () => {
     const triangle = {
       x: 5,
       y: 5,
-      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 10 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 0, y: 10 },
+      ],
     };
 
     expect(intersectsPolygonAabb(triangle, { x: 8, y: 8, width: 2, height: 2 })).toBe(false);
@@ -250,7 +263,12 @@ describe("polygon collision", () => {
     const square = {
       x: 10,
       y: 10,
-      points: [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 20, y: 0 },
+        { x: 20, y: 20 },
+        { x: 0, y: 20 },
+      ],
     };
 
     expect(intersectsPolygonCircle(square, { x: 10, y: 10, radius: 1 })).toBe(true);
@@ -258,9 +276,18 @@ describe("polygon collision", () => {
 
   it("resolves a falling polygon against a static floor", () => {
     const result = applyPolygonCollisions(
-      { x: 5, y: 5, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }] },
+      {
+        x: 5,
+        y: 5,
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+      },
       { x: 0, y: 8 },
-      [{ x: -20, y: 15, width: 100, height: 10, layer: 1 }],
+      [{ x: -20, y: 15, width: 100, height: 10, layer: 1 }]
     );
 
     expect(result.position).toEqual({ x: 5, y: 10 });
@@ -270,10 +297,19 @@ describe("polygon collision", () => {
 
   it("honors collision masks when resolving polygons", () => {
     const result = applyPolygonCollisions(
-      { x: 5, y: 5, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }] },
+      {
+        x: 5,
+        y: 5,
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+      },
       { x: 0, y: 8 },
       [{ x: -20, y: 15, width: 100, height: 10, layer: 2 }],
-      1,
+      1
     );
 
     expect(result.position).toEqual({ x: 5, y: 13 });
@@ -304,11 +340,13 @@ describe("trigger events", () => {
     const first = updateTriggerEvents([trigger, player]);
     const second = updateTriggerEvents([trigger, player], first.active);
 
-    expect(first.events).toEqual([{
-      type: "enter",
-      triggerEntityId: trigger.id,
-      otherEntityId: player.id,
-    }]);
+    expect(first.events).toEqual([
+      {
+        type: "enter",
+        triggerEntityId: trigger.id,
+        otherEntityId: player.id,
+      },
+    ]);
     expect(second.events).toEqual([]);
   });
 
@@ -321,11 +359,13 @@ describe("trigger events", () => {
 
     const second = updateTriggerEvents([trigger, player], first.active);
 
-    expect(second.events).toEqual([{
-      type: "exit",
-      triggerEntityId: trigger.id,
-      otherEntityId: player.id,
-    }]);
+    expect(second.events).toEqual([
+      {
+        type: "exit",
+        triggerEntityId: trigger.id,
+        otherEntityId: player.id,
+      },
+    ]);
   });
 
   it("filters trigger overlaps using both collider masks", () => {
@@ -392,11 +432,9 @@ describe("rigid body sleeping", () => {
 
 describe("collision events", () => {
   it("reports the static entity contacted during collision resolution", () => {
-    const result = applyAabbCollisions(
-      { x: 0, y: 0, width: 10, height: 10 },
-      { x: 0, y: 10 },
-      [{ x: 0, y: 15, width: 100, height: 10, layer: 1, entityId: "floor" }],
-    );
+    const result = applyAabbCollisions({ x: 0, y: 0, width: 10, height: 10 }, { x: 0, y: 10 }, [
+      { x: 0, y: 15, width: 100, height: 10, layer: 1, entityId: "floor" },
+    ]);
 
     expect(result.collisionEntityIds).toEqual(["floor"]);
   });
@@ -435,11 +473,9 @@ describe("collision events", () => {
     };
 
     // Body falling straight down into the polygon's upper bound (y=10).
-    const result = applyAabbCollisions(
-      { x: 20, y: 0, width: 10, height: 10 },
-      { x: 0, y: 11 },
-      [ramp],
-    );
+    const result = applyAabbCollisions({ x: 20, y: 0, width: 10, height: 10 }, { x: 0, y: 11 }, [
+      ramp,
+    ]);
 
     expect(result.collisionEntityIds).toContain("ramp");
     expect(result.grounded).toBe(true);
@@ -463,11 +499,7 @@ describe("collision events", () => {
     };
 
     // Circle pushed right into the wall.
-    const result = applyCircleCollisions(
-      { x: 5, y: 25, radius: 4 },
-      { x: 10, y: 0 },
-      [wall],
-    );
+    const result = applyCircleCollisions({ x: 5, y: 25, radius: 4 }, { x: 10, y: 0 }, [wall]);
 
     expect(result.collisionEntityIds).toContain("wall");
     expect(result.velocity.x).toBe(0);
@@ -479,10 +511,14 @@ describe("SceneManager persistent state", () => {
     const scene = createEmptyScene("Main");
     const loaded = loadScene(scene);
     const storage = new InMemoryStorage();
-    const manager = new SceneManager({
-      scenes: { "main": loaded },
-      transition: { type: "none", duration: 0 }
-    }, [], storage);
+    const manager = new SceneManager(
+      {
+        scenes: { main: loaded },
+        transition: { type: "none", duration: 0 },
+      },
+      [],
+      storage
+    );
 
     // Initial state
     expect(manager.getPersistentVar("score")).toBeUndefined();
@@ -510,7 +546,7 @@ describe("SceneManager persistent state", () => {
   it("returns false if loading an empty or non-existent slot", async () => {
     const manager = new SceneManager({
       scenes: {},
-      transition: { type: "none", duration: 0 }
+      transition: { type: "none", duration: 0 },
     });
 
     const success = await manager.loadGame("nonexistent");
@@ -524,7 +560,7 @@ describe("behavior systems runtime logic", () => {
       type: "Transform" as const,
       position: { x: 0, y: 0 },
       rotation: 0,
-      scale: { x: 1, y: 1 }
+      scale: { x: 1, y: 1 },
     };
 
     const tween = {
@@ -536,7 +572,7 @@ describe("behavior systems runtime logic", () => {
       easing: "linear" as const,
       loop: false,
       pingPong: false,
-      active: true
+      active: true,
     };
 
     // First frame (1s elapsed out of 2s duration)
@@ -555,14 +591,18 @@ describe("behavior systems runtime logic", () => {
       type: "Transform" as const,
       position: { x: 0, y: 0 },
       rotation: 0,
-      scale: { x: 1, y: 1 }
+      scale: { x: 1, y: 1 },
     };
 
     const followPath = {
       type: "FollowPath" as const,
-      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 10 },
+      ],
       speed: 10,
-      loop: false
+      loop: false,
     };
 
     // First step: move towards point index 1 (x: 10, y: 0)
@@ -580,10 +620,14 @@ describe("behavior systems runtime logic", () => {
 
   it("handles state transitions and DSL actions", () => {
     const mockStorage = new InMemoryStorage();
-    const sceneManager = new SceneManager({
-      scenes: {},
-      transition: { type: "none", duration: 0 }
-    }, [], mockStorage);
+    const sceneManager = new SceneManager(
+      {
+        scenes: {},
+        transition: { type: "none", duration: 0 },
+      },
+      [],
+      mockStorage
+    );
 
     const entity = {
       id: "bot",
@@ -593,29 +637,24 @@ describe("behavior systems runtime logic", () => {
           type: "StateMachine" as const,
           initialState: "idle",
           currentState: "idle",
-          states: [
-            { name: "idle", on: { "collisionEnter": "walking" } },
-            { name: "walking" }
-          ]
+          states: [{ name: "idle", on: { collisionEnter: "walking" } }, { name: "walking" }],
         },
         {
           type: "Script" as const,
           handlers: [
             {
               event: "enter:walking",
-              actions: [
-                { type: "setVariable", key: "walk_triggered", value: true }
-              ]
-            }
-          ]
-        }
-      ]
+              actions: [{ type: "setVariable", key: "walk_triggered", value: true }],
+            },
+          ],
+        },
+      ],
     };
 
     const context = {
       entityId: "bot",
       entities: [entity],
-      sceneManager
+      sceneManager,
     };
 
     // Trigger transition to walking state
@@ -642,15 +681,11 @@ describe("behavior systems runtime logic", () => {
           states: [
             {
               name: "idle",
-              exit: [
-                { type: "setVariable", key: "exited_idle", value: true },
-              ],
+              exit: [{ type: "setVariable", key: "exited_idle", value: true }],
             },
             {
               name: "active",
-              enter: [
-                { type: "setVariable", key: "entered_active", value: true },
-              ],
+              enter: [{ type: "setVariable", key: "entered_active", value: true }],
             },
           ],
         },
@@ -709,10 +744,7 @@ describe("behavior systems runtime logic", () => {
           type: "StateMachine" as const,
           initialState: "idle",
           currentState: "idle",
-          states: [
-            { name: "idle", duration: 1, then: "moving" },
-            { name: "moving" },
-          ],
+          states: [{ name: "idle", duration: 1, then: "moving" }, { name: "moving" }],
         },
       ],
     };

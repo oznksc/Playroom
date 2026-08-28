@@ -25,7 +25,10 @@ beforeEach(async () => {
   await writeFile(join(gk, "scenes", "menu.scene.json"), sceneToJson(createMenuScene("BuildTest")));
   await writeFile(join(gk, "scenes", "settings.scene.json"), sceneToJson(createSettingsScene()));
   await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createStarterGameplayScene()));
-  await writeFile(join(gk, "generated", "assets.ts"), "export const gamekitAssets = {} as const;\n");
+  await writeFile(
+    join(gk, "generated", "assets.ts"),
+    "export const gamekitAssets = {} as const;\n"
+  );
 });
 
 afterEach(async () => {

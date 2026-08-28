@@ -1,4 +1,7 @@
-export function toolJson(data: unknown, isError = false): {
+export function toolJson(
+  data: unknown,
+  isError = false
+): {
   content: Array<{ type: "text"; text: string }>;
   isError?: true;
 } {

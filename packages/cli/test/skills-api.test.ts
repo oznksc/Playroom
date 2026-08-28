@@ -34,7 +34,7 @@ beforeEach(async () => {
       },
       timeline: { tracks: [], duration: 0, loop: false, playing: false },
       gui: { nodes: [], componentInstances: [] },
-    }),
+    })
   );
 });
 
@@ -57,7 +57,7 @@ describe("CLI skills", () => {
     expect(result.assetsCopied.length).toBeGreaterThan(0);
 
     const scene = JSON.parse(
-      await readFile(join(root, "gamekit", "scenes", result.filename), "utf8"),
+      await readFile(join(root, "gamekit", "scenes", result.filename), "utf8")
     );
     expect(scene.id).toBe("platformer");
     expect(scene.entities.length).toBe(result.entityCount);

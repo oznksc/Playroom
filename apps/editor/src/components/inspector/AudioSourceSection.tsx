@@ -13,7 +13,14 @@ type Props = {
   onRemove: () => void;
 };
 
-export function AudioSourceSection({ audioSource, assets, onChange, open, onToggle, onRemove }: Props) {
+export function AudioSourceSection({
+  audioSource,
+  assets,
+  onChange,
+  open,
+  onToggle,
+  onRemove,
+}: Props) {
   return (
     <AccordionSection
       icon={<Volume2 size={12} />}
@@ -26,44 +33,70 @@ export function AudioSourceSection({ audioSource, assets, onChange, open, onTogg
       {audioSource ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Asset
+            </span>
             <Select
               value={audioSource.assetId}
               onChange={(e) => {
                 const val = e.target.value;
-                onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.assetId = val; });
+                onChange((d) => {
+                  findComponent<AudioSourceComponent>(d, "AudioSource")!.assetId = val;
+                });
               }}
             >
               <option value="">— Select —</option>
               {assets.map((a) => (
-                <option key={a.id} value={a.id}>{a.id}</option>
+                <option key={a.id} value={a.id}>
+                  {a.id}
+                </option>
               ))}
             </Select>
           </label>
           <NumberField
             label="Volume"
             value={audioSource.volume}
-            onChange={(v) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.volume = v; })}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<AudioSourceComponent>(d, "AudioSource")!.volume = v;
+              })
+            }
           />
           <CheckboxField
             label="Loop"
             checked={audioSource.loop}
-            onChange={(checked) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.loop = checked; })}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<AudioSourceComponent>(d, "AudioSource")!.loop = checked;
+              })
+            }
           />
           <CheckboxField
             label="Play on start"
             checked={audioSource.playOnStart}
-            onChange={(checked) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.playOnStart = checked; })}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<AudioSourceComponent>(d, "AudioSource")!.playOnStart = checked;
+              })
+            }
           />
           <NumberField
             label="Min distance"
             value={audioSource.minDistance ?? 0}
-            onChange={(v) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.minDistance = v; })}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<AudioSourceComponent>(d, "AudioSource")!.minDistance = v;
+              })
+            }
           />
           <NumberField
             label="Max distance"
             value={audioSource.maxDistance ?? 1000}
-            onChange={(v) => onChange((d) => { findComponent<AudioSourceComponent>(d, "AudioSource")!.maxDistance = v; })}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<AudioSourceComponent>(d, "AudioSource")!.maxDistance = v;
+              })
+            }
           />
         </>
       ) : (

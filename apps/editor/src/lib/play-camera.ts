@@ -4,7 +4,7 @@ import { clampPlayCamera, computeSceneWorldBounds } from "./physics.js";
 
 export function initializePlayCamera(
   scene: GameKitScene,
-  rules: { spawnPoint?: { x: number; y: number } },
+  rules: { spawnPoint?: { x: number; y: number } }
 ): {
   spawnPoint?: { x: number; y: number };
   cameraFollow: ReturnType<typeof createCameraFollow> | null;
@@ -21,10 +21,13 @@ export function initializePlayCamera(
     }
   }
 
-  const target = scene.entities.find((entity) => entity.id === followTargetId)
-    ?? scene.entities.find((entity) => entity.components.some((component) => component.type === "PlayerController"));
+  const target =
+    scene.entities.find((entity) => entity.id === followTargetId) ??
+    scene.entities.find((entity) =>
+      entity.components.some((component) => component.type === "PlayerController")
+    );
   const transform = target?.components.find(
-    (component): component is TransformComponent => component.type === "Transform",
+    (component): component is TransformComponent => component.type === "Transform"
   );
   if (!transform) return { spawnPoint: rules.spawnPoint, cameraFollow: null, pan: null };
 

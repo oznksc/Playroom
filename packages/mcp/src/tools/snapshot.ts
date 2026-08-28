@@ -20,13 +20,13 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
       await mkdir(snapshotsDir, { recursive: true });
       await writeFile(
         join(snapshotsDir, `${snapshotId}.json`),
-        JSON.stringify({ scenePath: filename, scene }, null, 2),
+        JSON.stringify({ scenePath: filename, scene }, null, 2)
       );
 
       return {
         content: [{ type: "text", text: JSON.stringify({ snapshotId, scenePath: filename }) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -41,24 +41,34 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
 
       try {
         const data = await readFile(snapshotPath, "utf8");
-        const parsed = JSON.parse(data) as { scenePath?: string; scene?: unknown } & Record<string, unknown>;
+        const parsed = JSON.parse(data) as { scenePath?: string; scene?: unknown } & Record<
+          string,
+          unknown
+        >;
         // Support both new envelope { scenePath, scene } and legacy raw scene JSON
         const scene = (parsed.scene ?? parsed) as { id?: string };
         const filename = fileIO.resolveScenePath(
-          parsed.scenePath ?? (typeof scene.id === "string" ? scene.id : "main.scene.json"),
+          parsed.scenePath ?? (typeof scene.id === "string" ? scene.id : "main.scene.json")
         );
         await fileIO.writeScene(filename, scene as Parameters<typeof fileIO.writeScene>[1]);
 
         return {
-          content: [{ type: "text", text: JSON.stringify({ success: true, restored: snapshotId, scenePath: filename }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ success: true, restored: snapshotId, scenePath: filename }),
+            },
+          ],
         };
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Snapshot not found: ${snapshotId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Snapshot not found: ${snapshotId}` }) },
+          ],
           isError: true,
         };
       }
-    },
+    }
   );
 
   server.tool(
@@ -73,10 +83,14 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
 
       let fromScene;
       try {
-        fromScene = unwrapSnapshot(JSON.parse(await readFile(join(snapshotsDir, `${from}.json`), "utf8")));
+        fromScene = unwrapSnapshot(
+          JSON.parse(await readFile(join(snapshotsDir, `${from}.json`), "utf8"))
+        );
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Snapshot not found: ${from}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Snapshot not found: ${from}` }) },
+          ],
           isError: true,
         };
       }
@@ -84,23 +98,31 @@ export function registerSnapshotTools(server: McpServer, fileIO: FileIO): void {
       let toScene;
       if (to) {
         try {
-          toScene = unwrapSnapshot(JSON.parse(await readFile(join(snapshotsDir, `${to}.json`), "utf8")));
+          toScene = unwrapSnapshot(
+            JSON.parse(await readFile(join(snapshotsDir, `${to}.json`), "utf8"))
+          );
         } catch {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: `Snapshot not found: ${to}` }) }],
+            content: [
+              { type: "text", text: JSON.stringify({ error: `Snapshot not found: ${to}` }) },
+            ],
             isError: true,
           };
         }
       } else {
-        const filename = fileIO.resolveScenePath((fromScene as { id?: string }).id ?? "main.scene.json");
+        const filename = fileIO.resolveScenePath(
+          (fromScene as { id?: string }).id ?? "main.scene.json"
+        );
         toScene = await fileIO.readScene(filename);
       }
 
       const patches = computeDiff(fromScene, toScene);
       return {
-        content: [{ type: "text", text: JSON.stringify({ from, to: to ?? "current", patches }, null, 2) }],
+        content: [
+          { type: "text", text: JSON.stringify({ from, to: to ?? "current", patches }, null, 2) },
+        ],
       };
-    },
+    }
   );
 }
 
@@ -111,7 +133,11 @@ function unwrapSnapshot(parsed: unknown): unknown {
   return parsed;
 }
 
-function computeDiff(a: unknown, b: unknown, path = ""): Array<{ op: string; path: string; value?: unknown }> {
+function computeDiff(
+  a: unknown,
+  b: unknown,
+  path = ""
+): Array<{ op: string; path: string; value?: unknown }> {
   const patches: Array<{ op: string; path: string; value?: unknown }> = [];
 
   if (a === b) return patches;

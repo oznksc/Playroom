@@ -49,7 +49,9 @@ export function SceneTabBar({
               title={file}
             >
               <span className={styles["scene-tab-label"]}>{sceneTabLabel(file)}</span>
-              {dirtyFiles.has(file) && <span className={styles["scene-tab-dirty"]} aria-label="Unsaved" />}
+              {dirtyFiles.has(file) && (
+                <span className={styles["scene-tab-dirty"]} aria-label="Unsaved" />
+              )}
               {workspace.openTabs.length > 1 && (
                 <span
                   className={styles["scene-tab-close"]}
@@ -149,15 +151,17 @@ export function ScenePanes({ workspace, onFocusPane, renderPane }: ScenePanesPro
       className={cn(
         workspaceStyles["scene-panes"],
         workspace.split === "horizontal" && workspaceStyles["split-h"],
-        workspace.split === "vertical" && workspaceStyles["split-v"],
+        workspace.split === "vertical" && workspaceStyles["split-v"]
       )}
     >
       {panes.map(({ id, file }) => {
-        const focused = (workspace.focused === id || workspace.split === "none") && focusedSceneFile(workspace) === file
-          ? true
-          : workspace.split === "none"
-            ? id === "a"
-            : workspace.focused === id;
+        const focused =
+          (workspace.focused === id || workspace.split === "none") &&
+          focusedSceneFile(workspace) === file
+            ? true
+            : workspace.split === "none"
+              ? id === "a"
+              : workspace.focused === id;
         return (
           <div
             key={id}
@@ -168,7 +172,9 @@ export function ScenePanes({ workspace, onFocusPane, renderPane }: ScenePanesPro
             }}
           >
             {workspace.split !== "none" && (
-              <span className={`${workspaceStyles["scene-pane-caption"]} type-label`}>{sceneTabLabel(file)}</span>
+              <span className={`${workspaceStyles["scene-pane-caption"]} type-label`}>
+                {sceneTabLabel(file)}
+              </span>
             )}
             {renderPane(id, file, focused)}
           </div>

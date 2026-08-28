@@ -1,13 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Key,
-  Zap,
-  Shield,
-  CheckCircle,
-  ClipboardList,
-  Sparkles,
-  Cpu,
-} from "lucide-react";
+import { Key, Zap, Shield, CheckCircle, ClipboardList, Sparkles, Cpu } from "lucide-react";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import { getApiUrl } from "../lib/api.js";
 import type { ApprovalMode } from "../lib/approval-mode.js";
@@ -25,9 +17,10 @@ import {
   TabsTrigger,
   TabsContent,
   Select,
+  Textarea,
   CheckboxField,
   cn,
-} from "@/ui";
+} from "@gamekit/ui";
 import { ProvidersPanel, PROVIDERS } from "./ProvidersPanel.js";
 import styles from "./AgentSettings.module.css";
 
@@ -42,10 +35,30 @@ const APPROVAL_MODES: Array<{
   desc: string;
   icon: React.ReactNode;
 }> = [
-  { value: "off", label: "Auto Approve", desc: "No confirmation needed", icon: <Zap size={14} className="text-yellow-400" /> },
-  { value: "destructive-only", label: "Destructive Only", desc: "Only remove/delete operations", icon: <Shield size={14} className="text-cyan-400" /> },
-  { value: "always", label: "Always Approve", desc: "Every tool call", icon: <CheckCircle size={14} className="text-green-400" /> },
-  { value: "plan", label: "Plan + Approve", desc: "Plan first, then confirm", icon: <ClipboardList size={14} className="text-purple-400" /> },
+  {
+    value: "off",
+    label: "Auto Approve",
+    desc: "No confirmation needed",
+    icon: <Zap size={14} className="text-yellow-400" />,
+  },
+  {
+    value: "destructive-only",
+    label: "Destructive Only",
+    desc: "Only remove/delete operations",
+    icon: <Shield size={14} className="text-cyan-400" />,
+  },
+  {
+    value: "always",
+    label: "Always Approve",
+    desc: "Every tool call",
+    icon: <CheckCircle size={14} className="text-green-400" />,
+  },
+  {
+    value: "plan",
+    label: "Plan + Approve",
+    desc: "Plan first, then confirm",
+    icon: <ClipboardList size={14} className="text-purple-400" />,
+  },
 ];
 
 const LANGUAGES = [
@@ -67,19 +80,39 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
   const [tab, setTab] = useState("providers");
 
   // Model tab state
-  const [activeProvider, setActiveProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
-  const [activeModel, setActiveModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
-  const [temperature, setTemperature] = useState(() => parseFloat(localStorage.getItem("gamekit:agent:temperature") || "1"));
-  const [maxTokens, setMaxTokens] = useState(() => parseInt(localStorage.getItem("gamekit:agent:maxTokens") || "4096", 10));
-  const [topP, setTopP] = useState(() => parseFloat(localStorage.getItem("gamekit:agent:topP") || "1"));
+  const [activeProvider, setActiveProvider] = useState(
+    () => localStorage.getItem("gamekit:agent:activeProvider") || ""
+  );
+  const [activeModel, setActiveModel] = useState(
+    () => localStorage.getItem("gamekit:agent:activeModel") || ""
+  );
+  const [temperature, setTemperature] = useState(() =>
+    parseFloat(localStorage.getItem("gamekit:agent:temperature") || "1")
+  );
+  const [maxTokens, setMaxTokens] = useState(() =>
+    parseInt(localStorage.getItem("gamekit:agent:maxTokens") || "4096", 10)
+  );
+  const [topP, setTopP] = useState(() =>
+    parseFloat(localStorage.getItem("gamekit:agent:topP") || "1")
+  );
   const [modelsList, setModelsList] = useState<string[]>([]);
 
   // Agent tab state
-  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(() => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only");
-  const [planMode, setPlanMode] = useState(() => localStorage.getItem("gamekit:agent:planMode") === "1");
-  const [maxTurns, setMaxTurns] = useState(() => parseInt(localStorage.getItem("gamekit:agent:maxTurns") || "25", 10));
-  const [customInstructions, setCustomInstructions] = useState(() => localStorage.getItem("gamekit:agent:customInstructions") || "");
-  const [responseLanguage, setResponseLanguage] = useState(() => localStorage.getItem("gamekit:agent:responseLanguage") || "auto");
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(
+    () => (localStorage.getItem("gamekit:agent:approvalMode") as ApprovalMode) || "destructive-only"
+  );
+  const [planMode, setPlanMode] = useState(
+    () => localStorage.getItem("gamekit:agent:planMode") === "1"
+  );
+  const [maxTurns, setMaxTurns] = useState(() =>
+    parseInt(localStorage.getItem("gamekit:agent:maxTurns") || "25", 10)
+  );
+  const [customInstructions, setCustomInstructions] = useState(
+    () => localStorage.getItem("gamekit:agent:customInstructions") || ""
+  );
+  const [responseLanguage, setResponseLanguage] = useState(
+    () => localStorage.getItem("gamekit:agent:responseLanguage") || "auto"
+  );
 
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
 
@@ -99,7 +132,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
       }
     }
     fetchModels();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [resolvedProvider]);
 
   // Persist model settings
@@ -155,17 +190,17 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       persistModelSetting("gamekit:agent:activeModel", newModel);
                     }}
                   >
-                    {keys.length > 0 ? (
-                      keys.map((k) => (
-                        <option key={k.provider} value={k.provider}>
-                          {PROVIDERS.find((p) => p.id === k.provider)?.label || k.provider}
-                        </option>
-                      ))
-                    ) : (
-                      PROVIDERS.map((p) => (
-                        <option key={p.id} value={p.id}>{p.label}</option>
-                      ))
-                    )}
+                    {keys.length > 0
+                      ? keys.map((k) => (
+                          <option key={k.provider} value={k.provider}>
+                            {PROVIDERS.find((p) => p.id === k.provider)?.label || k.provider}
+                          </option>
+                        ))
+                      : PROVIDERS.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
                   </Select>
                 </div>
 
@@ -174,14 +209,21 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   <h4 className={styles["agent-settings-section-title"]}>Model</h4>
                   {modelsList.length > 0 ? (
                     <Select
-                      value={activeModel || resolvedProvider && PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel || ""}
+                      value={
+                        activeModel ||
+                        (resolvedProvider &&
+                          PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel) ||
+                        ""
+                      }
                       onChange={(e) => {
                         setActiveModel(e.target.value);
                         persistModelSetting("gamekit:agent:activeModel", e.target.value);
                       }}
                     >
                       {modelsList.map((m) => (
-                        <option key={m} value={m}>{m}</option>
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
                       ))}
                       {activeModel && !modelsList.includes(activeModel) && (
                         <option value={activeModel}>{activeModel} (custom)</option>
@@ -190,7 +232,11 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                   ) : (
                     <Input
                       type="text"
-                      value={activeModel || PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel || ""}
+                      value={
+                        activeModel ||
+                        PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel ||
+                        ""
+                      }
                       onChange={(e) => {
                         setActiveModel(e.target.value);
                         persistModelSetting("gamekit:agent:activeModel", e.target.value);
@@ -237,7 +283,10 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     type="number"
                     value={maxTokens.toString()}
                     onChange={(e) => {
-                      const v = Math.max(256, Math.min(16384, parseInt(e.target.value, 10) || 4096));
+                      const v = Math.max(
+                        256,
+                        Math.min(16384, parseInt(e.target.value, 10) || 4096)
+                      );
                       setMaxTokens(v);
                       persistModelSetting("gamekit:agent:maxTokens", v.toString());
                     }}
@@ -284,7 +333,10 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                       <button
                         key={mode.value}
                         type="button"
-                        className={cn(styles["radio-card"], approvalMode === mode.value && styles.active)}
+                        className={cn(
+                          styles["radio-card"],
+                          approvalMode === mode.value && styles.active
+                        )}
                         onClick={() => {
                           setApprovalMode(mode.value);
                           localStorage.setItem("gamekit:agent:approvalMode", mode.value);
@@ -345,7 +397,9 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                     }}
                   >
                     {LANGUAGES.map((lang) => (
-                      <option key={lang.value} value={lang.value}>{lang.label}</option>
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
                     ))}
                   </Select>
                   <p className={styles["agent-settings-section-desc"]}>
@@ -358,18 +412,21 @@ export function AgentSettings({ open, onClose }: AgentSettingsProps) {
                 {/* Custom Instructions */}
                 <div className={styles["agent-settings-section"]}>
                   <h4 className={styles["agent-settings-section-title"]}>Custom Instructions</h4>
-                  <textarea
+                  <Textarea
                     className={styles["agent-instructions-textarea"]}
                     value={customInstructions}
                     onChange={(e) => {
                       setCustomInstructions(e.target.value);
                       localStorage.setItem("gamekit:agent:customInstructions", e.target.value);
                     }}
-                    placeholder={"Add custom rules or context for the agent...\n\nExamples:\n- Always use pixel-art style sprites\n- Place all platforms at y=300\n- Prefer dark backgrounds"}
+                    placeholder={
+                      "Add custom rules or context for the agent...\n\nExamples:\n- Always use pixel-art style sprites\n- Place all platforms at y=300\n- Prefer dark backgrounds"
+                    }
                     rows={4}
                   />
                   <p className={styles["agent-settings-section-desc"]}>
-                    Additional instructions appended to the agent's system prompt. Use this for project-specific rules, style preferences, or recurring patterns.
+                    Additional instructions appended to the agent's system prompt. Use this for
+                    project-specific rules, style preferences, or recurring patterns.
                   </p>
                 </div>
               </div>

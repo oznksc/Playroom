@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { runCli, type CliOutput } from "../lib/api";
+import { runCli, type CliOutput } from "../lib/api.js";
+import { Button, ErrorState, EmptyState } from "@gamekit/ui";
+import { CheckCircle2, Stethoscope, Sparkles, Hammer, Download } from "lucide-react";
 
-const ACTIONS: { label: string; args: string[] }[] = [
-  { label: "Init", args: ["init"] },
-  { label: "Validate", args: ["validate"] },
-  { label: "Doctor", args: ["doctor"] },
-  { label: "Generate", args: ["generate"] },
-  { label: "Build", args: ["build"] },
-  { label: "Export", args: ["export"] },
+const ACTIONS: { label: string; args: string[]; icon: React.ReactNode }[] = [
+  { label: "Init", args: ["init"], icon: <Sparkles size={12} /> },
+  { label: "Validate", args: ["validate"], icon: <CheckCircle2 size={12} /> },
+  { label: "Doctor", args: ["doctor"], icon: <Stethoscope size={12} /> },
+  { label: "Generate", args: ["generate"], icon: <Sparkles size={12} /> },
+  { label: "Build", args: ["build"], icon: <Hammer size={12} /> },
+  { label: "Export", args: ["export"], icon: <Download size={12} /> },
 ];
 
 export function ProjectPanel({ projectPath }: { projectPath: string }) {
@@ -37,22 +39,21 @@ export function ProjectPanel({ projectPath }: { projectPath: string }) {
       <div className="type-label">CLI — project commands</div>
       <div className="flex flex-wrap gap-2">
         {ACTIONS.map((a) => (
-          <button
+          <Button
             key={a.label}
+            size="sm"
+            variant="secondary"
+            loading={busy === a.label}
             disabled={busy !== null}
             onClick={() => run(a.label, a.args)}
-            className="rounded-md border border-border-default bg-bg-elevated px-3 py-1.5 text-md text-text-primary transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+            leftIcon={a.icon}
           >
-            {busy === a.label ? `${a.label}…` : a.label}
-          </button>
+            {a.label}
+          </Button>
         ))}
       </div>
 
-      {error && (
-        <div className="type-body rounded-md border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-accent-red">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState compact message={error} />}
 
       <div className="glass-panel flex-1 overflow-auto p-3">
         <div className="type-label mb-2">Output</div>
@@ -62,7 +63,7 @@ export function ProjectPanel({ projectPath }: { projectPath: string }) {
             {!output.ok && `\n\nexit code: ${output.code}`}
           </pre>
         ) : (
-          <div className="type-body text-text-muted">Run a command to see output.</div>
+          <EmptyState title="No Output" description="Run a command above to see live CLI output." />
         )}
       </div>
     </div>

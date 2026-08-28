@@ -96,7 +96,7 @@ export function resolveGamepadBindings(inputMap?: InputMapConfig): ResolvedGamep
 
 export function playerInputFromPressedKeys(
   pressed: ReadonlySet<string> | Iterable<string>,
-  inputMap?: InputMapConfig,
+  inputMap?: InputMapConfig
 ): PlayerControllerInput {
   const keys = pressed instanceof Set ? pressed : new Set(pressed);
   const actions = resolveActionKeys(inputMap);
@@ -111,7 +111,7 @@ export function playerInputFromPressedKeys(
 
 export function extendedInputFromPressedKeys(
   pressed: ReadonlySet<string> | Iterable<string>,
-  inputMap?: InputMapConfig,
+  inputMap?: InputMapConfig
 ): ExtendedPlayerInput {
   const keys = pressed instanceof Set ? pressed : new Set(pressed);
   const actions = resolveActionKeys(inputMap);
@@ -130,7 +130,7 @@ export function extendedInputFromPressedKeys(
 export function mergeGamepadIntoInput(
   base: ExtendedPlayerInput,
   inputMap: InputMapConfig | undefined,
-  snapshot: GamepadSnapshot,
+  snapshot: GamepadSnapshot
 ): ExtendedPlayerInput {
   const gp = resolveGamepadBindings(inputMap);
   return {

@@ -19,7 +19,11 @@ function playerAt(x: number, y: number) {
   return player;
 }
 
-function floorAt(scene: GameKitScene, y: number, opts: { solid: boolean; columns?: number; tiles?: number[] }): void {
+function floorAt(
+  scene: GameKitScene,
+  y: number,
+  opts: { solid: boolean; columns?: number; tiles?: number[] }
+): void {
   const columns = opts.columns ?? 4;
   const tiles = opts.tiles ?? [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   const floor = createEntity("Floor", { x: 0, y });
@@ -92,7 +96,8 @@ describe("tilemap collision", () => {
       solid: true,
     });
     const player = playerAt(50, 50);
-    (player.components.find((c) => c.type === "PlayerController") as { gravity: number }).gravity = 0;
+    (player.components.find((c) => c.type === "PlayerController") as { gravity: number }).gravity =
+      0;
     player.components.push({ type: "RigidBody", useGravity: false, velocity: { x: 0, y: 0 } });
     scene.entities.push(wall, player);
 

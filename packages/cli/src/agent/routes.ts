@@ -42,7 +42,7 @@ export async function handleAgentRoute(
   request: IncomingMessage,
   response: ServerResponse,
   pathname: string,
-  method: string,
+  method: string
 ): Promise<boolean> {
   // GET /api/agent/providers
   if (pathname === "/api/agent/providers" && method === "GET") {
@@ -183,15 +183,14 @@ export async function handleAgentRoute(
     const cliDir = __dirname.includes("dist")
       ? join(__dirname, "..")
       : join(__dirname, "..", "..", "dist");
-    const mcpClient = new McpClient(
-      join(cliDir, "index.js"),
-      root,
-    );
+    const mcpClient = new McpClient(join(cliDir, "index.js"), root);
 
     try {
       await mcpClient.connect();
     } catch (e) {
-      sendJson(response, 500, { error: `Failed to start MCP: ${e instanceof Error ? e.message : e}` });
+      sendJson(response, 500, {
+        error: `Failed to start MCP: ${e instanceof Error ? e.message : e}`,
+      });
       return true;
     }
 
@@ -211,7 +210,10 @@ export async function handleAgentRoute(
     beginSse(response);
 
     if (sessionSnapshotId) {
-      writeSse(response, "session_snapshot", { snapshotId: sessionSnapshotId, sceneId: body.sceneId });
+      writeSse(response, "session_snapshot", {
+        snapshotId: sessionSnapshotId,
+        sceneId: body.sceneId,
+      });
     }
 
     const defaultModel = body.model ?? storedKey?.model ?? defaultModelFor(provider.id);
@@ -236,7 +238,7 @@ export async function handleAgentRoute(
           sessionId: chatId,
           signal: abortController.signal,
         },
-        { provider, mcpClient, approvalGate: globalApprovalGate, auditLogger },
+        { provider, mcpClient, approvalGate: globalApprovalGate, auditLogger }
       );
 
       for await (const event of stream) {
@@ -358,8 +360,8 @@ export async function handleAgentRoute(
           toolCalls: Array.isArray(body.toolCalls) ? body.toolCalls : [],
         },
         null,
-        2,
-      ),
+        2
+      )
     );
     sendJson(response, 200, { ok: true });
     return true;
@@ -385,12 +387,24 @@ export async function handleAgentRoute(
     const sceneId = urlObj.searchParams.get("sceneId") ?? undefined;
     const tool = urlObj.searchParams.get("tool") ?? undefined;
     const status = (urlObj.searchParams.get("status") as AuditEntryStatus | null) ?? undefined;
-    const since = urlObj.searchParams.get("since") ? Number(urlObj.searchParams.get("since")) : undefined;
-    const until = urlObj.searchParams.get("until") ? Number(urlObj.searchParams.get("until")) : undefined;
+    const since = urlObj.searchParams.get("since")
+      ? Number(urlObj.searchParams.get("since"))
+      : undefined;
+    const until = urlObj.searchParams.get("until")
+      ? Number(urlObj.searchParams.get("until"))
+      : undefined;
     const sessionId = urlObj.searchParams.get("sessionId") ?? undefined;
 
     const auditLogger = new AgentAuditLogger(root);
-    const entries = await auditLogger.query({ limit, sceneId, tool, status, since, until, sessionId });
+    const entries = await auditLogger.query({
+      limit,
+      sceneId,
+      tool,
+      status,
+      since,
+      until,
+      sessionId,
+    });
     sendJson(response, 200, { entries, total: entries.length });
     return true;
   }
@@ -412,7 +426,12 @@ function sanitizeHistoryId(sceneId: string): string {
 }
 
 function extractSnapshotId(content: unknown): string | undefined {
-  if (content && typeof content === "object" && !Array.isArray(content) && "snapshotId" in content) {
+  if (
+    content &&
+    typeof content === "object" &&
+    !Array.isArray(content) &&
+    "snapshotId" in content
+  ) {
     const id = (content as { snapshotId?: unknown }).snapshotId;
     return typeof id === "string" ? id : undefined;
   }
@@ -443,7 +462,8 @@ function summarizeScene(scene: Record<string, unknown>): string {
     tags?: string[];
     components: Array<{ type: string; position?: { x: number; y: number } }>;
   }>;
-  const viewport = scene.viewport as { width?: number; height?: number; background?: string } | undefined;
+  const viewport = scene.viewport as
+    { width?: number; height?: number; background?: string } | undefined;
   const gravity = scene.gravity as { x?: number; y?: number } | undefined;
   const lines = [
     `Scene: ${scene.name ?? "untitled"} (${scene.id ?? "?"})`,
@@ -474,17 +494,26 @@ function summarizeScene(scene: Record<string, unknown>): string {
   return lines.join("\n");
 }
 
-async function loadSkillSummaries(skillsDir: string): Promise<Array<{ name: string; description: string }>> {
+async function loadSkillSummaries(
+  skillsDir: string
+): Promise<Array<{ name: string; description: string }>> {
   const summaries: Array<{ name: string; description: string }> = [];
   try {
     const files = await readdir(skillsDir);
     for (const file of files.filter((f) => f.endsWith(".json"))) {
       try {
         const raw = JSON.parse(await readFile(join(skillsDir, file), "utf8"));
-        summaries.push({ name: raw.name ?? file.replace(".json", ""), description: raw.description ?? "" });
-      } catch { /* skip */ }
+        summaries.push({
+          name: raw.name ?? file.replace(".json", ""),
+          description: raw.description ?? "",
+        });
+      } catch {
+        /* skip */
+      }
     }
-  } catch { /* dir not found */ }
+  } catch {
+    /* dir not found */
+  }
   return summaries;
 }
 

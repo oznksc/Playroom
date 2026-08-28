@@ -26,7 +26,7 @@ export function preloadEntityAssets(
   loader: Phaser.Loader.LoaderPlugin,
   entities: GameKitEntity[],
   assetUrls: Record<string, string>,
-  loadedFonts: FontRegistry,
+  loadedFonts: FontRegistry
 ): Set<string> {
   const loadedKeys = new Set<string>();
   for (const entity of entities) {
@@ -62,17 +62,25 @@ export function preloadEntityAssets(
     }
 
     const text = findComponent<TextComponent>(entity, "Text");
-    if (!text?.fontAssetId || loadedKeys.has(`font:${text.fontAssetId}`) || !assetUrls[text.fontAssetId]) continue;
+    if (
+      !text?.fontAssetId ||
+      loadedKeys.has(`font:${text.fontAssetId}`) ||
+      !assetUrls[text.fontAssetId]
+    )
+      continue;
     loadedKeys.add(`font:${text.fontAssetId}`);
     const family = `GKFont-${text.fontAssetId}`;
     const url = assetUrls[text.fontAssetId];
     const style = document.createElement("style");
     style.textContent = `@font-face{font-family:'${family}';src:url('${url}') format('${fontFormat(url)}');font-display:swap;}`;
     document.head.appendChild(style);
-    new FontFace(family, `url(${url})`).load().then((loaded) => {
-      (document.fonts as unknown as { add(font: FontFace): void }).add(loaded);
-      loadedFonts.set(text.fontAssetId, family);
-    }).catch(() => undefined);
+    new FontFace(family, `url(${url})`)
+      .load()
+      .then((loaded) => {
+        (document.fonts as unknown as { add(font: FontFace): void }).add(loaded);
+        loadedFonts.set(text.fontAssetId, family);
+      })
+      .catch(() => undefined);
   }
   return loadedKeys;
 }
@@ -87,7 +95,7 @@ export function preloadGuiImageAssets(
   sceneGui: { nodes?: GuiNode[] } | undefined,
   guiComponents: GuiComponent[],
   assetUrls: Record<string, string>,
-  loadedKeys: Set<string>,
+  loadedKeys: Set<string>
 ): void {
   const assetIds = new Set<string>();
   const collect = (nodes: GuiNode[] | undefined) => {

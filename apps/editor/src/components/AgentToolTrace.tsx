@@ -58,7 +58,7 @@ function ToolCallRow({ toolCall }: { toolCall: AgentToolCall }) {
                   ? "text-accent"
                   : toolCall.status === "needs-approval"
                     ? "text-warning"
-                    : "text-text-muted",
+                    : "text-text-muted"
           )}
         >
           {statusLabel(toolCall.status)}

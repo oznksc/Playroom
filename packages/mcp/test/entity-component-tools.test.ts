@@ -60,7 +60,10 @@ describe("entity tool handlers", () => {
   });
 
   it("updates an entity name", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Old" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Old",
+    });
     const { data } = await call("update_entity", {
       scenePath: "main.scene.json",
       entityId: entity.id,
@@ -70,7 +73,10 @@ describe("entity tool handlers", () => {
   });
 
   it("removes an entity", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Temp" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Temp",
+    });
     const { data } = await call("remove_entity", {
       scenePath: "main.scene.json",
       entityId: entity.id,
@@ -105,20 +111,42 @@ describe("entity tool handlers", () => {
 
 describe("component tool handlers", () => {
   it("adds a component to an entity", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Ball" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Ball",
+    });
     const { data } = await call("add_component", {
       scenePath: "main.scene.json",
       entityId: entity.id,
-      component: { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 16, isStatic: false, isTrigger: false },
+      component: {
+        type: "CircleCollider",
+        offset: { x: 0, y: 0 },
+        radius: 16,
+        isStatic: false,
+        isTrigger: false,
+      },
     });
     const cc = data.components.find((c: any) => c.type === "CircleCollider");
     expect(cc.radius).toBe(16);
   });
 
   it("rejects a duplicate component type", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Ball" });
-    const comp = { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 8, isStatic: false, isTrigger: false };
-    await call("add_component", { scenePath: "main.scene.json", entityId: entity.id, component: comp });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Ball",
+    });
+    const comp = {
+      type: "CircleCollider",
+      offset: { x: 0, y: 0 },
+      radius: 8,
+      isStatic: false,
+      isTrigger: false,
+    };
+    await call("add_component", {
+      scenePath: "main.scene.json",
+      entityId: entity.id,
+      component: comp,
+    });
     const { result, data } = await call("add_component", {
       scenePath: "main.scene.json",
       entityId: entity.id,
@@ -129,11 +157,20 @@ describe("component tool handlers", () => {
   });
 
   it("updates component properties", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Ball" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Ball",
+    });
     await call("add_component", {
       scenePath: "main.scene.json",
       entityId: entity.id,
-      component: { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 8, isStatic: false, isTrigger: false },
+      component: {
+        type: "CircleCollider",
+        offset: { x: 0, y: 0 },
+        radius: 8,
+        isStatic: false,
+        isTrigger: false,
+      },
     });
     const { data } = await call("update_component", {
       scenePath: "main.scene.json",
@@ -146,11 +183,20 @@ describe("component tool handlers", () => {
   });
 
   it("removes a component", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Ball" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Ball",
+    });
     await call("add_component", {
       scenePath: "main.scene.json",
       entityId: entity.id,
-      component: { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 8, isStatic: false, isTrigger: false },
+      component: {
+        type: "CircleCollider",
+        offset: { x: 0, y: 0 },
+        radius: 8,
+        isStatic: false,
+        isTrigger: false,
+      },
     });
     const { data } = await call("remove_component", {
       scenePath: "main.scene.json",
@@ -164,7 +210,10 @@ describe("component tool handlers", () => {
   });
 
   it("returns an error when updating a missing component", async () => {
-    const { data: entity } = await call("add_entity", { scenePath: "main.scene.json", name: "Ball" });
+    const { data: entity } = await call("add_entity", {
+      scenePath: "main.scene.json",
+      name: "Ball",
+    });
     const { result, data } = await call("update_component", {
       scenePath: "main.scene.json",
       entityId: entity.id,

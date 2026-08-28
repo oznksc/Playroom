@@ -2,7 +2,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { FileIO } from "../utils/file-io.js";
 import { CircleColliderInputSchema, RigidBodyInputSchema } from "../schemas/component.js";
-import type { AabbColliderComponent, CircleColliderComponent, PolygonColliderComponent, TransformComponent } from "@gamekit/schema";
+import type {
+  AabbColliderComponent,
+  CircleColliderComponent,
+  PolygonColliderComponent,
+  TransformComponent,
+} from "@gamekit/schema";
 import { GameKitComponentSchema } from "@gamekit/schema";
 import { raycast } from "@gamekit/runtime/collision";
 
@@ -14,33 +19,73 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
       type: z.enum(["AabbCollider", "CircleCollider", "PolygonCollider"]).describe("Collider type"),
-      offset: z.object({ x: z.number(), y: z.number() }).optional().describe("Collider offset from transform position"),
-      size: z.object({ x: z.number().positive(), y: z.number().positive() }).optional().describe("Size for AabbCollider"),
+      offset: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("Collider offset from transform position"),
+      size: z
+        .object({ x: z.number().positive(), y: z.number().positive() })
+        .optional()
+        .describe("Size for AabbCollider"),
       radius: z.number().positive().optional().describe("Radius for CircleCollider"),
-      points: z.array(z.object({ x: z.number(), y: z.number() })).min(3).optional().describe("Points for PolygonCollider (min 3)"),
+      points: z
+        .array(z.object({ x: z.number(), y: z.number() }))
+        .min(3)
+        .optional()
+        .describe("Points for PolygonCollider (min 3)"),
       isStatic: z.boolean().default(false).describe("Whether the collider is static (immovable)"),
-      isTrigger: z.boolean().default(false).describe("Whether the collider is a trigger (overlap only, no collision response)"),
+      isTrigger: z
+        .boolean()
+        .default(false)
+        .describe("Whether the collider is a trigger (overlap only, no collision response)"),
       layer: z.number().int().optional().describe("Collision layer bitmask"),
       mask: z.number().int().optional().describe("Collision mask bitmask"),
     },
-    async ({ scenePath, entityId, type, offset, size, radius, points, isStatic, isTrigger, layer, mask }) => {
+    async ({
+      scenePath,
+      entityId,
+      type,
+      offset,
+      size,
+      radius,
+      points,
+      isStatic,
+      isTrigger,
+      layer,
+      mask,
+    }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
 
       const existingCollider = entity.components.find(
-        (c) => c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider"
+        (c) =>
+          c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider"
       );
       if (existingCollider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" already has a ${existingCollider.type}. Use remove_component first to replace it.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" already has a ${existingCollider.type}. Use remove_component first to replace it.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -48,7 +93,12 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       if (type === "AabbCollider") {
         if (!size) {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: "size is required for AabbCollider" }) }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ error: "size is required for AabbCollider" }),
+              },
+            ],
             isError: true,
           };
         }
@@ -64,7 +114,12 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       } else if (type === "CircleCollider") {
         if (!radius) {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: "radius is required for CircleCollider" }) }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ error: "radius is required for CircleCollider" }),
+              },
+            ],
             isError: true,
           };
         }
@@ -81,7 +136,12 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       } else if (type === "PolygonCollider") {
         if (!points) {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: "points is required for PolygonCollider" }) }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ error: "points is required for PolygonCollider" }),
+              },
+            ],
             isError: true,
           };
         }
@@ -101,7 +161,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -111,20 +171,42 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
       mass: z.number().positive().default(1).describe("Mass in kg"),
-      isKinematic: z.boolean().default(false).describe("Kinematic bodies are not affected by forces"),
+      isKinematic: z
+        .boolean()
+        .default(false)
+        .describe("Kinematic bodies are not affected by forces"),
       gravityScale: z.number().default(1).describe("Gravity multiplier"),
       drag: z.number().min(0).max(1).default(0).describe("Linear damping (0-1)"),
       useGravity: z.boolean().default(true).describe("Whether gravity applies"),
-      initialVelocity: z.object({ x: z.number(), y: z.number() }).optional().describe("Starting velocity"),
+      initialVelocity: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("Starting velocity"),
     },
-    async ({ scenePath, entityId, mass, isKinematic, gravityScale, drag, useGravity, initialVelocity }) => {
+    async ({
+      scenePath,
+      entityId,
+      mass,
+      isKinematic,
+      gravityScale,
+      drag,
+      useGravity,
+      initialVelocity,
+    }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -132,27 +214,36 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const existing = entity.components.find((c) => c.type === "RigidBody");
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" already has a RigidBody component. Use remove_component first to replace it.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" already has a RigidBody component. Use remove_component first to replace it.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
 
-      entity.components.push(GameKitComponentSchema.parse({
-        type: "RigidBody",
-        velocity: initialVelocity ?? { x: 0, y: 0 },
-        angularVelocity: 0,
-        mass,
-        drag,
-        isKinematic,
-        gravityScale,
-        useGravity,
-      }));
+      entity.components.push(
+        GameKitComponentSchema.parse({
+          type: "RigidBody",
+          velocity: initialVelocity ?? { x: 0, y: 0 },
+          angularVelocity: 0,
+          mass,
+          drag,
+          isKinematic,
+          gravityScale,
+          useGravity,
+        })
+      );
 
       await fileIO.writeScene(filename, scene);
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -171,7 +262,14 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -183,7 +281,14 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
       if (!collider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -195,7 +300,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -213,7 +318,14 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available entity IDs.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -230,7 +342,14 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
 
       if (!circleCollider && !aabbCollider && !polygonCollider) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Entity "${entity.name}" has no collider component. Use add_collider to add one.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -249,7 +368,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -272,7 +391,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
         { x: originX, y: originY },
         { x: directionX, y: directionY },
         scene.entities,
-        { maxDistance, mask },
+        { maxDistance, mask }
       );
 
       if (!hit) {
@@ -284,7 +403,7 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(hit, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -305,11 +424,17 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       const overlaps: { entityId: string; colliderType: string }[] = [];
 
       for (const entity of scene.entities) {
-        const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+        const transform = entity.components.find(
+          (c): c is TransformComponent => c.type === "Transform"
+        );
         if (!transform) continue;
 
-        const aabbComp = entity.components.find((c: any): c is AabbColliderComponent => c.type === "AabbCollider");
-        const circleComp = entity.components.find((c: any): c is CircleColliderComponent => c.type === "CircleCollider");
+        const aabbComp = entity.components.find(
+          (c: any): c is AabbColliderComponent => c.type === "AabbCollider"
+        );
+        const circleComp = entity.components.find(
+          (c: any): c is CircleColliderComponent => c.type === "CircleCollider"
+        );
 
         if (mask !== undefined) {
           const layer = aabbComp?.layer ?? circleComp?.layer ?? 1;
@@ -352,6 +477,6 @@ export function registerPhysicsTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(overlaps, null, 2) }],
       };
-    },
+    }
   );
 }

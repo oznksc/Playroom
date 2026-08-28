@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createProject, createEntity, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createProject,
+  createEntity,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { FileIO } from "../src/utils/file-io.js";
 
 let tmpDir: string;
@@ -126,15 +132,36 @@ describe("entity tools", () => {
     const ball = createEntity("Ball");
     ball.components = [
       { type: "Transform", position: { x: 100, y: 100 }, rotation: 0, scale: { x: 1, y: 1 } },
-      { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 16, isStatic: false, isTrigger: false },
-      { type: "RigidBody", velocity: { x: 0, y: 0 }, angularVelocity: 0, mass: 1, drag: 0, isKinematic: false, gravityScale: 1, useGravity: true },
+      {
+        type: "CircleCollider",
+        offset: { x: 0, y: 0 },
+        radius: 16,
+        isStatic: false,
+        isTrigger: false,
+      },
+      {
+        type: "RigidBody",
+        velocity: { x: 0, y: 0 },
+        angularVelocity: 0,
+        mass: 1,
+        drag: 0,
+        isKinematic: false,
+        gravityScale: 1,
+        useGravity: true,
+      },
     ];
     scene.entities.push(ball);
 
     const wall = createEntity("Wall");
     wall.components = [
       { type: "Transform", position: { x: 0, y: 500 }, rotation: 0, scale: { x: 1, y: 1 } },
-      { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 800, y: 32 }, isStatic: true, layer: 1 },
+      {
+        type: "AabbCollider",
+        offset: { x: 0, y: 0 },
+        size: { x: 800, y: 32 },
+        isStatic: true,
+        layer: 1,
+      },
     ];
     scene.entities.push(wall);
 

@@ -27,7 +27,9 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const existing = project.assets.find((a) => a.id === id);
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) },
+          ],
           isError: true,
         };
       }
@@ -38,9 +40,18 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, asset, message: "Asset added and manifest regenerated" }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              { success: true, asset, message: "Asset added and manifest regenerated" },
+              null,
+              2
+            ),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -64,9 +75,18 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed, message: "Asset removed and manifest regenerated" }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              { success: true, removed, message: "Asset removed and manifest regenerated" },
+              null,
+              2
+            ),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool("regenerate_manifest", "Regenerate the assets.ts manifest file", {}, async () => {
@@ -74,7 +94,16 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
     await regenerateAssetsManifest(fileIO.projectRoot, project);
 
     return {
-      content: [{ type: "text", text: JSON.stringify({ success: true, message: "Assets manifest regenerated", assetCount: project.assets.length }) }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            success: true,
+            message: "Assets manifest regenerated",
+            assetCount: project.assets.length,
+          }),
+        },
+      ],
     };
   });
 
@@ -89,14 +118,21 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const extension = extname(sourcePath).toLowerCase();
       if (![".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(extension)) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Unsupported image extension: ${extension}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Unsupported image extension: ${extension}` }),
+            },
+          ],
           isError: true,
         };
       }
       const project = await fileIO.readProject();
       if (project.assets.find((a) => a.id === id)) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) },
+          ],
           isError: true,
         };
       }
@@ -106,7 +142,12 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
         await copyFile(sourcePath, destination);
       } catch (err) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Failed to copy file: ${(err as Error).message}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Failed to copy file: ${(err as Error).message}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -117,7 +158,7 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, asset }, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -131,7 +172,14 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const extension = extname(sourcePath).toLowerCase();
       if (![".mp3", ".ogg", ".wav"].includes(extension)) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Unsupported audio extension: ${extension}. Only mp3, ogg, and wav are supported.` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Unsupported audio extension: ${extension}. Only mp3, ogg, and wav are supported.`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -140,7 +188,9 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       const existing = project.assets.find((a) => a.id === id);
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Asset ID already exists: ${id}` }) },
+          ],
           isError: true,
         };
       }
@@ -152,7 +202,12 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
         await copyFile(sourcePath, destination);
       } catch (err) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Failed to copy file: ${(err as Error).message}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Failed to copy file: ${(err as Error).message}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -163,7 +218,16 @@ export function registerAssetTools(server: McpServer, fileIO: FileIO): void {
       await regenerateAssetsManifest(fileIO.projectRoot, project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, assetId: id, asset, message: "Audio asset imported successfully" }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              { success: true, assetId: id, asset, message: "Audio asset imported successfully" },
+              null,
+              2
+            ),
+          },
+        ],
       };
     }
   );

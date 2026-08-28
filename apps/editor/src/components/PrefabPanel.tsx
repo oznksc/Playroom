@@ -134,10 +134,9 @@ export function PrefabPanel({
     if (!confirm(`Delete prefab "${prefab.name}"?`)) return;
     setBusy(true);
     try {
-      const res = await fetch(
-        getApiUrl(`/api/prefabs?id=${encodeURIComponent(prefab.file)}`),
-        { method: "DELETE" }
-      );
+      const res = await fetch(getApiUrl(`/api/prefabs?id=${encodeURIComponent(prefab.file)}`), {
+        method: "DELETE",
+      });
       const body = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) throw new Error(body.error ?? "Delete failed");
       onStatus?.(`Removed ${prefab.file}`);

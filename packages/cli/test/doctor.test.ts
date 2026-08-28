@@ -67,7 +67,10 @@ describe("runDoctor", () => {
   });
 
   it("flags PROJECT_INVALID on bad schemaVersion", async () => {
-    await writeFile(join(root, "gamekit", "project.json"), JSON.stringify({ schemaVersion: 99, name: "X", scenes: [], assets: [], levels: [] }));
+    await writeFile(
+      join(root, "gamekit", "project.json"),
+      JSON.stringify({ schemaVersion: 99, name: "X", scenes: [], assets: [], levels: [] })
+    );
     const report = await runDoctor(root);
     expect(report.ok).toBe(false);
     expect(report.issues.some((i) => i.code === "PROJECT_INVALID")).toBe(true);
@@ -77,7 +80,7 @@ describe("runDoctor", () => {
   it("flags SCHEMA_VERSION and points at migrate for unversioned JSON", async () => {
     await writeFile(
       join(root, "gamekit", "project.json"),
-      JSON.stringify({ name: "Legacy", scenes: ["main.scene.json"] }),
+      JSON.stringify({ name: "Legacy", scenes: ["main.scene.json"] })
     );
     const report = await runDoctor(root);
     expect(report.ok).toBe(false);
@@ -103,7 +106,10 @@ describe("runDoctor", () => {
   });
 
   it("flags SCENE_ORPHAN for unlisted scene files", async () => {
-    await writeFile(join(root, "gamekit", "scenes", "extra.scene.json"), sceneToJson(createEmptyScene("Extra")));
+    await writeFile(
+      join(root, "gamekit", "scenes", "extra.scene.json"),
+      sceneToJson(createEmptyScene("Extra"))
+    );
     const report = await runDoctor(root);
     expect(report.issues.some((i) => i.code === "SCENE_ORPHAN")).toBe(true);
   });
@@ -112,14 +118,25 @@ describe("runDoctor", () => {
     await writeFile(join(root, "gamekit", "scenes", "bad.scene.json"), "{ broken");
     const report = await runDoctor(root);
     expect(report.ok).toBe(false);
-    expect(report.issues.some((i) => i.code === "SCENE_PARSE" || i.code === "SCENE_INVALID")).toBe(true);
+    expect(report.issues.some((i) => i.code === "SCENE_PARSE" || i.code === "SCENE_INVALID")).toBe(
+      true
+    );
   });
 
   it("flags ASSET_UNREGISTERED for scene references to unknown assets", async () => {
     const scene = createEmptyScene("Main");
     scene.entities.push({
-      id: "e1", name: "E",
-      components: [{ type: "Sprite", assetId: "unknown-asset", width: 16, height: 16, anchor: { x: 0.5, y: 0.5 } }],
+      id: "e1",
+      name: "E",
+      components: [
+        {
+          type: "Sprite",
+          assetId: "unknown-asset",
+          width: 16,
+          height: 16,
+          anchor: { x: 0.5, y: 0.5 },
+        },
+      ],
     });
     await writeFile(join(root, "gamekit", "scenes", "main.scene.json"), sceneToJson(scene));
 
@@ -155,7 +172,9 @@ describe("runDoctor", () => {
 
   it("flags LEVEL_SCENE_MISSING for levels referencing nonexistent scenes", async () => {
     const project = createProject("Doctor");
-    project.levels = [{ id: "l1", name: "Level 1", order: 1, sceneIds: ["nope.scene.json"], unlocked: true }];
+    project.levels = [
+      { id: "l1", name: "Level 1", order: 1, sceneIds: ["nope.scene.json"], unlocked: true },
+    ];
     await writeFile(join(root, "gamekit", "project.json"), projectToJson(project));
 
     const report = await runDoctor(root);
@@ -173,7 +192,9 @@ describe("runDoctor", () => {
 
   it("flags TRANSITION_TARGET_MISSING for bad transition targets", async () => {
     const project = createProject("Doctor");
-    project.transitions = [{ id: "t1", name: "To Boss", toSceneId: "boss.scene.json", type: "fade", duration: 0.5 }];
+    project.transitions = [
+      { id: "t1", name: "To Boss", toSceneId: "boss.scene.json", type: "fade", duration: 0.5 },
+    ];
     await writeFile(join(root, "gamekit", "project.json"), projectToJson(project));
 
     const report = await runDoctor(root);
@@ -183,10 +204,17 @@ describe("runDoctor", () => {
   it("valid transition target produces no issue", async () => {
     const project = createProject("Doctor");
     project.scenes = ["main.scene.json", "boss.scene.json"];
-    project.levels = [{ id: "l1", name: "Level 1", order: 1, sceneIds: ["main.scene.json"], unlocked: true }];
-    project.transitions = [{ id: "t1", name: "To Boss", toSceneId: "boss.scene.json", type: "fade", duration: 0.5 }];
+    project.levels = [
+      { id: "l1", name: "Level 1", order: 1, sceneIds: ["main.scene.json"], unlocked: true },
+    ];
+    project.transitions = [
+      { id: "t1", name: "To Boss", toSceneId: "boss.scene.json", type: "fade", duration: 0.5 },
+    ];
     await writeFile(join(root, "gamekit", "project.json"), projectToJson(project));
-    await writeFile(join(root, "gamekit", "scenes", "boss.scene.json"), sceneToJson(createEmptyScene("Boss")));
+    await writeFile(
+      join(root, "gamekit", "scenes", "boss.scene.json"),
+      sceneToJson(createEmptyScene("Boss"))
+    );
 
     const report = await runDoctor(root);
     expect(report.issues.some((i) => i.code === "TRANSITION_TARGET_MISSING")).toBe(false);
@@ -197,16 +225,22 @@ describe("runDoctor", () => {
     await writeFile(join(root, "gamekit", "prefabs", "bad.prefab.json"), "{ broken");
     const report = await runDoctor(root);
     expect(report.ok).toBe(false);
-    expect(report.issues.some((i) => i.code === "PREFAB_PARSE" || i.code === "PREFAB_INVALID")).toBe(true);
+    expect(
+      report.issues.some((i) => i.code === "PREFAB_PARSE" || i.code === "PREFAB_INVALID")
+    ).toBe(true);
   });
 
   it("valid prefab produces no issue", async () => {
     await mkdir(join(root, "gamekit", "prefabs"), { recursive: true });
-    const prefab = createPrefab("Coin", [{ type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }]);
+    const prefab = createPrefab("Coin", [
+      { type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } },
+    ]);
     await writeFile(join(root, "gamekit", "prefabs", "coin.prefab.json"), prefabToJson(prefab));
 
     const report = await runDoctor(root);
-    expect(report.issues.some((i) => i.code === "PREFAB_INVALID" || i.code === "PREFAB_PARSE")).toBe(false);
+    expect(
+      report.issues.some((i) => i.code === "PREFAB_INVALID" || i.code === "PREFAB_PARSE")
+    ).toBe(false);
   });
 
   it("reports prefabs count in summary", async () => {

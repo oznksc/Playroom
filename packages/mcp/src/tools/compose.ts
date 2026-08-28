@@ -59,24 +59,72 @@ const SCRIPT_ACTIONS = [
 const COMPONENT_CATALOG: Array<{ type: string; fields: string; notes: string }> = [
   { type: "Transform", fields: "position, rotation, scale", notes: "Required on every entity" },
   { type: "Sprite", fields: "assetId, width, height, anchor", notes: "Primary visual" },
-  { type: "AabbCollider", fields: "offset, size, isStatic, isTrigger, layer, mask", notes: "One collider type per entity" },
-  { type: "CircleCollider", fields: "offset, radius, isStatic, isTrigger, layer, mask", notes: "One collider type per entity" },
-  { type: "PolygonCollider", fields: "offset, points, isStatic, isTrigger", notes: "Convex; one collider type per entity" },
-  { type: "PlayerController", fields: "speed, jumpVelocity, gravity", notes: "gravity 0 = top-down 4-way" },
+  {
+    type: "AabbCollider",
+    fields: "offset, size, isStatic, isTrigger, layer, mask",
+    notes: "One collider type per entity",
+  },
+  {
+    type: "CircleCollider",
+    fields: "offset, radius, isStatic, isTrigger, layer, mask",
+    notes: "One collider type per entity",
+  },
+  {
+    type: "PolygonCollider",
+    fields: "offset, points, isStatic, isTrigger",
+    notes: "Convex; one collider type per entity",
+  },
+  {
+    type: "PlayerController",
+    fields: "speed, jumpVelocity, gravity",
+    notes: "gravity 0 = top-down 4-way",
+  },
   { type: "CameraFollow", fields: "targetId, smoothing", notes: "smoothing 0–1 exponential lerp" },
-  { type: "RigidBody", fields: "velocity, mass, drag, isKinematic, gravityScale, useGravity", notes: "Needed for impulses" },
-  { type: "Animation", fields: "assetId, frameWidth, frameHeight, totalFrames, framesPerSecond, loop", notes: "Sprite sheet" },
-  { type: "Tilemap", fields: "tilesetId, tileWidth/Height, columns, grid, tiles, solid", notes: "solid = static tiles" },
-  { type: "Text", fields: "text, fontAssetId, size, color, align, width?", notes: "width enables wrap" },
-  { type: "AudioSource", fields: "assetId, volume, loop, playOnStart, minDistance?, maxDistance?", notes: "Spatial if listener present" },
+  {
+    type: "RigidBody",
+    fields: "velocity, mass, drag, isKinematic, gravityScale, useGravity",
+    notes: "Needed for impulses",
+  },
+  {
+    type: "Animation",
+    fields: "assetId, frameWidth, frameHeight, totalFrames, framesPerSecond, loop",
+    notes: "Sprite sheet",
+  },
+  {
+    type: "Tilemap",
+    fields: "tilesetId, tileWidth/Height, columns, grid, tiles, solid",
+    notes: "solid = static tiles",
+  },
+  {
+    type: "Text",
+    fields: "text, fontAssetId, size, color, align, width?",
+    notes: "width enables wrap",
+  },
+  {
+    type: "AudioSource",
+    fields: "assetId, volume, loop, playOnStart, minDistance?, maxDistance?",
+    notes: "Spatial if listener present",
+  },
   { type: "AudioListener", fields: "enabled", notes: "One per scene typical" },
-  { type: "Tween", fields: "property, startValue, endValue, duration, easing, loop, pingPong", notes: "Prefer recipes when possible" },
+  {
+    type: "Tween",
+    fields: "property, startValue, endValue, duration, easing, loop, pingPong",
+    notes: "Prefer recipes when possible",
+  },
   { type: "FollowPath", fields: "points, speed, loop", notes: "Patrol / moving platform" },
   { type: "StateMachine", fields: "initialState, states[]", notes: "enter/exit/on/duration" },
   { type: "Script", fields: "handlers[{event, actions}]", notes: "See list_script_catalog" },
-  { type: "ParticleSystem", fields: "maxParticles, emissionRate, lifetime, speed, colors, sizes", notes: "Prefer effect recipes" },
+  {
+    type: "ParticleSystem",
+    fields: "maxParticles, emissionRate, lifetime, speed, colors, sizes",
+    notes: "Prefer effect recipes",
+  },
   { type: "Light2D", fields: "kind, range, intensity, color", notes: "point or spot" },
-  { type: "NineSlice", fields: "assetId, width, height, left/right/top/bottom", notes: "UI panels, stretchy platforms" },
+  {
+    type: "NineSlice",
+    fields: "assetId, width, height, left/right/top/bottom",
+    notes: "UI panels, stretchy platforms",
+  },
 ];
 
 function visualSize(entity: GameKitEntity): { width: number; height: number } | null {
@@ -85,7 +133,11 @@ function visualSize(entity: GameKitEntity): { width: number; height: number } | 
   const nine = entity.components.find((c) => c.type === "NineSlice");
   if (nine) return { width: nine.width, height: nine.height };
   const text = entity.components.find((c): c is TextComponent => c.type === "Text");
-  if (text) return { width: text.width ?? text.size * Math.max(1, text.text.length * 0.6), height: text.size };
+  if (text)
+    return {
+      width: text.width ?? text.size * Math.max(1, text.text.length * 0.6),
+      height: text.size,
+    };
   return null;
 }
 
@@ -111,7 +163,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
     "list_component_types",
     "Catalog of valid GameKit component types and their main fields. Use instead of inventing types.",
     {},
-    async () => toolJson({ count: COMPONENT_CATALOG.length, components: COMPONENT_CATALOG }),
+    async () => toolJson({ count: COMPONENT_CATALOG.length, components: COMPONENT_CATALOG })
   );
 
   server.tool(
@@ -128,7 +180,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
           "collisionEnter requires a solid collider (isTrigger false).",
           "applyImpulse requires a RigidBody on the same entity.",
         ],
-      }),
+      })
   );
 
   server.tool(
@@ -165,7 +217,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, entity: summarizeEntity(entity), sprite });
-    },
+    }
   );
 
   server.tool(
@@ -183,13 +235,26 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       const entity = findEntity(scene, entityId);
       if (!entity) return toolJson({ error: `Entity "${entityId}" not found.` }, true);
       const size = visualSize(entity);
-      if (!size) return toolJson({ error: "Entity has no Sprite/NineSlice/Text to fit against. Call set_sprite first." }, true);
+      if (!size)
+        return toolJson(
+          { error: "Entity has no Sprite/NineSlice/Text to fit against. Call set_sprite first." },
+          true
+        );
 
-      const aabb = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-      const circle = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+      const aabb = entity.components.find(
+        (c): c is AabbColliderComponent => c.type === "AabbCollider"
+      );
+      const circle = entity.components.find(
+        (c): c is CircleColliderComponent => c.type === "CircleCollider"
+      );
       const polygon = entity.components.find((c) => c.type === "PolygonCollider");
       if (polygon && !aabb && !circle) {
-        return toolJson({ error: "Entity has a PolygonCollider; resize its points with update_component instead." }, true);
+        return toolJson(
+          {
+            error: "Entity has a PolygonCollider; resize its points with update_component instead.",
+          },
+          true
+        );
       }
 
       if (aabb) {
@@ -210,12 +275,12 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
             size: { x: size.width, y: size.height },
             isStatic: isStatic ?? false,
             isTrigger: isTrigger ?? false,
-          }),
+          })
         );
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, fitted: size, entity: summarizeEntity(entity) });
-    },
+    }
   );
 
   server.tool(
@@ -224,7 +289,10 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string(),
       targetId: z.string().describe("Entity the camera should follow"),
-      entityId: z.string().optional().describe("Entity that receives CameraFollow (defaults to targetId)"),
+      entityId: z
+        .string()
+        .optional()
+        .describe("Entity that receives CameraFollow (defaults to targetId)"),
       smoothing: z.number().min(0).max(1).optional().describe("0–1 exponential lerp (default 0.1)"),
     },
     async ({ scenePath, targetId, entityId, smoothing }) => {
@@ -249,7 +317,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, hostId, camera: cam });
-    },
+    }
   );
 
   server.tool(
@@ -292,7 +360,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, text: label });
-    },
+    }
   );
 
   server.tool(
@@ -306,7 +374,10 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
         .array(z.object({ type: z.string().min(1) }).catchall(z.unknown()))
         .min(1)
         .describe("Script actions, each with a type field"),
-      replace: z.boolean().optional().describe("If true, replace existing handlers for this event (default false = append)"),
+      replace: z
+        .boolean()
+        .optional()
+        .describe("If true, replace existing handlers for this event (default false = append)"),
     },
     async ({ scenePath, entityId, event, actions, replace }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -325,7 +396,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       script.handlers.push(handler);
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, handler, handlerCount: script.handlers.length });
-    },
+    }
   );
 
   server.tool(
@@ -336,7 +407,9 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       role: z.enum(ENTITY_ROLES),
       columns: z.number().int().min(1).max(32),
       rows: z.number().int().min(1).max(32),
-      origin: z.object({ x: z.number(), y: z.number() }).describe("World position of the first cell"),
+      origin: z
+        .object({ x: z.number(), y: z.number() })
+        .describe("World position of the first cell"),
       gap: z.number().optional().describe("Extra pixels between cell bounds (default 8)"),
       cell: z
         .object({ x: z.number(), y: z.number() })
@@ -381,7 +454,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
         count: created.length,
         entities: created.map(summarizeEntity),
       });
-    },
+    }
   );
 
   server.tool(
@@ -413,7 +486,10 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
         };
         const transform = getTransform(clone);
         if (transform) {
-          transform.position = { x: transform.position.x + delta.x, y: transform.position.y + delta.y };
+          transform.position = {
+            x: transform.position.x + delta.x,
+            y: transform.position.y + delta.y,
+          };
         }
         idMap.set(source.id, clone.id);
         clones.push(clone);
@@ -440,7 +516,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
         copied: clones.map(summarizeEntity),
         idMap: Object.fromEntries(idMap),
       });
-    },
+    }
   );
 
   server.tool(
@@ -449,8 +525,14 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string(),
       entityIds: z.array(z.string()).min(1),
-      offset: z.object({ x: z.number(), y: z.number() }).optional().describe("Added to each position"),
-      position: z.object({ x: z.number(), y: z.number() }).optional().describe("If set, every entity is moved to this point (stacks them)"),
+      offset: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("Added to each position"),
+      position: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("If set, every entity is moved to this point (stacks them)"),
     },
     async ({ scenePath, entityIds, offset, position }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -460,14 +542,19 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
         const entity = findEntity(scene, id);
         if (!entity) return toolJson({ error: `Entity "${id}" not found.` }, true);
         const transform = getTransform(entity);
-        if (!transform) return toolJson({ error: `Entity "${entity.name}" has no Transform.` }, true);
+        if (!transform)
+          return toolJson({ error: `Entity "${entity.name}" has no Transform.` }, true);
         if (position) transform.position = { ...position };
-        if (offset) transform.position = { x: transform.position.x + offset.x, y: transform.position.y + offset.y };
+        if (offset)
+          transform.position = {
+            x: transform.position.x + offset.x,
+            y: transform.position.y + offset.y,
+          };
         moved.push(summarizeEntity(entity));
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, moved });
-    },
+    }
   );
 
   server.tool(
@@ -485,11 +572,13 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       if (!entity) return toolJson({ error: `Entity "${entityId}" not found.` }, true);
       const transform = getTransform(entity);
       if (!transform) return toolJson({ error: "No Transform." }, true);
-      if (axis === "x" || axis === "both") transform.scale = { ...transform.scale, x: -transform.scale.x };
-      if (axis === "y" || axis === "both") transform.scale = { ...transform.scale, y: -transform.scale.y };
+      if (axis === "x" || axis === "both")
+        transform.scale = { ...transform.scale, x: -transform.scale.x };
+      if (axis === "y" || axis === "both")
+        transform.scale = { ...transform.scale, y: -transform.scale.y };
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, scale: transform.scale });
-    },
+    }
   );
 
   server.tool(
@@ -499,7 +588,10 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       scenePath: z.string(),
       fromAssetId: z.string(),
       toAssetId: z.string(),
-      entityIds: z.array(z.string()).optional().describe("Limit to these entities; omit for the whole scene"),
+      entityIds: z
+        .array(z.string())
+        .optional()
+        .describe("Limit to these entities; omit for the whole scene"),
     },
     async ({ scenePath, fromAssetId, toAssetId, entityIds }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -523,7 +615,7 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, fromAssetId, toAssetId, replacements });
-    },
+    }
   );
 
   server.tool(
@@ -550,6 +642,6 @@ export function registerComposeTools(server: McpServer, fileIO: FileIO): void {
       else to.components.push(clone);
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, copied: componentType, to: summarizeEntity(to) });
-    },
+    }
   );
 }

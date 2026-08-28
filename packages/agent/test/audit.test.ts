@@ -50,8 +50,20 @@ describe("AgentAuditLogger", () => {
   it("filters entries by tool, sceneId, and status", async () => {
     await logger.append({ tool: "get_scene", args: {}, status: "ok", sceneId: "main" });
     await logger.append({ tool: "delete_scene", args: {}, status: "denied", sceneId: "boss" });
-    await logger.append({ tool: "add_entity", args: {}, status: "error", error: "Failed", sceneId: "main" });
-    await logger.append({ tool: "get_scene", args: {}, status: "cached", cached: true, sceneId: "boss" });
+    await logger.append({
+      tool: "add_entity",
+      args: {},
+      status: "error",
+      error: "Failed",
+      sceneId: "main",
+    });
+    await logger.append({
+      tool: "get_scene",
+      args: {},
+      status: "cached",
+      cached: true,
+      sceneId: "boss",
+    });
 
     const sceneMain = await logger.query({ sceneId: "main" });
     expect(sceneMain).toHaveLength(2);

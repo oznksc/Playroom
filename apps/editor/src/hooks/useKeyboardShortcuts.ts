@@ -149,7 +149,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         undo();
         return;
       }
-      if (ctrl && (event.shiftKey && event.key === "z") || (ctrl && event.key === "y")) {
+      if ((ctrl && event.shiftKey && event.key === "z") || (ctrl && event.key === "y")) {
         event.preventDefault();
         redo();
         return;
@@ -164,11 +164,26 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
 
       // Gizmo tool shortcuts (q/w/e/r/p)
       if (!isInput && !isPlaying) {
-        if (event.key === "q" || event.key === "Q") { setActiveTool("select"); return; }
-        if (event.key === "w" || event.key === "W") { setActiveTool("translate"); return; }
-        if (event.key === "e" || event.key === "E") { setActiveTool("rotate"); return; }
-        if (event.key === "r" || event.key === "R") { setActiveTool("scale"); return; }
-        if (event.key === "p" || event.key === "P") { setActiveTool("polygon-edit"); return; }
+        if (event.key === "q" || event.key === "Q") {
+          setActiveTool("select");
+          return;
+        }
+        if (event.key === "w" || event.key === "W") {
+          setActiveTool("translate");
+          return;
+        }
+        if (event.key === "e" || event.key === "E") {
+          setActiveTool("rotate");
+          return;
+        }
+        if (event.key === "r" || event.key === "R") {
+          setActiveTool("scale");
+          return;
+        }
+        if (event.key === "p" || event.key === "P") {
+          setActiveTool("polygon-edit");
+          return;
+        }
         if (event.key === "b" || event.key === "B") {
           setActiveTool("paint");
           setTilePaintMode?.("brush");
@@ -194,11 +209,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
           setTilePaintMode?.("eyedropper");
           return;
         }
-        if (event.key === "[" ) {
+        if (event.key === "[") {
           setBrushSize?.((n) => Math.max(1, n - 1));
           return;
         }
-        if (event.key === "]" ) {
+        if (event.key === "]") {
           setBrushSize?.((n) => Math.min(3, n + 1));
           return;
         }
@@ -238,7 +253,10 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
           const s = sceneRef.current;
           if (!s) return;
           const entity = s.entities.find((e) => e.id === [...ids][0]);
-          if (entity) clipboardRef.current = structuredClone(entity) as import("@gamekit/schema").GameKitEntity;
+          if (entity)
+            clipboardRef.current = structuredClone(
+              entity
+            ) as import("@gamekit/schema").GameKitEntity;
         }
         return;
       }

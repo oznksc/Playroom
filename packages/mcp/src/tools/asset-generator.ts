@@ -24,14 +24,24 @@ import {
   type MusicalScale,
   type AnimationAction,
 } from "../generators/index.js";
-import { createEntity, type AnimationComponent, type AudioSourceComponent, type SpriteComponent, type TransformComponent } from "@gamekit/schema";
+import {
+  createEntity,
+  type AnimationComponent,
+  type AudioSourceComponent,
+  type SpriteComponent,
+  type TransformComponent,
+} from "@gamekit/schema";
 
 export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): void {
   server.tool(
     "analyze_asset_prompt",
     "Asset Studio: Parse a natural language prompt using AI logic to recommend sprite category, archetype, palette, animation action, sfx preset, and music genre.",
     {
-      prompt: z.string().describe("Natural language asset description (e.g. 'cyberpunk ninja jumping with katana', 'retro 8-bit gold coin', 'dark dungeon boss fight')"),
+      prompt: z
+        .string()
+        .describe(
+          "Natural language asset description (e.g. 'cyberpunk ninja jumping with katana', 'retro 8-bit gold coin', 'dark dungeon boss fight')"
+        ),
     },
     async ({ prompt }) => {
       const analysis = parseAiPrompt(prompt);
@@ -51,7 +61,10 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "Asset Studio: Expand a minimal prompt into a rich, stylized pixel art generation prompt with artistic directives.",
     {
       prompt: z.string().describe("Input short prompt to enhance"),
-      category: z.enum(["character", "enemy", "item", "tile", "prop", "icon"]).optional().describe("Optional sprite category"),
+      category: z
+        .enum(["character", "enemy", "item", "tile", "prop", "icon"])
+        .optional()
+        .describe("Optional sprite category"),
     },
     async ({ prompt, category }) => {
       const enhanced = enhanceAiPrompt(prompt, category as SpriteCategory | undefined);
@@ -71,11 +84,25 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "Asset Studio: Generate a 4-variation preview set from a prompt or archetype with data URLs and seeds for inspection/selection.",
     {
       prompt: z.string().optional().describe("Descriptive prompt for the asset"),
-      category: z.enum(["character", "enemy", "item", "tile", "prop", "icon"]).optional().describe("Sprite category"),
-      archetype: z.string().optional().describe("Archetype/subject keyword (e.g. 'knight', 'slime', 'sword', 'potion')"),
-      palette: z.enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"]).optional().describe("Color palette style"),
+      category: z
+        .enum(["character", "enemy", "item", "tile", "prop", "icon"])
+        .optional()
+        .describe("Sprite category"),
+      archetype: z
+        .string()
+        .optional()
+        .describe("Archetype/subject keyword (e.g. 'knight', 'slime', 'sword', 'potion')"),
+      palette: z
+        .enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"])
+        .optional()
+        .describe("Color palette style"),
       size: z.number().optional().describe("Pixel size (16, 24, 32, 48, 64 - default: 32)"),
-      count: z.number().min(2).max(8).optional().describe("Number of variations to generate (default: 4)"),
+      count: z
+        .number()
+        .min(2)
+        .max(8)
+        .optional()
+        .describe("Number of variations to generate (default: 4)"),
     },
     async ({ prompt, category, archetype, palette, size, count }) => {
       const variations = generateSpriteVariations({
@@ -120,18 +147,57 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_sprite",
     "Asset Studio: Procedurally generate a 2D sprite image (PNG) and register it as an asset in the project. Can automatically spawn it as an entity in the scene.",
     {
-      id: z.string().describe("Asset ID (kebab-case, e.g. 'hero-sprite', 'gold-coin', 'pine-tree')"),
-      category: z.enum(["character", "enemy", "item", "tile", "prop", "icon"]).optional().describe("Sprite category"),
-      archetype: z.string().optional().describe("Archetype/subject keyword (e.g. 'knight', 'slime', 'sword', 'potion', 'grass', 'chest')"),
-      palette: z.enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"]).optional().describe("Color palette style"),
-      size: z.number().optional().describe("Square pixel dimensions (16, 24, 32, 48, 64, 128 - default: 32)"),
+      id: z
+        .string()
+        .describe("Asset ID (kebab-case, e.g. 'hero-sprite', 'gold-coin', 'pine-tree')"),
+      category: z
+        .enum(["character", "enemy", "item", "tile", "prop", "icon"])
+        .optional()
+        .describe("Sprite category"),
+      archetype: z
+        .string()
+        .optional()
+        .describe(
+          "Archetype/subject keyword (e.g. 'knight', 'slime', 'sword', 'potion', 'grass', 'chest')"
+        ),
+      palette: z
+        .enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"])
+        .optional()
+        .describe("Color palette style"),
+      size: z
+        .number()
+        .optional()
+        .describe("Square pixel dimensions (16, 24, 32, 48, 64, 128 - default: 32)"),
       seed: z.number().optional().describe("Specific PRNG seed for deterministic generation"),
-      prompt: z.string().optional().describe("Optional descriptive text prompt to guide generation"),
-      scene: z.string().optional().describe("Scene filename (e.g. 'main.scene.json') if autoSpawn is true"),
-      autoSpawn: z.boolean().optional().describe("If true, automatically creates an entity with Sprite in the scene"),
-      position: z.object({ x: z.number(), y: z.number() }).optional().describe("World position if autoSpawn is true"),
+      prompt: z
+        .string()
+        .optional()
+        .describe("Optional descriptive text prompt to guide generation"),
+      scene: z
+        .string()
+        .optional()
+        .describe("Scene filename (e.g. 'main.scene.json') if autoSpawn is true"),
+      autoSpawn: z
+        .boolean()
+        .optional()
+        .describe("If true, automatically creates an entity with Sprite in the scene"),
+      position: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("World position if autoSpawn is true"),
     },
-    async ({ id, category, archetype, palette, size, seed, prompt, scene, autoSpawn, position }) => {
+    async ({
+      id,
+      category,
+      archetype,
+      palette,
+      size,
+      seed,
+      prompt,
+      scene,
+      autoSpawn,
+      position,
+    }) => {
       await mkdir(fileIO.assetsDir, { recursive: true });
 
       const sprite = generateSprite({
@@ -186,7 +252,12 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
           entity.components = [transform, spriteComp];
 
           // Add collider for physical objects
-          if (category === "character" || category === "enemy" || category === "item" || category === "tile") {
+          if (
+            category === "character" ||
+            category === "enemy" ||
+            category === "item" ||
+            category === "tile"
+          ) {
             entity.components.push({
               type: "AabbCollider",
               offset: { x: 0, y: 0 },
@@ -232,18 +303,56 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_character_spritesheet",
     "Asset Studio: Procedurally generate an animated character spritesheet (PNG strip) and register it. Can automatically spawn an animated entity.",
     {
-      id: z.string().describe("Asset ID (kebab-case, e.g. 'hero-walk', 'slime-jump', 'knight-attack')"),
-      archetype: z.string().optional().describe("Character archetype (e.g. 'hero', 'knight', 'rogue', 'wizard', 'monster', 'slime', 'robot', 'alien')"),
-      animation: z.enum(["idle", "walk", "run", "jump", "attack", "hurt", "die"]).optional().describe("Animation type (default: 'walk')"),
-      frameCount: z.number().min(2).max(8).optional().describe("Number of animation frames (default: 4)"),
-      frameSize: z.number().optional().describe("Frame width and height in pixels (16, 32, 48, 64 - default: 32)"),
+      id: z
+        .string()
+        .describe("Asset ID (kebab-case, e.g. 'hero-walk', 'slime-jump', 'knight-attack')"),
+      archetype: z
+        .string()
+        .optional()
+        .describe(
+          "Character archetype (e.g. 'hero', 'knight', 'rogue', 'wizard', 'monster', 'slime', 'robot', 'alien')"
+        ),
+      animation: z
+        .enum(["idle", "walk", "run", "jump", "attack", "hurt", "die"])
+        .optional()
+        .describe("Animation type (default: 'walk')"),
+      frameCount: z
+        .number()
+        .min(2)
+        .max(8)
+        .optional()
+        .describe("Number of animation frames (default: 4)"),
+      frameSize: z
+        .number()
+        .optional()
+        .describe("Frame width and height in pixels (16, 32, 48, 64 - default: 32)"),
       fps: z.number().optional().describe("Playback speed in frames per second (default: 8)"),
-      palette: z.enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"]).optional().describe("Color palette style"),
+      palette: z
+        .enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"])
+        .optional()
+        .describe("Color palette style"),
       scene: z.string().optional().describe("Scene filename if autoSpawn is true"),
-      autoSpawn: z.boolean().optional().describe("If true, automatically creates an entity with Animation component in the scene"),
-      position: z.object({ x: z.number(), y: z.number() }).optional().describe("World position if autoSpawn is true"),
+      autoSpawn: z
+        .boolean()
+        .optional()
+        .describe("If true, automatically creates an entity with Animation component in the scene"),
+      position: z
+        .object({ x: z.number(), y: z.number() })
+        .optional()
+        .describe("World position if autoSpawn is true"),
     },
-    async ({ id, archetype, animation, frameCount, frameSize, fps, palette, scene, autoSpawn, position }) => {
+    async ({
+      id,
+      archetype,
+      animation,
+      frameCount,
+      frameSize,
+      fps,
+      palette,
+      scene,
+      autoSpawn,
+      position,
+    }) => {
       await mkdir(fileIO.assetsDir, { recursive: true });
 
       const sheet = generateCharacterSpritesheet({
@@ -354,10 +463,23 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_tileset",
     "Asset Studio: Procedurally generate a 2D tilemap tileset texture (PNG) with terrain, borders, and platforms, and register it as an asset.",
     {
-      id: z.string().describe("Asset ID (kebab-case, e.g. 'tileset-grass', 'tileset-dungeon', 'tileset-cyberpunk')"),
-      theme: z.enum(["grass", "stone", "brick", "dungeon", "scifi", "cyberpunk"]).optional().describe("Tileset theme"),
-      palette: z.enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"]).optional().describe("Color palette style"),
-      tileSize: z.number().optional().describe("Square pixel dimensions per tile (16, 24, 32 - default: 16)"),
+      id: z
+        .string()
+        .describe(
+          "Asset ID (kebab-case, e.g. 'tileset-grass', 'tileset-dungeon', 'tileset-cyberpunk')"
+        ),
+      theme: z
+        .enum(["grass", "stone", "brick", "dungeon", "scifi", "cyberpunk"])
+        .optional()
+        .describe("Tileset theme"),
+      palette: z
+        .enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"])
+        .optional()
+        .describe("Color palette style"),
+      tileSize: z
+        .number()
+        .optional()
+        .describe("Square pixel dimensions per tile (16, 24, 32 - default: 16)"),
       columns: z.number().optional().describe("Number of columns (default: 4)"),
       rows: z.number().optional().describe("Number of rows (default: 4)"),
       seed: z.number().optional().describe("PRNG seed"),
@@ -423,26 +545,40 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_sound_effect",
     "Asset Studio: Procedurally synthesize a sound effect (SFX WAV audio) and register it as an audio asset. Can attach to an entity's AudioSource.",
     {
-      id: z.string().describe("Asset ID (kebab-case, e.g. 'sfx-jump', 'sfx-coin', 'sfx-laser', 'sfx-explosion')"),
-      preset: z.enum([
-        "jump",
-        "coin",
-        "laser",
-        "explosion",
-        "hit",
-        "powerup",
-        "hurt",
-        "ui_click",
-        "defeat",
-        "victory",
-        "step",
-        "whoosh",
-        "teleport",
-        "item_pickup",
-      ]).describe("Sound effect preset type"),
-      volume: z.number().min(0).max(1).optional().describe("Sound volume (0.0 to 1.0, default 0.8)"),
+      id: z
+        .string()
+        .describe(
+          "Asset ID (kebab-case, e.g. 'sfx-jump', 'sfx-coin', 'sfx-laser', 'sfx-explosion')"
+        ),
+      preset: z
+        .enum([
+          "jump",
+          "coin",
+          "laser",
+          "explosion",
+          "hit",
+          "powerup",
+          "hurt",
+          "ui_click",
+          "defeat",
+          "victory",
+          "step",
+          "whoosh",
+          "teleport",
+          "item_pickup",
+        ])
+        .describe("Sound effect preset type"),
+      volume: z
+        .number()
+        .min(0)
+        .max(1)
+        .optional()
+        .describe("Sound volume (0.0 to 1.0, default 0.8)"),
       scene: z.string().optional().describe("Scene filename if attaching to an entity"),
-      attachToEntityId: z.string().optional().describe("Optional entity ID in scene to attach an AudioSource component with this sound"),
+      attachToEntityId: z
+        .string()
+        .optional()
+        .describe("Optional entity ID in scene to attach an AudioSource component with this sound"),
     },
     async ({ id, preset, volume, scene, attachToEntityId }) => {
       await mkdir(fileIO.assetsDir, { recursive: true });
@@ -522,22 +658,36 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_music_track",
     "Asset Studio: Procedurally synthesize a background music (BGM WAV audio) track and register it as an audio asset. Can attach as looping scene BGM.",
     {
-      id: z.string().describe("Asset ID (kebab-case, e.g. 'bgm-adventure', 'bgm-boss', 'bgm-dungeon')"),
-      preset: z.enum([
-        "chiptune_adventure",
-        "boss_battle",
-        "chill_dungeon",
-        "cyberpunk_pulse",
-        "retro_menu",
-        "victory_fanfare",
-        "spooky_night",
-      ]).optional().describe("Music genre / mood preset"),
+      id: z
+        .string()
+        .describe("Asset ID (kebab-case, e.g. 'bgm-adventure', 'bgm-boss', 'bgm-dungeon')"),
+      preset: z
+        .enum([
+          "chiptune_adventure",
+          "boss_battle",
+          "chill_dungeon",
+          "cyberpunk_pulse",
+          "retro_menu",
+          "victory_fanfare",
+          "spooky_night",
+        ])
+        .optional()
+        .describe("Music genre / mood preset"),
       bpm: z.number().optional().describe("Tempo in beats per minute (e.g. 120, 130, 145)"),
       durationSec: z.number().optional().describe("Loop duration in seconds (default: ~8s)"),
-      key: z.enum(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]).optional().describe("Musical root key"),
-      scale: z.enum(["major", "minor", "pentatonic", "dorian", "blues", "harmonic_minor"]).optional().describe("Musical scale"),
+      key: z
+        .enum(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"])
+        .optional()
+        .describe("Musical root key"),
+      scale: z
+        .enum(["major", "minor", "pentatonic", "dorian", "blues", "harmonic_minor"])
+        .optional()
+        .describe("Musical scale"),
       scene: z.string().optional().describe("Scene filename if attachAsBgm is true"),
-      attachAsBgm: z.boolean().optional().describe("If true, adds a looping AudioSource entity to the active scene"),
+      attachAsBgm: z
+        .boolean()
+        .optional()
+        .describe("If true, adds a looping AudioSource entity to the active scene"),
     },
     async ({ id, preset, bpm, durationSec, key, scale, scene, attachAsBgm }) => {
       await mkdir(fileIO.assetsDir, { recursive: true });
@@ -570,7 +720,9 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
         const sceneFile = fileIO.resolveScenePath(scene || "main.scene.json");
         try {
           const sceneData = await fileIO.readScene(sceneFile);
-          let bgmEntity = sceneData.entities.find((e) => e.id === "bgm-music" || e.id === "audio-bgm");
+          let bgmEntity = sceneData.entities.find(
+            (e) => e.id === "bgm-music" || e.id === "audio-bgm"
+          );
           if (!bgmEntity) {
             bgmEntity = createEntity("bgm-music");
             bgmEntity.components.push({
@@ -631,21 +783,37 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     "generate_asset_pack",
     "Asset Studio: One-shot generator that produces a complete, cohesive thematic game asset pack (character spritesheet, enemy sprite, collectible item, terrain tileset, jump/coin/hit SFX, and BGM music loop) and registers everything.",
     {
-      packName: z.string().describe("Asset pack name prefix (e.g. 'cyber-platformer', 'dungeon-crawler', 'retro-arcade')"),
-      theme: z.enum(["cyberpunk", "dungeon", "fantasy", "arcade", "retro", "scifi"]).optional().describe("Overall visual & acoustic theme"),
-      palette: z.enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"]).optional().describe("Color palette override"),
+      packName: z
+        .string()
+        .describe(
+          "Asset pack name prefix (e.g. 'cyber-platformer', 'dungeon-crawler', 'retro-arcade')"
+        ),
+      theme: z
+        .enum(["cyberpunk", "dungeon", "fantasy", "arcade", "retro", "scifi"])
+        .optional()
+        .describe("Overall visual & acoustic theme"),
+      palette: z
+        .enum(["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"])
+        .optional()
+        .describe("Color palette override"),
       scene: z.string().optional().describe("Scene filename to spawn entities into"),
-      autoSpawn: z.boolean().optional().describe("If true, spawns player, enemy, and collectible entities into the scene"),
+      autoSpawn: z
+        .boolean()
+        .optional()
+        .describe("If true, spawns player, enemy, and collectible entities into the scene"),
     },
     async ({ packName, theme = "cyberpunk", palette, scene, autoSpawn }) => {
       await mkdir(fileIO.assetsDir, { recursive: true });
 
-      const chosenPalette: PaletteName = palette ?? (
-        theme === "cyberpunk" || theme === "scifi" ? "cyberpunk" :
-        theme === "retro" ? "gameboy" :
-        theme === "arcade" ? "nes" :
-        "pico8"
-      );
+      const chosenPalette: PaletteName =
+        palette ??
+        (theme === "cyberpunk" || theme === "scifi"
+          ? "cyberpunk"
+          : theme === "retro"
+            ? "gameboy"
+            : theme === "arcade"
+              ? "nes"
+              : "pico8");
 
       const generatedAssets: Array<{ id: string; file: string; kind: "image" | "audio" }> = [];
 
@@ -692,7 +860,8 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
 
       // 4. Tileset
       const tilesetId = `${packName}-tileset`;
-      const tilesetTheme = theme === "cyberpunk" ? "cyberpunk" : theme === "dungeon" ? "dungeon" : "grass";
+      const tilesetTheme =
+        theme === "cyberpunk" ? "cyberpunk" : theme === "dungeon" ? "dungeon" : "grass";
       const tileset = generateTileset({
         id: tilesetId,
         theme: tilesetTheme,
@@ -718,7 +887,12 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
 
       // 6. BGM Track
       const bgmId = `${packName}-bgm`;
-      const musicPreset: MusicPreset = theme === "cyberpunk" ? "cyberpunk_pulse" : theme === "dungeon" ? "chill_dungeon" : "chiptune_adventure";
+      const musicPreset: MusicPreset =
+        theme === "cyberpunk"
+          ? "cyberpunk_pulse"
+          : theme === "dungeon"
+            ? "chill_dungeon"
+            : "chiptune_adventure";
       const bgmWav = synthesizeMusic({ preset: musicPreset, durationSec: 4.0 });
       const bgmFile = `${bgmId}.wav`;
       await writeFile(join(fileIO.assetsDir, bgmFile), bgmWav);
@@ -748,10 +922,29 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
           const playerEntity = createEntity("player");
           playerEntity.components = [
             { type: "Transform", position: { x: 200, y: 300 }, rotation: 0, scale: { x: 1, y: 1 } },
-            { type: "Sprite", assetId: playerSheetId, width: 32, height: 32, anchor: { x: 0.5, y: 0.5 } },
-            { type: "Animation", assetId: playerSheetId, frameWidth: 32, frameHeight: 32, totalFrames: 4, framesPerSecond: 8, loop: true },
+            {
+              type: "Sprite",
+              assetId: playerSheetId,
+              width: 32,
+              height: 32,
+              anchor: { x: 0.5, y: 0.5 },
+            },
+            {
+              type: "Animation",
+              assetId: playerSheetId,
+              frameWidth: 32,
+              frameHeight: 32,
+              totalFrames: 4,
+              framesPerSecond: 8,
+              loop: true,
+            },
             { type: "PlayerController", speed: 200, jumpVelocity: 400, gravity: 800 },
-            { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 32, y: 32 }, isStatic: false },
+            {
+              type: "AabbCollider",
+              offset: { x: 0, y: 0 },
+              size: { x: 32, y: 32 },
+              isStatic: false,
+            },
           ];
           sceneData.entities.push(playerEntity);
           spawnedEntities.push(playerEntity.id);
@@ -761,7 +954,12 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
           enemyEntity.components = [
             { type: "Transform", position: { x: 450, y: 300 }, rotation: 0, scale: { x: 1, y: 1 } },
             { type: "Sprite", assetId: enemyId, width: 32, height: 32, anchor: { x: 0.5, y: 0.5 } },
-            { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 32, y: 32 }, isStatic: false },
+            {
+              type: "AabbCollider",
+              offset: { x: 0, y: 0 },
+              size: { x: 32, y: 32 },
+              isStatic: false,
+            },
           ];
           sceneData.entities.push(enemyEntity);
           spawnedEntities.push(enemyEntity.id);
@@ -771,7 +969,12 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
           coinEntity.components = [
             { type: "Transform", position: { x: 320, y: 260 }, rotation: 0, scale: { x: 1, y: 1 } },
             { type: "Sprite", assetId: itemId, width: 24, height: 24, anchor: { x: 0.5, y: 0.5 } },
-            { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 24, y: 24 }, isStatic: true },
+            {
+              type: "AabbCollider",
+              offset: { x: 0, y: 0 },
+              size: { x: 24, y: 24 },
+              isStatic: true,
+            },
           ];
           sceneData.entities.push(coinEntity);
           spawnedEntities.push(coinEntity.id);
@@ -815,30 +1018,50 @@ export function registerAssetGeneratorTools(server: McpServer, fileIO: FileIO): 
     }
   );
 
-  server.tool("list_asset_generator_presets", "Asset Studio: List all available presets, styles, and options for asset generators", {}, async () => {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              sfxPresets: Object.keys(SFX_PRESETS),
-              musicPresets: Object.keys(MUSIC_PRESETS),
-              palettes: Object.keys(PALETTES),
-              spriteCategories: ["character", "enemy", "item", "tile", "prop", "icon"],
-              characterArchetypes: ["hero", "knight", "rogue", "wizard", "monster", "slime", "robot", "alien"],
-              animationActions: ["idle", "walk", "run", "jump", "attack", "hurt", "die"],
-              musicalScales: ["major", "minor", "pentatonic", "dorian", "blues", "harmonic_minor"],
-              musicalKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-              tilesetThemes: ["grass", "stone", "brick", "dungeon", "scifi", "cyberpunk"],
-              packThemes: ["cyberpunk", "dungeon", "fantasy", "arcade", "retro", "scifi"],
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  });
+  server.tool(
+    "list_asset_generator_presets",
+    "Asset Studio: List all available presets, styles, and options for asset generators",
+    {},
+    async () => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                sfxPresets: Object.keys(SFX_PRESETS),
+                musicPresets: Object.keys(MUSIC_PRESETS),
+                palettes: Object.keys(PALETTES),
+                spriteCategories: ["character", "enemy", "item", "tile", "prop", "icon"],
+                characterArchetypes: [
+                  "hero",
+                  "knight",
+                  "rogue",
+                  "wizard",
+                  "monster",
+                  "slime",
+                  "robot",
+                  "alien",
+                ],
+                animationActions: ["idle", "walk", "run", "jump", "attack", "hurt", "die"],
+                musicalScales: [
+                  "major",
+                  "minor",
+                  "pentatonic",
+                  "dorian",
+                  "blues",
+                  "harmonic_minor",
+                ],
+                musicalKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+                tilesetThemes: ["grass", "stone", "brick", "dungeon", "scifi", "cyberpunk"],
+                packThemes: ["cyberpunk", "dungeon", "fantasy", "arcade", "retro", "scifi"],
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
 }
-

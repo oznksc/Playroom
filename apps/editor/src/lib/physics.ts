@@ -18,22 +18,22 @@ export function velocityFromDisplacement(displacement: Vector2, dt: number): Vec
  * Compute the world AABB that encloses all entity sprites in the scene.
  * Used by the play-mode camera clamp to prevent scrolling past content.
  */
-export function computeSceneWorldBounds(
-  scene: GameKitScene,
-): { minX: number; minY: number; maxX: number; maxY: number } {
+export function computeSceneWorldBounds(scene: GameKitScene): {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+} {
   let minX = 0;
   let minY = 0;
   let maxX = scene.viewport.width;
   let maxY = scene.viewport.height;
 
   for (const entity of scene.entities) {
-    const t = entity.components.find(
-      (c): c is TransformComponent => c.type === "Transform",
-    );
+    const t = entity.components.find((c): c is TransformComponent => c.type === "Transform");
     if (!t) continue;
     const sprite = entity.components.find((c) => c.type === "Sprite") as
-      | { width?: number; height?: number }
-      | undefined;
+      { width?: number; height?: number } | undefined;
     const halfW = (sprite?.width ?? 64) / 2;
     const halfH = (sprite?.height ?? 64) / 2;
     minX = Math.min(minX, t.position.x - halfW);
@@ -57,7 +57,7 @@ export function computeSceneWorldBounds(
 export function clampPlayCamera(
   cam: Vector2,
   scene: GameKitScene,
-  world: { minX: number; minY: number; maxX: number; maxY: number },
+  world: { minX: number; minY: number; maxX: number; maxY: number }
 ): Vector2 {
   const vw = scene.viewport.width;
   const vh = scene.viewport.height;

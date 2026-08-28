@@ -14,7 +14,7 @@ export type SceneSoundMap = Map<string, Phaser.Sound.BaseSound>;
 export function setupSceneAudio(
   scene: Phaser.Scene,
   entities: GameKitEntity[],
-  sounds: SceneSoundMap,
+  sounds: SceneSoundMap
 ): void {
   for (const entity of entities) {
     const audio = findComponent<AudioSourceComponent>(entity, "AudioSource");
@@ -54,7 +54,7 @@ export function stopSceneAudio(sounds: SceneSoundMap): void {
 export function updateSceneAudio(
   scene: Phaser.Scene,
   entities: GameKitEntity[],
-  sounds: SceneSoundMap,
+  sounds: SceneSoundMap
 ): void {
   const listener = findAudioListenerPosition(entities);
   for (const entity of entities) {

@@ -48,7 +48,7 @@ export function useSceneViewport({
         y: scene.viewport.height / 2 - viewSize.h / (2 * nextZoom),
       });
     },
-    [scene, viewSize.w, viewSize.h],
+    [scene, viewSize.w, viewSize.h]
   );
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export function useSceneViewport({
         const delta = event.deltaY > 0 ? -0.08 : 0.08;
         const nextZoom = Math.min(
           MAX_ZOOM,
-          Math.max(MIN_ZOOM, Math.round((currentZoom + delta) * 100) / 100),
+          Math.max(MIN_ZOOM, Math.round((currentZoom + delta) * 100) / 100)
         );
         setPan({
           x: worldX - screenX / nextZoom,
@@ -184,7 +184,7 @@ export function useSceneViewport({
         y: (clientY - rect.top) / zoom + pan.y,
       };
     },
-    [pan.x, pan.y, zoom],
+    [pan.x, pan.y, zoom]
   );
 
   return {

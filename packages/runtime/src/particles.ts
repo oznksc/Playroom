@@ -29,12 +29,18 @@ export function updateParticleEmitter(
   origin: Vector2,
   gravityY: number,
   dt: number,
-  rng?: SeededRng,
+  rng?: SeededRng
 ): Particle[] {
   if (!component.active) {
     // Still age existing particles
     state.particles = state.particles
-      .map((p) => ({ ...p, age: p.age + dt, vy: p.vy + gravityY * component.gravityScale * dt, x: p.x + p.vx * dt, y: p.y + p.vy * dt }))
+      .map((p) => ({
+        ...p,
+        age: p.age + dt,
+        vy: p.vy + gravityY * component.gravityScale * dt,
+        x: p.x + p.vx * dt,
+        y: p.y + p.vy * dt,
+      }))
       .filter((p) => p.age < p.lifetime);
     return state.particles;
   }
@@ -60,7 +66,11 @@ export function updateParticleEmitter(
   return state.particles;
 }
 
-export function spawnParticle(component: ParticleSystemComponent, origin: Vector2, rng?: SeededRng): Particle {
+export function spawnParticle(
+  component: ParticleSystemComponent,
+  origin: Vector2,
+  rng?: SeededRng
+): Particle {
   const rand = rng ? () => rng.next() : Math.random;
   let ox = origin.x;
   let oy = origin.y;

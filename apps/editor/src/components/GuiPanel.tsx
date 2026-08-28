@@ -1,15 +1,6 @@
 import type { GuiNode } from "@gamekit/schema";
 import { Plus, Trash2, Type, Square, Image, Layers } from "lucide-react";
-import {
-  Panel,
-  PanelHeader,
-  PanelTitle,
-  PanelBody,
-  IconButton,
-  EmptyState,
-  Badge,
-  cn,
-} from "@/ui";
+import { Panel, PanelHeader, PanelTitle, PanelBody, IconButton, EmptyState, Badge, cn } from "@/ui";
 
 type GuiPanelProps = {
   nodes: GuiNode[];

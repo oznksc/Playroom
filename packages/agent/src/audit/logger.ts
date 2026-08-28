@@ -29,7 +29,9 @@ export class AgentAuditLogger {
   /**
    * Append an audit entry to the on-disk JSONL log.
    */
-  async append(rawEntry: Partial<AuditEntry> & { tool: string; status: AuditEntry["status"] }): Promise<AuditEntry> {
+  async append(
+    rawEntry: Partial<AuditEntry> & { tool: string; status: AuditEntry["status"] }
+  ): Promise<AuditEntry> {
     const timestamp = rawEntry.timestamp ?? Date.now();
     const entry: AuditEntry = {
       id: rawEntry.id || nanoid(),

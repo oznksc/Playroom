@@ -1,20 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  createEmptyScene,
-  createEntity,
-  createLevel,
-  validateScene,
-} from "@gamekit/schema";
+import { createEmptyScene, createEntity, createLevel, validateScene } from "@gamekit/schema";
 import { loadScene } from "../src/scene.js";
 import { simulateSceneSteps } from "../src/simulate.js";
-import {
-  InMemoryStorage,
-  SceneManager,
-} from "../src/manager.js";
-import {
-  createParticleEmitter,
-  updateParticleEmitter,
-} from "../src/particles.js";
+import { InMemoryStorage, SceneManager } from "../src/manager.js";
+import { createParticleEmitter, updateParticleEmitter } from "../src/particles.js";
 
 /** Shared platformer-like fixture used for physics parity smoke tests. */
 export function createParityPlatformerFixture() {
@@ -103,7 +92,7 @@ describe("SceneManager levels + save", () => {
         transition: { type: "none", duration: 0 },
       },
       levels,
-      storage,
+      storage
     );
 
     expect(manager.isLevelUnlocked("level-1")).toBe(true);
@@ -139,11 +128,8 @@ describe("SceneManager levels + save", () => {
         },
         transition: { type: "none", duration: 0 },
       },
-      [
-        createLevel("Level 1", 1, ["a.scene.json"]),
-        createLevel("Level 2", 2, ["b.scene.json"]),
-      ],
-      storage,
+      [createLevel("Level 1", 1, ["a.scene.json"]), createLevel("Level 2", 2, ["b.scene.json"])],
+      storage
     );
     expect(manager2.isLevelUnlocked("level-2")).toBe(false);
     expect(await manager2.loadGame("slot1")).toBe(true);

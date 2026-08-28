@@ -1,12 +1,7 @@
 import type { GameKitAsset, GameKitScene, GuiComponent } from "@gamekit/schema";
 import type { CanvasTool } from "./editor-tools.js";
 import type { TilePaintOverlay } from "./tile-paint.js";
-import {
-  drawScene,
-  drawSceneFrame,
-  drawScreenSpaceText,
-  drawWorldGrid,
-} from "./canvas.js";
+import { drawScene, drawSceneFrame, drawScreenSpaceText, drawWorldGrid } from "./canvas.js";
 
 const VOID_COLOR = "#090c12";
 
@@ -65,14 +60,7 @@ export function drawSceneCanvas({
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.fillStyle = VOID_COLOR;
   context.fillRect(0, 0, cssWidth, cssHeight);
-  context.setTransform(
-    dpr * zoom,
-    0,
-    0,
-    dpr * zoom,
-    -pan.x * zoom * dpr,
-    -pan.y * zoom * dpr,
-  );
+  context.setTransform(dpr * zoom, 0, 0, dpr * zoom, -pan.x * zoom * dpr, -pan.y * zoom * dpr);
 
   const bounds = {
     worldLeft: pan.x,
@@ -89,7 +77,7 @@ export function drawSceneCanvas({
       bounds.worldRight,
       bounds.worldBottom,
       zoom,
-      snapSize || 32,
+      snapSize || 32
     );
   }
   if (!scene) return;
@@ -119,7 +107,7 @@ export function drawSceneCanvas({
       guiComponents,
       selectedComponentInstanceId,
       showGuiTools,
-      { skipViewportChrome: true, skipScreenSpaceText: true, activeTool, zoom },
+      { skipViewportChrome: true, skipScreenSpaceText: true, activeTool, zoom }
     );
     context.restore();
     context.save();
@@ -134,7 +122,7 @@ export function drawSceneCanvas({
       viewportHeight,
       zoom,
       bounds,
-      `Play  ${Math.round(viewportWidth)}×${Math.round(viewportHeight)}`,
+      `Play  ${Math.round(viewportWidth)}×${Math.round(viewportHeight)}`
     );
     return;
   }
@@ -151,7 +139,7 @@ export function drawSceneCanvas({
     guiComponents,
     selectedComponentInstanceId,
     showGuiTools,
-    { activeTool, zoom, paintOverlay },
+    { activeTool, zoom, paintOverlay }
   );
   drawSceneFrame(context, viewportWidth, viewportHeight, zoom, bounds);
 }

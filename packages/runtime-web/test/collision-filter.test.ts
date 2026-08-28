@@ -5,13 +5,26 @@ import { colliderLayerMask, solidCollides, triggerOverlaps } from "../src/collis
 describe("colliderLayerMask", () => {
   it("defaults to layer 1 / all-ones mask when no collider fields are set", () => {
     const entity = createEntity("Bare", { x: 0, y: 0 });
-    entity.components.push({ type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 8, y: 8 }, isStatic: false });
+    entity.components.push({
+      type: "AabbCollider",
+      offset: { x: 0, y: 0 },
+      size: { x: 8, y: 8 },
+      isStatic: false,
+    });
     expect(colliderLayerMask(entity)).toEqual({ layer: 1, mask: 0xffffffff });
   });
 
   it("reads explicit layer and mask", () => {
     const entity = createEntity("Filtered", { x: 0, y: 0 });
-    entity.components.push({ type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 4, isStatic: false, isTrigger: false, layer: 2, mask: 6 });
+    entity.components.push({
+      type: "CircleCollider",
+      offset: { x: 0, y: 0 },
+      radius: 4,
+      isStatic: false,
+      isTrigger: false,
+      layer: 2,
+      mask: 6,
+    });
     expect(colliderLayerMask(entity)).toEqual({ layer: 2, mask: 6 });
   });
 });

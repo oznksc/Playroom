@@ -150,9 +150,12 @@ export function samplePhaserProfiler(game: GameLike, drawCalls?: number): PlayPr
     breakdown[classifyDisplayObject(child.type)] += 1;
     if (child.visible !== false) visible += 1;
   }
-  const displayList = children.length || scene?.sys?.displayList?.length || scene?.children?.length || 0;
+  const displayList =
+    children.length || scene?.sys?.displayList?.length || scene?.children?.length || 0;
   const textures = game.textures?.list
-    ? Object.keys(game.textures.list as Record<string, unknown>).filter((k) => k !== "__DEFAULT" && k !== "__MISSING").length
+    ? Object.keys(game.textures.list as Record<string, unknown>).filter(
+        (k) => k !== "__DEFAULT" && k !== "__MISSING"
+      ).length
     : 0;
   const lights = scene?.lights?.lights?.length ?? 0;
   return {

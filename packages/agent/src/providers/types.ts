@@ -31,7 +31,8 @@ export type StreamEvent =
   | { type: "error"; message: string }
   | { type: "done"; usage?: { inputTokens: number; outputTokens: number } };
 
-export type ProviderId = "anthropic" | "openai" | "google" | "ollama" | "lmstudio" | "custom" | "openrouter" | "xai";
+export type ProviderId =
+  "anthropic" | "openai" | "google" | "ollama" | "lmstudio" | "custom" | "openrouter" | "xai";
 
 export interface ProviderAdapter {
   readonly id: ProviderId;
@@ -39,11 +40,7 @@ export interface ProviderAdapter {
   readonly defaultBaseUrl: string;
   readonly requiresApiKey: boolean;
 
-  listModels(input: {
-    apiKey: string;
-    baseUrl?: string;
-    signal: AbortSignal;
-  }): Promise<string[]>;
+  listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]>;
 
   stream(input: StreamInput): AsyncGenerator<StreamEvent>;
 

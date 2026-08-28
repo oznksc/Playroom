@@ -12,11 +12,7 @@ export type RecipeCategory = z.infer<typeof RecipeCategorySchema>;
 export const RecipeTargetSchema = z.enum(["entity", "scene"]);
 export type RecipeTarget = z.infer<typeof RecipeTargetSchema>;
 
-export const RecipeMergeSchema = z.enum([
-  "upsert-by-type",
-  "append",
-  "require-missing",
-]);
+export const RecipeMergeSchema = z.enum(["upsert-by-type", "append", "require-missing"]);
 export type RecipeMerge = z.infer<typeof RecipeMergeSchema>;
 
 export const RecipeParamDefSchema = z.object({

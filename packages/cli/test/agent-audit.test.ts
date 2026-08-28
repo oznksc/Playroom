@@ -61,7 +61,10 @@ describe("Agent Audit API & Logger", () => {
     // Query all
     const resAll = await fetch(`${server.url}/api/agent/audit`);
     expect(resAll.status).toBe(200);
-    const bodyAll = (await resAll.json()) as { entries: Array<{ tool: string; status: string }>; total: number };
+    const bodyAll = (await resAll.json()) as {
+      entries: Array<{ tool: string; status: string }>;
+      total: number;
+    };
     expect(bodyAll.total).toBe(3);
     expect(bodyAll.entries[0].tool).toBe("delete_scene");
 
@@ -73,7 +76,10 @@ describe("Agent Audit API & Logger", () => {
 
     // Filter by status
     const resStatus = await fetch(`${server.url}/api/agent/audit?status=denied`);
-    const bodyStatus = (await resStatus.json()) as { entries: Array<{ status: string }>; total: number };
+    const bodyStatus = (await resStatus.json()) as {
+      entries: Array<{ status: string }>;
+      total: number;
+    };
     expect(bodyStatus.total).toBe(1);
     expect(bodyStatus.entries[0].status).toBe("denied");
 

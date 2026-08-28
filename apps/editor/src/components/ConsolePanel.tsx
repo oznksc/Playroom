@@ -95,11 +95,21 @@ export function ConsolePanel({ logs, onExecuteCommand, onClearLogs }: ConsolePan
             Slash commands
           </div>
           <ul className="m-0 list-none space-y-1.5 p-0 text-text-secondary">
-            <li><code className="text-accent">/spawn</code> obstacle</li>
-            <li><code className="text-accent">/gravity</code> [y]</li>
-            <li><code className="text-accent">/speed</code> [px]</li>
-            <li><code className="text-accent">/clear</code></li>
-            <li><code className="text-accent">/help</code></li>
+            <li>
+              <code className="text-accent">/spawn</code> obstacle
+            </li>
+            <li>
+              <code className="text-accent">/gravity</code> [y]
+            </li>
+            <li>
+              <code className="text-accent">/speed</code> [px]
+            </li>
+            <li>
+              <code className="text-accent">/clear</code>
+            </li>
+            <li>
+              <code className="text-accent">/help</code>
+            </li>
           </ul>
         </aside>
       </div>

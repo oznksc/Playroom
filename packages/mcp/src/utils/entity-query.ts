@@ -97,7 +97,7 @@ export function setPositionFromMin(entity: GameKitEntity, minX: number, minY: nu
 
 export function aabbOverlap(
   a: { minX: number; minY: number; maxX: number; maxY: number },
-  b: { minX: number; minY: number; maxX: number; maxY: number },
+  b: { minX: number; minY: number; maxX: number; maxY: number }
 ): boolean {
   return a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY;
 }
@@ -120,17 +120,37 @@ export function summarizeEntity(entity: GameKitEntity): EntitySummary {
 export function summarizeComponent(comp: GameKitComponent): Record<string, unknown> {
   switch (comp.type) {
     case "Transform":
-      return { type: comp.type, position: comp.position, rotation: comp.rotation, scale: comp.scale };
+      return {
+        type: comp.type,
+        position: comp.position,
+        rotation: comp.rotation,
+        scale: comp.scale,
+      };
     case "Sprite":
       return { type: comp.type, assetId: comp.assetId, width: comp.width, height: comp.height };
     case "AabbCollider":
-      return { type: comp.type, size: comp.size, isStatic: comp.isStatic, isTrigger: comp.isTrigger ?? false };
+      return {
+        type: comp.type,
+        size: comp.size,
+        isStatic: comp.isStatic,
+        isTrigger: comp.isTrigger ?? false,
+      };
     case "CircleCollider":
-      return { type: comp.type, radius: comp.radius, isStatic: comp.isStatic, isTrigger: comp.isTrigger };
+      return {
+        type: comp.type,
+        radius: comp.radius,
+        isStatic: comp.isStatic,
+        isTrigger: comp.isTrigger,
+      };
     case "PolygonCollider":
       return { type: comp.type, points: comp.points.length, isStatic: comp.isStatic };
     case "PlayerController":
-      return { type: comp.type, speed: comp.speed, jumpVelocity: comp.jumpVelocity, gravity: comp.gravity };
+      return {
+        type: comp.type,
+        speed: comp.speed,
+        jumpVelocity: comp.jumpVelocity,
+        gravity: comp.gravity,
+      };
     case "CameraFollow":
       return { type: comp.type, targetId: comp.targetId, smoothing: comp.smoothing };
     case "RigidBody":
@@ -146,14 +166,16 @@ export function summarizeComponent(comp: GameKitComponent): Record<string, unkno
 
 export function isOffScreen(
   bounds: EntityBounds,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): boolean {
-  return bounds.maxX < 0 || bounds.maxY < 0 || bounds.minX > viewport.width || bounds.minY > viewport.height;
+  return (
+    bounds.maxX < 0 ||
+    bounds.maxY < 0 ||
+    bounds.minX > viewport.width ||
+    bounds.minY > viewport.height
+  );
 }
 
-export function findEntity(
-  scene: GameKitScene,
-  entityId: string,
-): GameKitEntity | undefined {
+export function findEntity(scene: GameKitScene, entityId: string): GameKitEntity | undefined {
   return scene.entities.find((e) => e.id === entityId);
 }

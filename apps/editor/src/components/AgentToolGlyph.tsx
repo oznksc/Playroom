@@ -24,11 +24,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { AgentToolCallStatus } from "../lib/agent-schemas.js";
-import {
-  motionForStatus,
-  resolveToolStage,
-  type ToolStageKind,
-} from "../lib/agent-tool-stage.js";
+import { motionForStatus, resolveToolStage, type ToolStageKind } from "../lib/agent-tool-stage.js";
 import styles from "./AgentToolGlyph.module.css";
 import { cn } from "@/ui";
 
@@ -64,7 +60,13 @@ export function AgentToolGlyph({ tool, status, size = 12 }: AgentToolGlyphProps)
   const stage = resolveToolStage(tool);
   const motion = motionForStatus(stage, status);
   const Icon =
-    status === "error" ? AlertCircle : status === "cancelled" ? Ban : status === "needs-approval" ? Clock : KIND_ICON[stage.kind];
+    status === "error"
+      ? AlertCircle
+      : status === "cancelled"
+        ? Ban
+        : status === "needs-approval"
+          ? Clock
+          : KIND_ICON[stage.kind];
 
   const tone =
     status === "ok"
@@ -79,7 +81,11 @@ export function AgentToolGlyph({ tool, status, size = 12 }: AgentToolGlyphProps)
 
   return (
     <span
-      className={cn(styles["agent-tool-glyph"], "inline-flex shrink-0 items-center justify-center", tone)}
+      className={cn(
+        styles["agent-tool-glyph"],
+        "inline-flex shrink-0 items-center justify-center",
+        tone
+      )}
       data-kind={stage.kind}
       data-status={status}
       data-motion={motion}

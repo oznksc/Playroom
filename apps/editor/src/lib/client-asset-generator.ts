@@ -110,42 +110,137 @@ export function parseAiPrompt(rawPrompt: string): AiPromptAnalysis {
 
   // Determine Palette
   let palette: PaletteName = "pico8";
-  if (p.includes("cyber") || p.includes("neon") || p.includes("futur") || p.includes("laser") || p.includes("matrix") || p.includes("synth")) {
+  if (
+    p.includes("cyber") ||
+    p.includes("neon") ||
+    p.includes("futur") ||
+    p.includes("laser") ||
+    p.includes("matrix") ||
+    p.includes("synth")
+  ) {
     palette = "cyberpunk";
   } else if (p.includes("gameboy") || p.includes("retro green") || p.includes("nostalg")) {
     palette = "gameboy";
   } else if (p.includes("nes") || p.includes("8-bit") || p.includes("classic arcade")) {
     palette = "nes";
-  } else if (p.includes("pastel") || p.includes("fairy") || p.includes("soft") || p.includes("cute") || p.includes("dream")) {
+  } else if (
+    p.includes("pastel") ||
+    p.includes("fairy") ||
+    p.includes("soft") ||
+    p.includes("cute") ||
+    p.includes("dream")
+  ) {
     palette = "pastel";
-  } else if (p.includes("mono") || p.includes("ink") || p.includes("noir") || p.includes("black and white") || p.includes("shadow")) {
+  } else if (
+    p.includes("mono") ||
+    p.includes("ink") ||
+    p.includes("noir") ||
+    p.includes("black and white") ||
+    p.includes("shadow")
+  ) {
     palette = "monochrome";
   }
 
   // Determine Category
   let category: SpriteCategory = "character";
   if (
-    p.includes("sword") || p.includes("shield") || p.includes("potion") || p.includes("coin") ||
-    p.includes("gem") || p.includes("key") || p.includes("heart") || p.includes("weapon") ||
-    p.includes("item") || p.includes("ring") || p.includes("scroll") || p.includes("axe") || p.includes("bow")
+    p.includes("sword") ||
+    p.includes("shield") ||
+    p.includes("potion") ||
+    p.includes("coin") ||
+    p.includes("gem") ||
+    p.includes("key") ||
+    p.includes("heart") ||
+    p.includes("weapon") ||
+    p.includes("item") ||
+    p.includes("ring") ||
+    p.includes("scroll") ||
+    p.includes("axe") ||
+    p.includes("bow")
   ) {
     category = "item";
-  } else if (p.includes("slime") || p.includes("goblin") || p.includes("demon") || p.includes("monster") || p.includes("dragon") || p.includes("skeleton") || p.includes("boss") || p.includes("enemy") || p.includes("spider")) {
+  } else if (
+    p.includes("slime") ||
+    p.includes("goblin") ||
+    p.includes("demon") ||
+    p.includes("monster") ||
+    p.includes("dragon") ||
+    p.includes("skeleton") ||
+    p.includes("boss") ||
+    p.includes("enemy") ||
+    p.includes("spider")
+  ) {
     category = "enemy";
-  } else if (p.includes("tile") || p.includes("wall") || p.includes("floor") || p.includes("brick") || p.includes("grass block") || p.includes("dirt") || p.includes("platform")) {
+  } else if (
+    p.includes("tile") ||
+    p.includes("wall") ||
+    p.includes("floor") ||
+    p.includes("brick") ||
+    p.includes("grass block") ||
+    p.includes("dirt") ||
+    p.includes("platform")
+  ) {
     category = "tile";
-  } else if (p.includes("tree") || p.includes("rock") || p.includes("chest") || p.includes("torch") || p.includes("pillar") || p.includes("barrel") || p.includes("spikes") || p.includes("prop")) {
+  } else if (
+    p.includes("tree") ||
+    p.includes("rock") ||
+    p.includes("chest") ||
+    p.includes("torch") ||
+    p.includes("pillar") ||
+    p.includes("barrel") ||
+    p.includes("spikes") ||
+    p.includes("prop")
+  ) {
     category = "prop";
-  } else if (p.includes("icon") || p.includes("button") || p.includes("cursor") || p.includes("crosshair") || p.includes("badge")) {
+  } else if (
+    p.includes("icon") ||
+    p.includes("button") ||
+    p.includes("cursor") ||
+    p.includes("crosshair") ||
+    p.includes("badge")
+  ) {
     category = "icon";
   }
 
   // Determine Archetype Keyword
   const archetypeMatches = [
-    "knight", "wizard", "rogue", "assassin", "ninja", "mage", "archer", "robot", "alien", "cyborg",
-    "slime", "goblin", "skeleton", "demon", "dragon", "golem", "ghost", "zombie",
-    "sword", "katana", "shield", "potion", "coin", "gem", "heart", "key", "axe", "hammer",
-    "tree", "rock", "chest", "torch", "barrel", "spikes", "wall", "floor", "brick"
+    "knight",
+    "wizard",
+    "rogue",
+    "assassin",
+    "ninja",
+    "mage",
+    "archer",
+    "robot",
+    "alien",
+    "cyborg",
+    "slime",
+    "goblin",
+    "skeleton",
+    "demon",
+    "dragon",
+    "golem",
+    "ghost",
+    "zombie",
+    "sword",
+    "katana",
+    "shield",
+    "potion",
+    "coin",
+    "gem",
+    "heart",
+    "key",
+    "axe",
+    "hammer",
+    "tree",
+    "rock",
+    "chest",
+    "torch",
+    "barrel",
+    "spikes",
+    "wall",
+    "floor",
+    "brick",
   ];
   let archetype = "hero";
   for (const a of archetypeMatches) {
@@ -157,31 +252,48 @@ export function parseAiPrompt(rawPrompt: string): AiPromptAnalysis {
 
   // Determine Animation Action
   let animationAction: AnimationAction = "walk";
-  if (p.includes("attack") || p.includes("slash") || p.includes("strike") || p.includes("swing")) animationAction = "attack";
+  if (p.includes("attack") || p.includes("slash") || p.includes("strike") || p.includes("swing"))
+    animationAction = "attack";
   else if (p.includes("run") || p.includes("sprint") || p.includes("dash")) animationAction = "run";
   else if (p.includes("jump") || p.includes("leap") || p.includes("air")) animationAction = "jump";
-  else if (p.includes("idle") || p.includes("stand") || p.includes("breath")) animationAction = "idle";
-  else if (p.includes("hurt") || p.includes("damage") || p.includes("hit")) animationAction = "hurt";
-  else if (p.includes("die") || p.includes("death") || p.includes("defeat")) animationAction = "die";
+  else if (p.includes("idle") || p.includes("stand") || p.includes("breath"))
+    animationAction = "idle";
+  else if (p.includes("hurt") || p.includes("damage") || p.includes("hit"))
+    animationAction = "hurt";
+  else if (p.includes("die") || p.includes("death") || p.includes("defeat"))
+    animationAction = "die";
 
   // Determine SFX preset
   let sfxPreset = "jump";
   if (p.includes("laser") || p.includes("pew") || p.includes("shoot")) sfxPreset = "laser";
-  else if (p.includes("coin") || p.includes("gem") || p.includes("pickup") || p.includes("chime")) sfxPreset = "coin";
-  else if (p.includes("explosion") || p.includes("boom") || p.includes("blast")) sfxPreset = "explosion";
+  else if (p.includes("coin") || p.includes("gem") || p.includes("pickup") || p.includes("chime"))
+    sfxPreset = "coin";
+  else if (p.includes("explosion") || p.includes("boom") || p.includes("blast"))
+    sfxPreset = "explosion";
   else if (p.includes("hit") || p.includes("punch") || p.includes("strike")) sfxPreset = "hit";
   else if (p.includes("powerup") || p.includes("level up")) sfxPreset = "powerup";
   else if (p.includes("hurt") || p.includes("grunt")) sfxPreset = "hurt";
-  else if (p.includes("victory") || p.includes("fanfare") || p.includes("win")) sfxPreset = "victory";
+  else if (p.includes("victory") || p.includes("fanfare") || p.includes("win"))
+    sfxPreset = "victory";
   else if (p.includes("defeat") || p.includes("game over")) sfxPreset = "defeat";
 
   // Determine Music genre
   let musicGenre = "chiptune_adventure";
-  if (p.includes("boss") || p.includes("battle") || p.includes("intense") || p.includes("combat")) musicGenre = "boss_battle";
-  else if (p.includes("dungeon") || p.includes("cave") || p.includes("chill") || p.includes("ambient")) musicGenre = "chill_dungeon";
-  else if (p.includes("cyber") || p.includes("synthwave") || p.includes("electronic")) musicGenre = "cyberpunk_pulse";
-  else if (p.includes("menu") || p.includes("title") || p.includes("intro")) musicGenre = "retro_menu";
-  else if (p.includes("spooky") || p.includes("horror") || p.includes("dark")) musicGenre = "spooky_night";
+  if (p.includes("boss") || p.includes("battle") || p.includes("intense") || p.includes("combat"))
+    musicGenre = "boss_battle";
+  else if (
+    p.includes("dungeon") ||
+    p.includes("cave") ||
+    p.includes("chill") ||
+    p.includes("ambient")
+  )
+    musicGenre = "chill_dungeon";
+  else if (p.includes("cyber") || p.includes("synthwave") || p.includes("electronic"))
+    musicGenre = "cyberpunk_pulse";
+  else if (p.includes("menu") || p.includes("title") || p.includes("intro"))
+    musicGenre = "retro_menu";
+  else if (p.includes("spooky") || p.includes("horror") || p.includes("dark"))
+    musicGenre = "spooky_night";
 
   return {
     category,
@@ -198,12 +310,18 @@ export function parseAiPrompt(rawPrompt: string): AiPromptAnalysis {
 /**
  * Magic AI Prompt Enhancer: expands minimal keywords into rich, stylized generative prompts.
  */
-export function enhanceAiPrompt(inputPrompt: string, category: SpriteCategory = "character"): string {
+export function enhanceAiPrompt(
+  inputPrompt: string,
+  category: SpriteCategory = "character"
+): string {
   const clean = inputPrompt.trim();
   if (!clean) {
-    if (category === "character") return "16-bit cyber knight with glowing cyan visor, neon edge trim, and dark obsidian armor, crisp pixel outlines";
-    if (category === "enemy") return "pulsing radioactive emerald slime monster with molten core and fiery pixel eyes, transparent background";
-    if (category === "item") return "legendary glowing ancient rune sword with crystalline hilt and celestial particle aura";
+    if (category === "character")
+      return "16-bit cyber knight with glowing cyan visor, neon edge trim, and dark obsidian armor, crisp pixel outlines";
+    if (category === "enemy")
+      return "pulsing radioactive emerald slime monster with molten core and fiery pixel eyes, transparent background";
+    if (category === "item")
+      return "legendary glowing ancient rune sword with crystalline hilt and celestial particle aura";
     return "dungeon stone brick tile with moss highlights and glowing neon glyphs";
   }
 
@@ -291,7 +409,8 @@ export function renderClientSprite(
   const outlineColor = pal[0];
   const mid = Math.floor(gridRes / 2);
   const isSlime = archetype.includes("slime") || archetype.includes("blob");
-  const isKnight = archetype.includes("knight") || archetype.includes("armor") || archetype.includes("warrior");
+  const isKnight =
+    archetype.includes("knight") || archetype.includes("armor") || archetype.includes("warrior");
   const isWizard = archetype.includes("wizard") || archetype.includes("mage");
   const isRobot = archetype.includes("robot") || archetype.includes("cyborg");
 
@@ -310,7 +429,11 @@ export function renderClientSprite(
       for (let y = 2; y <= 6; y++) {
         const w = y === 2 ? 2 : 3;
         for (let x = mid - w; x <= mid; x++) {
-          setSymmetricPixel(x, y, isKnight ? accentColor : isWizard ? accentColor : isRobot ? primaryColor : skinTone);
+          setSymmetricPixel(
+            x,
+            y,
+            isKnight ? accentColor : isWizard ? accentColor : isRobot ? primaryColor : skinTone
+          );
         }
       }
       setSymmetricPixel(mid - 2, 4, isRobot ? [0, 240, 255, 255] : outlineColor);
@@ -442,15 +565,41 @@ export function renderClientSpritesheet(
     if (animation === "idle") {
       bodyOffsetY = frame === 1 || frame === 2 ? -1 : 0;
     } else if (animation === "walk") {
-      if (frame === 0) { legOffsetL = -1; legOffsetR = 1; bodyOffsetY = 0; }
-      else if (frame === 1) { legOffsetL = 0; legOffsetR = 0; bodyOffsetY = -1; }
-      else if (frame === 2) { legOffsetL = 1; legOffsetR = -1; bodyOffsetY = 0; }
-      else { legOffsetL = 0; legOffsetR = 0; bodyOffsetY = -1; }
+      if (frame === 0) {
+        legOffsetL = -1;
+        legOffsetR = 1;
+        bodyOffsetY = 0;
+      } else if (frame === 1) {
+        legOffsetL = 0;
+        legOffsetR = 0;
+        bodyOffsetY = -1;
+      } else if (frame === 2) {
+        legOffsetL = 1;
+        legOffsetR = -1;
+        bodyOffsetY = 0;
+      } else {
+        legOffsetL = 0;
+        legOffsetR = 0;
+        bodyOffsetY = -1;
+      }
     } else if (animation === "run") {
-      if (frame === 0) { legOffsetL = -2; legOffsetR = 2; bodyOffsetY = 0; }
-      else if (frame === 1) { legOffsetL = -1; legOffsetR = 0; bodyOffsetY = -2; }
-      else if (frame === 2) { legOffsetL = 2; legOffsetR = -2; bodyOffsetY = 0; }
-      else { legOffsetL = 0; legOffsetR = -1; bodyOffsetY = -2; }
+      if (frame === 0) {
+        legOffsetL = -2;
+        legOffsetR = 2;
+        bodyOffsetY = 0;
+      } else if (frame === 1) {
+        legOffsetL = -1;
+        legOffsetR = 0;
+        bodyOffsetY = -2;
+      } else if (frame === 2) {
+        legOffsetL = 2;
+        legOffsetR = -2;
+        bodyOffsetY = 0;
+      } else {
+        legOffsetL = 0;
+        legOffsetR = -1;
+        bodyOffsetY = -2;
+      }
     } else if (animation === "attack") {
       if (frame === 1) attackSlash = true;
     }

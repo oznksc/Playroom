@@ -30,7 +30,7 @@ export class McpClient {
 
   constructor(
     private readonly cliPath: string,
-    private readonly projectPath: string,
+    private readonly projectPath: string
   ) {}
 
   async connect(): Promise<void> {

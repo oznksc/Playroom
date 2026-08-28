@@ -5,7 +5,6 @@ import { GuiNodeInputSchema } from "../schemas/gui.js";
 import type { FileIO } from "../utils/file-io.js";
 
 export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): void {
-
   // ── Definition tools (operate on project.json) ──
 
   server.tool(
@@ -16,12 +15,14 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const project = await fileIO.readProject();
       const components = project.guiComponents ?? [];
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ componentCount: components.length, components }, null, 2)
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ componentCount: components.length, components }, null, 2),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -35,14 +36,19 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
       return {
         content: [{ type: "text", text: JSON.stringify(component, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -62,7 +68,7 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       return {
         content: [{ type: "text", text: JSON.stringify(component, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -77,7 +83,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -88,7 +99,7 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       return {
         content: [{ type: "text", text: JSON.stringify(component, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -103,7 +114,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const index = components.findIndex((c) => c.id === componentId);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -113,9 +129,14 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       await fileIO.writeProject(project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: removed.name, id: removed.id }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, removed: removed.name, id: removed.id }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -130,7 +151,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -142,7 +168,7 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       return {
         content: [{ type: "text", text: JSON.stringify(newNode, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -158,7 +184,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -178,7 +209,7 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       return {
         content: [{ type: "text", text: JSON.stringify(node, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -193,7 +224,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -210,9 +246,14 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       await fileIO.writeProject(project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: removed.id, type: removed.type }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, removed: removed.id, type: removed.type }),
+          },
+        ],
       };
-    },
+    }
   );
 
   // ── Instance tools (operate on scene files) ──
@@ -233,16 +274,18 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
 
       const enriched = instances.map((inst) => ({
         ...inst,
-        component: componentMap.get(inst.componentId)?.name ?? "(missing)"
+        component: componentMap.get(inst.componentId)?.name ?? "(missing)",
       }));
 
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ instanceCount: instances.length, instances: enriched }, null, 2)
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ instanceCount: instances.length, instances: enriched }, null, 2),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -262,7 +305,12 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const component = (project.guiComponents ?? []).find((c) => c.id === componentId);
       if (!component) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Component not found: ${componentId}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Component not found: ${componentId}` }),
+            },
+          ],
           isError: true,
         };
       }
@@ -275,9 +323,11 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ instance, component: component.name }, null, 2) }],
+        content: [
+          { type: "text", text: JSON.stringify({ instance, component: component.name }, null, 2) },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -286,7 +336,9 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
     {
       scenePath: z.string().describe("Scene filename"),
       instanceId: z.string().describe("Instance ID to update"),
-      props: z.record(z.unknown()).describe("Properties to update (x, y, visible, interactive, nodeOverrides)"),
+      props: z
+        .record(z.unknown())
+        .describe("Properties to update (x, y, visible, interactive, nodeOverrides)"),
     },
     async ({ scenePath, instanceId, props }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -296,7 +348,9 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const instance = instances.find((i) => i.id === instanceId);
       if (!instance) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Instance not found: ${instanceId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Instance not found: ${instanceId}` }) },
+          ],
           isError: true,
         };
       }
@@ -308,7 +362,7 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       return {
         content: [{ type: "text", text: JSON.stringify(instance, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -326,7 +380,9 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       const index = instances.findIndex((i) => i.id === instanceId);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Instance not found: ${instanceId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Instance not found: ${instanceId}` }) },
+          ],
           isError: true,
         };
       }
@@ -335,8 +391,17 @@ export function registerGuiComponentTools(server: McpServer, fileIO: FileIO): vo
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: removed.id, componentId: removed.componentId }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              removed: removed.id,
+              componentId: removed.componentId,
+            }),
+          },
+        ],
       };
-    },
+    }
   );
 }

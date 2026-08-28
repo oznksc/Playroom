@@ -22,24 +22,32 @@ export default defineConfig({
       "@gamekit/runtime/timeline": path.resolve(__dirname, "packages/runtime/src/timeline.ts"),
       "@gamekit/runtime/particles": path.resolve(__dirname, "packages/runtime/src/particles.ts"),
       "@gamekit/runtime/rigid-body": path.resolve(__dirname, "packages/runtime/src/rigid-body.ts"),
-      "@gamekit/runtime/rules-engine": path.resolve(__dirname, "packages/runtime/src/rules-engine.ts"),
+      "@gamekit/runtime/rules-engine": path.resolve(
+        __dirname,
+        "packages/runtime/src/rules-engine.ts"
+      ),
       "@gamekit/runtime/clone": path.resolve(__dirname, "packages/runtime/src/clone.ts"),
       "@gamekit/runtime/gui": path.resolve(__dirname, "packages/runtime/src/gui.ts"),
       "@gamekit/runtime/gestures": path.resolve(__dirname, "packages/runtime/src/gestures.ts"),
-      "@gamekit/runtime/spatial-audio": path.resolve(__dirname, "packages/runtime/src/spatial-audio.ts"),
+      "@gamekit/runtime/spatial-audio": path.resolve(
+        __dirname,
+        "packages/runtime/src/spatial-audio.ts"
+      ),
       "@gamekit/runtime/light": path.resolve(__dirname, "packages/runtime/src/light.ts"),
       "@gamekit/runtime/simulate": path.resolve(__dirname, "packages/runtime/src/simulate.ts"),
       "@gamekit/runtime/rng": path.resolve(__dirname, "packages/runtime/src/rng.ts"),
       "@gamekit/runtime": path.resolve(__dirname, "packages/runtime/src/index.ts"),
+      "@gamekit/ui": path.resolve(__dirname, "packages/ui/src/index.ts"),
+      "@gamekit/ui/*": path.resolve(__dirname, "packages/ui/src/*"),
     },
   },
   test: {
     environmentMatchGlobs: [
       ["apps/editor/**", "happy-dom"],
+      ["apps/studio/**", "happy-dom"],
+      ["packages/ui/**", "happy-dom"],
     ],
-    setupFiles: [
-      path.resolve(__dirname, "apps/editor/test/setup.ts"),
-    ],
+    setupFiles: [path.resolve(__dirname, "apps/editor/test/setup.ts")],
     exclude: [
       "**/node_modules/**",
       "**/dist/**",

@@ -3,12 +3,7 @@ import { mkdir, writeFile, rm, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import {
-  createEmptyScene,
-  createProject,
-  projectToJson,
-  sceneToJson,
-} from "@gamekit/schema";
+import { createEmptyScene, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
 import { encodePng, decodePng } from "../src/png.js";
 import { packRects, packBuildAssets, packAudioBank, packTextureAtlas } from "../src/packer.js";
 import { buildProject } from "../src/build.js";
@@ -42,14 +37,13 @@ describe("packRects", () => {
         { id: "b", width: 8, height: 4 },
       ],
       1,
-      64,
+      64
     );
     expect(packed.overflow).toEqual([]);
     expect(packed.placements).toHaveLength(2);
     const a = packed.placements.find((p) => p.id === "a")!;
     const b = packed.placements.find((p) => p.id === "b")!;
-    const overlap =
-      a.x < b.x + 8 && a.x + 4 > b.x && a.y < b.y + 4 && a.y + 4 > b.y;
+    const overlap = a.x < b.x + 8 && a.x + 4 > b.x && a.y < b.y + 4 && a.y + 4 > b.y;
     expect(overlap).toBe(false);
   });
 });
@@ -74,10 +68,13 @@ describe("asset packer", () => {
     ];
     await writeFile(join(gk, "project.json"), projectToJson(project));
     await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createEmptyScene("Main")));
-    await writeFile(join(gk, "generated", "assets.ts"), "export const gamekitAssets = {} as const;\n");
+    await writeFile(
+      join(gk, "generated", "assets.ts"),
+      "export const gamekitAssets = {} as const;\n"
+    );
     await writeFile(join(gk, "assets", "red.png"), solidPng(4, 4, [255, 0, 0, 255]));
     await writeFile(join(gk, "assets", "blue.png"), solidPng(8, 4, [0, 0, 255, 255]));
-    await writeFile(join(gk, "assets", "icon.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
+    await writeFile(join(gk, "assets", "icon.svg"), '<svg xmlns="http://www.w3.org/2000/svg"/>');
     await writeFile(join(gk, "assets", "jump.wav"), Buffer.from("JUMP-AUDIO"));
     await writeFile(join(gk, "assets", "hit.mp3"), Buffer.from("HIT-AUDIO-BYTES"));
   });
@@ -97,8 +94,14 @@ describe("asset packer", () => {
     const decoded = decodePng(atlas.png!);
     const red = atlas.json.frames.red.frame;
     const blue = atlas.json.frames.blue.frame;
-    const redPx = decoded.data.subarray((red.y * decoded.width + red.x) * 4, (red.y * decoded.width + red.x) * 4 + 4);
-    const bluePx = decoded.data.subarray((blue.y * decoded.width + blue.x) * 4, (blue.y * decoded.width + blue.x) * 4 + 4);
+    const redPx = decoded.data.subarray(
+      (red.y * decoded.width + red.x) * 4,
+      (red.y * decoded.width + red.x) * 4 + 4
+    );
+    const bluePx = decoded.data.subarray(
+      (blue.y * decoded.width + blue.x) * 4,
+      (blue.y * decoded.width + blue.x) * 4 + 4
+    );
     expect([...redPx]).toEqual([255, 0, 0, 255]);
     expect([...bluePx]).toEqual([0, 0, 255, 255]);
 
@@ -106,7 +109,9 @@ describe("asset packer", () => {
     expect(audio.bank).not.toBeNull();
     expect(Object.keys(audio.json.clips).sort()).toEqual(["hit", "jump"]);
     const jump = audio.json.clips.jump;
-    expect(audio.bank!.subarray(jump.offset, jump.offset + jump.length).toString()).toBe("JUMP-AUDIO");
+    expect(audio.bank!.subarray(jump.offset, jump.offset + jump.length).toString()).toBe(
+      "JUMP-AUDIO"
+    );
   });
 
   it("writes packed artifacts from buildProject", async () => {
@@ -122,7 +127,12 @@ describe("asset packer", () => {
 
   it("skips packing when pack: false", async () => {
     const outDir = join(root, "dist-nopack");
-    const result = await buildProject(root, { outDir, platform: "web", skipDoctor: true, pack: false });
+    const result = await buildProject(root, {
+      outDir,
+      platform: "web",
+      skipDoctor: true,
+      pack: false,
+    });
     expect(result.packed).toBeNull();
   });
 

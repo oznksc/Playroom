@@ -3,9 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  slugify,
-} from "@gamekit/schema";
+import { slugify } from "@gamekit/schema";
 import {
   createGameFromSkill,
   generateAssetRegistry,
@@ -13,10 +11,7 @@ import {
   initProject,
   buildExportBootstrapInput,
 } from "./project.js";
-import {
-  generateMobileApp,
-  generateWebMain,
-} from "./export-bootstrap.js";
+import { generateMobileApp, generateWebMain } from "./export-bootstrap.js";
 
 export type ProjectPlatform = "expo" | "web" | "tauri" | "libgdx";
 export type ProjectGenre =
@@ -66,18 +61,30 @@ export const GENRE_TEMPLATES: TemplateMetadata[] = [
   {
     id: "platformer",
     name: "2D Platformer",
-    description: "Side-scrolling platformer with physics, jumping, coins, hazard spikes, and level completion.",
+    description:
+      "Side-scrolling platformer with physics, jumping, coins, hazard spikes, and level completion.",
     icon: "Gamepad2",
     badge: "Most Popular",
-    features: ["Physics & Jump mechanics", "Coin collection triggers", "Hazard spikes & respawn", "Touch & WASD controls"],
+    features: [
+      "Physics & Jump mechanics",
+      "Coin collection triggers",
+      "Hazard spikes & respawn",
+      "Touch & WASD controls",
+    ],
   },
   {
     id: "topdown",
     name: "Top-Down Adventure",
-    description: "Zelda-style 8-directional adventure with obstacles, collectibles, and camera follow.",
+    description:
+      "Zelda-style 8-directional adventure with obstacles, collectibles, and camera follow.",
     icon: "Compass",
     badge: "RPG Starter",
-    features: ["8-directional smooth movement", "Obstacle collisions", "Camera follow target", "Touch & Keyboard input"],
+    features: [
+      "8-directional smooth movement",
+      "Obstacle collisions",
+      "Camera follow target",
+      "Touch & Keyboard input",
+    ],
   },
   {
     id: "topdown-shooter",
@@ -85,15 +92,26 @@ export const GENRE_TEMPLATES: TemplateMetadata[] = [
     description: "Fast-paced arena shooter with enemies, projectile hazards, and score tracking.",
     icon: "Crosshair",
     badge: "Action",
-    features: ["Action shooting controls", "Enemy hazard kill zones", "Health & Score counters", "Wave arena setup"],
+    features: [
+      "Action shooting controls",
+      "Enemy hazard kill zones",
+      "Health & Score counters",
+      "Wave arena setup",
+    ],
   },
   {
     id: "physics-puzzle",
     name: "Physics & Puzzle",
-    description: "Sokoban & physics-inspired puzzle game with goal triggers and rigid body mechanics.",
+    description:
+      "Sokoban & physics-inspired puzzle game with goal triggers and rigid body mechanics.",
     icon: "Boxes",
     badge: "Puzzle",
-    features: ["Pushable rigid bodies", "Goal socket triggers", "Level progression flow", "Undo & Reset support"],
+    features: [
+      "Pushable rigid bodies",
+      "Goal socket triggers",
+      "Level progression flow",
+      "Undo & Reset support",
+    ],
   },
   {
     id: "endless-runner",
@@ -101,15 +119,26 @@ export const GENRE_TEMPLATES: TemplateMetadata[] = [
     description: "Fast reflex runner with procedurally styled obstacles and coin streaks.",
     icon: "Zap",
     badge: "Arcade",
-    features: ["Continuous runner mechanics", "Coin multiplier rules", "Single life challenge", "Quick retry loop"],
+    features: [
+      "Continuous runner mechanics",
+      "Coin multiplier rules",
+      "Single life challenge",
+      "Quick retry loop",
+    ],
   },
   {
     id: "blank",
     name: "Clean Slate / Sandbox",
-    description: "Minimal starting canvas with player entity, camera follow, and empty world ready for custom creation.",
+    description:
+      "Minimal starting canvas with player entity, camera follow, and empty world ready for custom creation.",
     icon: "Sparkles",
     badge: "Minimal",
-    features: ["Basic PlayerController", "CameraFollow component", "Clean canvas structure", "Pre-configured input map"],
+    features: [
+      "Basic PlayerController",
+      "CameraFollow component",
+      "Clean canvas structure",
+      "Pre-configured input map",
+    ],
   },
 ];
 
@@ -212,7 +241,9 @@ export async function scaffoldProject(options: ScaffoldOptions): Promise<Scaffol
           await writeFile(dest, content);
         }
       } catch (err) {
-        warnings.push(`Could not copy ${basename(src)}: ${err instanceof Error ? err.message : String(err)}`);
+        warnings.push(
+          `Could not copy ${basename(src)}: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
 
@@ -244,7 +275,10 @@ export async function scaffoldProject(options: ScaffoldOptions): Promise<Scaffol
         typescript: "^5.7.2",
       },
     };
-    await writeFile(join(targetDir, "package.json"), JSON.stringify(expoPackageJson, null, 2) + "\n");
+    await writeFile(
+      join(targetDir, "package.json"),
+      JSON.stringify(expoPackageJson, null, 2) + "\n"
+    );
   } else if (platform === "web" || platform === "tauri") {
     const templateDir = getTemplateDir("web-game");
     const filesToCopy = [
@@ -263,7 +297,9 @@ export async function scaffoldProject(options: ScaffoldOptions): Promise<Scaffol
           await writeFile(dest, content);
         }
       } catch (err) {
-        warnings.push(`Could not copy ${basename(src)}: ${err instanceof Error ? err.message : String(err)}`);
+        warnings.push(
+          `Could not copy ${basename(src)}: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
 
@@ -292,7 +328,10 @@ export async function scaffoldProject(options: ScaffoldOptions): Promise<Scaffol
         ...(platform === "tauri" ? { "@tauri-apps/cli": "^2.0.0" } : {}),
       },
     };
-    await writeFile(join(targetDir, "package.json"), JSON.stringify(webPackageJson, null, 2) + "\n");
+    await writeFile(
+      join(targetDir, "package.json"),
+      JSON.stringify(webPackageJson, null, 2) + "\n"
+    );
 
     // Tauri setup if target is tauri
     if (platform === "tauri") {
@@ -370,10 +409,14 @@ fn main() {
       if (existsSync(templateDir)) {
         await cp(templateDir, targetDir, { recursive: true });
       } else {
-        warnings.push("LibGDX template directory not found; only the gamekit/ folder will be generated.");
+        warnings.push(
+          "LibGDX template directory not found; only the gamekit/ folder will be generated."
+        );
       }
     } catch (err) {
-      warnings.push(`Could not copy LibGDX template: ${err instanceof Error ? err.message : String(err)}`);
+      warnings.push(
+        `Could not copy LibGDX template: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 
@@ -405,7 +448,9 @@ fn main() {
         warnings.push(...createRes.warnings);
       }
     } catch (e) {
-      warnings.push(`Skill template "${genre}" fallback: ${e instanceof Error ? e.message : String(e)}`);
+      warnings.push(
+        `Skill template "${genre}" fallback: ${e instanceof Error ? e.message : String(e)}`
+      );
       await initProject(targetDir, { name: projectName });
       primarySceneFile = "main.scene.json";
       sceneId = "main";
@@ -424,13 +469,20 @@ fn main() {
       await writeFile(join(targetDir, "src", "main.ts"), generateWebMain(bootstrap));
     }
   } catch (err) {
-    warnings.push(`Entrypoint generator warning: ${err instanceof Error ? err.message : String(err)}`);
+    warnings.push(
+      `Entrypoint generator warning: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   // ── Step 4: Install Dependencies (Optional / Auto) ───────────────────
   let installed = false;
   if (options.runInstall) {
-    options.onProgress?.(`Installing dependencies with ${pm}…`, 5, totalSteps, `Running \`${pm} install\` in ${targetDir}`);
+    options.onProgress?.(
+      `Installing dependencies with ${pm}…`,
+      5,
+      totalSteps,
+      `Running \`${pm} install\` in ${targetDir}`
+    );
     try {
       await runPackageManagerInstall(targetDir, pm, (log) => {
         options.onProgress?.(`Installing dependencies with ${pm}…`, 5, totalSteps, log);
@@ -480,7 +532,7 @@ gamekit/generated/
 function runPackageManagerInstall(
   cwd: string,
   pm: PackageManager,
-  onLog?: (line: string) => void,
+  onLog?: (line: string) => void
 ): Promise<void> {
   return new Promise((resolvePromise, reject) => {
     const args = ["install"];
@@ -528,7 +580,9 @@ function runCommand(cmd: string, args: string[], cwd: string): Promise<void> {
 /**
  * Open OS native folder picker dialog (macOS AppleScript, Windows PowerShell, Linux Zenity/KDialog).
  */
-export async function openNativeFolderDialog(prompt = "Select Location Directory"): Promise<string | null> {
+export async function openNativeFolderDialog(
+  prompt = "Select Location Directory"
+): Promise<string | null> {
   const platform = process.platform;
   try {
     const { exec } = await import("node:child_process");
@@ -547,7 +601,9 @@ export async function openNativeFolderDialog(prompt = "Select Location Directory
       return selected || null;
     } else {
       try {
-        const { stdout } = await execAsync(`zenity --file-selection --directory --title="${prompt}"`);
+        const { stdout } = await execAsync(
+          `zenity --file-selection --directory --title="${prompt}"`
+        );
         return stdout.trim() || null;
       } catch {
         const { stdout } = await execAsync(`kdialog --getexistingdirectory`);
@@ -558,4 +614,3 @@ export async function openNativeFolderDialog(prompt = "Select Location Directory
     return null;
   }
 }
-

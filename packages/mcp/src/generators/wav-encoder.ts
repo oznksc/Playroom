@@ -11,7 +11,10 @@ export type WavEncodeOptions = {
 /**
  * Encodes an array of floating point audio samples (-1.0 to 1.0) into a 16-bit PCM WAV Buffer.
  */
-export function encodeWav(samples: Float32Array | number[], options: WavEncodeOptions = {}): Uint8Array {
+export function encodeWav(
+  samples: Float32Array | number[],
+  options: WavEncodeOptions = {}
+): Uint8Array {
   const sampleRate = options.sampleRate ?? 44100;
   const numChannels = options.channels ?? 1;
   const numSamples = samples.length;

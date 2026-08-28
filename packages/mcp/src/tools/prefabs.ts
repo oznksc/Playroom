@@ -10,27 +10,32 @@ import {
 import type { FileIO } from "../utils/file-io.js";
 
 export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
-  server.tool("list_prefabs", "List all prefab template files in gamekit/prefabs/. Returns each prefab's file, id, name, component types, and source entity name. Unreadable files are included with an 'error' field.", {}, async () => {
-    const files = await fileIO.listPrefabs();
-    const prefabs = [];
-    for (const file of files) {
-      try {
-        const prefab = await fileIO.readPrefab(file);
-        prefabs.push({
-          file,
-          id: prefab.id,
-          name: prefab.name,
-          componentTypes: prefab.components.map((c) => c.type),
-          sourceEntityName: prefab.sourceEntityName ?? null,
-        });
-      } catch {
-        prefabs.push({ file, error: "unreadable" });
+  server.tool(
+    "list_prefabs",
+    "List all prefab template files in gamekit/prefabs/. Returns each prefab's file, id, name, component types, and source entity name. Unreadable files are included with an 'error' field.",
+    {},
+    async () => {
+      const files = await fileIO.listPrefabs();
+      const prefabs = [];
+      for (const file of files) {
+        try {
+          const prefab = await fileIO.readPrefab(file);
+          prefabs.push({
+            file,
+            id: prefab.id,
+            name: prefab.name,
+            componentTypes: prefab.components.map((c) => c.type),
+            sourceEntityName: prefab.sourceEntityName ?? null,
+          });
+        } catch {
+          prefabs.push({ file, error: "unreadable" });
+        }
       }
+      return {
+        content: [{ type: "text", text: JSON.stringify({ prefabs }, null, 2) }],
+      };
     }
-    return {
-      content: [{ type: "text", text: JSON.stringify({ prefabs }, null, 2) }],
-    };
-  });
+  );
 
   server.tool(
     "create_prefab",
@@ -46,7 +51,9 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -71,12 +78,12 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
                 },
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -84,9 +91,7 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
     "Spawn a prefab instance into a scene. Looks up the prefab by filename, id, or name (in that order). If x/y are provided, the instance's Transform position is set to those values; otherwise the prefab's original Transform position is used. The instance gets a fresh entity ID. Returns the created entity info and the source prefab ID.",
     {
       scenePath: z.string().describe("Target scene filename"),
-      prefabId: z
-        .string()
-        .describe("Prefab id or filename (e.g. coin or coin.prefab.json)"),
+      prefabId: z.string().describe("Prefab id or filename (e.g. coin or coin.prefab.json)"),
       x: z.number().optional().describe("World X position for Transform"),
       y: z.number().optional().describe("World Y position for Transform"),
       name: z.string().optional().describe("Optional instance name override"),
@@ -116,7 +121,9 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
         }
         if (!found) {
           return {
-            content: [{ type: "text", text: JSON.stringify({ error: `Prefab not found: ${prefabId}` }) }],
+            content: [
+              { type: "text", text: JSON.stringify({ error: `Prefab not found: ${prefabId}` }) },
+            ],
             isError: true,
           };
         }
@@ -132,16 +139,20 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
       });
 
       // Replace default Transform components with prefab components, then apply position override
-      const components = structuredClone(prefab.components).map((c: unknown) => GameKitComponentSchema.parse(c));
+      const components = structuredClone(prefab.components).map((c: unknown) =>
+        GameKitComponentSchema.parse(c)
+      );
       const hasTransform = components.some((c) => c.type === "Transform");
       if (!hasTransform) {
         entity.components = components;
-        entity.components.unshift(GameKitComponentSchema.parse({
-          type: "Transform",
-          position: { x: x ?? 0, y: y ?? 0 },
-          rotation: 0,
-          scale: { x: 1, y: 1 },
-        }));
+        entity.components.unshift(
+          GameKitComponentSchema.parse({
+            type: "Transform",
+            position: { x: x ?? 0, y: y ?? 0 },
+            rotation: 0,
+            scale: { x: 1, y: 1 },
+          })
+        );
       } else {
         entity.components = components.map((c) => {
           if (c.type !== "Transform") return c;
@@ -179,12 +190,12 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
                 prefabId: prefab.id,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -204,10 +215,12 @@ export function registerPrefabTools(server: McpServer, fileIO: FileIO): void {
         };
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Prefab not found: ${prefabId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Prefab not found: ${prefabId}` }) },
+          ],
           isError: true,
         };
       }
-    },
+    }
   );
 }

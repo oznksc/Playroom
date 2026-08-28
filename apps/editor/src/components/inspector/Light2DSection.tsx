@@ -25,25 +25,48 @@ export function Light2DSection({ light2D, onChange, open, onToggle, onRemove }: 
       {light2D ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Kind</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Kind
+            </span>
             <Select
               value={light2D.kind}
-              onChange={(e) => onChange((d) => {
-                findComponent<Light2DComponent>(d, "Light2D")!.kind = e.target.value as Light2DComponent["kind"];
-              })}
+              onChange={(e) =>
+                onChange((d) => {
+                  findComponent<Light2DComponent>(d, "Light2D")!.kind = e.target
+                    .value as Light2DComponent["kind"];
+                })
+              }
             >
               <option value="point">Point</option>
               <option value="spot">Spot</option>
             </Select>
           </label>
-          <NumberField label="Range" value={light2D.range}
-            onChange={(v) => onChange((d) => { findComponent<Light2DComponent>(d, "Light2D")!.range = v; })}
+          <NumberField
+            label="Range"
+            value={light2D.range}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<Light2DComponent>(d, "Light2D")!.range = v;
+              })
+            }
           />
-          <NumberField label="Intensity" value={light2D.intensity}
-            onChange={(v) => onChange((d) => { findComponent<Light2DComponent>(d, "Light2D")!.intensity = v; })}
+          <NumberField
+            label="Intensity"
+            value={light2D.intensity}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<Light2DComponent>(d, "Light2D")!.intensity = v;
+              })
+            }
           />
-          <ColorField label="Color" value={light2D.color}
-            onChange={(v) => onChange((d) => { findComponent<Light2DComponent>(d, "Light2D")!.color = v; })}
+          <ColorField
+            label="Color"
+            value={light2D.color}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<Light2DComponent>(d, "Light2D")!.color = v;
+              })
+            }
           />
         </>
       ) : (

@@ -29,7 +29,7 @@ export function startDevWatch(root: string, options: DevWatchOptions = {}): { st
           const errs = report.summary.errors;
           const warns = report.summary.warnings;
           console.log(
-            `[gamekit dev] ${type}: ${path} → assets regenerated · doctor ${errs} error(s), ${warns} warning(s)`,
+            `[gamekit dev] ${type}: ${path} → assets regenerated · doctor ${errs} error(s), ${warns} warning(s)`
           );
         } catch (e) {
           console.error(`[gamekit dev] failed:`, e instanceof Error ? e.message : e);

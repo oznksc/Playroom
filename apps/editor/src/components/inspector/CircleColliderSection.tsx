@@ -12,7 +12,13 @@ type Props = {
   onRemove: () => void;
 };
 
-export function CircleColliderSection({ circleCollider, onChange, open, onToggle, onRemove }: Props) {
+export function CircleColliderSection({
+  circleCollider,
+  onChange,
+  open,
+  onToggle,
+  onRemove,
+}: Props) {
   return (
     <AccordionSection
       icon={<Circle size={12} />}
@@ -28,58 +34,73 @@ export function CircleColliderSection({ circleCollider, onChange, open, onToggle
             <NumberField
               label="Radius"
               value={circleCollider.radius}
-              onChange={(value) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.radius = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<CircleColliderComponent>(draft, "CircleCollider")!.radius = value;
+                })
+              }
             />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
               label="Offset X"
               value={circleCollider.offset.x}
-              onChange={(value) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.x = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.x = value;
+                })
+              }
             />
             <NumberField
               label="Offset Y"
               value={circleCollider.offset.y}
-              onChange={(value) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.y = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<CircleColliderComponent>(draft, "CircleCollider")!.offset.y = value;
+                })
+              }
             />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
               label="Layer"
               value={circleCollider.layer ?? 1}
-              onChange={(value) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.layer = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<CircleColliderComponent>(draft, "CircleCollider")!.layer = value;
+                })
+              }
             />
             <NumberField
               label="Mask"
               value={circleCollider.mask ?? 1}
-              onChange={(value) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.mask = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<CircleColliderComponent>(draft, "CircleCollider")!.mask = value;
+                })
+              }
             />
           </div>
           <CheckboxField
             id="circle-collider-static-check"
             label="Is Static (Rigid obstacle)"
             checked={circleCollider.isStatic}
-            onChange={(checked) => onChange((draft) => {
-              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = checked;
-            })}
+            onChange={(checked) =>
+              onChange((draft) => {
+                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = checked;
+              })
+            }
           />
           <CheckboxField
             id="circle-collider-trigger-check"
             label="Is Trigger (Overlap only)"
             checked={circleCollider.isTrigger}
-            onChange={(checked) => onChange((draft) => {
-              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = checked;
-            })}
+            onChange={(checked) =>
+              onChange((draft) => {
+                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger =
+                  checked;
+              })
+            }
           />
         </>
       ) : (

@@ -1,4 +1,9 @@
-import type { ScriptComponent, ScriptAction, StateMachineComponent, GameSavePayload } from "@gamekit/schema";
+import type {
+  ScriptComponent,
+  ScriptAction,
+  StateMachineComponent,
+  GameSavePayload,
+} from "@gamekit/schema";
 
 /**
  * Host capabilities for script / rules actions.
@@ -90,7 +95,12 @@ export function executeActions(actions: ScriptAction[], context: ScriptContext):
         break;
       case "incrementVariable": {
         if (context.sceneManager && typeof action.key === "string") {
-          const delta = typeof action.by === "number" ? action.by : typeof action.value === "number" ? action.value : 1;
+          const delta =
+            typeof action.by === "number"
+              ? action.by
+              : typeof action.value === "number"
+                ? action.value
+                : 1;
           const current = context.sceneManager.getPersistentVar?.(action.key, 0);
           const n = typeof current === "number" ? current : Number(current) || 0;
           context.sceneManager.setPersistentVar(action.key, n + delta);
@@ -161,8 +171,7 @@ export function executeActions(actions: ScriptAction[], context: ScriptContext):
           // Use triggering entity transform as checkpoint
           const entity = context.entities.find((e) => e.id === context.entityId);
           const t = entity?.components?.find((c: { type: string }) => c.type === "Transform") as
-            | { position?: { x: number; y: number } }
-            | undefined;
+            { position?: { x: number; y: number } } | undefined;
           if (t?.position) point = { ...t.position };
         }
         if (point) context.rules?.setCheckpoint?.(point);
@@ -182,7 +191,8 @@ export function transitionFsm(
   const entity = context.entities.find((e) => e.id === context.entityId);
   if (!entity) return;
 
-  const script = entity.components.find((c: any) => c.type === "Script") as ScriptComponent | undefined;
+  const script = entity.components.find((c: any) => c.type === "Script") as
+    ScriptComponent | undefined;
 
   // 1. Run exit event actions for current state
   if (sm.currentState) {
@@ -225,7 +235,7 @@ export function updateFsm(
   sm: StateMachineComponent,
   context: ScriptContext,
   dt: number,
-  timers: Map<string, { stateName: string; elapsed: number }>,
+  timers: Map<string, { stateName: string; elapsed: number }>
 ): void {
   if (!sm.currentState) {
     sm.currentState = sm.initialState;

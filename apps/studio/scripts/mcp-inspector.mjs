@@ -14,7 +14,7 @@ async function main() {
 
   const client = new Client(
     { name: "gamekit-studio-inspector", version: "0.1.0" },
-    { capabilities: {} },
+    { capabilities: {} }
   );
   await client.connect(clientTransport);
 

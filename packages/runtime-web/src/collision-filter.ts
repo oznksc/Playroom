@@ -17,7 +17,7 @@ export type ColliderFilter = { layer: number; mask: number };
 
 export function colliderLayerMask(entity: GameKitEntity): ColliderFilter {
   const collider = entity.components.find(
-    (c) => c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider",
+    (c) => c.type === "AabbCollider" || c.type === "CircleCollider" || c.type === "PolygonCollider"
   ) as { layer?: number; mask?: number } | undefined;
   return { layer: collider?.layer ?? 1, mask: collider?.mask ?? 0xffffffff };
 }

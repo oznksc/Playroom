@@ -97,7 +97,16 @@ export function OllamaIcon({ size = 18, ...props }: IconProps) {
 export function LMStudioIcon({ size = 18, ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
-      <rect x={3} y={4} width={18} height={16} rx={3} stroke="currentColor" strokeWidth={1.8} fill="none" />
+      <rect
+        x={3}
+        y={4}
+        width={18}
+        height={16}
+        rx={3}
+        stroke="currentColor"
+        strokeWidth={1.8}
+        fill="none"
+      />
       <path
         d="M7 9l3 3-3 3"
         stroke="currentColor"
@@ -105,7 +114,15 @@ export function LMStudioIcon({ size = 18, ...props }: IconProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <line x1={13} y1={15} x2={17} y2={15} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <line
+        x1={13}
+        y1={15}
+        x2={17}
+        y2={15}
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

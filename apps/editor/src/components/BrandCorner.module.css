@@ -17,12 +17,17 @@
   box-shadow: var(--glass-shadow), var(--glass-ring), var(--glass-inset);
   pointer-events: auto;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease;
 }
 
 .brand-corner:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.35), var(--glass-ring), var(--glass-inset);
+  box-shadow:
+    0 0 16px rgba(0, 240, 255, 0.35),
+    var(--glass-ring),
+    var(--glass-inset);
 }
 
 .brand-corner:active {

@@ -51,8 +51,12 @@ export function VirtualGameControls({ controls, onInput }: VirtualGameControlsPr
   return (
     <div className={workspaceStyles["canvas-virtual-pad"]} aria-label="Virtual game controls">
       <div className={workspaceStyles["canvas-virtual-pad-move"]} aria-label="Movement">
-        <VirtualButton action="left" onInput={onInput}>◀</VirtualButton>
-        <VirtualButton action="right" onInput={onInput}>▶</VirtualButton>
+        <VirtualButton action="left" onInput={onInput}>
+          ◀
+        </VirtualButton>
+        <VirtualButton action="right" onInput={onInput}>
+          ▶
+        </VirtualButton>
       </div>
       <div className={workspaceStyles["canvas-virtual-pad-actions"]} aria-label="Actions">
         {(
@@ -71,7 +75,7 @@ export function VirtualGameControls({ controls, onInput }: VirtualGameControlsPr
               onInput={onInput}
               className={cn(
                 workspaceStyles["canvas-virtual-btn-action"],
-                action === "jump" && workspaceStyles["canvas-virtual-btn-primary"],
+                action === "jump" && workspaceStyles["canvas-virtual-btn-primary"]
               )}
             >
               <span className={workspaceStyles["canvas-virtual-btn-label"]}>{label}</span>

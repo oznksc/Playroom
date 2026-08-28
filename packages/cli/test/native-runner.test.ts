@@ -44,7 +44,9 @@ describe("Native Runner & IPC", () => {
     expect(existsSync(join(nativeDir, "core", "build.gradle"))).toBe(true);
     expect(existsSync(join(nativeDir, "lwjgl3", "build.gradle"))).toBe(true);
     expect(existsSync(join(nativeDir, "assets", "gamekit", "project.json"))).toBe(true);
-    expect(existsSync(join(nativeDir, "assets", "gamekit", "scenes", "main.scene.json"))).toBe(true);
+    expect(existsSync(join(nativeDir, "assets", "gamekit", "scenes", "main.scene.json"))).toBe(
+      true
+    );
 
     // Test incremental update
     const updatedScene = createEmptyScene("main");
@@ -52,7 +54,10 @@ describe("Native Runner & IPC", () => {
     await writeFile(join(root, "gamekit", "scenes", "main.scene.json"), sceneToJson(updatedScene));
 
     await manager.syncProjectToNative(root);
-    const syncedSceneRaw = await readFile(join(nativeDir, "assets", "gamekit", "scenes", "main.scene.json"), "utf8");
+    const syncedSceneRaw = await readFile(
+      join(nativeDir, "assets", "gamekit", "scenes", "main.scene.json"),
+      "utf8"
+    );
     const syncedScene = JSON.parse(syncedSceneRaw);
     expect(syncedScene.name).toBe("Updated Title");
   });

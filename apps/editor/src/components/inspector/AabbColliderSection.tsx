@@ -30,32 +30,40 @@ export function AabbColliderSection({ collider, onChange, open, onToggle, onRemo
             <NumberField
               label="Width"
               value={collider.size.x}
-              onChange={(value) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.x = value;
+                })
+              }
             />
             <NumberField
               label="Height"
               value={collider.size.y}
-              onChange={(value) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.size.y = value;
+                })
+              }
             />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
               label="Offset X"
               value={collider.offset.x}
-              onChange={(value) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.x = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.x = value;
+                })
+              }
             />
             <NumberField
               label="Offset Y"
               value={collider.offset.y}
-              onChange={(value) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.y = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.offset.y = value;
+                })
+              }
             />
           </div>
           {MVP_SHOW_ADVANCED_PHYSICS && (
@@ -63,16 +71,20 @@ export function AabbColliderSection({ collider, onChange, open, onToggle, onRemo
               <NumberField
                 label="Layer"
                 value={collider.layer ?? 1}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.layer = value;
+                  })
+                }
               />
               <NumberField
                 label="Mask"
                 value={collider.mask ?? 1}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<AabbColliderComponent>(draft, "AabbCollider")!.mask = value;
+                  })
+                }
               />
             </div>
           )}
@@ -80,17 +92,21 @@ export function AabbColliderSection({ collider, onChange, open, onToggle, onRemo
             id="collider-static-check"
             label="Static collider"
             checked={collider.isStatic}
-            onChange={(checked) => onChange((draft) => {
-              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = checked;
-            })}
+            onChange={(checked) =>
+              onChange((draft) => {
+                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = checked;
+              })
+            }
           />
           <CheckboxField
             id="collider-trigger-check"
             label="Is Trigger (Overlap only)"
             checked={collider.isTrigger ?? false}
-            onChange={(checked) => onChange((draft) => {
-              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = checked;
-            })}
+            onChange={(checked) =>
+              onChange((draft) => {
+                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = checked;
+              })
+            }
           />
         </>
       ) : (

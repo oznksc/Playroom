@@ -197,18 +197,32 @@ function inferKind(tool: string): ToolStageKind {
   if (tool.includes("snapshot")) return "snapshot";
   if (tool.includes("asset")) return "asset";
   if (tool.includes("input") || tool.includes("gesture")) return "input";
-  if (tool.includes("rule") || tool.includes("hazard") || tool.includes("objective")) return "rules";
-  if (tool.includes("collider") || tool.includes("rigid") || tool.includes("gravity") || tool.includes("physics") || tool.includes("impulse")) {
+  if (tool.includes("rule") || tool.includes("hazard") || tool.includes("objective"))
+    return "rules";
+  if (
+    tool.includes("collider") ||
+    tool.includes("rigid") ||
+    tool.includes("gravity") ||
+    tool.includes("physics") ||
+    tool.includes("impulse")
+  ) {
     return "physics";
   }
   if (tool.includes("simulate")) return "simulate";
   if (tool.includes("validate") || tool.includes("doctor")) return "validate";
-  if (tool.includes("layout") || tool.includes("transform") || tool.includes("place") || tool.includes("align")) {
+  if (
+    tool.includes("layout") ||
+    tool.includes("transform") ||
+    tool.includes("place") ||
+    tool.includes("align")
+  ) {
     return "layout";
   }
   if (tool.includes("scene")) return "scene";
-  if (tool.startsWith("list_") || tool.startsWith("get_") || tool.startsWith("explain_")) return "read";
-  if (tool.startsWith("search_") || tool.startsWith("find_") || tool.startsWith("query_")) return "search";
+  if (tool.startsWith("list_") || tool.startsWith("get_") || tool.startsWith("explain_"))
+    return "read";
+  if (tool.startsWith("search_") || tool.startsWith("find_") || tool.startsWith("query_"))
+    return "search";
   if (tool.includes("entity") || tool.includes("component")) return "entity";
   return "generic";
 }

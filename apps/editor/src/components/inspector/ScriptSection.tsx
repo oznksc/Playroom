@@ -28,9 +28,14 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
             {script.handlers.length} handler(s). Events fire at runtime.
           </p>
           {script.handlers.map((h, i) => (
-            <div key={i} className="rounded-md border border-border-default bg-bg-base p-2 space-y-1.5">
+            <div
+              key={i}
+              className="rounded-md border border-border-default bg-bg-base p-2 space-y-1.5"
+            >
               <label className="flex flex-col gap-1">
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Event</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                  Event
+                </span>
                 <Input
                   value={h.event}
                   onChange={(e) => {
@@ -43,16 +48,20 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Actions DSL</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                  Actions DSL
+                </span>
                 <div className="flex items-center gap-1">
                   <Select
                     value={h.actions[0]?.type ?? ""}
                     className="h-7 flex-1 text-[10px]"
-                    onChange={(e) => onChange((d) => {
-                      const handler = findComponent<ScriptComponent>(d, "Script")!.handlers[i];
-                      if (!e.target.value) return;
-                      handler.actions = [{ type: e.target.value }, ...handler.actions.slice(1)];
-                    })}
+                    onChange={(e) =>
+                      onChange((d) => {
+                        const handler = findComponent<ScriptComponent>(d, "Script")!.handlers[i];
+                        if (!e.target.value) return;
+                        handler.actions = [{ type: e.target.value }, ...handler.actions.slice(1)];
+                      })
+                    }
                   >
                     <option value="">Add action type…</option>
                     <option value="playSound">playSound</option>
@@ -77,18 +86,43 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                     <option value="leaderboard.submit">leaderboard.submit</option>
                     <option value="services.showUI">services.showUI</option>
                   </Select>
-                  <IconButton size="sm" title="Add action" onClick={() => onChange((d) => {
-                    findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.push({ type: "setVariable", key: "", value: true });
-                  })}>
+                  <IconButton
+                    size="sm"
+                    title="Add action"
+                    onClick={() =>
+                      onChange((d) => {
+                        findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.push({
+                          type: "setVariable",
+                          key: "",
+                          value: true,
+                        });
+                      })
+                    }
+                  >
                     <Plus size={11} />
                   </IconButton>
                 </div>
                 {h.actions.map((action, actionIndex) => (
-                  <div key={actionIndex} className="flex items-center gap-1 rounded border border-border-default bg-bg-surface px-1.5 py-1">
-                    <span className="type-mono min-w-0 flex-1 truncate text-[10px] text-accent-cyan">{action.type}</span>
-                    <IconButton size="sm" variant="danger" title="Remove action" onClick={() => onChange((d) => {
-                      findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.splice(actionIndex, 1);
-                    })}>
+                  <div
+                    key={actionIndex}
+                    className="flex items-center gap-1 rounded border border-border-default bg-bg-surface px-1.5 py-1"
+                  >
+                    <span className="type-mono min-w-0 flex-1 truncate text-[10px] text-accent-cyan">
+                      {action.type}
+                    </span>
+                    <IconButton
+                      size="sm"
+                      variant="danger"
+                      title="Remove action"
+                      onClick={() =>
+                        onChange((d) => {
+                          findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions.splice(
+                            actionIndex,
+                            1
+                          );
+                        })
+                      }
+                    >
                       <Trash2 size={10} />
                     </IconButton>
                   </div>
@@ -97,9 +131,13 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                   <ScriptActionFields
                     key={`${actionIndex}-${action.type}-fields`}
                     action={action}
-                    onChange={(next) => onChange((d) => {
-                      findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions[actionIndex] = next;
-                    })}
+                    onChange={(next) =>
+                      onChange((d) => {
+                        findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions[
+                          actionIndex
+                        ] = next;
+                      })
+                    }
                   />
                 ))}
                 <Textarea
@@ -112,23 +150,37 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
                       onChange((d) => {
                         findComponent<ScriptComponent>(d, "Script")!.handlers[i].actions = actions;
                       });
-                    } catch { /* ignore */ }
+                    } catch {
+                      /* ignore */
+                    }
                   }}
                 />
               </label>
-              <IconButton size="sm" variant="danger" title="Remove handler"
-                onClick={() => onChange((d) => {
-                  findComponent<ScriptComponent>(d, "Script")!.handlers.splice(i, 1);
-                })}
+              <IconButton
+                size="sm"
+                variant="danger"
+                title="Remove handler"
+                onClick={() =>
+                  onChange((d) => {
+                    findComponent<ScriptComponent>(d, "Script")!.handlers.splice(i, 1);
+                  })
+                }
               >
                 <Trash2 size={11} />
               </IconButton>
             </div>
           ))}
-          <Button size="sm" variant="secondary"
-            onClick={() => onChange((d) => {
-              findComponent<ScriptComponent>(d, "Script")!.handlers.push({ event: "onStart", actions: [] });
-            })}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              onChange((d) => {
+                findComponent<ScriptComponent>(d, "Script")!.handlers.push({
+                  event: "onStart",
+                  actions: [],
+                });
+              })
+            }
           >
             Add handler
           </Button>
@@ -140,20 +192,30 @@ export function ScriptSection({ script, onChange, open, onToggle, onRemove }: Pr
   );
 }
 
-function ScriptActionFields({ action, onChange }: { action: { type: string; [key: string]: unknown }; onChange: (action: { type: string; [key: string]: unknown }) => void }) {
+function ScriptActionFields({
+  action,
+  onChange,
+}: {
+  action: { type: string; [key: string]: unknown };
+  onChange: (action: { type: string; [key: string]: unknown }) => void;
+}) {
   const textField = (key: string, label: string, placeholder: string) => (
     <Input
-      value={typeof action[key] === "string" ? action[key] as string : ""}
+      value={typeof action[key] === "string" ? (action[key] as string) : ""}
       placeholder={placeholder}
       aria-label={label}
       onChange={(event) => onChange({ ...action, [key]: event.target.value })}
     />
   );
 
-  if (action.type === "playSound") return <div className="pl-2">{textField("assetId", "Sound asset ID", "sound asset id")}</div>;
-  if (action.type === "switchScene") return <div className="pl-2">{textField("sceneId", "Scene ID", "scene id")}</div>;
-  if (action.type === "destroyEntity") return <div className="pl-2">{textField("entityId", "Entity ID", "optional entity id")}</div>;
-  if (action.type === "transitionState") return <div className="pl-2">{textField("state", "Target state", "target state")}</div>;
+  if (action.type === "playSound")
+    return <div className="pl-2">{textField("assetId", "Sound asset ID", "sound asset id")}</div>;
+  if (action.type === "switchScene")
+    return <div className="pl-2">{textField("sceneId", "Scene ID", "scene id")}</div>;
+  if (action.type === "destroyEntity")
+    return <div className="pl-2">{textField("entityId", "Entity ID", "optional entity id")}</div>;
+  if (action.type === "transitionState")
+    return <div className="pl-2">{textField("state", "Target state", "target state")}</div>;
   if (action.type === "setVariable") {
     return (
       <div className="grid grid-cols-2 gap-1 pl-2">
@@ -163,13 +225,22 @@ function ScriptActionFields({ action, onChange }: { action: { type: string; [key
     );
   }
   if (action.type === "applyImpulse") {
-    const force = typeof action.force === "object" && action.force !== null
-      ? action.force as { x?: number; y?: number }
-      : { x: 0, y: 0 };
+    const force =
+      typeof action.force === "object" && action.force !== null
+        ? (action.force as { x?: number; y?: number })
+        : { x: 0, y: 0 };
     return (
       <div className="grid grid-cols-2 gap-1 pl-2">
-        <NumberField label="Force X" value={force.x ?? 0} onChange={(value) => onChange({ ...action, force: { ...force, x: value } })} />
-        <NumberField label="Force Y" value={force.y ?? 0} onChange={(value) => onChange({ ...action, force: { ...force, y: value } })} />
+        <NumberField
+          label="Force X"
+          value={force.x ?? 0}
+          onChange={(value) => onChange({ ...action, force: { ...force, x: value } })}
+        />
+        <NumberField
+          label="Force Y"
+          value={force.y ?? 0}
+          onChange={(value) => onChange({ ...action, force: { ...force, y: value } })}
+        />
       </div>
     );
   }

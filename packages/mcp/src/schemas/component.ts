@@ -37,10 +37,9 @@ export const SpriteInputSchema = SpriteComponentSchema.extend({
 });
 
 export const AabbColliderInputSchema = AabbColliderComponentSchema.extend({
-  size: z.object({ x: z.number(), y: z.number() }).refine(
-    (v) => v.x > 0 && v.y > 0,
-    { message: "Size must be positive" },
-  ),
+  size: z
+    .object({ x: z.number(), y: z.number() })
+    .refine((v) => v.x > 0 && v.y > 0, { message: "Size must be positive" }),
   layer: z.number().int().optional(),
   mask: z.number().int().optional(),
 });

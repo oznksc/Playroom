@@ -186,7 +186,7 @@ export function LevelPanel({
                   "rounded-[12px] border p-2 transition-colors",
                   active
                     ? "border-accent/40 bg-[rgba(0,240,255,0.1)]"
-                    : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]",
+                    : "border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08]"
                 )}
               >
                 <div className="mb-1.5 flex items-center gap-1.5">
@@ -278,9 +278,7 @@ export function LevelPanel({
                     {scenes
                       .filter(
                         (s) =>
-                          !level.sceneIds.some(
-                            (id) => sceneLabel(id) === sceneLabel(s) || id === s,
-                          ),
+                          !level.sceneIds.some((id) => sceneLabel(id) === sceneLabel(s) || id === s)
                       )
                       .map((sceneId) => (
                         <option key={sceneId} value={sceneId}>
@@ -335,7 +333,7 @@ export function LevelPanel({
                                       levelId:
                                         typeof action.levelId === "string"
                                           ? action.levelId
-                                          : nextLevel?.id ?? "",
+                                          : (nextLevel?.id ?? ""),
                                     }
                                   : type === "switchScene"
                                     ? {
@@ -343,7 +341,7 @@ export function LevelPanel({
                                         sceneId:
                                           typeof action.sceneId === "string"
                                             ? action.sceneId
-                                            : level.sceneIds[0] ?? "",
+                                            : (level.sceneIds[0] ?? ""),
                                       }
                                     : type === "setVariable" || type === "incrementVariable"
                                       ? {
@@ -439,8 +437,8 @@ export function LevelPanel({
                       </Button>
                       {level.rules && Object.keys(level.rules).length > 0 && (
                         <p className="text-[9px] text-text-muted">
-                          Level rules override present (
-                          {Object.keys(level.rules).join(", ")}). Edit via project JSON for now.
+                          Level rules override present ({Object.keys(level.rules).join(", ")}). Edit
+                          via project JSON for now.
                         </p>
                       )}
                     </div>

@@ -25,13 +25,7 @@ import {
   Target,
   CheckCircle2,
 } from "lucide-react";
-import {
-  Button,
-  IconButton,
-  Badge,
-  SegmentedControl,
-  cn,
-} from "@/ui";
+import { Button, IconButton, Badge, SegmentedControl, cn } from "@/ui";
 import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
 import { AssetStudioStationDeck } from "./AssetStudioStations.js";
@@ -52,7 +46,12 @@ type AssetStudioModalProps = {
   embedded?: boolean;
   onClose: () => void;
   onAssetCreated?: (asset: GameKitAsset) => void;
-  onSpawnEntityWithSprite?: (assetId: string, width: number, height: number, category?: string) => void;
+  onSpawnEntityWithSprite?: (
+    assetId: string,
+    width: number,
+    height: number,
+    category?: string
+  ) => void;
   onSpawnEntityWithAnimation?: (
     assetId: string,
     frameWidth: number,
@@ -82,7 +81,8 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
     desc: "4-frame walk & weapon slash cycle with collider and physics",
     tag: "Character Pack",
     icon: Sparkles,
-    prompt: "Generate an animated 4-frame cyberpunk knight hero walk spritesheet (32x32) with a weapon slash cycle, then spawn it as a player entity with collider in the scene.",
+    prompt:
+      "Generate an animated 4-frame cyberpunk knight hero walk spritesheet (32x32) with a weapon slash cycle, then spawn it as a player entity with collider in the scene.",
     kind: "spritesheet",
   },
   {
@@ -91,7 +91,8 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
     desc: "Radioactive green slime monster with hurt & death animations",
     tag: "Enemy Pack",
     icon: Skull,
-    prompt: "Generate a radioactive emerald bouncing slime monster enemy with 4-frame squashing animation cycle, add collider and spawn in the active scene.",
+    prompt:
+      "Generate a radioactive emerald bouncing slime monster enemy with 4-frame squashing animation cycle, add collider and spawn in the active scene.",
     kind: "spritesheet",
   },
   {
@@ -100,7 +101,8 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
     desc: "Jump sweep, Gem pickup chime, Laser blast, and Impact hit",
     tag: "Audio Kit",
     icon: Volume2,
-    prompt: "Generate a full set of retro sound effects: jump sweep (sfx-jump), coin pickup chime (sfx-coin), laser blaster (sfx-laser), and explosion rumble (sfx-explosion).",
+    prompt:
+      "Generate a full set of retro sound effects: jump sweep (sfx-jump), coin pickup chime (sfx-coin), laser blaster (sfx-laser), and explosion rumble (sfx-explosion).",
     kind: "sfx",
   },
   {
@@ -109,7 +111,8 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
     desc: "Upbeat loopable chiptune adventure soundtrack in C Major",
     tag: "Music & BGM",
     icon: Music,
-    prompt: "Synthesize a loopable 130 BPM Chiptune Adventure soundtrack in C Major with lead synth, bassline, and 8-bit drums.",
+    prompt:
+      "Synthesize a loopable 130 BPM Chiptune Adventure soundtrack in C Major with lead synth, bassline, and 8-bit drums.",
     kind: "music",
   },
   {
@@ -118,7 +121,8 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
     desc: "Glowing gold coin, diamond gem, and heart container sprites",
     tag: "Items & Props",
     icon: Coins,
-    prompt: "Generate 3 collectible item sprites: golden coin (32x32), sapphire diamond gem (32x32), and celestial heart container (32x32) with Cyberpunk neon palette.",
+    prompt:
+      "Generate 3 collectible item sprites: golden coin (32x32), sapphire diamond gem (32x32), and celestial heart container (32x32) with Cyberpunk neon palette.",
     kind: "sprite",
   },
 ];
@@ -139,26 +143,26 @@ export function AssetStudioModal({
 
   // --- Shared Agent Hooks & Settings (Identical to AgentPanel) ---
   const { keys, sessionKey } = useAgentKeys();
-  const [activeProvider] = useState(() => localStorage.getItem("gamekit:agent:activeProvider") || "");
+  const [activeProvider] = useState(
+    () => localStorage.getItem("gamekit:agent:activeProvider") || ""
+  );
   const [activeModel] = useState(() => localStorage.getItem("gamekit:agent:activeModel") || "");
   const resolvedProvider = activeProvider || (keys.length > 0 ? keys[0].provider : "anthropic");
   const activeKeyEntry = keys.find((k) => k.provider === resolvedProvider) || keys[0] || null;
   const resolvedModel =
-    activeModel || activeKeyEntry?.model || (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
+    activeModel ||
+    activeKeyEntry?.model ||
+    (resolvedProvider === "openrouter" ? "meta-llama/llama-3.3-70b-instruct" : "claude-sonnet-4-5");
 
   // Dedicated Agent instance for Asset Studio
-  const {
-    messages,
-    toolCalls,
-    isStreaming,
-    sendMessage,
-    abort,
-  } = useAgent(
+  const { messages, toolCalls, isStreaming, sendMessage, abort } = useAgent(
     activeSceneId || "main.scene.json",
     resolvedModel,
     resolvedProvider,
     "off",
-    onAssetCreated ? () => onAssetCreated({ id: "agent-asset", file: "agent-asset.png", kind: "image" }) : undefined,
+    onAssetCreated
+      ? () => onAssetCreated({ id: "agent-asset", file: "agent-asset.png", kind: "image" })
+      : undefined,
     false,
     sessionKey(resolvedProvider),
     activeKeyEntry?.baseUrl
@@ -254,7 +258,12 @@ export function AssetStudioModal({
   if (!isOpen) return null;
 
   return (
-    <div className={cn(embedded ? styles["asset-studio-embedded"] : styles["asset-studio-scrim"], isOpen && styles.open)}>
+    <div
+      className={cn(
+        embedded ? styles["asset-studio-embedded"] : styles["asset-studio-scrim"],
+        isOpen && styles.open
+      )}
+    >
       <div
         className={cn(
           embedded ? styles["asset-studio-workspace"] : styles["asset-studio-sheet"],
@@ -265,12 +274,24 @@ export function AssetStudioModal({
         )}
       >
         {/* Content-sheet chrome: the Studio is an extension of Content, not a separate surface. */}
-        <div className={cn(styles["asset-studio-internal-header"], sheetStyles["bottom-sheet-header"], "relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4", embedded && "hidden")}>
+        <div
+          className={cn(
+            styles["asset-studio-internal-header"],
+            sheetStyles["bottom-sheet-header"],
+            "relative select-none !h-auto !min-h-12 !px-3 !pb-2 !pt-4",
+            embedded && "hidden"
+          )}
+        >
           {/* Drag Handle */}
           <div
-            className={cn(sheetStyles["bottom-sheet-handle"], "!top-2 flex items-center justify-center cursor-pointer")}
+            className={cn(
+              sheetStyles["bottom-sheet-handle"],
+              "!top-2 flex items-center justify-center cursor-pointer"
+            )}
             onClick={() =>
-              setStudioMode((prev) => (prev === "sheet" ? "expanded" : prev === "expanded" ? "fullscreen" : "sheet"))
+              setStudioMode((prev) =>
+                prev === "sheet" ? "expanded" : prev === "expanded" ? "fullscreen" : "sheet"
+              )
             }
             title="Toggle Studio Size"
           >
@@ -286,7 +307,10 @@ export function AssetStudioModal({
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <h2 className={cn(sheetStyles["bottom-sheet-title"], "!p-0")}>Asset Studio</h2>
-                  <Badge variant="accent" className="text-[9px] uppercase font-mono px-1.5 py-0.5 tracking-wider bg-cyan-500/20 text-cyan-300 border-cyan-500/40">
+                  <Badge
+                    variant="accent"
+                    className="text-[9px] uppercase font-mono px-1.5 py-0.5 tracking-wider bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                  >
                     Agent Powered • {resolvedProvider}
                   </Badge>
                 </div>
@@ -304,9 +328,30 @@ export function AssetStudioModal({
                 ariaLabel="Asset Studio size"
                 className="mr-2"
                 options={[
-                  { value: "sheet", label: <span className="flex items-center gap-1"><Sliders size={12} /> Sheet</span> },
-                  { value: "expanded", label: <span className="flex items-center gap-1"><Maximize2 size={12} /> Studio</span> },
-                  { value: "fullscreen", label: <span className="flex items-center gap-1"><Radio size={12} /> Full</span> },
+                  {
+                    value: "sheet",
+                    label: (
+                      <span className="flex items-center gap-1">
+                        <Sliders size={12} /> Sheet
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "expanded",
+                    label: (
+                      <span className="flex items-center gap-1">
+                        <Maximize2 size={12} /> Studio
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "fullscreen",
+                    label: (
+                      <span className="flex items-center gap-1">
+                        <Radio size={12} /> Full
+                      </span>
+                    ),
+                  },
                 ]}
               />
 
@@ -337,7 +382,10 @@ export function AssetStudioModal({
                     onClick={() => handleExecutePinpointSuggestion(item)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-cyan-500/15 hover:border-cyan-500/40 border border-white/[0.08] transition-all shrink-0 text-left group"
                   >
-                    <Icon size={13} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                    <Icon
+                      size={13}
+                      className="text-cyan-400 group-hover:scale-110 transition-transform"
+                    />
                     <div className="flex flex-col">
                       <span className="text-[11px] font-semibold text-white group-hover:text-cyan-300 leading-tight">
                         {item.title}
@@ -376,7 +424,9 @@ export function AssetStudioModal({
                 <div
                   className={cn(
                     "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                    activeTab === "copilot" ? "bg-cyan-500 text-black font-bold scale-105" : "bg-white/[0.06] text-cyan-400"
+                    activeTab === "copilot"
+                      ? "bg-cyan-500 text-black font-bold scale-105"
+                      : "bg-white/[0.06] text-cyan-400"
                   )}
                 >
                   <Bot size={13} />
@@ -397,10 +447,14 @@ export function AssetStudioModal({
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className={cn(
-                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                  activeTab === "sprites" ? "bg-blue-500 text-black font-bold scale-105" : "bg-white/[0.06] text-blue-400"
-                )}>
+                <div
+                  className={cn(
+                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                    activeTab === "sprites"
+                      ? "bg-blue-500 text-black font-bold scale-105"
+                      : "bg-white/[0.06] text-blue-400"
+                  )}
+                >
                   <ImageIcon size={13} />
                 </div>
                 <span>Sprites & Props Matrix</span>
@@ -419,10 +473,14 @@ export function AssetStudioModal({
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className={cn(
-                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                  activeTab === "animated" ? "bg-violet-500 text-white font-bold scale-105" : "bg-white/[0.06] text-violet-400"
-                )}>
+                <div
+                  className={cn(
+                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                    activeTab === "animated"
+                      ? "bg-violet-500 text-white font-bold scale-105"
+                      : "bg-white/[0.06] text-violet-400"
+                  )}
+                >
                   <Film size={13} />
                 </div>
                 <span>Animation Cycles</span>
@@ -441,10 +499,14 @@ export function AssetStudioModal({
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className={cn(
-                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                  activeTab === "sfx" ? "bg-yellow-500 text-black font-bold scale-105" : "bg-white/[0.06] text-yellow-400"
-                )}>
+                <div
+                  className={cn(
+                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                    activeTab === "sfx"
+                      ? "bg-yellow-500 text-black font-bold scale-105"
+                      : "bg-white/[0.06] text-yellow-400"
+                  )}
+                >
                   <Volume2 size={13} />
                 </div>
                 <span>Sound FX (SFX)</span>
@@ -463,10 +525,14 @@ export function AssetStudioModal({
                     : "text-text-muted hover:bg-white/[0.04] hover:text-white"
                 )}
               >
-                <div className={cn(
-                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
-                  activeTab === "music" ? "bg-purple-500 text-white font-bold scale-105" : "bg-white/[0.06] text-purple-400"
-                )}>
+                <div
+                  className={cn(
+                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-transform duration-150",
+                    activeTab === "music"
+                      ? "bg-purple-500 text-white font-bold scale-105"
+                      : "bg-white/[0.06] text-purple-400"
+                  )}
+                >
                   <Music size={13} />
                 </div>
                 <span>Chiptune BGM Studio</span>
@@ -486,7 +552,10 @@ export function AssetStudioModal({
 
           {/* ZONE 2: Middle Parameter Deck & Chat Stream */}
           <div className="flex-1 flex flex-col border-r border-white/[0.06] bg-black/20 overflow-hidden min-h-0">
-            <div key={activeTab} className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col min-h-0")}>
+            <div
+              key={activeTab}
+              className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col min-h-0")}
+            >
               <AssetStudioStationDeck
                 activeTab={activeTab}
                 copilot={{
@@ -554,10 +623,10 @@ export function AssetStudioModal({
                 {activeTab === "sfx"
                   ? `SFX: ${sfxPreset}`
                   : activeTab === "music"
-                  ? `BGM: ${musicPreset}`
-                  : activeTab === "animated"
-                  ? `Cycle: ${sheetAnimation}`
-                  : "Active Preview"}
+                    ? `BGM: ${musicPreset}`
+                    : activeTab === "animated"
+                      ? `Cycle: ${sheetAnimation}`
+                      : "Active Preview"}
               </Badge>
 
               {activeTab !== "sfx" && activeTab !== "music" && (
@@ -592,7 +661,13 @@ export function AssetStudioModal({
             </div>
 
             {/* Stage Center Viewport */}
-            <div key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab} className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col items-center justify-center my-3 gap-3")}>
+            <div
+              key={activeTab === "sfx" || activeTab === "music" ? "audio" : activeTab}
+              className={cn(
+                sheetStyles["studio-station-pane"],
+                "flex-1 flex flex-col items-center justify-center my-3 gap-3"
+              )}
+            >
               {/* STAGE A: AUDIO EQUALIZER (SFX & MUSIC) */}
               {activeTab === "sfx" || activeTab === "music" ? (
                 <div className="flex flex-col items-center justify-center gap-5 w-full">
@@ -640,7 +715,8 @@ export function AssetStudioModal({
                   <div
                     className={cn(
                       "relative rounded-2xl border-2 border-violet-500/40 p-4 bg-[#080d17] shadow-[0_0_50px_rgba(139,92,246,0.15)] flex items-center justify-center",
-                      showGrid && "bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:16px_16px]"
+                      showGrid &&
+                        "bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:16px_16px]"
                     )}
                     style={{
                       width: `${Math.min(220, sheetFrameSize * zoomLevel * 3)}px`,
@@ -659,7 +735,9 @@ export function AssetStudioModal({
                     <IconButton
                       size="sm"
                       variant="ghost"
-                      onClick={() => setSheetCurrentFrame((prev) => (prev - 1 + sheetFrames) % sheetFrames)}
+                      onClick={() =>
+                        setSheetCurrentFrame((prev) => (prev - 1 + sheetFrames) % sheetFrames)
+                      }
                       title="Previous Frame"
                     >
                       <ChevronLeft size={13} />
@@ -691,7 +769,8 @@ export function AssetStudioModal({
                   <div
                     className={cn(
                       "relative rounded-2xl border-2 border-dashed border-cyan-500/30 flex items-center justify-center p-4 bg-[#080d17] shadow-[0_0_40px_rgba(0,240,255,0.08)]",
-                      showGrid && "bg-[radial-gradient(#00f0ff_1px,transparent_1px)] [background-size:16px_16px]"
+                      showGrid &&
+                        "bg-[radial-gradient(#00f0ff_1px,transparent_1px)] [background-size:16px_16px]"
                     )}
                     style={{
                       width: `${Math.min(220, spriteSize * zoomLevel * 3)}px`,
@@ -764,7 +843,13 @@ export function AssetStudioModal({
                   variant="solid"
                   size="md"
                   onClick={() => {
-                    onSpawnEntityWithAnimation(sheetId, sheetFrameSize, sheetFrameSize, sheetFrames, sheetFps);
+                    onSpawnEntityWithAnimation(
+                      sheetId,
+                      sheetFrameSize,
+                      sheetFrameSize,
+                      sheetFrames,
+                      sheetFps
+                    );
                     onClose();
                   }}
                   className="w-full bg-violet-600 text-white hover:bg-violet-500 font-bold shadow-lg shadow-violet-500/20"
@@ -776,7 +861,12 @@ export function AssetStudioModal({
                   variant="solid"
                   size="md"
                   onClick={() => {
-                    onSpawnEntityWithSprite(activeVariation.id, spriteSize, spriteSize, activeVariation.category);
+                    onSpawnEntityWithSprite(
+                      activeVariation.id,
+                      spriteSize,
+                      spriteSize,
+                      activeVariation.category
+                    );
                     onClose();
                   }}
                   className="w-full bg-cyan-500 text-black hover:bg-cyan-400 font-bold shadow-lg shadow-cyan-500/20"
@@ -803,8 +893,10 @@ export function AssetStudioModal({
                   size="sm"
                   onClick={() => {
                     if (activeTab === "sfx") handleDownloadAsset(null, `${sfxId}.wav`);
-                    else if (activeTab === "animated") handleDownloadAsset(sheetPreviewUrl, `${sheetId}.png`);
-                    else if (activeVariation) handleDownloadAsset(activeVariation.dataUrl, `${activeVariation.id}.png`);
+                    else if (activeTab === "animated")
+                      handleDownloadAsset(sheetPreviewUrl, `${sheetId}.png`);
+                    else if (activeVariation)
+                      handleDownloadAsset(activeVariation.dataUrl, `${activeVariation.id}.png`);
                   }}
                   className="flex-1"
                 >

@@ -32,10 +32,14 @@ export type GeneratedSpritesheet = {
  * Generates horizontal spritesheets (frameWidth * totalFrames x frameHeight)
  * compatible with Playroom's Animation component.
  */
-export function generateCharacterSpritesheet(options: SpritesheetOptions = {}): GeneratedSpritesheet {
+export function generateCharacterSpritesheet(
+  options: SpritesheetOptions = {}
+): GeneratedSpritesheet {
   const archetype = (options.archetype || "hero").toLowerCase();
   const animation = options.animation || "walk";
-  const frameCount = options.frameCount ?? (animation === "walk" || animation === "run" ? 4 : animation === "idle" ? 4 : 4);
+  const frameCount =
+    options.frameCount ??
+    (animation === "walk" || animation === "run" ? 4 : animation === "idle" ? 4 : 4);
   const frameSize = options.frameSize ?? 32;
   const fps = options.fps ?? (animation === "run" ? 10 : animation === "walk" ? 8 : 6);
   const paletteName = options.palette ?? "pico8";
@@ -118,9 +122,12 @@ export function generateCharacterSpritesheet(options: SpritesheetOptions = {}): 
         bodyOffsetY = -2;
       }
     } else if (animation === "jump") {
-      if (frame === 0) bodyOffsetY = 1; // Crouch prep
-      else if (frame === 1) bodyOffsetY = -3; // Rising apex
-      else if (frame === 2) bodyOffsetY = -1; // Falling
+      if (frame === 0)
+        bodyOffsetY = 1; // Crouch prep
+      else if (frame === 1)
+        bodyOffsetY = -3; // Rising apex
+      else if (frame === 2)
+        bodyOffsetY = -1; // Falling
       else bodyOffsetY = 1; // Landing
     } else if (animation === "attack") {
       if (frame === 0) {

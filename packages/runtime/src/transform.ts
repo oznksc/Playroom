@@ -6,7 +6,11 @@ import type { TransformComponent } from "@gamekit/schema";
  * pivot — matching Phaser, where the game object's position is its origin and
  * rotation/scale happen around it.
  */
-export function pivotTransform(transform: TransformComponent, px: number, py: number): Transforms3d {
+export function pivotTransform(
+  transform: TransformComponent,
+  px: number,
+  py: number
+): Transforms3d {
   const t: Transforms3d = [{ translateX: px }, { translateY: py }];
   const rotation = transform.rotation ?? 0;
   if (rotation !== 0) t.push({ rotate: (rotation * Math.PI) / 180 });

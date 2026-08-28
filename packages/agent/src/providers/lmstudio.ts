@@ -165,7 +165,7 @@ async function* parseOpenAiSse(res: Response): AsyncGenerator<StreamEvent> {
                 name: tc.name,
                 args: JSON.parse(tc.argsJson || "{}"),
               })),
-            }
+            };
             currentToolCalls.clear();
           }
           yield { type: "done" };

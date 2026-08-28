@@ -46,14 +46,18 @@ function toCodes(keys: string[]): number[] {
 
 export function configureSceneKeyboard(
   keyboard: Phaser.Input.Keyboard.KeyboardPlugin | null,
-  inputMap?: InputMapConfig,
+  inputMap?: InputMapConfig
 ): SceneInputKeys {
   if (!keyboard) {
     return { left: [], right: [], up: [], down: [], jump: [], fire: [], action: [] };
   }
   const map = inputMap ?? DEFAULT_INPUT_MAP;
-  const left = byAction(map, "move_left").length ? byAction(map, "move_left") : ["ArrowLeft", "a", "A"];
-  const right = byAction(map, "move_right").length ? byAction(map, "move_right") : ["ArrowRight", "d", "D"];
+  const left = byAction(map, "move_left").length
+    ? byAction(map, "move_left")
+    : ["ArrowLeft", "a", "A"];
+  const right = byAction(map, "move_right").length
+    ? byAction(map, "move_right")
+    : ["ArrowRight", "d", "D"];
   const up = byAction(map, "move_up");
   const down = byAction(map, "move_down");
   const jump = byAction(map, "jump").length ? byAction(map, "jump") : ["ArrowUp", " ", "w", "W"];
@@ -82,7 +86,7 @@ export type TouchButtons = {
 export function resolveScenePlayerInput(
   keys: SceneInputKeys,
   touch: TouchButtons,
-  inputMap?: InputMapConfig,
+  inputMap?: InputMapConfig
 ): ExtendedPlayerInput {
   const base: ExtendedPlayerInput = {
     left: keys.left.some((k) => k.isDown) || touch.dx < -0.3,

@@ -61,7 +61,10 @@ export type InitResult = {
   activeScenePath: string;
 };
 
-export async function initProject(root: string, options: { name?: string } = {}): Promise<InitResult> {
+export async function initProject(
+  root: string,
+  options: { name?: string } = {}
+): Promise<InitResult> {
   const gamekitRoot = getGameKitRoot(root);
   const scenesRoot = join(gamekitRoot, "scenes");
   const assetsRoot = join(gamekitRoot, "assets");
@@ -77,17 +80,17 @@ export async function initProject(root: string, options: { name?: string } = {})
   const settingsPath = join(scenesRoot, "settings.scene.json");
   const scenePath = join(scenesRoot, "main.scene.json");
 
-  if (!await exists(projectPath)) {
+  if (!(await exists(projectPath))) {
     await writeFile(projectPath, projectToJson(createProject(projectName)));
   }
 
   // Starter shell: menu + settings + gameplay (idempotent — never overwrite).
   // Skip creating default main when the project already lists other scene files
   // (custom samples / multi-scene exports must not grow a phantom main.scene.json).
-  if (!await exists(menuPath)) {
+  if (!(await exists(menuPath))) {
     await writeFile(menuPath, sceneToJson(createMenuScene(projectName)));
   }
-  if (!await exists(settingsPath)) {
+  if (!(await exists(settingsPath))) {
     await writeFile(settingsPath, sceneToJson(createSettingsScene()));
   }
   let projectSceneList: string[] = [];
@@ -100,9 +103,9 @@ export async function initProject(root: string, options: { name?: string } = {})
     projectSceneList = [];
   }
   const hasCustomGameplay = projectSceneList.some(
-    (f) => f !== "menu.scene.json" && f !== "settings.scene.json" && f !== "main.scene.json",
+    (f) => f !== "menu.scene.json" && f !== "settings.scene.json" && f !== "main.scene.json"
   );
-  if (!await exists(scenePath) && !hasCustomGameplay) {
+  if (!(await exists(scenePath)) && !hasCustomGameplay) {
     await writeFile(scenePath, sceneToJson(createStarterGameplayScene()));
   }
 
@@ -126,7 +129,9 @@ export async function readProject(root: string): Promise<GameKitProject> {
   const result = validateProject(raw);
 
   if (!result.ok) {
-    throw new Error(`Invalid gamekit/project.json:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(
+      `Invalid gamekit/project.json:\n${result.errors.map((error) => `- ${error}`).join("\n")}`
+    );
   }
 
   return result.value;
@@ -135,7 +140,9 @@ export async function readProject(root: string): Promise<GameKitProject> {
 export async function writeProject(root: string, project: GameKitProject): Promise<void> {
   const result = validateProject(project);
   if (!result.ok) {
-    throw new Error(`Cannot write invalid project:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(
+      `Cannot write invalid project:\n${result.errors.map((error) => `- ${error}`).join("\n")}`
+    );
   }
   await writeFile(join(getGameKitRoot(root), "project.json"), projectToJson(project));
 }
@@ -146,7 +153,9 @@ export async function readScene(root: string, file = "main.scene.json"): Promise
   const result = validateScene(raw);
 
   if (!result.ok) {
-    throw new Error(`Invalid scene ${file}:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(
+      `Invalid scene ${file}:\n${result.errors.map((error) => `- ${error}`).join("\n")}`
+    );
   }
 
   return result.value;
@@ -158,14 +167,23 @@ export async function getSceneMtime(root: string, file = "main.scene.json"): Pro
   return st.mtimeMs;
 }
 
-export async function writeScene(root: string, scene: GameKitScene, file = "main.scene.json"): Promise<void> {
+export async function writeScene(
+  root: string,
+  scene: GameKitScene,
+  file = "main.scene.json"
+): Promise<void> {
   const result = validateScene(scene);
   if (!result.ok) {
-    throw new Error(`Cannot write invalid scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(
+      `Cannot write invalid scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`
+    );
   }
 
   await mkdir(join(getGameKitRoot(root), "scenes"), { recursive: true });
-  await writeFile(join(getGameKitRoot(root), "scenes", sanitizeSceneFile(file)), sceneToJson(scene));
+  await writeFile(
+    join(getGameKitRoot(root), "scenes", sanitizeSceneFile(file)),
+    sceneToJson(scene)
+  );
 }
 
 export async function listAssets(root: string): Promise<GameKitAsset[]> {
@@ -185,7 +203,9 @@ export async function importAsset(root: string, sourceFile: string): Promise<Gam
   } else if ([".ttf", ".otf"].includes(extension)) {
     kind = "font";
   } else {
-    throw new Error("Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf).");
+    throw new Error(
+      "Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf)."
+    );
   }
 
   const sourceInfo = await stat(sourceFile);
@@ -203,20 +223,23 @@ export async function importAsset(root: string, sourceFile: string): Promise<Gam
   const asset: GameKitAsset = {
     id: assetId,
     file: fileName,
-    kind
+    kind,
   };
 
-  project.assets = [
-    ...project.assets.filter((existing) => existing.id !== asset.id),
-    asset
-  ].sort((a, b) => a.id.localeCompare(b.id));
+  project.assets = [...project.assets.filter((existing) => existing.id !== asset.id), asset].sort(
+    (a, b) => a.id.localeCompare(b.id)
+  );
 
   await writeProject(root, project);
   await generateAssetRegistry(root);
   return asset;
 }
 
-export async function importAssetBuffer(root: string, fileName: string, data: Buffer): Promise<GameKitAsset> {
+export async function importAssetBuffer(
+  root: string,
+  fileName: string,
+  data: Buffer
+): Promise<GameKitAsset> {
   await initProject(root);
   const extension = extname(fileName).toLowerCase();
   let kind: "image" | "audio" | "font";
@@ -227,7 +250,9 @@ export async function importAssetBuffer(root: string, fileName: string, data: Bu
   } else if ([".ttf", ".otf"].includes(extension)) {
     kind = "font";
   } else {
-    throw new Error("Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf).");
+    throw new Error(
+      "Supported formats: images (png, jpg, jpeg, webp, svg), audio (mp3, ogg, wav), fonts (ttf, otf)."
+    );
   }
 
   const assetId = slugify(basename(fileName, extension));
@@ -238,12 +263,11 @@ export async function importAssetBuffer(root: string, fileName: string, data: Bu
   const asset: GameKitAsset = {
     id: assetId,
     file: savedFile,
-    kind
+    kind,
   };
-  project.assets = [
-    ...project.assets.filter((existing) => existing.id !== asset.id),
-    asset
-  ].sort((a, b) => a.id.localeCompare(b.id));
+  project.assets = [...project.assets.filter((existing) => existing.id !== asset.id), asset].sort(
+    (a, b) => a.id.localeCompare(b.id)
+  );
 
   await writeProject(root, project);
   await generateAssetRegistry(root);
@@ -270,7 +294,10 @@ export async function removeAsset(root: string, assetId: string): Promise<void> 
   await generateAssetRegistry(root);
 }
 
-export async function generateAssetRegistry(root: string, platform: "mobile" | "web" | "libgdx" = "mobile"): Promise<string> {
+export async function generateAssetRegistry(
+  root: string,
+  platform: "mobile" | "web" | "libgdx" = "mobile"
+): Promise<string> {
   const generatedRoot = join(getGameKitRoot(root), "generated");
   await mkdir(generatedRoot, { recursive: true });
 
@@ -291,29 +318,38 @@ export async function generateAssetRegistry(root: string, platform: "mobile" | "
 
   if (platform === "web") {
     const entries = project.assets
-      .map((asset) => `  ${JSON.stringify(asset.id)}: new URL("../assets/${asset.file}", import.meta.url).href`)
+      .map(
+        (asset) =>
+          `  ${JSON.stringify(asset.id)}: new URL("../assets/${asset.file}", import.meta.url).href`
+      )
       .join(",\n");
 
-    await writeFile(output, `/* This file is generated by Playroom CLI. */
+    await writeFile(
+      output,
+      `/* This file is generated by Playroom CLI. */
 export const gamekitAssets: Record<string, string> = {
 ${entries}
 };
 
 export type GameKitAssetId = keyof typeof gamekitAssets;
-`);
+`
+    );
   } else {
     const entries = project.assets
       .map((asset) => `  ${JSON.stringify(asset.id)}: require("../assets/${asset.file}")`)
       .join(",\n");
 
-    await writeFile(output, `/* This file is generated by Playroom CLI. */
+    await writeFile(
+      output,
+      `/* This file is generated by Playroom CLI. */
 /* eslint-disable @typescript-eslint/no-var-requires */
 export const gamekitAssets = {
 ${entries}
 } as const;
 
 export type GameKitAssetId = keyof typeof gamekitAssets;
-`);
+`
+    );
   }
 
   return relative(root, output);
@@ -336,7 +372,7 @@ export async function getProjectSnapshot(root: string): Promise<{
     scenes: sceneFiles.filter((file) => file.endsWith(".scene.json")).sort(),
     assets: project.assets,
     levels: project.levels ?? [],
-    guiComponents: project.guiComponents ?? []
+    guiComponents: project.guiComponents ?? [],
   };
 }
 
@@ -406,7 +442,7 @@ export async function createPrefabFromEntity(
   root: string,
   sceneFile: string,
   entityId: string,
-  name?: string,
+  name?: string
 ): Promise<{ file: string; prefab: GameKitPrefab }> {
   const scene = await readScene(root, sceneFile);
   const entity = scene.entities.find((e) => e.id === entityId);
@@ -424,11 +460,9 @@ export async function instantiatePrefab(
   root: string,
   sceneFile: string,
   prefabId: string,
-  options: { x?: number; y?: number; name?: string } = {},
+  options: { x?: number; y?: number; name?: string } = {}
 ): Promise<{ entityId: string; name: string }> {
-  const file = prefabId.endsWith(".prefab.json")
-    ? prefabId
-    : `${slugify(prefabId)}.prefab.json`;
+  const file = prefabId.endsWith(".prefab.json") ? prefabId : `${slugify(prefabId)}.prefab.json`;
 
   let prefab: GameKitPrefab;
   try {
@@ -542,12 +576,7 @@ export async function listRecipes(options?: {
   const { listRecipes: list } = await import("@gamekit/mcp/recipes");
   return list({
     category: options?.category as
-      | "effect"
-      | "mechanic"
-      | "script"
-      | "animation"
-      | "gesture"
-      | undefined,
+      "effect" | "mechanic" | "script" | "animation" | "gesture" | undefined,
     tags: options?.tags,
     query: options?.query,
   });
@@ -569,7 +598,7 @@ export async function applyRecipe(
     scenePath: string;
     entityId?: string;
     params?: Record<string, string | number | boolean>;
-  },
+  }
 ): Promise<{
   recipeId: string;
   scenePath: string;
@@ -623,7 +652,7 @@ type SkillTemplateFile = {
 export async function applySkill(
   root: string,
   skillId: string,
-  sceneName?: string,
+  sceneName?: string
 ): Promise<ApplySkillResult> {
   await initProject(root);
   const skillsDir = getSkillsDir();
@@ -658,7 +687,10 @@ export async function applySkill(
   }
   for (const entity of scene.entities) {
     for (const comp of entity.components) {
-      if (comp.type === "CameraFollow" && typeof (comp as { targetId?: string }).targetId === "string") {
+      if (
+        comp.type === "CameraFollow" &&
+        typeof (comp as { targetId?: string }).targetId === "string"
+      ) {
         const resolved = idMap.get((comp as { targetId: string }).targetId);
         if (resolved) (comp as { targetId: string }).targetId = resolved;
       }
@@ -781,7 +813,7 @@ function ensureGameController(scene: GameKitScene, gameplaySceneId: string): voi
 export async function wireShellToGameplay(
   root: string,
   gameplaySceneId: string,
-  gameplayFile: string,
+  gameplayFile: string
 ): Promise<void> {
   const menu = await readScene(root, "menu.scene.json");
   for (const entity of menu.entities) {
@@ -861,7 +893,7 @@ export async function wireShellToGameplay(
 export async function applySkillPackRecipes(
   root: string,
   skillId: string,
-  sceneFile: string,
+  sceneFile: string
 ): Promise<{ applied: string[]; warnings: string[] }> {
   const pack = getSkillPack(skillId);
   const applied: string[] = [];
@@ -873,7 +905,7 @@ export async function applySkillPackRecipes(
       let entityId: string | undefined;
       if (step.entityName) {
         const ent = scene.entities.find(
-          (e) => e.name.toLowerCase() === step.entityName!.toLowerCase(),
+          (e) => e.name.toLowerCase() === step.entityName!.toLowerCase()
         );
         if (!ent) {
           warnings.push(`Recipe ${step.id}: entity "${step.entityName}" not found — skipped`);
@@ -889,9 +921,7 @@ export async function applySkillPackRecipes(
       applied.push(step.id);
       warnings.push(...result.warnings);
     } catch (err) {
-      warnings.push(
-        `Recipe ${step.id}: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      warnings.push(`Recipe ${step.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -939,13 +969,11 @@ export async function createGameFromSkill(
   options: {
     name?: string;
     platform?: "web" | "mobile";
-  } = {},
+  } = {}
 ): Promise<CreateGameFromSkillResult> {
   const skills = await listSkills();
   if (!skills.some((s) => s.id === skillId)) {
-    throw new Error(
-      `Unknown skill "${skillId}". Available: ${skills.map((s) => s.id).join(", ")}`,
-    );
+    throw new Error(`Unknown skill "${skillId}". Available: ${skills.map((s) => s.id).join(", ")}`);
   }
 
   const projectName = options.name ?? getSkillPack(skillId).label ?? skillId;
@@ -959,10 +987,7 @@ export async function createGameFromSkill(
   const skillResult = await applySkill(root, skillId);
   await wireShellToGameplay(root, skillResult.sceneId, skillResult.filename);
   const packResult = await applySkillPackRecipes(root, skillId, skillResult.filename);
-  const registryPath = await generateAssetRegistry(
-    root,
-    options.platform ?? "mobile",
-  );
+  const registryPath = await generateAssetRegistry(root, options.platform ?? "mobile");
 
   return {
     skillId,
@@ -979,9 +1004,7 @@ export async function createGameFromSkill(
 }
 
 export async function removePrefab(root: string, prefabId: string): Promise<string> {
-  const file = prefabId.endsWith(".prefab.json")
-    ? prefabId
-    : `${slugify(prefabId)}.prefab.json`;
+  const file = prefabId.endsWith(".prefab.json") ? prefabId : `${slugify(prefabId)}.prefab.json`;
   const path = join(getPrefabsRoot(root), basename(file));
   try {
     await unlink(path);
@@ -1015,7 +1038,7 @@ export async function buildExportBootstrapInput(root: string): Promise<Bootstrap
       const scene = await readScene(root, file);
       sceneId = scene.id;
       hasPlayerController = scene.entities.some((entity) =>
-        entity.components.some((c) => c.type === "PlayerController"),
+        entity.components.some((c) => c.type === "PlayerController")
       );
     } catch {
       // Still register the file; validation already ran on valid scenes at editor time.
@@ -1036,11 +1059,18 @@ export async function buildExportBootstrapInput(root: string): Promise<Bootstrap
   };
 }
 
-export async function exportProject(root: string, outputDir: string, platform: "mobile" | "web" | "libgdx" = "mobile"): Promise<string> {
+export async function exportProject(
+  root: string,
+  outputDir: string,
+  platform: "mobile" | "web" | "libgdx" = "mobile"
+): Promise<string> {
   const { project, scenes, assets } = await getProjectSnapshot(root);
   const gamekitRoot = getGameKitRoot(root);
   const playroomRoot = fileURLToPath(new URL("../../..", import.meta.url));
-  const pkgJson = JSON.parse(await readFile(join(playroomRoot, "package.json"), "utf8")) as Record<string, unknown>;
+  const pkgJson = JSON.parse(await readFile(join(playroomRoot, "package.json"), "utf8")) as Record<
+    string,
+    unknown
+  >;
 
   await mkdir(outputDir, { recursive: true });
 
@@ -1057,7 +1087,10 @@ export async function exportProject(root: string, outputDir: string, platform: "
       const settingsContent = await readFile(settingsPath, "utf8");
       await writeFile(
         settingsPath,
-        settingsContent.replace(/rootProject\.name = 'PlayroomGame'/, `rootProject.name = '${sanitizedAppName || "PlayroomGame"}'`),
+        settingsContent.replace(
+          /rootProject\.name = 'PlayroomGame'/,
+          `rootProject.name = '${sanitizedAppName || "PlayroomGame"}'`
+        )
       );
     }
 
@@ -1065,7 +1098,8 @@ export async function exportProject(root: string, outputDir: string, platform: "
     if (await exists(stringsPath)) {
       const pgsAppId =
         project.gameServices?.googlePlayAppId ??
-        project.gameServices?.achievements?.find((a) => a.providers.googlePlay)?.providers.googlePlay ??
+        project.gameServices?.achievements?.find((a) => a.providers.googlePlay)?.providers
+          .googlePlay ??
         "";
       await writeFile(
         stringsPath,
@@ -1074,7 +1108,7 @@ export async function exportProject(root: string, outputDir: string, platform: "
     <string name="app_name">${project.name}</string>
     <string name="game_services_project_id">${pgsAppId}</string>
 </resources>
-`,
+`
       );
     }
 
@@ -1087,7 +1121,9 @@ export async function exportProject(root: string, outputDir: string, platform: "
           const sceneJson = JSON.parse(await readFile(scenePath, "utf8"));
           if (
             sceneJson.viewport?.orientation === "landscape" ||
-            (sceneJson.viewport?.width && sceneJson.viewport?.height && sceneJson.viewport.width > sceneJson.viewport.height)
+            (sceneJson.viewport?.width &&
+              sceneJson.viewport?.height &&
+              sceneJson.viewport.width > sceneJson.viewport.height)
           ) {
             orientation = "sensorLandscape";
           }
@@ -1114,7 +1150,10 @@ export async function exportProject(root: string, outputDir: string, platform: "
 
     for (const sceneFile of scenes) {
       const scenePath = join(gamekitRoot, "scenes", sceneFile);
-      await writeFile(join(gdxAssetsGamekit, "scenes", sceneFile), await readFile(scenePath, "utf8"));
+      await writeFile(
+        join(gdxAssetsGamekit, "scenes", sceneFile),
+        await readFile(scenePath, "utf8")
+      );
     }
 
     for (const asset of assets) {
@@ -1130,7 +1169,10 @@ export async function exportProject(root: string, outputDir: string, platform: "
       try {
         const prefabFiles = (await readdir(prefabsRoot)).filter((f) => f.endsWith(".prefab.json"));
         for (const file of prefabFiles) {
-          await writeFile(join(gdxAssetsGamekit, "prefabs", file), await readFile(join(prefabsRoot, file)));
+          await writeFile(
+            join(gdxAssetsGamekit, "prefabs", file),
+            await readFile(join(prefabsRoot, file))
+          );
         }
       } catch {
         // ignore empty / unreadable prefabs dir
@@ -1174,7 +1216,12 @@ export async function exportProject(root: string, outputDir: string, platform: "
     await mkdir(join(outputDir, "src"), { recursive: true });
     await writeFile(join(outputDir, "src", "main.ts"), generateWebMain(bootstrap));
 
-    const templatePkg = { ...JSON.parse(await readFile(join(templateDir, "package.json"), "utf8")) as Record<string, unknown> };
+    const templatePkg = {
+      ...(JSON.parse(await readFile(join(templateDir, "package.json"), "utf8")) as Record<
+        string,
+        unknown
+      >),
+    };
     templatePkg.name = project.name.toLowerCase().replace(/\s+/g, "-");
     const deps = templatePkg.dependencies as Record<string, string>;
     deps["@gamekit/runtime-web"] = (pkgJson.version as string) ?? "0.1.0";
@@ -1196,9 +1243,15 @@ export async function exportProject(root: string, outputDir: string, platform: "
 
     await writeFile(join(outputDir, "App.tsx"), generateMobileApp(bootstrap));
 
-    const templatePkg = { ...JSON.parse(await readFile(join(templateDir, "package.json"), "utf8")) as Record<string, unknown> };
+    const templatePkg = {
+      ...(JSON.parse(await readFile(join(templateDir, "package.json"), "utf8")) as Record<
+        string,
+        unknown
+      >),
+    };
     templatePkg.name = project.name.toLowerCase().replace(/\s+/g, "-");
-    (templatePkg.dependencies as Record<string, string>)["@gamekit/runtime"] = (pkgJson.version as string) ?? "0.1.0";
+    (templatePkg.dependencies as Record<string, string>)["@gamekit/runtime"] =
+      (pkgJson.version as string) ?? "0.1.0";
     await writeFile(join(outputDir, "package.json"), JSON.stringify(templatePkg, null, 2) + "\n");
   }
 
@@ -1221,7 +1274,10 @@ export async function exportProject(root: string, outputDir: string, platform: "
     try {
       const prefabFiles = (await readdir(prefabsRoot)).filter((f) => f.endsWith(".prefab.json"));
       for (const file of prefabFiles) {
-        await writeFile(join(outputGamekit, "prefabs", file), await readFile(join(prefabsRoot, file)));
+        await writeFile(
+          join(outputGamekit, "prefabs", file),
+          await readFile(join(prefabsRoot, file))
+        );
       }
     } catch {
       // ignore empty / unreadable prefabs dir
@@ -1274,7 +1330,10 @@ export async function loadGameState(root: string, slotName: string): Promise<voi
   // currentLevelId is derived on save from activeScene; unlock flags carry progress.
   await writeProject(root, project);
 
-  await writeFile(join(gamekitRoot, "state.json"), JSON.stringify(payload.persistentState, null, 2));
+  await writeFile(
+    join(gamekitRoot, "state.json"),
+    JSON.stringify(payload.persistentState, null, 2)
+  );
 }
 
 export type SaveSlotInfo = {

@@ -18,7 +18,9 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
     "list_entities",
     "List entities in a scene as compact summaries (id, name, tags, component types, position, bounds). Prefer this over get_scene for large scenes. Use query_entities to filter.",
     {
-      scenePath: z.string().describe("Scene filename including .scene.json (e.g. 'main.scene.json')"),
+      scenePath: z
+        .string()
+        .describe("Scene filename including .scene.json (e.g. 'main.scene.json')"),
     },
     async ({ scenePath }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -29,7 +31,7 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
         count: scene.entities.length,
         entities: scene.entities.map(summarizeEntity),
       });
-    },
+    }
   );
 
   server.tool(
@@ -45,8 +47,10 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return toolJson(
-          { error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available IDs.` },
-          true,
+          {
+            error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available IDs.`,
+          },
+          true
         );
       }
       return toolJson({
@@ -55,7 +59,7 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
         tags: entity.tags ?? [],
         components: entity.components.map(summarizeComponent),
       });
-    },
+    }
   );
 
   server.tool(
@@ -71,12 +75,14 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return toolJson(
-          { error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available IDs.` },
-          true,
+          {
+            error: `Entity "${entityId}" not found in scene "${scenePath}". Use list_entities to see available IDs.`,
+          },
+          true
         );
       }
       return toolJson(entity);
-    },
+    }
   );
 
   server.tool(
@@ -116,11 +122,16 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
 
       return toolJson({
         sceneId: scene.id,
-        filters: { nameContains: nameContains ?? null, tag: tag ?? null, componentType: componentType ?? null, region: region ?? null },
+        filters: {
+          nameContains: nameContains ?? null,
+          tag: tag ?? null,
+          componentType: componentType ?? null,
+          region: region ?? null,
+        },
         count: matches.length,
         entities: matches.map(summarizeEntity),
       });
-    },
+    }
   );
 
   server.tool(
@@ -139,10 +150,21 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
         const types = new Set(entity.components.map((c) => c.type));
         const issues: string[] = [];
         if (!types.has("Transform")) issues.push("missing-transform");
-        if (!types.has("Sprite") && !types.has("Text") && !types.has("NineSlice") && !types.has("Tilemap") && !types.has("ParticleSystem")) {
+        if (
+          !types.has("Sprite") &&
+          !types.has("Text") &&
+          !types.has("NineSlice") &&
+          !types.has("Tilemap") &&
+          !types.has("ParticleSystem")
+        ) {
           issues.push("no-visual");
         }
-        if (types.has("PlayerController") && !types.has("AabbCollider") && !types.has("CircleCollider") && !types.has("PolygonCollider")) {
+        if (
+          types.has("PlayerController") &&
+          !types.has("AabbCollider") &&
+          !types.has("CircleCollider") &&
+          !types.has("PolygonCollider")
+        ) {
           issues.push("player-missing-collider");
         }
         if (bounds && isOffScreen(bounds, viewport)) issues.push("off-screen");
@@ -177,6 +199,6 @@ export function registerQueryTools(server: McpServer, fileIO: FileIO): void {
         overlaps,
         entities,
       });
-    },
+    }
   );
 }

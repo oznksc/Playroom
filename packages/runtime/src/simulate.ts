@@ -86,7 +86,9 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
   const vars: Record<string, unknown> = {};
 
   for (const entity of working.entities) {
-    const pc = entity.components.find((c): c is PlayerControllerComponent => c.type === "PlayerController");
+    const pc = entity.components.find(
+      (c): c is PlayerControllerComponent => c.type === "PlayerController"
+    );
     if (pc) controllers.set(entity.id, createPlayerController(pc));
     const rb = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
     if (rb) bodies.set(entity.id, createRigidBody(rb));
@@ -120,7 +122,9 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
               const t = e.components.find((c): c is TransformComponent => c.type === "Transform");
               return t ? { entityId: e.id, position: { ...t.position } } : null;
             })
-            .filter((p): p is { entityId: string; position: { x: number; y: number } } => p !== null),
+            .filter(
+              (p): p is { entityId: string; position: { x: number; y: number } } => p !== null
+            ),
         setPlayerPosition: (entityId, position) => {
           const entity = working.entities.find((e) => e.id === entityId);
           const t = entity?.components.find((c): c is TransformComponent => c.type === "Transform");
@@ -137,7 +141,7 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         },
         sceneManager,
       },
-      { level: options.level ?? null },
+      { level: options.level ?? null }
     );
     engine.start();
   }
@@ -154,26 +158,36 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
 
     const solids: CollisionSolid[] = [];
     for (const entity of working.entities) {
-      const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+      const aabbCollider = entity.components.find(
+        (c): c is AabbColliderComponent => c.type === "AabbCollider"
+      );
       if (aabbCollider && aabbCollider.isStatic && !aabbCollider.isTrigger) {
         const aabb = getEntityAabb(entity);
         if (aabb) solids.push({ ...aabb, layer: aabbCollider.layer ?? 1, entityId: entity.id });
       }
-      const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
+      const circleCollider = entity.components.find(
+        (c): c is CircleColliderComponent => c.type === "CircleCollider"
+      );
       if (circleCollider && circleCollider.isStatic && !circleCollider.isTrigger) {
         const circle = getEntityCircle(entity);
-        if (circle) solids.push({ ...circle, layer: circleCollider.layer ?? 1, entityId: entity.id });
+        if (circle)
+          solids.push({ ...circle, layer: circleCollider.layer ?? 1, entityId: entity.id });
       }
-      const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+      const polygonCollider = entity.components.find(
+        (c): c is PolygonColliderComponent => c.type === "PolygonCollider"
+      );
       if (polygonCollider && polygonCollider.isStatic && !polygonCollider.isTrigger) {
         const polygon = getEntityPolygon(entity);
-        if (polygon) solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
+        if (polygon)
+          solids.push({ ...polygon, layer: polygonCollider.layer ?? 1, entityId: entity.id });
       }
       solids.push(...getTilemapSolids(entity));
     }
 
     for (const entity of working.entities) {
-      const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+      const transform = entity.components.find(
+        (c): c is TransformComponent => c.type === "Transform"
+      );
       if (!transform) continue;
 
       const body = bodies.get(entity.id);
@@ -189,9 +203,15 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         }
         body.integrateForces(fixedDt, working.gravity || { x: 0, y: 9.8 * 60 });
 
-        const aabbCollider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
-        const circleCollider = entity.components.find((c): c is CircleColliderComponent => c.type === "CircleCollider");
-        const polygonCollider = entity.components.find((c): c is PolygonColliderComponent => c.type === "PolygonCollider");
+        const aabbCollider = entity.components.find(
+          (c): c is AabbColliderComponent => c.type === "AabbCollider"
+        );
+        const circleCollider = entity.components.find(
+          (c): c is CircleColliderComponent => c.type === "CircleCollider"
+        );
+        const polygonCollider = entity.components.find(
+          (c): c is PolygonColliderComponent => c.type === "PolygonCollider"
+        );
 
         if (aabbCollider && !aabbCollider.isStatic) {
           const movingAabb = getEntityAabb(entity);
@@ -212,7 +232,12 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         } else if (circleCollider && !circleCollider.isStatic) {
           const circle = getEntityCircle(entity);
           if (circle) {
-            const result = applyCircleCollisions(circle, body.state.velocity, solids, circleCollider.mask);
+            const result = applyCircleCollisions(
+              circle,
+              body.state.velocity,
+              solids,
+              circleCollider.mask
+            );
             transform.position.x = result.position.x - circleCollider.offset.x;
             transform.position.y = result.position.y - circleCollider.offset.y;
             body.state.velocity = result.velocity;
@@ -221,7 +246,12 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         } else if (polygonCollider && !polygonCollider.isStatic) {
           const polygon = getEntityPolygon(entity);
           if (polygon) {
-            const result = applyPolygonCollisions(polygon, body.state.velocity, solids, polygonCollider.mask);
+            const result = applyPolygonCollisions(
+              polygon,
+              body.state.velocity,
+              solids,
+              polygonCollider.mask
+            );
             transform.position.x = result.position.x - polygonCollider.offset.x;
             transform.position.y = result.position.y - polygonCollider.offset.y;
             body.state.velocity = result.velocity;
@@ -232,16 +262,25 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
           transform.position.y += body.state.velocity.y * fixedDt;
         }
 
-        const rbComp = entity.components.find((c): c is RigidBodyComponent => c.type === "RigidBody");
+        const rbComp = entity.components.find(
+          (c): c is RigidBodyComponent => c.type === "RigidBody"
+        );
         if (rbComp) rbComp.velocity = { ...body.state.velocity };
         if (controller) controller.state.velocity = body.state.velocity;
       } else if (controller) {
         controller.update(input, fixedDt);
-        const collider = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+        const collider = entity.components.find(
+          (c): c is AabbColliderComponent => c.type === "AabbCollider"
+        );
         if (collider) {
           const movingAabb = getEntityAabb(entity);
           if (movingAabb) {
-            const result = applyAabbCollisions(movingAabb, controller.state.velocity, solids, collider.mask);
+            const result = applyAabbCollisions(
+              movingAabb,
+              controller.state.velocity,
+              solids,
+              collider.mask
+            );
             transform.position.x = result.position.x - collider.offset.x;
             transform.position.y = result.position.y - collider.offset.y;
             controller.state.velocity = result.velocity;
@@ -258,49 +297,49 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
     for (const entity of working.entities) {
       const script = entity.components.find((c): c is ScriptComponent => c.type === "Script");
       if (!script || !hasScriptHandler(script, "update")) continue;
-      const context =
-        engine?.scriptContext(entity.id, {
-          dt: fixedDt,
-          sceneManager,
-          rigidBodies: bodies,
-          destroyEntity: (id) => {
-            working.entities = working.entities.filter((e) => e.id !== id);
-          },
-        }) ?? {
-          entityId: entity.id,
-          dt: fixedDt,
-          entities: working.entities,
-          sceneManager,
-          rigidBodies: bodies,
-          destroyEntity: (id) => {
-            working.entities = working.entities.filter((e) => e.id !== id);
-          },
-        };
+      const context = engine?.scriptContext(entity.id, {
+        dt: fixedDt,
+        sceneManager,
+        rigidBodies: bodies,
+        destroyEntity: (id) => {
+          working.entities = working.entities.filter((e) => e.id !== id);
+        },
+      }) ?? {
+        entityId: entity.id,
+        dt: fixedDt,
+        entities: working.entities,
+        sceneManager,
+        rigidBodies: bodies,
+        destroyEntity: (id) => {
+          working.entities = working.entities.filter((e) => e.id !== id);
+        },
+      };
       evaluateScriptEvent("update", script, context);
     }
 
     // Per-frame StateMachine updates (on.update transitions + duration timers)
     for (const entity of working.entities) {
-      const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+      const sm = entity.components.find(
+        (c): c is StateMachineComponent => c.type === "StateMachine"
+      );
       if (!sm) continue;
-      const context =
-        engine?.scriptContext(entity.id, {
-          dt: fixedDt,
-          sceneManager,
-          rigidBodies: bodies,
-          destroyEntity: (id) => {
-            working.entities = working.entities.filter((e) => e.id !== id);
-          },
-        }) ?? {
-          entityId: entity.id,
-          dt: fixedDt,
-          entities: working.entities,
-          sceneManager,
-          rigidBodies: bodies,
-          destroyEntity: (id) => {
-            working.entities = working.entities.filter((e) => e.id !== id);
-          },
-        };
+      const context = engine?.scriptContext(entity.id, {
+        dt: fixedDt,
+        sceneManager,
+        rigidBodies: bodies,
+        destroyEntity: (id) => {
+          working.entities = working.entities.filter((e) => e.id !== id);
+        },
+      }) ?? {
+        entityId: entity.id,
+        dt: fixedDt,
+        entities: working.entities,
+        sceneManager,
+        rigidBodies: bodies,
+        destroyEntity: (id) => {
+          working.entities = working.entities.filter((e) => e.id !== id);
+        },
+      };
       updateFsm(sm, context, fixedDt, fsmTimers);
     }
 
@@ -314,21 +353,22 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
         for (const entityId of [event.triggerEntityId, event.otherEntityId]) {
           const entity = working.entities.find((e) => e.id === entityId);
           if (!entity) continue;
-          const context =
-            engine?.scriptContext(entity.id, {
-              sceneManager,
-              rigidBodies: bodies,
-              destroyEntity: (id) => {
-                working.entities = working.entities.filter((e) => e.id !== id);
-              },
-            }) ?? {
-              entityId: entity.id,
-              entities: working.entities,
-              sceneManager,
-              rigidBodies: bodies,
-            };
+          const context = engine?.scriptContext(entity.id, {
+            sceneManager,
+            rigidBodies: bodies,
+            destroyEntity: (id) => {
+              working.entities = working.entities.filter((e) => e.id !== id);
+            },
+          }) ?? {
+            entityId: entity.id,
+            entities: working.entities,
+            sceneManager,
+            rigidBodies: bodies,
+          };
 
-          const sm = entity.components.find((c): c is StateMachineComponent => c.type === "StateMachine");
+          const sm = entity.components.find(
+            (c): c is StateMachineComponent => c.type === "StateMachine"
+          );
           if (sm) {
             if (!sm.currentState) sm.currentState = sm.initialState;
             const stateObj = sm.states.find((s) => s.name === sm.currentState);
@@ -348,7 +388,9 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
   }
 
   const entitySummaries = working.entities.map((entity: GameKitEntity) => {
-    const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
+    const transform = entity.components.find(
+      (c): c is TransformComponent => c.type === "Transform"
+    );
     const controller = controllers.get(entity.id);
     const body = bodies.get(entity.id);
     return {
@@ -377,9 +419,7 @@ export function simulateSceneSteps(scene: GameKitScene, options: SimulateOptions
               ? null
               : rulesState.livesRemaining
             : null,
-          collectProgress: rulesState
-            ? Object.fromEntries(rulesState.collectCounts.entries())
-            : {},
+          collectProgress: rulesState ? Object.fromEntries(rulesState.collectCounts.entries()) : {},
         }
       : {}),
   };

@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createProject, createEntity, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createProject,
+  createEntity,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { createMcpServer } from "../src/server.js";
 
 let tmpDir: string;
@@ -57,13 +63,17 @@ describe("snapshot tools", () => {
 
   it("diffs two snapshots", async () => {
     const snapTool = (server as any)._registeredTools.snapshot_undo_point;
-    const a = JSON.parse((await snapTool.handler({ scenePath: "main.scene.json" })).content[0].text);
+    const a = JSON.parse(
+      (await snapTool.handler({ scenePath: "main.scene.json" })).content[0].text
+    );
 
     const scenePath = join(tmpDir, "gamekit", "scenes", "main.scene.json");
     const scene = createEmptyScene("Main");
     scene.entities.push(createEntity("Hero", { x: 50, y: 20 }));
     await writeFile(scenePath, sceneToJson(scene));
-    const b = JSON.parse((await snapTool.handler({ scenePath: "main.scene.json" })).content[0].text);
+    const b = JSON.parse(
+      (await snapTool.handler({ scenePath: "main.scene.json" })).content[0].text
+    );
 
     const diffTool = (server as any)._registeredTools.diff_scene_versions;
     const diffResult = await diffTool.handler({ from: a.snapshotId, to: b.snapshotId });

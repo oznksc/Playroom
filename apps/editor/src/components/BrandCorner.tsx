@@ -14,13 +14,21 @@ export function BrandCorner({ isDirty, className, onClick }: BrandCornerProps) {
     <button
       type="button"
       onClick={onClick}
-      className={cn(styles["brand-corner"], "cursor-pointer hover:opacity-90 transition-opacity", className)}
+      className={cn(
+        styles["brand-corner"],
+        "cursor-pointer hover:opacity-90 transition-opacity",
+        className
+      )}
       title="Playroom Studio — Open Project Hub"
     >
       <div className={styles["brand-corner-logo"]}>
         <img src={logoUrl} alt="Playroom" />
         {isDirty && (
-          <StatusDot status="dirty" className={styles["brand-corner-dirty"]} title="Unsaved changes" />
+          <StatusDot
+            status="dirty"
+            className={styles["brand-corner-dirty"]}
+            title="Unsaved changes"
+          />
         )}
       </div>
     </button>

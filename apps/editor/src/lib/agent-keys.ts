@@ -39,7 +39,7 @@ async function deriveKey(passphrase: string, salt: ArrayBuffer): Promise<CryptoK
     enc.encode(passphrase),
     "PBKDF2",
     false,
-    ["deriveKey"],
+    ["deriveKey"]
   );
 
   return crypto.subtle.deriveKey(
@@ -52,7 +52,7 @@ async function deriveKey(passphrase: string, salt: ArrayBuffer): Promise<CryptoK
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"],
+    ["encrypt", "decrypt"]
   );
 }
 
@@ -83,7 +83,7 @@ export async function encryptApiKey(apiKey: string, passphrase: string): Promise
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
-    new TextEncoder().encode(apiKey),
+    new TextEncoder().encode(apiKey)
   );
 
   const packed = new Uint8Array(12 + ciphertext.byteLength);
@@ -93,7 +93,10 @@ export async function encryptApiKey(apiKey: string, passphrase: string): Promise
   return toBase64(packed.buffer);
 }
 
-export async function decryptApiKey(encryptedB64: string, passphrase: string): Promise<string | null> {
+export async function decryptApiKey(
+  encryptedB64: string,
+  passphrase: string
+): Promise<string | null> {
   try {
     const salt = getSalt();
     const key = await deriveKey(passphrase, salt);
@@ -102,11 +105,7 @@ export async function decryptApiKey(encryptedB64: string, passphrase: string): P
     const iv = packed.slice(0, 12).buffer;
     const ciphertext = packed.slice(12).buffer;
 
-    const plainBuffer = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
-      key,
-      ciphertext,
-    );
+    const plainBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
 
     return new TextDecoder().decode(plainBuffer);
   } catch {
@@ -131,7 +130,7 @@ export function saveEncryptedKey(
   provider: string,
   encryptedApiKey: string,
   model?: string,
-  baseUrl?: string,
+  baseUrl?: string
 ): void {
   const keys = JSON.parse(localStorage.getItem(KEYS_PREFIX + "v1") ?? "{}");
   keys[provider] = { encryptedApiKey, model, baseUrl };
@@ -143,7 +142,7 @@ export function saveEncryptedKey(
 }
 
 export function getEncryptedKey(
-  provider: string,
+  provider: string
 ): { encryptedApiKey: string; model?: string; baseUrl?: string } | null {
   const keys = JSON.parse(localStorage.getItem(KEYS_PREFIX + "v1") ?? "{}");
   return keys[provider] ?? null;
@@ -190,7 +189,7 @@ export async function storeApiKey(
   apiKey: string,
   passphrase: string,
   model?: string,
-  baseUrl?: string,
+  baseUrl?: string
 ): Promise<"keychain" | "local"> {
   if (isTauri()) {
     const { invoke } = await import("@tauri-apps/api/core");

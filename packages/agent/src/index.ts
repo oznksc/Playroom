@@ -47,4 +47,9 @@ export type { PromptContext } from "./system/prompt.js";
 export { loadSkillSummaries } from "./system/skills-loader.js";
 
 export { AgentAuditLogger, DEFAULT_MAX_AUDIT_ENTRIES } from "./audit/logger.js";
-export type { AuditEntry, AuditQueryOptions, AuditEntryStatus, AuditApprovalDecision } from "./audit/types.js";
+export type {
+  AuditEntry,
+  AuditQueryOptions,
+  AuditEntryStatus,
+  AuditApprovalDecision,
+} from "./audit/types.js";

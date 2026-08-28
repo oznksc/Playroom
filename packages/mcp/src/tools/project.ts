@@ -36,7 +36,7 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(project, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -53,7 +53,7 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -67,7 +67,7 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
     },
     async ({ name, sceneIds, order, unlocked }) => {
       const project = await fileIO.readProject();
-      const nextOrder = order ?? (project.levels.reduce((max, l) => Math.max(max, l.order), 0) + 1);
+      const nextOrder = order ?? project.levels.reduce((max, l) => Math.max(max, l.order), 0) + 1;
       const level = createLevel(name, nextOrder, sceneIds);
       if (unlocked !== undefined) level.unlocked = unlocked;
       if (project.levels.some((l) => l.id === level.id)) {
@@ -76,9 +76,14 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
       project.levels.push(level);
       await fileIO.writeProject(project);
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, level, total: project.levels.length }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, level, total: project.levels.length }, null, 2),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -116,7 +121,7 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, level }, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -129,7 +134,9 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
       project.levels = project.levels.filter((l) => l.id !== levelId);
       if (project.levels.length === before) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Level "${levelId}" not found.` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Level "${levelId}" not found.` }) },
+          ],
           isError: true,
         };
       }
@@ -138,11 +145,15 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
         content: [
           {
             type: "text",
-            text: JSON.stringify({ success: true, removed: levelId, remaining: project.levels.map((l) => l.id) }, null, 2),
+            text: JSON.stringify(
+              { success: true, removed: levelId, remaining: project.levels.map((l) => l.id) },
+              null,
+              2
+            ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -157,7 +168,9 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
         };
       } catch (err: any) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) }],
+          content: [
+            { type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) },
+          ],
         };
       }
     }

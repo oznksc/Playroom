@@ -60,13 +60,15 @@ describe("RulesEngine", () => {
           }
         },
         onOutcome,
-      },
+      }
     );
     engine.start();
 
     // Drop player below fall line
     const player = entities.find((e) => e.components.some((c) => c.type === "PlayerController"))!;
-    const transform = player.components.find((c): c is TransformComponent => c.type === "Transform")!;
+    const transform = player.components.find(
+      (c): c is TransformComponent => c.type === "Transform"
+    )!;
     transform.position.y = 600;
     engine.update(1 / 60);
 
@@ -101,12 +103,14 @@ describe("RulesEngine", () => {
         },
         resetPlayerMotion: () => {},
       },
-      { initialSpawn: { x: 10, y: 20 } },
+      { initialSpawn: { x: 10, y: 20 } }
     );
     engine.start();
 
     const player = entities.find((e) => e.components.some((c) => c.type === "PlayerController"))!;
-    const transform = player.components.find((c): c is TransformComponent => c.type === "Transform")!;
+    const transform = player.components.find(
+      (c): c is TransformComponent => c.type === "Transform"
+    )!;
     transform.position.y = 600;
     engine.update(1 / 60);
 
@@ -146,7 +150,7 @@ describe("RulesEngine", () => {
         },
         getPlayerTransforms: () => [],
         onOutcome,
-      },
+      }
     );
     engine.start();
 
@@ -182,7 +186,7 @@ describe("RulesEngine", () => {
           completeLevel,
           getState: () => ({ currentLevelId: "level-1" }),
         },
-      },
+      }
     );
     engine.start();
     engine.handleTriggerEnter(goal.id);
@@ -209,7 +213,7 @@ describe("RulesEngine", () => {
         },
         getPlayerTransforms: () => [],
         onOutcome,
-      },
+      }
     );
     engine.start();
     engine.handleTriggerEnter(coin.id);
@@ -253,7 +257,7 @@ describe("RulesEngine + level onComplete", () => {
           unlocked: true,
           onComplete: [{ type: "setVariable", key: "cleared", value: true }],
         },
-      },
+      }
     );
     engine.start();
     engine.handleTriggerEnter(goal.id);
@@ -282,7 +286,7 @@ describe("RulesEngine + level onComplete", () => {
           unlocked: true,
           rules: { lives: 1, winMessage: "Level win" },
         },
-      },
+      }
     );
     expect(engine.rules.lives).toBe(1);
     expect(engine.rules.winMessage).toBe("Level win");
@@ -300,9 +304,7 @@ describe("RulesEngine tagContact + checkpoint", () => {
       lives: 2,
       onFall: "respawn",
       spawnPoint: { x: 10, y: 20 },
-      hazards: [
-        { id: "h1", type: "tagContact", tag: "hazard", onTrigger: "respawn", cooldown: 0 },
-      ],
+      hazards: [{ id: "h1", type: "tagContact", tag: "hazard", onTrigger: "respawn", cooldown: 0 }],
       objectives: [],
     });
 
@@ -322,7 +324,7 @@ describe("RulesEngine tagContact + checkpoint", () => {
           Object.assign(t.position, pos);
         },
         resetPlayerMotion: () => {},
-      },
+      }
     );
     engine.start();
     engine.handleTriggerEnter(spike.id);
@@ -350,7 +352,7 @@ describe("RulesEngine tagContact + checkpoint", () => {
       {
         getEntities: () => entities,
         getPlayerTransforms: () => [],
-      },
+      }
     );
     engine.start();
     engine.handleTriggerEnter(flag.id);
@@ -386,7 +388,7 @@ describe("script actions for rules", () => {
         { type: "win", message: "Nice" },
         { type: "completeObjective", objectiveId: "obj-1" },
       ],
-      ctx,
+      ctx
     );
 
     expect(vars.score).toBe(3);

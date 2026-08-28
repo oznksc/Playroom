@@ -28,7 +28,7 @@ export function tileCellAt(
   tileWidth: number,
   tileHeight: number,
   gridWidth: number,
-  gridHeight: number,
+  gridHeight: number
 ): TileCell | null {
   if (tileWidth <= 0 || tileHeight <= 0) return null;
   const gx = Math.floor((point.x - origin.x) / tileWidth);
@@ -44,7 +44,7 @@ export function stampBrush(
   cx: number,
   cy: number,
   value: number,
-  size = 1,
+  size = 1
 ): number[] {
   const next = tiles.slice();
   const radius = Math.max(0, Math.floor((Math.max(1, size) - 1) / 2));
@@ -63,7 +63,7 @@ export function fillRectCells(
   height: number,
   a: TileCell,
   b: TileCell,
-  value: number,
+  value: number
 ): number[] {
   const next = tiles.slice();
   const minX = Math.max(0, Math.min(a.gx, b.gx));
@@ -84,7 +84,7 @@ export function floodFill(
   height: number,
   gx: number,
   gy: number,
-  value: number,
+  value: number
 ): number[] {
   if (!inTileBounds(gx, gy, width, height)) return tiles.slice();
   const start = tileIndex(gx, gy, width);
@@ -110,7 +110,7 @@ export function tilesetTileCount(
   image: { width: number; height: number } | undefined,
   tileWidth: number,
   tileHeight: number,
-  columns: number,
+  columns: number
 ): number {
   const tw = Math.max(1, tileWidth);
   const th = Math.max(1, tileHeight);
@@ -126,7 +126,7 @@ export function tileSrcRect(
   tileId: number,
   columns: number,
   tileWidth: number,
-  tileHeight: number,
+  tileHeight: number
 ): { sx: number; sy: number; sw: number; sh: number } | null {
   if (tileId <= 0) return null;
   const cols = Math.max(1, columns);
@@ -151,7 +151,13 @@ export function rectCells(a: TileCell, b: TileCell): TileCell[] {
   return cells;
 }
 
-export function brushCells(cx: number, cy: number, size: number, width: number, height: number): TileCell[] {
+export function brushCells(
+  cx: number,
+  cy: number,
+  size: number,
+  width: number,
+  height: number
+): TileCell[] {
   const cells: TileCell[] = [];
   const radius = Math.max(0, Math.floor((Math.max(1, size) - 1) / 2));
   for (let y = cy - radius; y <= cy + radius; y++) {
@@ -168,7 +174,7 @@ export function drawTilemapPaintOverlay(
   origin: { x: number; y: number },
   overlay: TilePaintOverlay,
   images: Map<string, HTMLImageElement>,
-  zoom = 1,
+  zoom = 1
 ): void {
   const { tileWidth, tileHeight, gridWidth, gridHeight } = tilemap;
   const hair = 1 / Math.max(0.0001, zoom);
@@ -226,8 +232,13 @@ export function drawTilemapPaintOverlay(
 export function findTilemapHit(
   entities: GameKitEntity[],
   point: { x: number; y: number },
-  selectedIds: Iterable<string>,
-): { entityId: string; tilemap: TilemapComponent; transform: TransformComponent; cell: TileCell } | null {
+  selectedIds: Iterable<string>
+): {
+  entityId: string;
+  tilemap: TilemapComponent;
+  transform: TransformComponent;
+  cell: TileCell;
+} | null {
   const selected = [...selectedIds]
     .map((id) => entities.find((e) => e.id === id))
     .find((e) => e && findComponent(e, "Tilemap"));
@@ -237,7 +248,14 @@ export function findTilemapHit(
     const tm = findComponent<TilemapComponent>(entity, "Tilemap");
     const tr = findComponent<TransformComponent>(entity, "Transform");
     if (!tm || !tr) continue;
-    const cell = tileCellAt(point, tr.position, tm.tileWidth, tm.tileHeight, tm.gridWidth, tm.gridHeight);
+    const cell = tileCellAt(
+      point,
+      tr.position,
+      tm.tileWidth,
+      tm.tileHeight,
+      tm.gridWidth,
+      tm.gridHeight
+    );
     if (!cell) continue;
     return { entityId: entity.id, tilemap: tm, transform: tr, cell };
   }

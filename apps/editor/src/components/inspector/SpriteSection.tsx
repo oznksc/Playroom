@@ -27,9 +27,14 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
       {sprite ? (
         <>
           <div className="mb-2 flex items-center gap-2">
-            {assets.find(a => a.id === sprite.assetId) ? (
+            {assets.find((a) => a.id === sprite.assetId) ? (
               <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-default bg-bg-base">
-                <img src={getApiUrl(`/gamekit/assets/${assets.find(a => a.id === sprite.assetId)?.file}`)} alt="" />
+                <img
+                  src={getApiUrl(
+                    `/gamekit/assets/${assets.find((a) => a.id === sprite.assetId)?.file}`
+                  )}
+                  alt=""
+                />
               </div>
             ) : (
               <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-default bg-bg-base text-text-muted">
@@ -37,7 +42,9 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset Ref</label>
+              <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Asset Ref
+              </label>
               <Select
                 value={sprite.assetId}
                 onChange={(event) => {
@@ -48,7 +55,9 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
                 }}
               >
                 {assets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>{asset.id}</option>
+                  <option key={asset.id} value={asset.id}>
+                    {asset.id}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -58,38 +67,48 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
               <NumberField
                 label="Width"
                 value={sprite.width}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<SpriteComponent>(draft, "Sprite")!.width = value;
+                  })
+                }
               />
               <NumberField
                 label="Height"
                 value={sprite.height}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<SpriteComponent>(draft, "Sprite")!.height = value;
+                  })
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <NumberField
                 label="Anchor X"
                 value={sprite.anchor.x}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.anchor.x = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<SpriteComponent>(draft, "Sprite")!.anchor.x = value;
+                  })
+                }
               />
               <NumberField
                 label="Anchor Y"
                 value={sprite.anchor.y}
-                onChange={(value) => onChange((draft) => {
-                  findComponent<SpriteComponent>(draft, "Sprite")!.anchor.y = value;
-                })}
+                onChange={(value) =>
+                  onChange((draft) => {
+                    findComponent<SpriteComponent>(draft, "Sprite")!.anchor.y = value;
+                  })
+                }
               />
             </div>
           </div>
         </>
       ) : (
-        <p className="text-center text-[10px] text-text-muted">Sprite Renderer missing on this entity</p>
+        <p className="text-center text-[10px] text-text-muted">
+          Sprite Renderer missing on this entity
+        </p>
       )}
     </AccordionSection>
   );

@@ -25,7 +25,7 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
       return toolJson({ scenePath: filename, rules: resolveGameRules(scene.gameRules) });
-    },
+    }
   );
 
   server.tool(
@@ -47,7 +47,7 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, spawnPoint: gr.spawnPoint ?? null });
-    },
+    }
   );
 
   server.tool(
@@ -66,7 +66,7 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, which, actions: gr[which] });
-    },
+    }
   );
 
   server.tool(
@@ -79,11 +79,12 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       const gr = ensureRules(scene);
       const before = gr.objectives.length;
       gr.objectives = gr.objectives.filter((o) => o.id !== id);
-      if (gr.objectives.length === before) return toolJson({ error: `Objective "${id}" not found.` }, true);
+      if (gr.objectives.length === before)
+        return toolJson({ error: `Objective "${id}" not found.` }, true);
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, remaining: gr.objectives.map((o) => o.id) });
-    },
+    }
   );
 
   server.tool(
@@ -96,11 +97,12 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       const gr = ensureRules(scene);
       const before = gr.hazards.length;
       gr.hazards = gr.hazards.filter((h) => h.id !== id);
-      if (gr.hazards.length === before) return toolJson({ error: `Hazard "${id}" not found.` }, true);
+      if (gr.hazards.length === before)
+        return toolJson({ error: `Hazard "${id}" not found.` }, true);
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, remaining: gr.hazards.map((h) => h.id) });
-    },
+    }
   );
 
   server.tool(
@@ -110,7 +112,9 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scenePath: z.string().describe("Scene filename, e.g. main.scene.json"),
       rules: z
         .record(z.unknown())
-        .describe("Partial GameRulesConfig fields to merge (scalars overwrite; pass full arrays to replace lists)"),
+        .describe(
+          "Partial GameRulesConfig fields to merge (scalars overwrite; pass full arrays to replace lists)"
+        ),
     },
     async ({ scenePath, rules }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -120,19 +124,21 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scene.gameRules = next;
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            success: true,
-            scenePath: filename,
-            objectives: next.objectives.length,
-            hazards: next.hazards.length,
-            onWin: next.onWin,
-            onLose: next.onLose,
-          }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              scenePath: filename,
+              objectives: next.objectives.length,
+              hazards: next.hazards.length,
+              onWin: next.onWin,
+              onLose: next.onLose,
+            }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -176,12 +182,14 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ success: true, objective, total: gr.objectives.length }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, objective, total: gr.objectives.length }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -226,18 +234,20 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       }
       // Replace existing same-id or same-type fall hazard
       gr.hazards = gr.hazards.filter(
-        (h) => h.id !== id && !(args.type === "fall" && h.type === "fall"),
+        (h) => h.id !== id && !(args.type === "fall" && h.type === "fall")
       );
       gr.hazards.push(hazard);
       scene.gameRules = gr;
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ success: true, hazard, total: gr.hazards.length }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, hazard, total: gr.hazards.length }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -247,7 +257,10 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       scenePath: z.string(),
       entityId: z.string(),
       tags: z.array(z.string().min(1)).describe("Tags to set (replaces unless merge=true)"),
-      merge: z.boolean().optional().describe("If true, append unique tags (default false = replace)"),
+      merge: z
+        .boolean()
+        .optional()
+        .describe("If true, append unique tags (default false = replace)"),
     },
     async ({ scenePath, entityId, tags, merge }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -255,7 +268,9 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -267,11 +282,13 @@ export function registerGameRulesTools(server: McpServer, fileIO: FileIO): void 
       }
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ success: true, entityId, tags: entity.tags ?? [] }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, entityId, tags: entity.tags ?? [] }),
+          },
+        ],
       };
-    },
+    }
   );
 }

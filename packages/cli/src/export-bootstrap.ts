@@ -70,19 +70,16 @@ export function orderSceneFiles(projectScenes: string[], diskScenes: string[]): 
  * Schema stores transition duration in seconds; SceneManager expects ms.
  */
 export function resolveTransitionMs(
-  transitions?: Array<{ type?: string; duration?: number }> | null,
+  transitions?: Array<{ type?: string; duration?: number }> | null
 ): BootstrapTransition {
   const t = transitions?.[0];
   if (!t || typeof t.duration !== "number" || !Number.isFinite(t.duration)) {
     return { type: "fade", duration: 250 };
   }
-  const type =
-    t.type === "none" || t.type === "fade" || t.type === "slide" ? t.type : "fade";
+  const type = t.type === "none" || t.type === "fade" || t.type === "slide" ? t.type : "fade";
   // Values under 20 are treated as seconds (0.35 → 350ms).
   const duration =
-    t.duration > 0 && t.duration < 20
-      ? Math.round(t.duration * 1000)
-      : Math.round(t.duration);
+    t.duration > 0 && t.duration < 20 ? Math.round(t.duration * 1000) : Math.round(t.duration);
   return { type, duration: Math.max(0, duration) };
 }
 
@@ -132,9 +129,7 @@ function formatStringArray(values: string[]): string {
 }
 
 function sceneImportBlock(scenes: BootstrapScene[], pathPrefix: string): string {
-  return scenes
-    .map((s) => `import ${s.importVar} from "${pathPrefix}${s.file}";`)
-    .join("\n");
+  return scenes.map((s) => `import ${s.importVar} from "${pathPrefix}${s.file}";`).join("\n");
 }
 
 function sceneRegisterBlock(scenes: BootstrapScene[]): string {

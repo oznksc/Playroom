@@ -1,5 +1,30 @@
-import type { AnimationComponent, GameKitScene, SpriteComponent, TilemapComponent, TransformComponent, TextComponent, GuiNode, GuiComponent, NineSliceComponent, Light2DComponent } from "@gamekit/schema";
-import { Canvas, Group, Rect, Circle, RoundedRect, Skia, Image as SkiaImage, useImage, Text as SkiaText, useFont, matchFont, Path, RadialGradient } from "@shopify/react-native-skia";
+import type {
+  AnimationComponent,
+  GameKitScene,
+  SpriteComponent,
+  TilemapComponent,
+  TransformComponent,
+  TextComponent,
+  GuiNode,
+  GuiComponent,
+  NineSliceComponent,
+  Light2DComponent,
+} from "@gamekit/schema";
+import {
+  Canvas,
+  Group,
+  Rect,
+  Circle,
+  RoundedRect,
+  Skia,
+  Image as SkiaImage,
+  useImage,
+  Text as SkiaText,
+  useFont,
+  matchFont,
+  Path,
+  RadialGradient,
+} from "@shopify/react-native-skia";
 import type { ComponentType, ReactElement, ReactNode } from "react";
 import { Fragment, useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View, Platform } from "react-native";
@@ -10,11 +35,7 @@ import { pivotTransform } from "./transform.js";
 import { computeNineSliceRegions } from "./nineslice.js";
 import { offsetGuiNode, guiNodeOrigin } from "./gui.js";
 import { wrapText } from "./wrap-text.js";
-import {
-  computeSpotCone,
-  pointLightColors,
-  LIGHT_GRADIENT_POSITIONS,
-} from "./light.js";
+import { computeSpotCone, pointLightColors, LIGHT_GRADIENT_POSITIONS } from "./light.js";
 
 // Skia packages may resolve a different @types/react (e.g. 19 vs 18) in monorepos;
 // cast Canvas so tsc accepts it without forcing a monorepo-wide React types upgrade.
@@ -111,8 +132,8 @@ function calculateViewportScale(
       top: safeArea.enabled ? insets.top + safeArea.padding.top : safeArea.padding.top,
       bottom: safeArea.enabled ? insets.bottom + safeArea.padding.bottom : safeArea.padding.bottom,
       left: safeArea.enabled ? insets.left + safeArea.padding.left : safeArea.padding.left,
-      right: safeArea.enabled ? insets.right + safeArea.padding.right : safeArea.padding.right
-    }
+      right: safeArea.enabled ? insets.right + safeArea.padding.right : safeArea.padding.right,
+    },
   };
 }
 
@@ -164,7 +185,7 @@ export function GameKitView({
             { scale: viewportScale.scale },
             { scale: camera.zoom ?? 1 },
             { translateX: -camera.x },
-            { translateY: -camera.y }
+            { translateY: -camera.y },
           ]}
         >
           <Rect
@@ -175,12 +196,16 @@ export function GameKitView({
             color={scene.viewport.background}
           />
           {scene.entities.map((entity) => {
-            const transform = entity.components.find((component): component is TransformComponent => component.type === "Transform");
+            const transform = entity.components.find(
+              (component): component is TransformComponent => component.type === "Transform"
+            );
             if (!transform) return null;
 
             const nodes: ReactElement[] = [];
 
-            const tilemap = entity.components.find((component): component is TilemapComponent => component.type === "Tilemap");
+            const tilemap = entity.components.find(
+              (component): component is TilemapComponent => component.type === "Tilemap"
+            );
             if (tilemap) {
               nodes.push(
                 <TilemapNode
@@ -192,7 +217,9 @@ export function GameKitView({
               );
             }
 
-            const anim = entity.components.find((component): component is AnimationComponent => component.type === "Animation");
+            const anim = entity.components.find(
+              (component): component is AnimationComponent => component.type === "Animation"
+            );
             if (anim) {
               nodes.push(
                 <AnimatedSpriteNode
@@ -204,7 +231,9 @@ export function GameKitView({
               );
             }
 
-            const sprite = entity.components.find((component): component is SpriteComponent => component.type === "Sprite");
+            const sprite = entity.components.find(
+              (component): component is SpriteComponent => component.type === "Sprite"
+            );
             if (sprite) {
               nodes.push(
                 <SpriteNode
@@ -216,7 +245,9 @@ export function GameKitView({
               );
             }
 
-            const nineSlice = entity.components.find((component): component is NineSliceComponent => component.type === "NineSlice");
+            const nineSlice = entity.components.find(
+              (component): component is NineSliceComponent => component.type === "NineSlice"
+            );
             if (nineSlice && !sprite) {
               nodes.push(
                 <NineSliceNode
@@ -228,7 +259,9 @@ export function GameKitView({
               );
             }
 
-            const textComp = entity.components.find((component): component is TextComponent => component.type === "Text");
+            const textComp = entity.components.find(
+              (component): component is TextComponent => component.type === "Text"
+            );
             if (textComp) {
               nodes.push(
                 <TextNode
@@ -252,19 +285,17 @@ export function GameKitView({
                     r={Math.max(0.5, particleRenderSize(p) / 2)}
                     color={Skia.Color(particleRenderColor(p))}
                     opacity={particleRenderAlpha(p)}
-                  />,
+                  />
                 );
               }
             }
 
-            const light = entity.components.find((component): component is Light2DComponent => component.type === "Light2D");
+            const light = entity.components.find(
+              (component): component is Light2DComponent => component.type === "Light2D"
+            );
             if (light) {
               nodes.push(
-                <LightNode
-                  key={`${entity.id}-light`}
-                  light={light}
-                  transform={transform}
-                />,
+                <LightNode key={`${entity.id}-light`} light={light} transform={transform} />
               );
             }
 
@@ -328,7 +359,11 @@ function GuiNodeView({
     const align = node.align ?? "left";
     const origin = guiNodeOrigin(node);
     const textX =
-      align === "center" ? origin.x + node.width / 2 : align === "right" ? origin.x + node.width : origin.x + 4;
+      align === "center"
+        ? origin.x + node.width / 2
+        : align === "right"
+          ? origin.x + node.width
+          : origin.x + 4;
     return (
       <Group>
         {font ? (
@@ -340,7 +375,14 @@ function GuiNodeView({
             color={Skia.Color(color)}
           />
         ) : (
-          <Rect x={origin.x} y={origin.y} width={node.width} height={node.height} color={Skia.Color(color)} opacity={0.15} />
+          <Rect
+            x={origin.x}
+            y={origin.y}
+            width={node.width}
+            height={node.height}
+            color={Skia.Color(color)}
+            opacity={0.15}
+          />
         )}
       </Group>
     );
@@ -362,7 +404,7 @@ function GuiNodeView({
         />
         {font ? (
           <SkiaText
-            x={origin.x + node.width / 2 - (node.text.length * fontSize * 0.28)}
+            x={origin.x + node.width / 2 - node.text.length * fontSize * 0.28}
             y={origin.y + node.height / 2 + fontSize / 3}
             text={node.text}
             font={font}
@@ -460,15 +502,7 @@ function GuiImageNode({
 }): ReactElement {
   const image = useImage(source as Parameters<typeof useImage>[0]);
   if (!image) {
-    return (
-      <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        color={Skia.Color("#444466")}
-      />
-    );
+    return <Rect x={x} y={y} width={width} height={height} color={Skia.Color("#444466")} />;
   }
   return <SkiaImage image={image} x={x} y={y} width={width} height={height} />;
 }
@@ -476,7 +510,7 @@ function GuiImageNode({
 function SpriteNode({
   sprite,
   transform,
-  source
+  source,
 }: {
   sprite: SpriteComponent;
   transform: TransformComponent;
@@ -487,17 +521,9 @@ function SpriteNode({
   const y = transform.position.y - sprite.height * sprite.anchor.y;
 
   return (
-    <Group
-      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-    >
+    <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
       {image ? (
-        <SkiaImage
-          image={image}
-          x={x}
-          y={y}
-          width={sprite.width}
-          height={sprite.height}
-        />
+        <SkiaImage image={image} x={x} y={y} width={sprite.width} height={sprite.height} />
       ) : (
         <Rect
           x={x}
@@ -514,7 +540,7 @@ function SpriteNode({
 function NineSliceNode({
   nineSlice,
   transform,
-  source
+  source,
 }: {
   nineSlice: NineSliceComponent;
   transform: TransformComponent;
@@ -532,18 +558,20 @@ function NineSliceNode({
 
   if (!image) {
     return (
-      <Group
-        transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-      >
-        <Rect x={x0} y={y0} width={nineSlice.width} height={nineSlice.height} color={Skia.Color("#f472b6")} />
+      <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
+        <Rect
+          x={x0}
+          y={y0}
+          width={nineSlice.width}
+          height={nineSlice.height}
+          color={Skia.Color("#f472b6")}
+        />
       </Group>
     );
   }
 
   return (
-    <Group
-      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-    >
+    <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
       {regions.map((r, i) => {
         const scaleX = r.sw > 0 ? r.w / r.sw : 1;
         const scaleY = r.sh > 0 ? r.h / r.sh : 1;
@@ -571,7 +599,7 @@ function NineSliceNode({
 function TilemapNode({
   tilemap,
   transform,
-  source
+  source,
 }: {
   tilemap: TilemapComponent;
   transform: TransformComponent;
@@ -624,9 +652,7 @@ function TilemapNode({
   }
 
   return tiles.length > 0 ? (
-    <Group
-      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-    >
+    <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
       {tiles}
     </Group>
   ) : null;
@@ -635,7 +661,7 @@ function TilemapNode({
 function AnimatedSpriteNode({
   anim,
   transform,
-  source
+  source,
 }: {
   anim: AnimationComponent;
   transform: TransformComponent;
@@ -648,13 +674,9 @@ function AnimatedSpriteNode({
   const srcX = frame * anim.frameWidth;
 
   return (
-    <Group
-      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-    >
+    <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
       {image ? (
-        <Group
-          clip={Skia.RRectXY(Skia.XYWHRect(x, y, anim.frameWidth, anim.frameHeight), 0, 0)}
-        >
+        <Group clip={Skia.RRectXY(Skia.XYWHRect(x, y, anim.frameWidth, anim.frameHeight), 0, 0)}>
           <SkiaImage
             image={image}
             x={x - srcX}
@@ -679,7 +701,7 @@ function AnimatedSpriteNode({
 function TextNode({
   textComponent,
   transform,
-  source
+  source,
 }: {
   textComponent: TextComponent;
   transform: TransformComponent;
@@ -687,7 +709,7 @@ function TextNode({
 }): ReactElement | null {
   const assetFont = useFont(
     textComponent.fontAssetId && source ? (source as string) : null,
-    textComponent.size,
+    textComponent.size
   );
   const systemFontFamily = Platform.select({ ios: "Helvetica", default: "sans-serif" });
   let systemFont: ReturnType<typeof matchFont> | null = null;
@@ -703,7 +725,7 @@ function TextNode({
   if (!font) {
     if (__DEV__ && textComponent.fontAssetId) {
       console.warn(
-        `[GameKit] Font asset "${textComponent.fontAssetId}" not loaded — text "${textComponent.text.slice(0, 20)}" hidden`,
+        `[GameKit] Font asset "${textComponent.fontAssetId}" not loaded — text "${textComponent.text.slice(0, 20)}" hidden`
       );
     }
     return null;
@@ -712,7 +734,9 @@ function TextNode({
   let x = transform.position.x;
   const y = transform.position.y;
 
-  const lines = textComponent.width ? wrapText(textComponent.text, font, textComponent.width) : [textComponent.text];
+  const lines = textComponent.width
+    ? wrapText(textComponent.text, font, textComponent.width)
+    : [textComponent.text];
 
   if (textComponent.align === "center" || textComponent.align === "right") {
     const width = Math.max(...lines.map((line) => font.getTextWidth(line)));
@@ -726,9 +750,7 @@ function TextNode({
   const lineHeight = textComponent.size * 1.2;
 
   return (
-    <Group
-      transform={pivotTransform(transform, transform.position.x, transform.position.y)}
-    >
+    <Group transform={pivotTransform(transform, transform.position.x, transform.position.y)}>
       {lines.map((line, i) => (
         <SkiaText
           key={i}
@@ -746,9 +768,9 @@ function TextNode({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    overflow: "hidden"
+    overflow: "hidden",
   },
   canvas: {
-    flex: 1
-  }
+    flex: 1,
+  },
 });

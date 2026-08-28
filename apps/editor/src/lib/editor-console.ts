@@ -1,4 +1,9 @@
-import { createEntity, type GameKitEntity, type GameKitScene, type PlayerControllerComponent } from "@gamekit/schema";
+import {
+  createEntity,
+  type GameKitEntity,
+  type GameKitScene,
+  type PlayerControllerComponent,
+} from "@gamekit/schema";
 import { findComponent } from "./components.js";
 
 export function createConsoleObstacle(assetId?: string): GameKitEntity {
@@ -35,7 +40,15 @@ export function executeEditorConsoleCommand(params: {
   setSelectedEntityIds: (ids: Set<string>) => void;
   addConsoleLog: (type: ConsoleLogType, message: string) => void;
 }): void {
-  const { command, selectedAssetId, fallbackAssetId, selectedEntityId, updateScene, setSelectedEntityIds, addConsoleLog } = params;
+  const {
+    command,
+    selectedAssetId,
+    fallbackAssetId,
+    selectedEntityId,
+    updateScene,
+    setSelectedEntityIds,
+    addConsoleLog,
+  } = params;
   const tokens = command.trim().split(/\s+/);
   const cmd = tokens[0]?.toLowerCase() ?? "";
 
@@ -45,7 +58,10 @@ export function executeEditorConsoleCommand(params: {
   if (cmd === "/help") {
     addConsoleLog("system", "Engine Command Console Reference:");
     addConsoleLog("system", "  /spawn                - Spawns randomized solid obstacle Box.");
-    addConsoleLog("system", "  /gravity [number]     - Adjusts simulated gravity force (e.g. 1800).");
+    addConsoleLog(
+      "system",
+      "  /gravity [number]     - Adjusts simulated gravity force (e.g. 1800)."
+    );
     addConsoleLog("system", "  /speed [number]       - Overrides speed px/s on active Player.");
     addConsoleLog("system", "  /clear                - Empties terminal logs history.");
     return;
@@ -91,17 +107,25 @@ export function executeEditorConsoleCommand(params: {
     let found = false;
     updateScene((draft) => {
       const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
-      const player = entity ? findComponent<PlayerControllerComponent>(entity, "PlayerController") : undefined;
+      const player = entity
+        ? findComponent<PlayerControllerComponent>(entity, "PlayerController")
+        : undefined;
       if (player) {
         player.speed = value;
         found = true;
       }
     });
-    addConsoleLog(found ? "system" : "warn", found
-      ? `Modified active PlayerController speed constants to ${value}px/s.`
-      : "Selected entity lacks an active PlayerController script.");
+    addConsoleLog(
+      found ? "system" : "warn",
+      found
+        ? `Modified active PlayerController speed constants to ${value}px/s.`
+        : "Selected entity lacks an active PlayerController script."
+    );
     return;
   }
 
-  addConsoleLog("error", `Engine command '${cmd}' unrecognized. Enter '/help' to inspect command catalog.`);
+  addConsoleLog(
+    "error",
+    `Engine command '${cmd}' unrecognized. Enter '/help' to inspect command catalog.`
+  );
 }

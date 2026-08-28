@@ -11,8 +11,19 @@ import { findEntity, summarizeEntity } from "../utils/entity-query.js";
 
 const DEFAULTS: Record<string, Record<string, unknown>> = {
   Sprite: { type: "Sprite", assetId: "player", width: 64, height: 64, anchor: { x: 0.5, y: 0.5 } },
-  AabbCollider: { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 64, y: 64 }, isStatic: false },
-  CircleCollider: { type: "CircleCollider", offset: { x: 0, y: 0 }, radius: 24, isStatic: false, isTrigger: false },
+  AabbCollider: {
+    type: "AabbCollider",
+    offset: { x: 0, y: 0 },
+    size: { x: 64, y: 64 },
+    isStatic: false,
+  },
+  CircleCollider: {
+    type: "CircleCollider",
+    offset: { x: 0, y: 0 },
+    radius: 24,
+    isStatic: false,
+    isTrigger: false,
+  },
   PolygonCollider: {
     type: "PolygonCollider",
     offset: { x: 0, y: 0 },
@@ -106,18 +117,64 @@ const EDITOR_CAPABILITIES = {
   purpose:
     "Author the full game with these tools. The editor is for pixel-level nudges (gizmos, snap, zoom, play feel) without extra tokens.",
   panels: {
-    Hierarchy: ["list_entities", "add_entity", "remove_entity", "update_entity", "reorder_entity", "duplicate_entity"],
-    Inspector: ["upsert_component", "update_component", "add_component", "remove_component", "list_components", "get_entity"],
-    World: ["get_scene_settings", "set_viewport", "set_gravity", "set_responsive", "set_safe_area", "set_game_rules"],
-    Input: ["get_input_map", "define_input_action", "remove_input_action", "apply_input_preset", "apply_recipe"],
+    Hierarchy: [
+      "list_entities",
+      "add_entity",
+      "remove_entity",
+      "update_entity",
+      "reorder_entity",
+      "duplicate_entity",
+    ],
+    Inspector: [
+      "upsert_component",
+      "update_component",
+      "add_component",
+      "remove_component",
+      "list_components",
+      "get_entity",
+    ],
+    World: [
+      "get_scene_settings",
+      "set_viewport",
+      "set_gravity",
+      "set_responsive",
+      "set_safe_area",
+      "set_game_rules",
+    ],
+    Input: [
+      "get_input_map",
+      "define_input_action",
+      "remove_input_action",
+      "apply_input_preset",
+      "apply_recipe",
+    ],
     Timeline: ["get_timeline", "set_timeline", "upsert_timeline_track", "remove_timeline_track"],
     Tilemap: ["add_tilemap", "paint_tile", "paint_tiles", "upsert_component"],
-    GUI: ["list_gui_nodes", "add_gui_node", "update_gui_node", "remove_gui_node", "list_gui_components"],
+    GUI: [
+      "list_gui_nodes",
+      "add_gui_node",
+      "update_gui_node",
+      "remove_gui_node",
+      "list_gui_components",
+    ],
     Prefabs: ["list_prefabs", "create_prefab", "instantiate_prefab", "remove_prefab"],
-    Levels: ["list_levels", "add_level", "update_level", "remove_level", "set_level_on_complete", "set_level_rules"],
+    Levels: [
+      "list_levels",
+      "add_level",
+      "update_level",
+      "remove_level",
+      "set_level_on_complete",
+      "set_level_rules",
+    ],
     Assets: ["list_assets", "add_asset", "import_image", "import_audio", "remove_asset"],
     Recipes: ["list_recipes", "describe_recipe", "apply_recipe"],
-    PlayVerify: ["simulate_runtime_step", "inspect_layout", "validate_scene", "run_doctor", "raycast"],
+    PlayVerify: [
+      "simulate_runtime_step",
+      "inspect_layout",
+      "validate_scene",
+      "run_doctor",
+      "raycast",
+    ],
   },
   editorOnly: [
     "Canvas gizmos / drag / snap / zoom",
@@ -132,7 +189,7 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
     "list_editor_capabilities",
     "Map of every editor panel to the MCP tools that cover it. Call this when planning a full authoring pass.",
     {},
-    async () => toolJson(EDITOR_CAPABILITIES),
+    async () => toolJson(EDITOR_CAPABILITIES)
   );
 
   server.tool(
@@ -170,12 +227,23 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
           entity.components.push(parsed);
         }
       } catch (e) {
-        return toolJson({ error: e instanceof Error ? e.message : String(e), hint: "Call list_component_types for fields." }, true);
+        return toolJson(
+          {
+            error: e instanceof Error ? e.message : String(e),
+            hint: "Call list_component_types for fields.",
+          },
+          true
+        );
       }
       await fileIO.writeScene(filename, scene);
       const saved = entity.components.find((c) => c.type === type);
-      return toolJson({ success: true, upserted: type, component: saved, entity: summarizeEntity(entity) });
-    },
+      return toolJson({
+        success: true,
+        upserted: type,
+        component: saved,
+        entity: summarizeEntity(entity),
+      });
+    }
   );
 
   server.tool(
@@ -194,7 +262,7 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
         ...(jumpVelocity !== undefined ? { jumpVelocity } : {}),
         ...(gravity !== undefined ? { gravity } : {}),
       });
-    },
+    }
   );
 
   server.tool(
@@ -217,7 +285,7 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
         if (v !== undefined) patch[k] = v;
       }
       return upsertTyped(fileIO, scenePath, entityId, "RigidBody", patch);
-    },
+    }
   );
 
   server.tool(
@@ -240,7 +308,7 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
         if (v !== undefined) patch[k] = v;
       }
       return upsertTyped(fileIO, scenePath, entityId, "Animation", patch);
-    },
+    }
   );
 
   server.tool(
@@ -259,7 +327,7 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
         ...(speed !== undefined ? { speed } : {}),
         ...(loop !== undefined ? { loop } : {}),
       });
-    },
+    }
   );
 
   server.tool(
@@ -298,8 +366,13 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
       sm.states.push(state as StateMachineComponent["states"][number]);
       if (initial) sm.initialState = name;
       await fileIO.writeScene(filename, scene);
-      return toolJson({ success: true, state, initialState: sm.initialState, states: sm.states.map((s) => s.name) });
-    },
+      return toolJson({
+        success: true,
+        state,
+        initialState: sm.initialState,
+        states: sm.states.map((s) => s.name),
+      });
+    }
   );
 
   server.tool(
@@ -311,8 +384,10 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
       enabled: z.boolean().optional(),
     },
     async ({ scenePath, entityId, enabled }) => {
-      return upsertTyped(fileIO, scenePath, entityId, "AudioListener", { enabled: enabled ?? true });
-    },
+      return upsertTyped(fileIO, scenePath, entityId, "AudioListener", {
+        enabled: enabled ?? true,
+      });
+    }
   );
 
   server.tool(
@@ -333,8 +408,12 @@ export function registerInspectorTools(server: McpServer, fileIO: FileIO): void 
       const before = script.handlers.length;
       script.handlers = script.handlers.filter((h) => h.event !== event);
       await fileIO.writeScene(filename, scene);
-      return toolJson({ success: true, removed: before - script.handlers.length, remaining: script.handlers.length });
-    },
+      return toolJson({
+        success: true,
+        removed: before - script.handlers.length,
+        remaining: script.handlers.length,
+      });
+    }
   );
 }
 
@@ -343,7 +422,7 @@ async function upsertTyped(
   scenePath: string,
   entityId: string,
   type: string,
-  patch: Record<string, unknown>,
+  patch: Record<string, unknown>
 ) {
   const filename = fileIO.resolveScenePath(scenePath);
   const scene = await fileIO.readScene(filename);

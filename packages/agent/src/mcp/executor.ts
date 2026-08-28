@@ -7,7 +7,7 @@ export async function callTool(
   client: McpClient,
   name: string,
   args: unknown,
-  _signal?: AbortSignal,
+  _signal?: AbortSignal
 ): Promise<ToolResult> {
   const raw = await client.request("tools/call", {
     name,

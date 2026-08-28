@@ -1,5 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { createServer as createHttpsServer, type ServerOptions as HttpsServerOptions } from "node:https";
+import {
+  createServer as createHttpsServer,
+  type ServerOptions as HttpsServerOptions,
+} from "node:https";
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, stat, unlink } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -123,7 +126,7 @@ export async function startEditorServer(options: EditorServerOptions): Promise<E
       await handleRequest(options, request, response);
     } catch (error) {
       sendJson(response, 500, {
-        error: error instanceof Error ? error.message : "Unknown server error"
+        error: error instanceof Error ? error.message : "Unknown server error",
       });
     }
   };
@@ -199,19 +202,33 @@ const ProjectCreateSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   targetDir: z.string().min(1, "Target directory is required"),
   platform: z.enum(["expo", "web", "tauri", "libgdx"]).default("web"),
-  genre: z.enum(["platformer", "topdown", "puzzle", "topdown-shooter", "endless-runner", "physics-puzzle", "blank"]).default("platformer"),
+  genre: z
+    .enum([
+      "platformer",
+      "topdown",
+      "puzzle",
+      "topdown-shooter",
+      "endless-runner",
+      "physics-puzzle",
+      "blank",
+    ])
+    .default("platformer"),
   packageManager: z.enum(["pnpm", "bun", "yarn", "npm"]).optional(),
   runInstall: z.boolean().default(true),
   initGit: z.boolean().default(false),
 });
 
-async function handleRequest(options: EditorServerOptions, request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function handleRequest(
+  options: EditorServerOptions,
+  request: IncomingMessage,
+  response: ServerResponse
+): Promise<void> {
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
       "access-control-allow-origin": "*",
       "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
       "access-control-allow-headers": "content-type",
-      "access-control-max-age": "86400"
+      "access-control-max-age": "86400",
     });
     response.end();
     return;
@@ -226,19 +243,22 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         {
           id: "web",
           name: "Web Game (Phaser + Vite)",
-          description: "Runs instantly in any modern browser with 60FPS Phaser rendering and fast Vite HMR.",
+          description:
+            "Runs instantly in any modern browser with 60FPS Phaser rendering and fast Vite HMR.",
           icon: "Globe",
         },
         {
           id: "expo",
           name: "Expo Mobile (React Native + Skia)",
-          description: "Native iOS and Android gaming with high-performance Skia GPU rendering and touch controls.",
+          description:
+            "Native iOS and Android gaming with high-performance Skia GPU rendering and touch controls.",
           icon: "Smartphone",
         },
         {
           id: "tauri",
           name: "Desktop App (Tauri + Phaser)",
-          description: "Ultra-lightweight native desktop app for macOS, Windows, and Linux powered by Rust & Webview.",
+          description:
+            "Ultra-lightweight native desktop app for macOS, Windows, and Linux powered by Rust & Webview.",
           icon: "Monitor",
         },
       ],
@@ -258,7 +278,10 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     return;
   }
 
-  if (url.pathname === "/api/system/pick-directory" && (request.method === "POST" || request.method === "GET")) {
+  if (
+    url.pathname === "/api/system/pick-directory" &&
+    (request.method === "POST" || request.method === "GET")
+  ) {
     const selected = await openNativeFolderDialog();
     sendJson(response, 200, { path: selected });
     return;
@@ -292,7 +315,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/project" && request.method === "POST") {
-    const body = z.record(z.unknown()).parse(JSON.parse((await readBody(request)).toString("utf8")));
+    const body = z
+      .record(z.unknown())
+      .parse(JSON.parse((await readBody(request)).toString("utf8")));
     const project = await readProject(options.root);
     const updated = { ...project, ...body };
     await writeProject(options.root, updated);
@@ -320,7 +345,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       const mtimeMs = await getSceneMtime(options.root, file);
       sendJson(response, 200, { file, mtimeMs });
     } catch (error) {
-      sendJson(response, 404, { error: error instanceof Error ? error.message : "Scene not found" });
+      sendJson(response, 404, {
+        error: error instanceof Error ? error.message : "Scene not found",
+      });
     }
     return;
   }
@@ -331,7 +358,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
   }
 
   if (url.pathname === "/api/build" && request.method === "POST") {
-    const body = BuildRequestSchema.parse(JSON.parse((await readBody(request)).toString("utf8") || "{}"));
+    const body = BuildRequestSchema.parse(
+      JSON.parse((await readBody(request)).toString("utf8") || "{}")
+    );
     try {
       const result = await buildProject(options.root, {
         platform: body.platform ?? "mobile",
@@ -382,7 +411,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       await removeAsset(options.root, assetId);
       sendJson(response, 200, { deleted: assetId });
     } catch (error) {
-      sendJson(response, 404, { error: error instanceof Error ? error.message : "Asset not found" });
+      sendJson(response, 404, {
+        error: error instanceof Error ? error.message : "Asset not found",
+      });
     }
     return;
   }
@@ -404,7 +435,16 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       musicPresets: Object.keys(MUSIC_PRESETS),
       palettes: Object.keys(PALETTES),
       spriteCategories: ["character", "enemy", "item", "tile", "prop", "icon"],
-      characterArchetypes: ["hero", "knight", "rogue", "wizard", "monster", "slime", "robot", "alien"],
+      characterArchetypes: [
+        "hero",
+        "knight",
+        "rogue",
+        "wizard",
+        "monster",
+        "slime",
+        "robot",
+        "alien",
+      ],
       animationActions: ["idle", "walk", "run", "jump", "attack", "hurt", "die"],
       musicalScales: ["major", "minor", "pentatonic", "dorian", "blues", "harmonic_minor"],
       musicalKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
@@ -555,7 +595,10 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
     if (body.action === "instantiate") {
       if (!body.sceneFile || !body.prefabId) {
-        sendJson(response, 400, { error: "Missing required field: sceneFile and prefabId are required for instantiate action." });
+        sendJson(response, 400, {
+          error:
+            "Missing required field: sceneFile and prefabId are required for instantiate action.",
+        });
         return;
       }
       try {
@@ -566,14 +609,18 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         });
         sendJson(response, 200, { ok: true, ...result });
       } catch (error) {
-        sendJson(response, 400, { error: error instanceof Error ? error.message : "Instantiate failed" });
+        sendJson(response, 400, {
+          error: error instanceof Error ? error.message : "Instantiate failed",
+        });
       }
       return;
     }
 
     // default: create from entity
     if (!body.sceneFile || !body.entityId) {
-      sendJson(response, 400, { error: "Missing required field: sceneFile and entityId are required for create action." });
+      sendJson(response, 400, {
+        error: "Missing required field: sceneFile and entityId are required for create action.",
+      });
       return;
     }
     try {
@@ -581,7 +628,7 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         options.root,
         body.sceneFile,
         body.entityId,
-        body.name,
+        body.name
       );
       sendJson(response, 200, {
         ok: true,
@@ -593,7 +640,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
         },
       });
     } catch (error) {
-      sendJson(response, 400, { error: error instanceof Error ? error.message : "Create prefab failed" });
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : "Create prefab failed",
+      });
     }
     return;
   }
@@ -608,7 +657,9 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
       const removed = await removePrefab(options.root, prefabId);
       sendJson(response, 200, { ok: true, removed });
     } catch (error) {
-      sendJson(response, 404, { error: error instanceof Error ? error.message : "Prefab not found" });
+      sendJson(response, 404, {
+        error: error instanceof Error ? error.message : "Prefab not found",
+      });
     }
     return;
   }
@@ -637,7 +688,11 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
     const category = url.searchParams.get("category") ?? undefined;
     const query = url.searchParams.get("query") ?? undefined;
     const tags = url.searchParams.get("tag")
-      ? url.searchParams.get("tag")!.split(",").map((t) => t.trim()).filter(Boolean)
+      ? url.searchParams
+          .get("tag")!
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : undefined;
     sendJson(response, 200, { recipes: await listRecipes({ category, query, tags }) });
     return;
@@ -705,14 +760,24 @@ async function handleRequest(options: EditorServerOptions, request: IncomingMess
 
   // Agent routes — delegate to agent handler
   if (url.pathname.startsWith("/api/agent/")) {
-    const handled = await handleAgentRoute(options.root, request, response, url.pathname, request.method ?? "GET");
+    const handled = await handleAgentRoute(
+      options.root,
+      request,
+      response,
+      url.pathname,
+      request.method ?? "GET"
+    );
     if (handled) return;
   }
 
   await serveEditorAsset(options, url.pathname, response);
 }
 
-async function serveProjectAsset(root: string, pathname: string, response: ServerResponse): Promise<void> {
+async function serveProjectAsset(
+  root: string,
+  pathname: string,
+  response: ServerResponse
+): Promise<void> {
   const fileName = decodeURIComponent(pathname.replace("/gamekit/assets/", ""));
   const normalized = normalize(fileName);
   if (normalized.includes("..") || normalized.startsWith("/")) {
@@ -724,7 +789,7 @@ async function serveProjectAsset(root: string, pathname: string, response: Serve
   try {
     response.writeHead(200, {
       "content-type": contentType(filePath),
-      "access-control-allow-origin": "*"
+      "access-control-allow-origin": "*",
     });
     response.end(await readFile(filePath));
   } catch {
@@ -732,8 +797,15 @@ async function serveProjectAsset(root: string, pathname: string, response: Serve
   }
 }
 
-async function serveEditorAsset(options: EditorServerOptions, pathname: string, response: ServerResponse): Promise<void> {
-  const root = options.editorDist ?? process.env.GAMEKIT_EDITOR_DIST ?? fileURLToPath(new URL("../../../apps/editor/dist", import.meta.url));
+async function serveEditorAsset(
+  options: EditorServerOptions,
+  pathname: string,
+  response: ServerResponse
+): Promise<void> {
+  const root =
+    options.editorDist ??
+    process.env.GAMEKIT_EDITOR_DIST ??
+    fileURLToPath(new URL("../../../apps/editor/dist", import.meta.url));
   const normalized = normalize(pathname === "/" ? "/index.html" : pathname);
 
   if (normalized.includes("..")) {
@@ -776,7 +848,7 @@ async function readBody(request: IncomingMessage): Promise<Buffer> {
 function sendJson(response: ServerResponse, status: number, body: unknown): void {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*"
+    "access-control-allow-origin": "*",
   });
   response.end(JSON.stringify(body, null, 2));
 }

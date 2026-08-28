@@ -1,4 +1,10 @@
-import type { GameKitAsset, GameKitScene, TransformComponent, GuiComponent, TilemapComponent } from "@gamekit/schema";
+import type {
+  GameKitAsset,
+  GameKitScene,
+  TransformComponent,
+  GuiComponent,
+  TilemapComponent,
+} from "@gamekit/schema";
 import type { CanvasTool, TilePaintMode } from "../lib/editor-tools.js";
 import { isTilePaintTool } from "../lib/editor-tools.js";
 import {
@@ -21,12 +27,7 @@ import {
 } from "lucide-react";
 import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
-import {
-  hitEntity,
-  hitGuiNode,
-  hitComponentInstance,
-  hitPolygonVertex,
-} from "../lib/canvas.js";
+import { hitEntity, hitGuiNode, hitComponentInstance, hitPolygonVertex } from "../lib/canvas.js";
 import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
 import { cn } from "@/ui";
@@ -82,7 +83,14 @@ type SceneCanvasProps = {
   onSelect: (id: string, shift: boolean) => void;
   onSelectGuiNode: (id: string) => void;
   onSelectComponentInstance: (id: string) => void;
-  onTransform: (id: string, updates: { position?: { x: number; y: number }; rotation?: number; scale?: { x: number; y: number } }) => void;
+  onTransform: (
+    id: string,
+    updates: {
+      position?: { x: number; y: number };
+      rotation?: number;
+      scale?: { x: number; y: number };
+    }
+  ) => void;
   onPolygonPointsChange?: (id: string, points: { x: number; y: number }[]) => void;
   onPaintTiles?: (entityId: string, tiles: number[]) => void;
   onSampleTile?: (tileId: number) => void;
@@ -142,26 +150,34 @@ export function SceneCanvas({
   const [, setContextMenuTick] = useState(0);
 
   // Drag states containing initial parameters
-  const [drag, setDrag] = useState<{
-    id: string;
-    dx: number;
-    dy: number;
-    startPosition: { x: number; y: number };
-    startRotation: number;
-    startScale: { x: number; y: number };
-    startPointer: { x: number; y: number };
-  } | undefined>();
+  const [drag, setDrag] = useState<
+    | {
+        id: string;
+        dx: number;
+        dy: number;
+        startPosition: { x: number; y: number };
+        startRotation: number;
+        startScale: { x: number; y: number };
+        startPointer: { x: number; y: number };
+      }
+    | undefined
+  >();
 
-  const [polygonDrag, setPolygonDrag] = useState<{
-    entityId: string;
-    vertexIndex: number;
-    startPoints: { x: number; y: number }[];
-    startPointer: { x: number; y: number };
-  } | undefined>();
+  const [polygonDrag, setPolygonDrag] = useState<
+    | {
+        entityId: string;
+        vertexIndex: number;
+        startPoints: { x: number; y: number }[];
+        startPointer: { x: number; y: number };
+      }
+    | undefined
+  >();
 
   const [paintHover, setPaintHover] = useState<{ entityId: string; cell: TileCell } | null>(null);
   const [paintDraft, setPaintDraft] = useState<{ entityId: string; tiles: number[] } | null>(null);
-  const [paintRectStart, setPaintRectStart] = useState<{ entityId: string; cell: TileCell } | null>(null);
+  const [paintRectStart, setPaintRectStart] = useState<{ entityId: string; cell: TileCell } | null>(
+    null
+  );
   const paintMode = activeTool === "erase" ? "erase" : tilePaintMode;
   const paintOverlayForDraw = useMemo<TilePaintOverlay | null>(() => {
     if (!isTilePaintTool(activeTool) || isPlaying) return null;
@@ -176,7 +192,16 @@ export function SceneCanvas({
       mode: paintMode,
       draftTiles: paintDraft?.entityId === entityId ? paintDraft.tiles : undefined,
     };
-  }, [activeTool, isPlaying, paintDraft, paintHover, paintRectStart, paintMode, paintTileId, brushSize]);
+  }, [
+    activeTool,
+    isPlaying,
+    paintDraft,
+    paintHover,
+    paintRectStart,
+    paintMode,
+    paintTileId,
+    brushSize,
+  ]);
 
   const images = useImageCache(assets);
   const {
@@ -335,7 +360,7 @@ export function SceneCanvas({
       : isTilePaintTool(activeTool)
         ? paintMode === "eyedropper"
           ? "copy"
-        : "cell"
+          : "cell"
         : "crosshair";
 
   return (
@@ -430,8 +455,8 @@ export function SceneCanvas({
                         hit.tilemap.gridHeight,
                         hit.cell.gx,
                         hit.cell.gy,
-                        value,
-                      ),
+                        value
+                      )
                     );
                     return;
                   }
@@ -447,7 +472,7 @@ export function SceneCanvas({
                     hit.cell.gx,
                     hit.cell.gy,
                     value,
-                    brushSize,
+                    brushSize
                   );
                   setPaintDraft({ entityId: hit.entityId, tiles: next });
                   event.currentTarget.setPointerCapture(event.pointerId);
@@ -520,7 +545,8 @@ export function SceneCanvas({
                   const vi = hitPolygonVertex(entity, point, zoom);
                   if (vi >= 0) {
                     onSelect(entity.id, false);
-                    const polygon = findComponent(entity, "PolygonCollider") as { points: { x: number; y: number }[] } | undefined;
+                    const polygon = findComponent(entity, "PolygonCollider") as
+                      { points: { x: number; y: number }[] } | undefined;
                     if (polygon) {
                       setPolygonDrag({
                         entityId: entity.id,
@@ -535,9 +561,7 @@ export function SceneCanvas({
                 }
               }
 
-              const hit = [...scene.entities]
-                .reverse()
-                .find((entity) => hitEntity(entity, point));
+              const hit = [...scene.entities].reverse().find((entity) => hitEntity(entity, point));
               if (!hit) {
                 onSelect("", false);
                 return;
@@ -587,7 +611,7 @@ export function SceneCanvas({
                       hit.cell.gx,
                       hit.cell.gy,
                       value,
-                      brushSize,
+                      brushSize
                     ),
                   });
                   return;
@@ -603,10 +627,24 @@ export function SceneCanvas({
                   };
                 }
                 const entity = scene.entities.find((e) => e.id === polygonDrag.entityId);
-                const polygon = entity ? findComponent(entity, "PolygonCollider") as { offset: { x: number; y: number }; points: { x: number; y: number }[] } | undefined : undefined;
+                const polygon = entity
+                  ? (findComponent(entity, "PolygonCollider") as
+                      | { offset: { x: number; y: number }; points: { x: number; y: number }[] }
+                      | undefined)
+                  : undefined;
                 if (polygon) {
-                  const ox = (entity ? findComponent(entity, "Transform") as { position: { x: number; y: number } } | undefined : undefined)?.position.x ?? 0;
-                  const oy = (entity ? findComponent(entity, "Transform") as { position: { x: number; y: number } } | undefined : undefined)?.position.y ?? 0;
+                  const ox =
+                    (entity
+                      ? (findComponent(entity, "Transform") as
+                          { position: { x: number; y: number } } | undefined)
+                      : undefined
+                    )?.position.x ?? 0;
+                  const oy =
+                    (entity
+                      ? (findComponent(entity, "Transform") as
+                          { position: { x: number; y: number } } | undefined)
+                      : undefined
+                    )?.position.y ?? 0;
                   const newPoints = polygonDrag.startPoints.map((p, i) => {
                     if (i !== polygonDrag.vertexIndex) return p;
                     return {
@@ -672,7 +710,10 @@ export function SceneCanvas({
               if (paintRectStart && scene && onPaintTiles) {
                 const entity = scene.entities.find((e) => e.id === paintRectStart.entityId);
                 const tm = entity ? findComponent<TilemapComponent>(entity, "Tilemap") : undefined;
-                const hover = paintHover?.entityId === paintRectStart.entityId ? paintHover.cell : paintRectStart.cell;
+                const hover =
+                  paintHover?.entityId === paintRectStart.entityId
+                    ? paintHover.cell
+                    : paintRectStart.cell;
                 if (tm) {
                   onPaintTiles(
                     paintRectStart.entityId,
@@ -682,8 +723,8 @@ export function SceneCanvas({
                       tm.gridHeight,
                       paintRectStart.cell,
                       hover,
-                      paintMode === "erase" ? 0 : paintTileId,
-                    ),
+                      paintMode === "erase" ? 0 : paintTileId
+                    )
                   );
                 }
               } else if (paintDraft && onPaintTiles) {

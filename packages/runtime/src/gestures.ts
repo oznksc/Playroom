@@ -57,9 +57,7 @@ export type GestureRecognizer = {
   activePointerCount: () => number;
 };
 
-export function createGestureRecognizer(
-  options: GestureRecognizerOptions = {},
-): GestureRecognizer {
+export function createGestureRecognizer(options: GestureRecognizerOptions = {}): GestureRecognizer {
   const tapSlop = options.tapSlop ?? 12;
   const tapMaxMs = options.tapMaxMs ?? 250;
   const longPressMs = options.longPressMs ?? 450;
@@ -111,11 +109,7 @@ export function createGestureRecognizer(
       // Long-press while still held nearly still
       const elapsed = _timeMs - p.startTime;
       const moved = Math.hypot(p.x - p.startX, p.y - p.startY);
-      if (
-        !longPressFired.has(id) &&
-        elapsed >= longPressMs &&
-        moved <= tapSlop
-      ) {
+      if (!longPressFired.has(id) && elapsed >= longPressMs && moved <= tapSlop) {
         longPressFired.add(id);
         return { kind: "longPress", x: p.x, y: p.y };
       }

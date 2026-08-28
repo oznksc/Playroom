@@ -6,12 +6,7 @@ import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import https from "node:https";
-import {
-  createProject,
-  createEmptyScene,
-  projectToJson,
-  sceneToJson,
-} from "@gamekit/schema";
+import { createProject, createEmptyScene, projectToJson, sceneToJson } from "@gamekit/schema";
 import { startEditorServer, type EditorServerHandle } from "../src/server.js";
 
 function opensslAvailable(): boolean {
@@ -41,33 +36,82 @@ function generateTlsFixture(dir: string): {
   const clientCert = join(dir, "client-cert.pem");
   const ext = join(dir, "san.cnf");
 
-  const openssl = (args: string[]) => execFileSync("openssl", args, { stdio: ["ignore", "pipe", "pipe"] });
+  const openssl = (args: string[]) =>
+    execFileSync("openssl", args, { stdio: ["ignore", "pipe", "pipe"] });
   openssl([
-    "req", "-x509", "-newkey", "rsa:2048", "-keyout", caKey, "-out", ca,
-    "-days", "1", "-nodes", "-subj", "/CN=PlayroomTestCA",
+    "req",
+    "-x509",
+    "-newkey",
+    "rsa:2048",
+    "-keyout",
+    caKey,
+    "-out",
+    ca,
+    "-days",
+    "1",
+    "-nodes",
+    "-subj",
+    "/CN=PlayroomTestCA",
   ]);
   openssl([
-    "req", "-newkey", "rsa:2048", "-keyout", serverKey, "-out", serverCsr,
-    "-nodes", "-subj", "/CN=localhost",
+    "req",
+    "-newkey",
+    "rsa:2048",
+    "-keyout",
+    serverKey,
+    "-out",
+    serverCsr,
+    "-nodes",
+    "-subj",
+    "/CN=localhost",
   ]);
   openssl([
-    "req", "-newkey", "rsa:2048", "-keyout", clientKey, "-out", clientCsr,
-    "-nodes", "-subj", "/CN=editor-client",
+    "req",
+    "-newkey",
+    "rsa:2048",
+    "-keyout",
+    clientKey,
+    "-out",
+    clientCsr,
+    "-nodes",
+    "-subj",
+    "/CN=editor-client",
   ]);
 
   // subjectAltName so Node's TLS stack accepts the server cert for 127.0.0.1.
-  writeFileSync(
-    ext,
-    "subjectAltName=DNS:localhost,IP:127.0.0.1\nbasicConstraints=CA:FALSE\n",
-  );
+  writeFileSync(ext, "subjectAltName=DNS:localhost,IP:127.0.0.1\nbasicConstraints=CA:FALSE\n");
 
   openssl([
-    "x509", "-req", "-in", serverCsr, "-CA", ca, "-CAkey", caKey, "-CAcreateserial",
-    "-out", serverCert, "-days", "1", "-extfile", ext,
+    "x509",
+    "-req",
+    "-in",
+    serverCsr,
+    "-CA",
+    ca,
+    "-CAkey",
+    caKey,
+    "-CAcreateserial",
+    "-out",
+    serverCert,
+    "-days",
+    "1",
+    "-extfile",
+    ext,
   ]);
   openssl([
-    "x509", "-req", "-in", clientCsr, "-CA", ca, "-CAkey", caKey, "-CAcreateserial",
-    "-out", clientCert, "-days", "1",
+    "x509",
+    "-req",
+    "-in",
+    clientCsr,
+    "-CA",
+    ca,
+    "-CAkey",
+    caKey,
+    "-CAcreateserial",
+    "-out",
+    clientCert,
+    "-days",
+    "1",
   ]);
 
   return { ca, caKey, serverCert, serverKey, clientCert, clientKey };
@@ -75,7 +119,7 @@ function generateTlsFixture(dir: string): {
 
 function httpsGet(
   url: string,
-  options: https.RequestOptions = {},
+  options: https.RequestOptions = {}
 ): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     const req = https.request(url, { method: "GET", ...options }, (res) => {

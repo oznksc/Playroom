@@ -2,7 +2,7 @@ import type { GameKitEntity, GameKitScene, TransformComponent } from "@gamekit/s
 
 export function findComponent<T extends { type: string }>(
   entity: GameKitEntity,
-  type: T["type"],
+  type: T["type"]
 ): T | undefined {
   return entity.components.find((component) => component.type === type) as T | undefined;
 }
@@ -14,8 +14,14 @@ export function computeWorldBounds(scene: GameKitScene): { width: number; height
   for (const entity of scene.entities) {
     const transform = findComponent<TransformComponent>(entity, "Transform");
     if (!transform) continue;
-    const sprite = findComponent<{ type: "Sprite"; width: number; height: number }>(entity, "Sprite");
-    const collider = findComponent<{ type: "AabbCollider"; size: { x: number; y: number } }>(entity, "AabbCollider");
+    const sprite = findComponent<{ type: "Sprite"; width: number; height: number }>(
+      entity,
+      "Sprite"
+    );
+    const collider = findComponent<{ type: "AabbCollider"; size: { x: number; y: number } }>(
+      entity,
+      "AabbCollider"
+    );
     const tilemap = findComponent<{
       type: "Tilemap";
       gridWidth: number;

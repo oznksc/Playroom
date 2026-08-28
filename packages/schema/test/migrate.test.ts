@@ -82,7 +82,7 @@ describe("schema migrate", () => {
       { name: "Old Game", scenes: ["main.scene.json"] },
       0,
       1,
-      "project",
+      "project"
     );
     expect(project.valid).toBe(true);
     expect(validateProject(project.value).ok).toBe(true);
@@ -100,7 +100,7 @@ describe("schema migrate", () => {
       },
       0,
       1,
-      "prefab",
+      "prefab"
     );
     expect(prefab.valid).toBe(true);
     expect(validatePrefab(prefab.value).ok).toBe(true);

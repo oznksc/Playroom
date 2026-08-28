@@ -4,7 +4,7 @@ import type {
   StreamEvent,
   ProviderMessage,
   ModelTool,
-  ToolCall
+  ToolCall,
 } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
@@ -15,11 +15,15 @@ export class GoogleAdapter implements ProviderAdapter {
   readonly defaultBaseUrl = DEFAULT_BASE_URL;
   readonly requiresApiKey = true;
 
-  async listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]> {
+  async listModels(input: {
+    apiKey: string;
+    baseUrl?: string;
+    signal: AbortSignal;
+  }): Promise<string[]> {
     try {
       const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/models`, {
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
@@ -27,7 +31,9 @@ export class GoogleAdapter implements ProviderAdapter {
         return ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
       }
       const data = (await res.json()) as { data?: Array<{ id: string }> };
-      return data.data?.map((m) => m.id) ?? ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
+      return (
+        data.data?.map((m) => m.id) ?? ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]
+      );
     } catch {
       return ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
     }
@@ -42,7 +48,7 @@ export class GoogleAdapter implements ProviderAdapter {
       const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/models`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
@@ -59,7 +65,7 @@ export class GoogleAdapter implements ProviderAdapter {
 
     const headers: Record<string, string> = {
       "content-type": "application/json",
-      "authorization": `Bearer ${input.apiKey}`,
+      authorization: `Bearer ${input.apiKey}`,
     };
 
     const res = await fetch(`${baseUrl}/chat/completions`, {

@@ -41,7 +41,9 @@ describe("compactText", () => {
 
 describe("fingerprint + cache", () => {
   it("treats key order as identical", () => {
-    expect(fingerprint("spawn_role", { b: 1, a: 2 })).toBe(fingerprint("spawn_role", { a: 2, b: 1 }));
+    expect(fingerprint("spawn_role", { b: 1, a: 2 })).toBe(
+      fingerprint("spawn_role", { a: 2, b: 1 })
+    );
   });
 
   it("reuses a successful identical call and blocks a twice-failed one", () => {

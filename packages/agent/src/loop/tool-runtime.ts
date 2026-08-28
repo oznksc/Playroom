@@ -116,7 +116,12 @@ export function extractText(value: unknown): string {
   if (Array.isArray(value)) {
     const parts = value
       .map((part) => {
-        if (part && typeof part === "object" && "text" in part && typeof (part as { text: unknown }).text === "string") {
+        if (
+          part &&
+          typeof part === "object" &&
+          "text" in part &&
+          typeof (part as { text: unknown }).text === "string"
+        ) {
           return (part as { text: string }).text;
         }
         return typeof part === "string" ? part : JSON.stringify(part);
@@ -173,7 +178,12 @@ export class ToolCallCache {
     if (isReadOnlyTool(mutationTool)) return 0;
     let invalidated = 0;
     for (const [key, entry] of this.seen.entries()) {
-      if (SCENE_STATE_READ_TOOLS.has(entry.tool) || entry.tool.startsWith("get_") || entry.tool.startsWith("list_") || entry.tool.startsWith("inspect_")) {
+      if (
+        SCENE_STATE_READ_TOOLS.has(entry.tool) ||
+        entry.tool.startsWith("get_") ||
+        entry.tool.startsWith("list_") ||
+        entry.tool.startsWith("inspect_")
+      ) {
         this.seen.delete(key);
         invalidated++;
       }
@@ -298,7 +308,11 @@ export class InspectSpinTracker {
       };
     }
 
-    return { consecutiveReadTurns: this.consecutiveReadTurns, intervention: "none", haltReads: false };
+    return {
+      consecutiveReadTurns: this.consecutiveReadTurns,
+      intervention: "none",
+      haltReads: false,
+    };
   }
 
   /**
@@ -339,7 +353,12 @@ export class InspectSpinTracker {
     return false;
   }
 
-  getStats(): { consecutiveReadTurns: number; totalTurns: number; totalReadTurns: number; totalMutationTurns: number } {
+  getStats(): {
+    consecutiveReadTurns: number;
+    totalTurns: number;
+    totalReadTurns: number;
+    totalMutationTurns: number;
+  } {
     return {
       consecutiveReadTurns: this.consecutiveReadTurns,
       totalTurns: this.totalTurns,

@@ -41,11 +41,7 @@ export type SpotCone = {
  * apex at the light position, opening along `rotationDeg` (degrees; 0 points
  * straight up, positive rotates clockwise) to `range` length.
  */
-export function computeSpotCone(
-  light: LightPoint,
-  range: number,
-  rotationDeg: number,
-): SpotCone {
+export function computeSpotCone(light: LightPoint, range: number, rotationDeg: number): SpotCone {
   const angle = (rotationDeg * Math.PI) / 180;
   const a1 = angle - LIGHT_CONE_HALF_ANGLE;
   const a2 = angle + LIGHT_CONE_HALF_ANGLE;

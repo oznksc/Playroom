@@ -5,11 +5,7 @@ export type TimelineState = {
   playing: boolean;
 };
 
-export function playTimeline(
-  scene: GameKitScene,
-  state: TimelineState,
-  dt: number
-): void {
+export function playTimeline(scene: GameKitScene, state: TimelineState, dt: number): void {
   if (!state.playing || scene.timeline.tracks.length === 0) return;
 
   const duration = scene.timeline.duration;
@@ -53,10 +49,14 @@ export function sampleTrack(track: TimelineTrack, time: number): number {
 
 function applyEasing(t: number, easing: Keyframe["easing"]): number {
   switch (easing) {
-    case "easeIn": return t * t;
-    case "easeOut": return 1 - (1 - t) * (1 - t);
-    case "easeInOut": return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    default: return t;
+    case "easeIn":
+      return t * t;
+    case "easeOut":
+      return 1 - (1 - t) * (1 - t);
+    case "easeInOut":
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    default:
+      return t;
   }
 }
 
@@ -65,7 +65,7 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 function asNumber(value: number | number[]): number {
-  return typeof value === "number" ? value : value[0] ?? 0;
+  return typeof value === "number" ? value : (value[0] ?? 0);
 }
 
 function applyTrackValue(
@@ -77,10 +77,20 @@ function applyTrackValue(
   if (!transform) return;
 
   switch (property) {
-    case "position.x": transform.position.x = value; break;
-    case "position.y": transform.position.y = value; break;
-    case "rotation": transform.rotation = value; break;
-    case "scale.x": transform.scale.x = value; break;
-    case "scale.y": transform.scale.y = value; break;
+    case "position.x":
+      transform.position.x = value;
+      break;
+    case "position.y":
+      transform.position.y = value;
+      break;
+    case "rotation":
+      transform.rotation = value;
+      break;
+    case "scale.x":
+      transform.scale.x = value;
+      break;
+    case "scale.y":
+      transform.scale.y = value;
+      break;
   }
 }

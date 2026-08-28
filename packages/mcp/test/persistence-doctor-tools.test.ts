@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createLevel, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createLevel,
+  createProject,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { createMcpServer } from "../src/server.js";
 
 let root: string;
@@ -17,7 +23,10 @@ beforeEach(async () => {
   project.scenes = ["main.scene.json"];
   project.levels = [createLevel("First", 0), createLevel("Second", 1)];
   await writeFile(join(root, "gamekit", "project.json"), projectToJson(project));
-  await writeFile(join(root, "gamekit", "scenes", "main.scene.json"), sceneToJson(createEmptyScene("Main")));
+  await writeFile(
+    join(root, "gamekit", "scenes", "main.scene.json"),
+    sceneToJson(createEmptyScene("Main"))
+  );
   server = createMcpServer(root);
 });
 
@@ -40,12 +49,16 @@ describe("persistence and doctor tool handlers", () => {
 
   it("reports missing project assets through doctor", async () => {
     const projectPath = join(root, "gamekit", "project.json");
-    const project = JSON.parse(await (await import("node:fs/promises")).readFile(projectPath, "utf8"));
+    const project = JSON.parse(
+      await (await import("node:fs/promises")).readFile(projectPath, "utf8")
+    );
     project.assets.push({ id: "missing", file: "missing.png", kind: "image" });
     await writeFile(projectPath, JSON.stringify(project, null, 2));
     const result = await tool("run_doctor").handler({ includeInfo: false });
     const report = JSON.parse(result.content[0].text);
     expect(report.ok).toBe(false);
-    expect(report.issues.some((issue: { code: string }) => issue.code === "ASSET_FILE_MISSING")).toBe(true);
+    expect(
+      report.issues.some((issue: { code: string }) => issue.code === "ASSET_FILE_MISSING")
+    ).toBe(true);
   });
 });

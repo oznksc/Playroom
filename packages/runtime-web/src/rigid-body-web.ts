@@ -31,7 +31,7 @@ export type PhaserRigidBody = {
 
 export function createPhaserRigidBody(
   body: PhaserRigidBody["body"],
-  component: RigidBodyComponent,
+  component: RigidBodyComponent
 ): PhaserRigidBody {
   let sleepTimer = 0;
   let sleeping = false;
@@ -46,10 +46,7 @@ export function createPhaserRigidBody(
     if (component.isKinematic) return;
     if (impulse.x !== 0 || impulse.y !== 0) wake();
     const mass = Math.max(0.001, component.mass);
-    body.setVelocity(
-      body.velocity.x + impulse.x / mass,
-      body.velocity.y + impulse.y / mass,
-    );
+    body.setVelocity(body.velocity.x + impulse.x / mass, body.velocity.y + impulse.y / mass);
     if (sleeping) body.moves = true;
   }
 
@@ -67,8 +64,9 @@ export function createPhaserRigidBody(
     }
 
     const linearSpeedSq = body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y;
-    const belowThreshold = linearSpeedSq <= RIGID_BODY_SLEEP_LINEAR_THRESHOLD ** 2
-      && Math.abs(body.angularVelocity) <= RIGID_BODY_SLEEP_ANGULAR_THRESHOLD;
+    const belowThreshold =
+      linearSpeedSq <= RIGID_BODY_SLEEP_LINEAR_THRESHOLD ** 2 &&
+      Math.abs(body.angularVelocity) <= RIGID_BODY_SLEEP_ANGULAR_THRESHOLD;
 
     if (!belowThreshold) {
       sleepTimer = 0;

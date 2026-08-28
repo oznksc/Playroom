@@ -26,7 +26,9 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
       {tilemap ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Tileset</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Tileset
+            </span>
             <Select
               value={tilemap.tilesetId}
               onChange={(e) => {
@@ -38,55 +40,92 @@ export function TilemapSection({ tilemap, assets, onChange, open, onToggle, onRe
             >
               <option value="">— Select asset —</option>
               {assets.map((a) => (
-                <option key={a.id} value={a.id}>{a.id}</option>
+                <option key={a.id} value={a.id}>
+                  {a.id}
+                </option>
               ))}
             </Select>
           </label>
           <div className="grid grid-cols-2 gap-1.5">
-            <NumberField label="Tile W" value={tilemap.tileWidth}
-              onChange={(v) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.tileWidth = v; })}
+            <NumberField
+              label="Tile W"
+              value={tilemap.tileWidth}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TilemapComponent>(d, "Tilemap")!.tileWidth = v;
+                })
+              }
             />
-            <NumberField label="Tile H" value={tilemap.tileHeight}
-              onChange={(v) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.tileHeight = v; })}
+            <NumberField
+              label="Tile H"
+              value={tilemap.tileHeight}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TilemapComponent>(d, "Tilemap")!.tileHeight = v;
+                })
+              }
             />
-            <NumberField label="Columns" value={tilemap.columns}
-              onChange={(v) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.columns = Math.max(1, Math.floor(v)); })}
+            <NumberField
+              label="Columns"
+              value={tilemap.columns}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TilemapComponent>(d, "Tilemap")!.columns = Math.max(
+                    1,
+                    Math.floor(v)
+                  );
+                })
+              }
             />
-            <NumberField label="Grid W" value={tilemap.gridWidth}
-              onChange={(v) => onChange((d) => {
-                const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
-                const w = Math.max(1, Math.floor(v));
-                const h = tm.gridHeight;
-                const next = new Array(w * h).fill(0);
-                for (let y = 0; y < h; y++) {
-                  for (let x = 0; x < Math.min(w, tm.gridWidth); x++) {
-                    const src = y * tm.gridWidth + x;
-                    if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
+            <NumberField
+              label="Grid W"
+              value={tilemap.gridWidth}
+              onChange={(v) =>
+                onChange((d) => {
+                  const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
+                  const w = Math.max(1, Math.floor(v));
+                  const h = tm.gridHeight;
+                  const next = new Array(w * h).fill(0);
+                  for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < Math.min(w, tm.gridWidth); x++) {
+                      const src = y * tm.gridWidth + x;
+                      if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
+                    }
                   }
-                }
-                tm.gridWidth = w;
-                tm.tiles = next;
-              })}
+                  tm.gridWidth = w;
+                  tm.tiles = next;
+                })
+              }
             />
-            <NumberField label="Grid H" value={tilemap.gridHeight}
-              onChange={(v) => onChange((d) => {
-                const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
-                const h = Math.max(1, Math.floor(v));
-                const w = tm.gridWidth;
-                const next = new Array(w * h).fill(0);
-                for (let y = 0; y < Math.min(h, tm.gridHeight); y++) {
-                  for (let x = 0; x < w; x++) {
-                    const src = y * tm.gridWidth + x;
-                    if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
+            <NumberField
+              label="Grid H"
+              value={tilemap.gridHeight}
+              onChange={(v) =>
+                onChange((d) => {
+                  const tm = findComponent<TilemapComponent>(d, "Tilemap")!;
+                  const h = Math.max(1, Math.floor(v));
+                  const w = tm.gridWidth;
+                  const next = new Array(w * h).fill(0);
+                  for (let y = 0; y < Math.min(h, tm.gridHeight); y++) {
+                    for (let x = 0; x < w; x++) {
+                      const src = y * tm.gridWidth + x;
+                      if (src < tm.tiles.length) next[y * w + x] = tm.tiles[src];
+                    }
                   }
-                }
-                tm.gridHeight = h;
-                tm.tiles = next;
-              })}
+                  tm.gridHeight = h;
+                  tm.tiles = next;
+                })
+              }
             />
           </div>
-          <CheckboxField label="Solid tiles (tile id ≠ 0 collides)" checked={tilemap.solid === true}
-            onChange={(checked) => onChange((d) => { findComponent<TilemapComponent>(d, "Tilemap")!.solid = checked; })}
+          <CheckboxField
+            label="Solid tiles (tile id ≠ 0 collides)"
+            checked={tilemap.solid === true}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<TilemapComponent>(d, "Tilemap")!.solid = checked;
+              })
+            }
           />
           <p className="m-0 font-mono text-[10px] text-text-muted">
             {tilemap.tiles.length} cells · B brush · X erase · G fill · T rect · I pick

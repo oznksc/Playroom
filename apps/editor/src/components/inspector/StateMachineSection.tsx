@@ -52,7 +52,9 @@ function AddTransitionForm({ stateIndex, states, onChange }: AddTransitionFormPr
         onChange={(e) => setTargetState(e.target.value)}
       >
         {states.map((s) => (
-          <option key={s.name} value={s.name}>{s.name}</option>
+          <option key={s.name} value={s.name}>
+            {s.name}
+          </option>
         ))}
       </Select>
       <Button
@@ -80,50 +82,68 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
       {stateMachine ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Initial state</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Initial state
+            </span>
             <Input
               value={stateMachine.initialState}
-              onChange={(e) => onChange((d) => {
-                findComponent<StateMachineComponent>(d, "StateMachine")!.initialState = e.target.value;
-              })}
+              onChange={(e) =>
+                onChange((d) => {
+                  findComponent<StateMachineComponent>(d, "StateMachine")!.initialState =
+                    e.target.value;
+                })
+              }
             />
           </label>
           <div className="space-y-2.5">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">States</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              States
+            </span>
             {stateMachine.states.map((st, i) => (
-              <div key={i} className="border border-white/[0.06] rounded-[6px] p-2 space-y-2 bg-black/10">
+              <div
+                key={i}
+                className="border border-white/[0.06] rounded-[6px] p-2 space-y-2 bg-black/10"
+              >
                 <div className="flex items-center gap-1">
                   <Input
                     value={st.name}
-                    onChange={(e) => onChange((d) => {
-                      const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                      const oldName = sm.states[i].name;
-                      const newName = e.target.value;
-                      if (sm.initialState === oldName) sm.initialState = newName;
-                      for (const s of sm.states) {
-                        if (s.on) {
-                          for (const [evt, target] of Object.entries(s.on)) {
-                            if (target === oldName) s.on[evt] = newName;
+                    onChange={(e) =>
+                      onChange((d) => {
+                        const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
+                        const oldName = sm.states[i].name;
+                        const newName = e.target.value;
+                        if (sm.initialState === oldName) sm.initialState = newName;
+                        for (const s of sm.states) {
+                          if (s.on) {
+                            for (const [evt, target] of Object.entries(s.on)) {
+                              if (target === oldName) s.on[evt] = newName;
+                            }
                           }
                         }
-                      }
-                      sm.states[i].name = newName;
-                    })}
+                        sm.states[i].name = newName;
+                      })
+                    }
                   />
-                  <IconButton size="sm" variant="danger" title="Remove state"
-                    onClick={() => onChange((d) => {
-                      const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                      const stateToRemove = sm.states[i].name;
-                      sm.states.splice(i, 1);
-                      if (sm.initialState === stateToRemove) sm.initialState = sm.states[0]?.name ?? "";
-                      for (const s of sm.states) {
-                        if (s.on) {
-                          for (const [evt, target] of Object.entries(s.on)) {
-                            if (target === stateToRemove) delete s.on[evt];
+                  <IconButton
+                    size="sm"
+                    variant="danger"
+                    title="Remove state"
+                    onClick={() =>
+                      onChange((d) => {
+                        const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
+                        const stateToRemove = sm.states[i].name;
+                        sm.states.splice(i, 1);
+                        if (sm.initialState === stateToRemove)
+                          sm.initialState = sm.states[0]?.name ?? "";
+                        for (const s of sm.states) {
+                          if (s.on) {
+                            for (const [evt, target] of Object.entries(s.on)) {
+                              if (target === stateToRemove) delete s.on[evt];
+                            }
                           }
                         }
-                      }
-                    })}
+                      })
+                    }
                   >
                     <Trash2 size={11} />
                   </IconButton>
@@ -133,59 +153,89 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                     <NumberField
                       label="Duration (s)"
                       value={st.duration ?? 0}
-                      onChange={(v) => onChange((d) => {
-                        const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
-                        s.duration = v > 0 ? v : undefined;
-                      })}
+                      onChange={(v) =>
+                        onChange((d) => {
+                          const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[
+                            i
+                          ];
+                          s.duration = v > 0 ? v : undefined;
+                        })
+                      }
                     />
                     <label className="flex flex-col gap-1">
-                      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Then →</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                        Then →
+                      </span>
                       <Select
                         value={st.then ?? ""}
                         className="h-7 py-0 text-[11px] px-1.5"
-                        onChange={(e) => onChange((d) => {
-                          const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
-                          s.then = e.target.value || undefined;
-                        })}
+                        onChange={(e) =>
+                          onChange((d) => {
+                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!
+                              .states[i];
+                            s.then = e.target.value || undefined;
+                          })
+                        }
                       >
                         <option value="">—</option>
                         {stateMachine.states.map((s) => (
-                          <option key={s.name} value={s.name}>{s.name}</option>
+                          <option key={s.name} value={s.name}>
+                            {s.name}
+                          </option>
                         ))}
                       </Select>
                     </label>
                   </div>
-                  <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Transitions</span>
+                  <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">
+                    Transitions
+                  </span>
                   {Object.entries(st.on || {}).map(([evt, target]) => (
                     <div key={evt} className="flex items-center gap-1.5 text-[11px]">
-                      <span className="text-text-muted font-mono truncate max-w-[80px]" title={evt}>{evt}:</span>
+                      <span className="text-text-muted font-mono truncate max-w-[80px]" title={evt}>
+                        {evt}:
+                      </span>
                       <Select
                         value={target}
                         className="h-6 py-0 text-[11px] px-1.5"
-                        onChange={(e) => onChange((d) => {
-                          const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                          const s = sm.states[i];
-                          if (s.on) s.on[evt] = e.target.value;
-                        })}
+                        onChange={(e) =>
+                          onChange((d) => {
+                            const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
+                            const s = sm.states[i];
+                            if (s.on) s.on[evt] = e.target.value;
+                          })
+                        }
                       >
                         {stateMachine.states.map((s) => (
-                          <option key={s.name} value={s.name}>{s.name}</option>
+                          <option key={s.name} value={s.name}>
+                            {s.name}
+                          </option>
                         ))}
                       </Select>
-                      <IconButton size="sm" variant="ghost" title="Remove transition"
-                        onClick={() => onChange((d) => {
-                          const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
-                          const s = sm.states[i];
-                          if (s.on) delete s.on[evt];
-                        })}
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        title="Remove transition"
+                        onClick={() =>
+                          onChange((d) => {
+                            const sm = findComponent<StateMachineComponent>(d, "StateMachine")!;
+                            const s = sm.states[i];
+                            if (s.on) delete s.on[evt];
+                          })
+                        }
                       >
                         <Trash2 size={10} />
                       </IconButton>
                     </div>
                   ))}
-                  <AddTransitionForm stateIndex={i} states={stateMachine.states} onChange={onChange} />
+                  <AddTransitionForm
+                    stateIndex={i}
+                    states={stateMachine.states}
+                    onChange={onChange}
+                  />
                   <label className="flex flex-col gap-1">
-                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Enter actions (JSON)</span>
+                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">
+                      Enter actions (JSON)
+                    </span>
                     <Textarea
                       rows={2}
                       value={JSON.stringify(st.enter ?? [])}
@@ -193,7 +243,8 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                         try {
                           const actions = JSON.parse(e.target.value) as ScriptAction[];
                           onChange((d) => {
-                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!
+                              .states[i];
                             s.enter = actions;
                           });
                         } catch {
@@ -203,7 +254,9 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                     />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">Exit actions (JSON)</span>
+                    <span className="text-[8px] font-semibold uppercase tracking-wide text-text-muted">
+                      Exit actions (JSON)
+                    </span>
                     <Textarea
                       rows={2}
                       value={JSON.stringify(st.exit ?? [])}
@@ -211,7 +264,8 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                         try {
                           const actions = JSON.parse(e.target.value) as ScriptAction[];
                           onChange((d) => {
-                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!.states[i];
+                            const s = findComponent<StateMachineComponent>(d, "StateMachine")!
+                              .states[i];
                             s.exit = actions;
                           });
                         } catch {
@@ -223,12 +277,16 @@ export function StateMachineSection({ stateMachine, onChange, open, onToggle, on
                 </div>
               </div>
             ))}
-            <Button size="sm" variant="secondary"
-              onClick={() => onChange((d) => {
-                findComponent<StateMachineComponent>(d, "StateMachine")!.states.push({
-                  name: `state_${stateMachine.states.length}`,
-                });
-              })}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                onChange((d) => {
+                  findComponent<StateMachineComponent>(d, "StateMachine")!.states.push({
+                    name: `state_${stateMachine.states.length}`,
+                  });
+                })
+              }
             >
               Add state
             </Button>

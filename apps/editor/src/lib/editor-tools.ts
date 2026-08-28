@@ -1,11 +1,5 @@
 export type CanvasTool =
-  | "select"
-  | "translate"
-  | "rotate"
-  | "scale"
-  | "paint"
-  | "erase"
-  | "polygon-edit";
+  "select" | "translate" | "rotate" | "scale" | "paint" | "erase" | "polygon-edit";
 
 export type TilePaintMode = "brush" | "erase" | "fill" | "rect" | "eyedropper";
 

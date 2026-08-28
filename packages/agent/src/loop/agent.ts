@@ -3,7 +3,12 @@ import type { ProviderAdapter, StreamEvent, ToolCall } from "../providers/types.
 import type { McpClient } from "../mcp/client.js";
 import { listTools, toModelTools } from "../mcp/tools.js";
 import { callTool } from "../mcp/executor.js";
-import { MessageHistory, formatToolDigest, toPriorProviderMessages, type PriorTurn } from "./history.js";
+import {
+  MessageHistory,
+  formatToolDigest,
+  toPriorProviderMessages,
+  type PriorTurn,
+} from "./history.js";
 import { globalApprovalGate, type ApprovalGate, type ApprovalMode } from "./approval.js";
 import { buildSystemPrompt, type PromptContext } from "../system/prompt.js";
 import type { SseEvent } from "./streaming.js";
@@ -56,10 +61,7 @@ const PLAN_MODE_INSTRUCTION = `PLAN MODE is ON.
 3. After the user confirms (or sends "execute"), run the plan with tools.
 4. Prefer snapshot_undo_point before bulk destructive edits when possible.`;
 
-export async function* runAgent(
-  input: AgentInput,
-  deps: AgentDeps,
-): AsyncGenerator<SseEvent> {
+export async function* runAgent(input: AgentInput, deps: AgentDeps): AsyncGenerator<SseEvent> {
   const { provider, mcpClient, auditLogger } = deps;
   const history = new MessageHistory();
   const approvalGate = deps.approvalGate ?? globalApprovalGate;
@@ -82,7 +84,8 @@ export async function* runAgent(
     history.append({ role: "user", content: digest });
     history.append({
       role: "assistant",
-      content: "Understood. I will use those prior results and continue from the current scene state.",
+      content:
+        "Understood. I will use those prior results and continue from the current scene state.",
     });
   }
   let userContent = input.message;
@@ -101,7 +104,10 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
   try {
     mcpTools = await listTools(mcpClient);
   } catch (e) {
-    yield { type: "error", message: `Failed to list MCP tools: ${e instanceof Error ? e.message : e}` };
+    yield {
+      type: "error",
+      message: `Failed to list MCP tools: ${e instanceof Error ? e.message : e}`,
+    };
     return;
   }
 
@@ -177,17 +183,19 @@ Prefer tool calls to fix issues you can see (missing colliders, bad spacing, off
           content: JSON.stringify({ error: haltMsg }),
         });
         if (auditLogger) {
-          auditLogger.append({
-            sceneId: input.sceneContext.sceneId,
-            projectPath: input.sceneContext.projectPath,
-            sessionId,
-            turn,
-            tool: call.name,
-            args: call.args,
-            status: "cancelled",
-            durationMs: 0,
-            error: haltMsg,
-          }).catch(() => {});
+          auditLogger
+            .append({
+              sceneId: input.sceneContext.sceneId,
+              projectPath: input.sceneContext.projectPath,
+              sessionId,
+              turn,
+              tool: call.name,
+              args: call.args,
+              status: "cancelled",
+              durationMs: 0,
+              error: haltMsg,
+            })
+            .catch(() => {});
         }
       }
       history.append({ role: "user", content: haltMsg });
@@ -223,7 +231,7 @@ async function* streamProvider(
   provider: ProviderAdapter,
   input: AgentInput,
   messages: ReturnType<MessageHistory["getMessages"]>,
-  tools: ReturnType<typeof toModelTools>,
+  tools: ReturnType<typeof toModelTools>
 ): AsyncGenerator<SseEvent, StreamEvent[]> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -273,12 +281,13 @@ type ExecutionContext = {
 
 async function* executeToolCalls(
   toolCalls: ToolCall[],
-  ctx: ExecutionContext,
+  ctx: ExecutionContext
 ): AsyncGenerator<SseEvent> {
   let index = 0;
   while (index < toolCalls.length) {
     const head = toolCalls[index];
-    const parallel = !ctx.approvalGate.needsApproval(head.name, ctx.approvalMode) && isReadOnlyTool(head.name);
+    const parallel =
+      !ctx.approvalGate.needsApproval(head.name, ctx.approvalMode) && isReadOnlyTool(head.name);
     if (!parallel) {
       yield* runOneTool(head, ctx);
       index += 1;
@@ -287,7 +296,8 @@ async function* executeToolCalls(
     const batch: ToolCall[] = [];
     while (index < toolCalls.length) {
       const next = toolCalls[index];
-      if (ctx.approvalGate.needsApproval(next.name, ctx.approvalMode) || !isReadOnlyTool(next.name)) break;
+      if (ctx.approvalGate.needsApproval(next.name, ctx.approvalMode) || !isReadOnlyTool(next.name))
+        break;
       batch.push(next);
       index += 1;
     }
@@ -295,10 +305,7 @@ async function* executeToolCalls(
   }
 }
 
-async function* runReadBatch(
-  batch: ToolCall[],
-  ctx: ExecutionContext,
-): AsyncGenerator<SseEvent> {
+async function* runReadBatch(batch: ToolCall[], ctx: ExecutionContext): AsyncGenerator<SseEvent> {
   if (batch.length === 1) {
     yield* runOneTool(batch[0], ctx);
     return;
@@ -340,7 +347,7 @@ async function* runReadBatch(
         ctx.cache.record(item.key, result);
         return { item, isCached: false, result };
       }
-    }),
+    })
   );
   const ms = Date.now() - started;
   for (const { item, isCached, result } of settled) {
@@ -360,28 +367,27 @@ async function* runReadBatch(
     });
 
     if (ctx.auditLogger) {
-      ctx.auditLogger.append({
-        sceneId: ctx.sceneId,
-        projectPath: ctx.projectPath,
-        sessionId: ctx.sessionId,
-        turn: ctx.turn,
-        tool: item.call.name,
-        args: item.call.args,
-        status: isCached ? "cached" : result.isError ? "error" : "ok",
-        cached: isCached,
-        durationMs: ms,
-        approval: "none",
-        summary: summarizeContent(result.content),
-        error: result.isError ? result.text : undefined,
-      }).catch(() => {});
+      ctx.auditLogger
+        .append({
+          sceneId: ctx.sceneId,
+          projectPath: ctx.projectPath,
+          sessionId: ctx.sessionId,
+          turn: ctx.turn,
+          tool: item.call.name,
+          args: item.call.args,
+          status: isCached ? "cached" : result.isError ? "error" : "ok",
+          cached: isCached,
+          durationMs: ms,
+          approval: "none",
+          summary: summarizeContent(result.content),
+          error: result.isError ? result.text : undefined,
+        })
+        .catch(() => {});
     }
   }
 }
 
-async function* runOneTool(
-  call: ToolCall,
-  ctx: ExecutionContext,
-): AsyncGenerator<SseEvent> {
+async function* runOneTool(call: ToolCall, ctx: ExecutionContext): AsyncGenerator<SseEvent> {
   const callId = call.id || nanoid();
   let approvalDecision: "none" | "allowed" | "denied" = "none";
 
@@ -411,18 +417,20 @@ async function* runOneTool(
         content: JSON.stringify({ denied: true }),
       });
       if (ctx.auditLogger) {
-        ctx.auditLogger.append({
-          sceneId: ctx.sceneId,
-          projectPath: ctx.projectPath,
-          sessionId: ctx.sessionId,
-          turn: ctx.turn,
-          tool: call.name,
-          args: call.args,
-          status: "denied",
-          durationMs: 0,
-          approval: "denied",
-          summary: "Denied by user approval",
-        }).catch(() => {});
+        ctx.auditLogger
+          .append({
+            sceneId: ctx.sceneId,
+            projectPath: ctx.projectPath,
+            sessionId: ctx.sessionId,
+            turn: ctx.turn,
+            tool: call.name,
+            args: call.args,
+            status: "denied",
+            durationMs: 0,
+            approval: "denied",
+            summary: "Denied by user approval",
+          })
+          .catch(() => {});
       }
       return;
     }
@@ -452,19 +460,21 @@ async function* runOneTool(
       content: ok && cached ? cached.text : skip,
     });
     if (ctx.auditLogger) {
-      ctx.auditLogger.append({
-        sceneId: ctx.sceneId,
-        projectPath: ctx.projectPath,
-        sessionId: ctx.sessionId,
-        turn: ctx.turn,
-        tool: call.name,
-        args: call.args,
-        status: "cached",
-        cached: true,
-        durationMs,
-        approval: approvalDecision,
-        summary: "Reused identical cached result",
-      }).catch(() => {});
+      ctx.auditLogger
+        .append({
+          sceneId: ctx.sceneId,
+          projectPath: ctx.projectPath,
+          sessionId: ctx.sessionId,
+          turn: ctx.turn,
+          tool: call.name,
+          args: call.args,
+          status: "cached",
+          cached: true,
+          durationMs,
+          approval: approvalDecision,
+          summary: "Reused identical cached result",
+        })
+        .catch(() => {});
     }
     return;
   }
@@ -503,20 +513,22 @@ async function* runOneTool(
   });
 
   if (ctx.auditLogger) {
-    ctx.auditLogger.append({
-      sceneId: ctx.sceneId,
-      projectPath: ctx.projectPath,
-      sessionId: ctx.sessionId,
-      turn: ctx.turn,
-      tool: call.name,
-      args: call.args,
-      status: result.isError ? "error" : "ok",
-      cached: false,
-      durationMs,
-      approval: approvalDecision,
-      summary: summarizeContent(result.content),
-      error: result.isError ? result.text : undefined,
-    }).catch(() => {});
+    ctx.auditLogger
+      .append({
+        sceneId: ctx.sceneId,
+        projectPath: ctx.projectPath,
+        sessionId: ctx.sessionId,
+        turn: ctx.turn,
+        tool: call.name,
+        args: call.args,
+        status: result.isError ? "error" : "ok",
+        cached: false,
+        durationMs,
+        approval: approvalDecision,
+        summary: summarizeContent(result.content),
+        error: result.isError ? result.text : undefined,
+      })
+      .catch(() => {});
   }
 }
 

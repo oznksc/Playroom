@@ -316,9 +316,7 @@ function buildTopDownArenaScene() {
   ];
   scene.gui = {
     nodes: [],
-    componentInstances: [
-      { id: "inst-hud", componentId: "hud", x: 0, y: 0, visible: true },
-    ],
+    componentInstances: [{ id: "inst-hud", componentId: "hud", x: 0, y: 0, visible: true }],
   };
   scene.gameRules = {
     ...DEFAULT_GAME_RULES,
@@ -440,9 +438,7 @@ function buildPhysicsPuzzleScene() {
   ];
   scene.gui = {
     nodes: [],
-    componentInstances: [
-      { id: "inst-hud", componentId: "hud", x: 0, y: 0, visible: true },
-    ],
+    componentInstances: [{ id: "inst-hud", componentId: "hud", x: 0, y: 0, visible: true }],
   };
   scene.gameRules = {
     ...DEFAULT_GAME_RULES,
@@ -530,8 +526,8 @@ async function writeExpoShell(exampleDir, name, slug, orientation) {
         },
       },
       null,
-      2,
-    ) + "\n",
+      2
+    ) + "\n"
   );
 
   await writeFile(
@@ -555,8 +551,8 @@ async function writeExpoShell(exampleDir, name, slug, orientation) {
         },
       },
       null,
-      2,
-    ) + "\n",
+      2
+    ) + "\n"
   );
 
   await writeFile(
@@ -568,7 +564,7 @@ async function writeExpoShell(exampleDir, name, slug, orientation) {
     plugins: ["react-native-reanimated/plugin"],
   };
 };
-`,
+`
   );
 
   await writeFile(
@@ -580,7 +576,7 @@ import { registerRootComponent } from "expo";
 import App from "./App";
 
 registerRootComponent(App);
-`,
+`
   );
 
   await writeFile(
@@ -595,15 +591,12 @@ registerRootComponent(App);
         include: ["**/*.ts", "**/*.tsx", "gamekit/**/*.json"],
       },
       null,
-      2,
-    ) + "\n",
+      2
+    ) + "\n"
   );
 
   // Reuse coin-jumper metro config pattern
-  const metro = await readFile(
-    join(root, "examples/simple-coin-jumper/metro.config.js"),
-    "utf8",
-  );
+  const metro = await readFile(join(root, "examples/simple-coin-jumper/metro.config.js"), "utf8");
   await writeFile(join(exampleDir, "metro.config.js"), metro);
 }
 
@@ -720,7 +713,7 @@ async function scaffoldExample({
       scenes,
       activeScene: "menu.scene.json",
       transition: resolveTransitionMs(project.transitions),
-    }),
+    })
   );
 
   await writeFile(
@@ -762,7 +755,7 @@ node ../../packages/cli/dist/index.js generate --platform mobile
 pnpm export        # Expo pack under ./build
 pnpm export:web    # Vite/Phaser pack under ./build-web
 \`\`\`
-`,
+`
   );
 
   console.log(`✓ scaffolded examples/${folder}`);

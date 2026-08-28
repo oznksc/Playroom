@@ -31,7 +31,12 @@ export interface BottomContentDrawerProps {
   setError: (err: unknown) => void;
   executeConsoleCommand: (cmdStr: string) => void;
   updateScene: (mutator: (draft: GameKitScene) => void) => void;
-  handleSpawnEntityWithSprite: (assetId: string, width: number, height: number, category?: string) => void;
+  handleSpawnEntityWithSprite: (
+    assetId: string,
+    width: number,
+    height: number,
+    category?: string
+  ) => void;
   handleSpawnEntityWithAnimation: (
     assetId: string,
     frameWidth: number,
@@ -101,10 +106,7 @@ export function BottomContentDrawer({
                 Studio
               </TabsTrigger>
               {showTimeline && (
-                <TabsTrigger
-                  value="timeline"
-                  icon={<Clock3 size={13} strokeWidth={1.75} />}
-                >
+                <TabsTrigger value="timeline" icon={<Clock3 size={13} strokeWidth={1.75} />}>
                   Timeline
                 </TabsTrigger>
               )}
@@ -139,7 +141,10 @@ export function BottomContentDrawer({
           </IconButton>
         </div>
         <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent">
-          <TabsContent value="assets" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
+          <TabsContent
+            value="assets"
+            className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col"
+          >
             <AssetsPanel
               assets={snapshot.assets}
               selectedAssetId={selectedAssetId}
@@ -149,7 +154,10 @@ export function BottomContentDrawer({
               onOpenAssetStudio={() => openContent("studio")}
             />
           </TabsContent>
-          <TabsContent value="studio" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
+          <TabsContent
+            value="studio"
+            className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col"
+          >
             <AssetStudioModal
               embedded
               isOpen
@@ -166,12 +174,18 @@ export function BottomContentDrawer({
             />
           </TabsContent>
           {showTimeline && (
-            <TabsContent value="timeline" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
+            <TabsContent
+              value="timeline"
+              className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col"
+            >
               <TimelinePanel scene={scene} onChange={updateScene} />
             </TabsContent>
           )}
           {showConsole && (
-            <TabsContent value="console" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
+            <TabsContent
+              value="console"
+              className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col"
+            >
               <ConsolePanel
                 logs={logs}
                 onExecuteCommand={executeConsoleCommand}

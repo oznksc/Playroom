@@ -27,15 +27,25 @@ export function FollowPathSection({ followPath, onChange, open, onToggle, onRemo
           <NumberField
             label="Speed"
             value={followPath.speed}
-            onChange={(v) => onChange((d) => { findComponent<FollowPathComponent>(d, "FollowPath")!.speed = v; })}
+            onChange={(v) =>
+              onChange((d) => {
+                findComponent<FollowPathComponent>(d, "FollowPath")!.speed = v;
+              })
+            }
           />
           <CheckboxField
             label="Loop"
             checked={followPath.loop}
-            onChange={(checked) => onChange((d) => { findComponent<FollowPathComponent>(d, "FollowPath")!.loop = checked; })}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<FollowPathComponent>(d, "FollowPath")!.loop = checked;
+              })
+            }
           />
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Points JSON</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Points JSON
+            </span>
             <Textarea
               className="min-h-[64px] font-mono text-[10px]"
               value={JSON.stringify(followPath.points)}
@@ -43,13 +53,23 @@ export function FollowPathSection({ followPath, onChange, open, onToggle, onRemo
                 try {
                   const points = JSON.parse(e.target.value) as { x: number; y: number }[];
                   if (!Array.isArray(points)) return;
-                  onChange((d) => { findComponent<FollowPathComponent>(d, "FollowPath")!.points = points; });
-                } catch { /* ignore partial JSON */ }
+                  onChange((d) => {
+                    findComponent<FollowPathComponent>(d, "FollowPath")!.points = points;
+                  });
+                } catch {
+                  /* ignore partial JSON */
+                }
               }}
             />
           </label>
-          <Button size="sm" variant="secondary"
-            onClick={() => onChange((d) => { findComponent<FollowPathComponent>(d, "FollowPath")!.points.push({ x: 0, y: 0 }); })}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              onChange((d) => {
+                findComponent<FollowPathComponent>(d, "FollowPath")!.points.push({ x: 0, y: 0 });
+              })
+            }
           >
             Add point
           </Button>

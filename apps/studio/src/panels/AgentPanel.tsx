@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { runCli } from "../lib/api";
+import { runCli } from "../lib/api.js";
+import { Button, ErrorState, EmptyState } from "@gamekit/ui";
+import { RefreshCw } from "lucide-react";
 
 export function AgentPanel({ projectPath }: { projectPath: string }) {
   const [log, setLog] = useState<string>("");
@@ -27,33 +29,34 @@ export function AgentPanel({ projectPath }: { projectPath: string }) {
     <div className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <div className="type-label">Agent — tool audit log</div>
-        <button
-          disabled={busy}
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={busy}
           onClick={refresh}
-          className="rounded-md border border-border-default bg-bg-elevated px-3 py-1.5 text-md text-text-primary hover:border-accent hover:text-accent disabled:opacity-50"
+          leftIcon={<RefreshCw size={12} />}
         >
           {busy ? "Loading…" : "Refresh"}
-        </button>
+        </Button>
       </div>
 
       <div className="type-body text-text-muted">
-        Surfaces the <span className="type-mono text-accent">@gamekit/agent</span> audit trail
-        (<span className="type-mono">gamekit audit</span>). The live agent run loop
-        (<span className="type-mono">runAgent</span>) can be wired here to drive the project
+        Surfaces the <span className="type-mono text-accent">@gamekit/agent</span> audit trail (
+        <span className="type-mono">gamekit audit</span>). The live agent run loop (
+        <span className="type-mono">runAgent</span>) can be wired here to drive the project
         programmatically.
       </div>
 
-      {error && (
-        <div className="type-body rounded-md border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-accent-red">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState compact message={error} />}
 
       <div className="glass-panel flex-1 overflow-auto p-3">
         {log ? (
           <pre className="type-mono whitespace-pre-wrap text-text-secondary">{log}</pre>
         ) : (
-          <div className="type-body text-text-muted">No audit entries loaded yet.</div>
+          <EmptyState
+            title="No Logs"
+            description="No audit entries loaded yet. Click refresh above to load the audit trail."
+          />
         )}
       </div>
     </div>

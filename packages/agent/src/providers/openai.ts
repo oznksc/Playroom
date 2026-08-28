@@ -17,18 +17,22 @@ export class OpenAIAdapter implements ProviderAdapter {
   constructor(
     id: ProviderId = "openai",
     label = "OpenAI",
-    defaultBaseUrl = "https://api.openai.com/v1",
+    defaultBaseUrl = "https://api.openai.com/v1"
   ) {
     this.id = id;
     this.label = label;
     this.defaultBaseUrl = defaultBaseUrl;
   }
 
-  async listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]> {
+  async listModels(input: {
+    apiKey: string;
+    baseUrl?: string;
+    signal: AbortSignal;
+  }): Promise<string[]> {
     try {
       const res = await fetch(`${input.baseUrl ?? this.defaultBaseUrl}/models`, {
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
@@ -49,14 +53,17 @@ export class OpenAIAdapter implements ProviderAdapter {
       const res = await fetch(`${input.baseUrl ?? this.defaultBaseUrl}/models`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${input.apiKey}`,
+          Authorization: `Bearer ${input.apiKey}`,
         },
         signal: input.signal,
       });
       if (res.ok) return { ok: true };
       return { ok: false, reason: `HTTP ${res.status}` };
     } catch (e) {
-      return { ok: false, reason: e instanceof Error ? e.message : `Cannot connect to ${this.label}` };
+      return {
+        ok: false,
+        reason: e instanceof Error ? e.message : `Cannot connect to ${this.label}`,
+      };
     }
   }
 
@@ -66,7 +73,7 @@ export class OpenAIAdapter implements ProviderAdapter {
 
     const headers: Record<string, string> = {
       "content-type": "application/json",
-      "authorization": `Bearer ${input.apiKey}`,
+      authorization: `Bearer ${input.apiKey}`,
     };
 
     const res = await fetch(`${baseUrl}/chat/completions`, {

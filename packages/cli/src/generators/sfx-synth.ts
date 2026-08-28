@@ -242,7 +242,8 @@ export function synthesizeSfx(options: SfxOptions = {}): Uint8Array {
 
     // Exponential frequency slide
     const progress = t / totalDuration;
-    let freq = config.startFreq * Math.pow(Math.max(0.001, config.endFreq / config.startFreq), progress);
+    let freq =
+      config.startFreq * Math.pow(Math.max(0.001, config.endFreq / config.startFreq), progress);
 
     // Vibrato LFO
     if (config.vibratoDepth > 0 && config.vibratoSpeed > 0) {

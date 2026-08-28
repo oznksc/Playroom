@@ -54,7 +54,7 @@ export function closeSceneTab(ws: SceneWorkspaceState, file: string): SceneWorks
   if (openTabs.length === 0) return ws;
   const fallback = openTabs[0];
   let paneA = ws.paneA === file ? fallback : ws.paneA;
-  let paneB = ws.paneB === file ? openTabs.find((f) => f !== paneA) ?? null : ws.paneB;
+  let paneB = ws.paneB === file ? (openTabs.find((f) => f !== paneA) ?? null) : ws.paneB;
   if (!openTabs.includes(paneA)) paneA = fallback;
   if (paneB && !openTabs.includes(paneB)) paneB = openTabs.find((f) => f !== paneA) ?? null;
   let focused = ws.focused;
@@ -70,7 +70,7 @@ export function focusScenePane(ws: SceneWorkspaceState, pane: ScenePaneId): Scen
 export function setSceneSplit(
   ws: SceneWorkspaceState,
   split: SplitMode,
-  available: string[] = [],
+  available: string[] = []
 ): SceneWorkspaceState {
   if (split === "none") {
     return { ...ws, split: "none", paneB: null, focused: "a" };
@@ -78,7 +78,11 @@ export function setSceneSplit(
   const focused = focusedSceneFile(ws);
   const pool = [...ws.openTabs, ...available];
   const other = pool.find((f) => f && f !== focused) ?? focused;
-  const openTabs = ws.openTabs.includes(other) ? ws.openTabs : other ? [...ws.openTabs, other] : ws.openTabs;
+  const openTabs = ws.openTabs.includes(other)
+    ? ws.openTabs
+    : other
+      ? [...ws.openTabs, other]
+      : ws.openTabs;
   return {
     ...ws,
     split,
@@ -88,11 +92,17 @@ export function setSceneSplit(
   };
 }
 
-export function syncWorkspaceScenes(ws: SceneWorkspaceState, scenes: string[], fallback: string): SceneWorkspaceState {
+export function syncWorkspaceScenes(
+  ws: SceneWorkspaceState,
+  scenes: string[],
+  fallback: string
+): SceneWorkspaceState {
   if (scenes.length === 0) {
     return createSceneWorkspace(fallback);
   }
-  const openTabs = (ws.openTabs.length ? ws.openTabs : [fallback]).filter((f) => scenes.includes(f));
+  const openTabs = (ws.openTabs.length ? ws.openTabs : [fallback]).filter((f) =>
+    scenes.includes(f)
+  );
   const tabs = openTabs.length ? openTabs : [scenes[0]];
   const paneA = scenes.includes(ws.paneA) ? ws.paneA : tabs[0];
   const paneB = ws.paneB && scenes.includes(ws.paneB) ? ws.paneB : null;

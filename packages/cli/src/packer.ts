@@ -102,8 +102,13 @@ function mimeForAudio(file: string): string {
 export function packRects(
   rects: Array<{ id: string; width: number; height: number }>,
   padding: number,
-  maxSize: number,
-): { placements: Array<{ id: string; x: number; y: number }>; width: number; height: number; overflow: string[] } {
+  maxSize: number
+): {
+  placements: Array<{ id: string; x: number; y: number }>;
+  width: number;
+  height: number;
+  overflow: string[];
+} {
   const sorted = [...rects].sort((a, b) => b.height - a.height || b.width - a.width);
   type Shelf = { y: number; height: number; x: number };
   const shelves: Shelf[] = [];
@@ -158,7 +163,7 @@ function blit(
   srcWidth: number,
   srcHeight: number,
   x: number,
-  y: number,
+  y: number
 ): void {
   for (let row = 0; row < srcHeight; row++) {
     const srcStart = row * srcWidth * 4;
@@ -170,7 +175,7 @@ function blit(
 export async function packTextureAtlas(
   assetsRoot: string,
   assets: GameKitAsset[],
-  options: { padding?: number; maxSize?: number } = {},
+  options: { padding?: number; maxSize?: number } = {}
 ): Promise<{
   png: Buffer | null;
   json: AtlasJson;
@@ -246,7 +251,7 @@ export async function packTextureAtlas(
   const packed = packRects(
     sprites.map((s) => ({ id: s.id, width: s.width, height: s.height })),
     padding,
-    maxSize,
+    maxSize
   );
   const byId = new Map(sprites.map((s) => [s.id, s]));
   for (const id of packed.overflow) {
@@ -300,7 +305,7 @@ export async function packTextureAtlas(
 
 export async function packAudioBank(
   assetsRoot: string,
-  assets: GameKitAsset[],
+  assets: GameKitAsset[]
 ): Promise<{ bank: Buffer | null; json: AudioBankJson }> {
   const skipped: AudioBankJson["skipped"] = [];
   const clips: Record<string, AudioBankClip> = {};
@@ -361,7 +366,7 @@ export async function packAudioBank(
 export async function packBuildAssets(
   assetsRoot: string,
   outDir: string,
-  assets: GameKitAsset[],
+  assets: GameKitAsset[]
 ): Promise<PackerResult> {
   const packedDir = join(outDir, PACKED_DIR);
   await mkdir(packedDir, { recursive: true });

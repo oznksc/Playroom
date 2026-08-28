@@ -68,10 +68,7 @@ export const SKILL_PACKS: Record<string, SkillPack> = {
   "physics-puzzle": {
     label: "Physics puzzle",
     tagEntities: [{ nameMatch: /^target$|^goal$/i, tags: ["goal"] }],
-    recipes: [
-      { id: "platformer-wasd-jump" },
-      { id: "win-reach-goal", params: { tag: "goal" } },
-    ],
+    recipes: [{ id: "platformer-wasd-jump" }, { id: "win-reach-goal", params: { tag: "goal" } }],
     fallDeathEnabled: true,
     lives: 3,
   },
@@ -88,10 +85,7 @@ export const SKILL_PACKS: Record<string, SkillPack> = {
       { nameMatch: /coin|pickup/i, tags: ["coin"] },
       { nameMatch: /hazard|spike|obstacle/i, tags: ["hazard"] },
     ],
-    recipes: [
-      { id: "platformer-wasd-jump" },
-      { id: "win-collect-all", params: { tag: "coin" } },
-    ],
+    recipes: [{ id: "platformer-wasd-jump" }, { id: "win-collect-all", params: { tag: "coin" } }],
     fallDeathEnabled: true,
     lives: 1,
   },
@@ -114,20 +108,14 @@ export const SKILL_PACKS: Record<string, SkillPack> = {
       { nameMatch: /enemy|hazard|obstacle/i, tags: ["hazard"] },
       { nameMatch: /core|base|target/i, tags: ["goal"] },
     ],
-    recipes: [
-      { id: "win-reach-goal", params: { tag: "goal" } },
-    ],
+    recipes: [{ id: "win-reach-goal", params: { tag: "goal" } }],
     fallDeathEnabled: false,
     lives: 5,
   },
   "visual-novel": {
     label: "Visual novel",
-    tagEntities: [
-      { nameMatch: /choice|target|goal/i, tags: ["goal"] },
-    ],
-    recipes: [
-      { id: "win-reach-goal", params: { tag: "goal" } },
-    ],
+    tagEntities: [{ nameMatch: /choice|target|goal/i, tags: ["goal"] }],
+    recipes: [{ id: "win-reach-goal", params: { tag: "goal" } }],
     fallDeathEnabled: false,
     lives: 0,
   },

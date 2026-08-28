@@ -11,6 +11,6 @@ export type LoadedScene = {
 export function loadScene(input: unknown, assets: AssetRegistry = {}): LoadedScene {
   return {
     scene: parseScene(input),
-    assets
+    assets,
   };
 }

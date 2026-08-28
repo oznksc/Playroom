@@ -15,7 +15,7 @@ beforeEach(async () => {
   await mkdir(join(gk, "prefabs"), { recursive: true });
   await writeFile(
     join(gk, "project.json"),
-    JSON.stringify({ name: "Legacy", scenes: ["main.scene.json"] }),
+    JSON.stringify({ name: "Legacy", scenes: ["main.scene.json"] })
   );
   await writeFile(
     join(gk, "scenes", "main.scene.json"),
@@ -34,14 +34,14 @@ beforeEach(async () => {
           ],
         },
       ],
-    }),
+    })
   );
   await writeFile(
     join(gk, "prefabs", "coin.prefab.json"),
     JSON.stringify({
       name: "Coin",
       components: [{ type: "Transform", position: { x: 1, y: 2 } }],
-    }),
+    })
   );
 });
 
@@ -62,11 +62,15 @@ describe("migrateProject", () => {
     const scene = JSON.parse(await readFile(join(root, "gamekit/scenes/main.scene.json"), "utf8"));
     expect(scene.schemaVersion).toBe(1);
     expect(scene.timeline.tracks).toEqual([]);
-    const collider = scene.entities[0].components.find((c: { type: string }) => c.type === "AabbCollider");
+    const collider = scene.entities[0].components.find(
+      (c: { type: string }) => c.type === "AabbCollider"
+    );
     expect(collider.isStatic).toBe(true);
     expect(collider.static).toBeUndefined();
 
-    const prefab = JSON.parse(await readFile(join(root, "gamekit/prefabs/coin.prefab.json"), "utf8"));
+    const prefab = JSON.parse(
+      await readFile(join(root, "gamekit/prefabs/coin.prefab.json"), "utf8")
+    );
     expect(prefab.schemaVersion).toBe(1);
     expect(prefab.id).toBe("coin");
   });
@@ -97,7 +101,11 @@ describe("migrateProject", () => {
     const gk = join(root, "gamekit");
     await writeFile(
       join(gk, "prefabs", "player.prefab.json"),
-      prefabToJson(createPrefab("Player", [{ type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }])),
+      prefabToJson(
+        createPrefab("Player", [
+          { type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } },
+        ])
+      )
     );
     const result = await migrateProject(root, 1, 1, { force: true });
     expect(result.errors).toBe(0);

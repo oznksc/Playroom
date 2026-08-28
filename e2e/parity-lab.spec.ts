@@ -57,6 +57,10 @@ test("Phaser play host mounts parity-lab without page errors", async ({ page }) 
     }
   });
 
+  await page.addInitScript(() => {
+    localStorage.setItem("playroom_tour_completed", "true");
+  });
+
   await page.goto(server.url, { waitUntil: "networkidle" });
 
   const playToggle = page.getByTestId("play-toggle");
@@ -67,7 +71,7 @@ test("Phaser play host mounts parity-lab without page errors", async ({ page }) 
       async () => {
         return page.evaluate(async () => (await fetch("/api/project")).ok);
       },
-      { timeout: 15_000 },
+      { timeout: 15_000 }
     )
     .toBeTruthy();
 
@@ -79,7 +83,7 @@ test("Phaser play host mounts parity-lab without page errors", async ({ page }) 
     await expect(host).toBeVisible({ timeout: 45_000 });
   } catch (err) {
     throw new Error(
-      `Play host did not mount for parity-lab.\nPage errors:\n${pageErrors.join("\n") || "(none)"}\nOriginal: ${err}`,
+      `Play host did not mount for parity-lab.\nPage errors:\n${pageErrors.join("\n") || "(none)"}\nOriginal: ${err}`
     );
   }
 

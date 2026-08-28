@@ -1,4 +1,3 @@
-
 .agent-settings-tabs {
   display: flex;
   flex-direction: column;
@@ -37,7 +36,10 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
-  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .provider-card:hover {
@@ -169,7 +171,9 @@
 .radio-card.active {
   border-color: rgba(0, 240, 255, 0.3);
   background: rgba(0, 240, 255, 0.06);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.08), inset 0 0 0 0.5px rgba(0, 240, 255, 0.15);
+  box-shadow:
+    0 0 12px rgba(0, 240, 255, 0.08),
+    inset 0 0 0 0.5px rgba(0, 240, 255, 0.15);
 }
 
 .radio-card-icon {
@@ -223,7 +227,7 @@
 }
 
 .agent-range-value {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
   color: rgba(245, 245, 247, 0.85);
   min-width: 36px;
@@ -255,7 +259,9 @@
   border: 2px solid rgba(0, 0, 0, 0.3);
   cursor: pointer;
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
-  transition: box-shadow 150ms ease, transform 150ms ease;
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
 .agent-range input[type="range"]::-webkit-slider-thumb:hover {
@@ -283,12 +289,14 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.3);
   color: rgba(245, 245, 247, 0.92);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
   line-height: 1.6;
   resize: vertical;
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .agent-instructions-textarea:hover {

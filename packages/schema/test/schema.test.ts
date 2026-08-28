@@ -69,7 +69,7 @@ describe("scene schema", () => {
       assets: [],
       entities: [],
       timeline: { tracks: [] },
-      gui: { nodes: [] }
+      gui: { nodes: [] },
     });
 
     expect(result.ok).toBe(false);
@@ -155,11 +155,11 @@ describe("scene schema", () => {
         orientation: "portrait",
         safeArea: {
           enabled: true,
-          padding: { top: 0, bottom: 0, left: 0, right: 0 }
-        }
+          padding: { top: 0, bottom: 0, left: 0, right: 0 },
+        },
       },
       timeline: { tracks: [] },
-      gui: { nodes: [] }
+      gui: { nodes: [] },
     });
 
     expect(result.ok).toBe(true);
@@ -181,11 +181,11 @@ describe("scene schema", () => {
         orientation: "landscape",
         safeArea: {
           enabled: false,
-          padding: { top: 0, bottom: 0, left: 0, right: 0 }
-        }
+          padding: { top: 0, bottom: 0, left: 0, right: 0 },
+        },
       },
       timeline: { tracks: [] },
-      gui: { nodes: [] }
+      gui: { nodes: [] },
     });
 
     expect(result.ok).toBe(true);
@@ -201,7 +201,7 @@ describe("scene schema", () => {
       assets: [],
       entities: [],
       timeline: { tracks: [] },
-      gui: { nodes: [] }
+      gui: { nodes: [] },
     });
 
     expect(result.ok).toBe(true);
@@ -233,10 +233,7 @@ describe("level schema", () => {
   });
 
   it("finds level for scene by bare id or file name", () => {
-    const levels = [
-      createLevel("One", 1, ["main"]),
-      createLevel("Two", 2, ["cave.scene.json"]),
-    ];
+    const levels = [createLevel("One", 1, ["main"]), createLevel("Two", 2, ["cave.scene.json"])];
     expect(findLevelForScene(levels, "main.scene.json")?.id).toBe("one");
     expect(findLevelForScene(levels, "main")?.id).toBe("one");
     expect(findLevelForScene(levels, "cave.scene.json")?.id).toBe("two");
@@ -276,7 +273,7 @@ describe("project schema", () => {
       name: "Example",
       scenes: ["main.scene.json"],
       levels: [],
-      assets: [{ id: "player", file: "player.png", kind: "image" }]
+      assets: [{ id: "player", file: "player.png", kind: "image" }],
     });
 
     expect(result.ok).toBe(true);
@@ -293,17 +290,17 @@ describe("project schema", () => {
           name: "Level 1",
           order: 1,
           sceneIds: ["main.scene.json"],
-          unlocked: true
+          unlocked: true,
         },
         {
           id: "level-2",
           name: "Level 2",
           order: 2,
           sceneIds: ["cave.scene.json"],
-          unlocked: false
-        }
+          unlocked: false,
+        },
       ],
-      assets: [{ id: "player", file: "player.png", kind: "image" }]
+      assets: [{ id: "player", file: "player.png", kind: "image" }],
     });
 
     expect(result.ok).toBe(true);
@@ -322,7 +319,7 @@ describe("project schema", () => {
       schemaVersion: 1,
       name: "Legacy Project",
       scenes: ["main.scene.json"],
-      assets: []
+      assets: [],
     });
 
     expect(result.ok).toBe(true);
@@ -408,15 +405,11 @@ describe("starter menu shell factories", () => {
   it("createProject includes menu scenes, activeScene, guiComponents, transitions", () => {
     const project = createProject("My Game");
     expect(validateProject(project).ok).toBe(true);
-    expect(project.scenes).toEqual([
-      "menu.scene.json",
-      "settings.scene.json",
-      "main.scene.json",
-    ]);
+    expect(project.scenes).toEqual(["menu.scene.json", "settings.scene.json", "main.scene.json"]);
     expect(project.activeScene).toBe("menu.scene.json");
     expect(project.guiComponents.length).toBeGreaterThanOrEqual(4);
     expect(project.guiComponents.map((c) => c.id).sort()).toEqual(
-      ["game-over", "hud", "pause-menu", "you-win"].sort(),
+      ["game-over", "hud", "pause-menu", "you-win"].sort()
     );
     expect(project.transitions?.length).toBeGreaterThanOrEqual(3);
   });
@@ -504,7 +497,9 @@ describe("starter menu shell factories", () => {
     const node = result.value.gui?.nodes.find((n) => n.id === "btn-anchored");
     expect(node?.anchorX).toBe(0.5);
     expect(node?.anchorY).toBe(0.5);
-    expect(result.value.gui?.componentInstances[0]?.nodeOverrides?.["hud-score"]?.text).toBe("9999");
+    expect(result.value.gui?.componentInstances[0]?.nodeOverrides?.["hud-score"]?.text).toBe(
+      "9999"
+    );
   });
 });
 
@@ -519,7 +514,7 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       fontAssetId: "custom-font",
       size: 24,
       color: "#ff0000",
-      align: "center"
+      align: "center",
     });
 
     entity.components.push({
@@ -529,12 +524,12 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       loop: true,
       playOnStart: false,
       minDistance: 40,
-      maxDistance: 600
+      maxDistance: 600,
     });
 
     entity.components.push({
       type: "AudioListener",
-      enabled: true
+      enabled: true,
     });
 
     scene.entities.push(entity);
@@ -598,7 +593,9 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     const result = validateScene(scene);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const text = result.value.entities[0].components.find((c) => c.type === "Text") as { fontAssetId: string };
+      const text = result.value.entities[0].components.find((c) => c.type === "Text") as {
+        fontAssetId: string;
+      };
       expect(text.fontAssetId).toBe("");
     }
   });
@@ -619,7 +616,9 @@ describe("sprint 4 extensions: audio, text, and font", () => {
     const result = validateScene(scene);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const text = result.value.entities[0].components.find((c) => c.type === "Text") as { width: number };
+      const text = result.value.entities[0].components.find((c) => c.type === "Text") as {
+        width: number;
+      };
       expect(text.width).toBe(120);
     }
   });
@@ -633,9 +632,9 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       assets: [
         { id: "img", file: "img.png", kind: "image" as const },
         { id: "laser-sound", file: "laser.mp3", kind: "audio" as const },
-        { id: "custom-font", file: "font.ttf", kind: "font" as const }
+        { id: "custom-font", file: "font.ttf", kind: "font" as const },
       ],
-      guiComponents: []
+      guiComponents: [],
     };
 
     const result = validateProject(project);
@@ -656,14 +655,17 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       duration: 2.0,
       easing: "easeInOut",
       loop: true,
-      pingPong: true
+      pingPong: true,
     });
 
     entity.components.push({
       type: "FollowPath",
-      points: [{ x: 0, y: 0 }, { x: 50, y: 50 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 50, y: 50 },
+      ],
       speed: 10,
-      loop: false
+      loop: false,
     });
 
     entity.components.push({
@@ -672,14 +674,14 @@ describe("sprint 4 extensions: audio, text, and font", () => {
       states: [
         {
           name: "idle",
-          on: { "collisionEnter": "walking", "update": "walking" },
+          on: { collisionEnter: "walking", update: "walking" },
           enter: [{ type: "setVariable", key: "entered_idle", value: true }],
           exit: [{ type: "setVariable", key: "exited_idle", value: true }],
           duration: 1.5,
           then: "walking",
         },
-        { name: "walking", on: { "triggerEnter": "idle" } }
-      ]
+        { name: "walking", on: { triggerEnter: "idle" } },
+      ],
     });
 
     entity.components.push({
@@ -689,10 +691,10 @@ describe("sprint 4 extensions: audio, text, and font", () => {
           event: "start",
           actions: [
             { type: "playSound", assetId: "sound-1" },
-            { type: "setVariable", key: "started", value: true }
-          ]
-        }
-      ]
+            { type: "setVariable", key: "started", value: true },
+          ],
+        },
+      ],
     });
 
     scene.entities.push(entity);
@@ -706,7 +708,9 @@ describe("sprint 4 extensions: audio, text, and font", () => {
 
 describe("prefab schema (comprehensive)", () => {
   it("createPrefab generates id via slugify and stamps createdAt", () => {
-    const prefab = createPrefab("Gold Coin", [{ type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }]);
+    const prefab = createPrefab("Gold Coin", [
+      { type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } },
+    ]);
     expect(prefab.id).toBe("gold-coin");
     expect(prefab.name).toBe("Gold Coin");
     expect(prefab.schemaVersion).toBe(1);
@@ -715,7 +719,14 @@ describe("prefab schema (comprehensive)", () => {
   });
 
   it("createPrefab deep-clones components (structuredClone isolation)", () => {
-    const components = [{ type: "Transform" as const, position: { x: 10, y: 20 }, rotation: 0, scale: { x: 1, y: 1 } }];
+    const components = [
+      {
+        type: "Transform" as const,
+        position: { x: 10, y: 20 },
+        rotation: 0,
+        scale: { x: 1, y: 1 },
+      },
+    ];
     const prefab = createPrefab("T", components);
     (components[0].position as { x: number }).x = 999;
     expect(prefab.components[0].position).toEqual({ x: 10, y: 20 });
@@ -740,7 +751,9 @@ describe("prefab schema (comprehensive)", () => {
   });
 
   it("parsePrefab returns valid prefab on good input", () => {
-    const prefab = createPrefab("Enemy", [{ type: "Transform", position: { x: 5, y: 5 }, rotation: 0, scale: { x: 1, y: 1 } }]);
+    const prefab = createPrefab("Enemy", [
+      { type: "Transform", position: { x: 5, y: 5 }, rotation: 0, scale: { x: 1, y: 1 } },
+    ]);
     const result = parsePrefab(prefab);
     expect(result.name).toBe("Enemy");
   });
@@ -779,8 +792,12 @@ describe("prefab schema (comprehensive)", () => {
 
   it("validatePrefab accepts optional fields when valid", () => {
     const input = {
-      schemaVersion: 1, id: "a", name: "A", components: [],
-      sourceEntityName: "Src", createdAt: "2026-01-01T00:00:00.000Z",
+      schemaVersion: 1,
+      id: "a",
+      name: "A",
+      components: [],
+      sourceEntityName: "Src",
+      createdAt: "2026-01-01T00:00:00.000Z",
     };
     const result = validatePrefab(input);
     expect(result.ok).toBe(true);
@@ -788,8 +805,12 @@ describe("prefab schema (comprehensive)", () => {
 
   it("validatePrefab rejects non-string optional fields", () => {
     const input = {
-      schemaVersion: 1, id: "a", name: "A", components: [],
-      sourceEntityName: 123, createdAt: true,
+      schemaVersion: 1,
+      id: "a",
+      name: "A",
+      components: [],
+      sourceEntityName: 123,
+      createdAt: true,
     };
     const result = validatePrefab(input);
     expect(result.ok).toBe(false);
@@ -857,8 +878,22 @@ describe("game services schema", () => {
     const result = GameServicesDefSchema.safeParse({
       enabled: true,
       achievements: [
-        { id: "duplicate_id", name: "Ach 1", type: "standard", description: "", hidden: false, providers: {} },
-        { id: "duplicate_id", name: "Ach 2", type: "standard", description: "", hidden: false, providers: {} },
+        {
+          id: "duplicate_id",
+          name: "Ach 1",
+          type: "standard",
+          description: "",
+          hidden: false,
+          providers: {},
+        },
+        {
+          id: "duplicate_id",
+          name: "Ach 2",
+          type: "standard",
+          description: "",
+          hidden: false,
+          providers: {},
+        },
       ],
       leaderboards: [],
     });
@@ -893,7 +928,11 @@ describe("game services schema", () => {
       achievements: [
         createAchievement("first-win", "First Win", {
           description: "Complete your first run",
-          providers: { googlePlay: "CgkI_first_win", gameCenter: "grp.first_win", steam: "ACH_FIRST_WIN" },
+          providers: {
+            googlePlay: "CgkI_first_win",
+            gameCenter: "grp.first_win",
+            steam: "ACH_FIRST_WIN",
+          },
         }),
         createAchievement("coin-hoarder", "Coin Hoarder", {
           type: "incremental",
@@ -948,14 +987,24 @@ describe("game service script actions", () => {
 
   it("creates and validates achievement.increment action", () => {
     const defaultInc = createIncrementAchievementAction("coins");
-    expect(defaultInc).toEqual({ type: "achievement.increment", achievementId: "coins", amount: 1 });
+    expect(defaultInc).toEqual({
+      type: "achievement.increment",
+      achievementId: "coins",
+      amount: 1,
+    });
     expect(IncrementAchievementActionSchema.safeParse(defaultInc).success).toBe(true);
 
     const customInc = createIncrementAchievementAction("coins", 5);
     expect(customInc.amount).toBe(5);
     expect(IncrementAchievementActionSchema.safeParse(customInc).success).toBe(true);
 
-    expect(IncrementAchievementActionSchema.safeParse({ type: "achievement.increment", achievementId: "c", amount: 0 }).success).toBe(false);
+    expect(
+      IncrementAchievementActionSchema.safeParse({
+        type: "achievement.increment",
+        achievementId: "c",
+        amount: 0,
+      }).success
+    ).toBe(false);
   });
 
   it("creates and validates achievement.setSteps action", () => {
@@ -963,12 +1012,22 @@ describe("game service script actions", () => {
     expect(action).toEqual({ type: "achievement.setSteps", achievementId: "xp", steps: 42 });
     expect(SetAchievementStepsActionSchema.safeParse(action).success).toBe(true);
 
-    expect(SetAchievementStepsActionSchema.safeParse({ type: "achievement.setSteps", achievementId: "xp", steps: -1 }).success).toBe(false);
+    expect(
+      SetAchievementStepsActionSchema.safeParse({
+        type: "achievement.setSteps",
+        achievementId: "xp",
+        steps: -1,
+      }).success
+    ).toBe(false);
   });
 
   it("creates and validates leaderboard.submit action", () => {
     const numSubmit = createSubmitLeaderboardAction("high-score", 9999);
-    expect(numSubmit).toEqual({ type: "leaderboard.submit", leaderboardId: "high-score", value: 9999 });
+    expect(numSubmit).toEqual({
+      type: "leaderboard.submit",
+      leaderboardId: "high-score",
+      value: 9999,
+    });
     expect(SubmitLeaderboardActionSchema.safeParse(numSubmit).success).toBe(true);
 
     const varSubmit = createSubmitLeaderboardAction("high-score", "$playerScore");

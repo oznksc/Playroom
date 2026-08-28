@@ -113,16 +113,10 @@ export function RecipesPanel({
       };
       if (!res.ok) throw new Error(body.error ?? "Apply failed");
       const parts = [
-        body.appliedComponents?.length
-          ? `components: ${body.appliedComponents.join(", ")}`
-          : null,
-        body.appliedInputActions?.length
-          ? `input: ${body.appliedInputActions.join(", ")}`
-          : null,
+        body.appliedComponents?.length ? `components: ${body.appliedComponents.join(", ")}` : null,
+        body.appliedInputActions?.length ? `input: ${body.appliedInputActions.join(", ")}` : null,
       ].filter(Boolean);
-      onStatus?.(
-        `Applied “${recipe.name}”${parts.length ? ` (${parts.join("; ")})` : ""}`,
-      );
+      onStatus?.(`Applied “${recipe.name}”${parts.length ? ` (${parts.join("; ")})` : ""}`);
       onApplied?.();
     } catch (e) {
       onStatus?.(e instanceof Error ? e.message : "Apply recipe failed");
@@ -142,8 +136,8 @@ export function RecipesPanel({
       </PanelHeader>
       <PanelBody className="space-y-2 p-2">
         <p className="text-[10px] leading-snug text-text-muted">
-          Ready-made effects, mechanics, scripts, animations, and input packs.
-          Entity recipes need a selection
+          Ready-made effects, mechanics, scripts, animations, and input packs. Entity recipes need a
+          selection
           {selectedEntityName ? (
             <>
               {" "}
@@ -166,10 +160,7 @@ export function RecipesPanel({
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <Select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
+          <Select value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORIES.map((c) => (
               <option key={c.value || "all"} value={c.value}>
                 {c.label}
@@ -201,7 +192,7 @@ export function RecipesPanel({
                       key={recipe.id}
                       className={cn(
                         "rounded-md border border-border-default/70 bg-bg-elevated/30 p-2",
-                        disabled && "opacity-60",
+                        disabled && "opacity-60"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">

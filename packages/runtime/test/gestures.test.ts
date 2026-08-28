@@ -54,7 +54,7 @@ describe("gesture recognizer", () => {
         distance: 100,
         x: 0,
         y: 0,
-      }),
+      })
     ).toBe("swipeUp");
     expect(
       gestureScriptEventName({
@@ -65,7 +65,7 @@ describe("gesture recognizer", () => {
         distance: 100,
         x: 0,
         y: 0,
-      }),
+      })
     ).toBe("swipeDown");
     expect(
       gestureScriptEventName({
@@ -76,7 +76,7 @@ describe("gesture recognizer", () => {
         distance: 100,
         x: 0,
         y: 0,
-      }),
+      })
     ).toBe("swipeLeft");
     expect(
       gestureScriptEventName({
@@ -87,8 +87,10 @@ describe("gesture recognizer", () => {
         distance: 100,
         x: 0,
         y: 0,
-      }),
+      })
     ).toBe("swipeRight");
-    expect(gestureScriptEventName({ kind: "pinch", scale: 2, centerX: 0, centerY: 0 })).toBe("pinch");
+    expect(gestureScriptEventName({ kind: "pinch", scale: 2, centerX: 0, centerY: 0 })).toBe(
+      "pinch"
+    );
   });
 });

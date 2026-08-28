@@ -29,7 +29,7 @@ export function useAssetStudioGeneration({
   onGenerateMusic,
 }: UseAssetStudioGenerationOptions) {
   const [aiPrompt, setAiPrompt] = useState(
-    "cyberpunk armored knight with neon cyan blade, glowing visor",
+    "cyberpunk armored knight with neon cyan blade, glowing visor"
   );
   const [isSynthesizingAi, setIsSynthesizingAi] = useState(false);
   const [variations, setVariations] = useState<AiSpriteVariation[]>([]);
@@ -57,7 +57,9 @@ export function useAssetStudioGeneration({
     setSpriteArchetype(analysis.archetype);
     setSpritePalette(analysis.palette);
     setSheetAnimation(analysis.animationAction);
-    setVariations(generateAiVariationSet(aiPrompt, analysis.category, analysis.palette, spriteSize));
+    setVariations(
+      generateAiVariationSet(aiPrompt, analysis.category, analysis.palette, spriteSize)
+    );
     setSelectedVariationIndex(0);
   }, [isOpen, variations.length, aiPrompt, spriteSize]);
 
@@ -69,9 +71,12 @@ export function useAssetStudioGeneration({
       sheetImageRef.current = image;
     };
     if (!isPlayingSheetAnim) return;
-    const intervalId = window.setInterval(() => {
-      setSheetCurrentFrame((previous) => (previous + 1) % sheetFrames);
-    }, 1000 / Math.max(1, sheetFps));
+    const intervalId = window.setInterval(
+      () => {
+        setSheetCurrentFrame((previous) => (previous + 1) % sheetFrames);
+      },
+      1000 / Math.max(1, sheetFps)
+    );
     return () => window.clearInterval(intervalId);
   }, [sheetPreviewUrl, sheetFrames, sheetFps, isPlayingSheetAnim]);
 
@@ -102,7 +107,7 @@ export function useAssetStudioGeneration({
       0,
       0,
       canvas.width,
-      canvas.height,
+      canvas.height
     );
   }, [sheetCurrentFrame, sheetFrameSize, sheetPreviewUrl]);
 
@@ -121,7 +126,7 @@ export function useAssetStudioGeneration({
 
       if (targetTab === "sprites" || targetTab === "copilot") {
         setVariations(
-          generateAiVariationSet(prompt, analysis.category, analysis.palette, spriteSize),
+          generateAiVariationSet(prompt, analysis.category, analysis.palette, spriteSize)
         );
         setSelectedVariationIndex(0);
         try {
@@ -151,8 +156,8 @@ export function useAssetStudioGeneration({
             analysis.animationAction,
             sheetFrames,
             sheetFrameSize,
-            analysis.palette,
-          ),
+            analysis.palette
+          )
         );
         setSheetCurrentFrame(0);
       } else if (targetTab === "sfx") {

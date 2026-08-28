@@ -33,7 +33,11 @@ if (typeof window !== "undefined") {
       fillText: () => {},
       strokeText: () => {},
       measureText: (text: string) =>
-        ({ width: text.length * 6, actualBoundingBoxAscent: 8, actualBoundingBoxDescent: 2 } as TextMetrics),
+        ({
+          width: text.length * 6,
+          actualBoundingBoxAscent: 8,
+          actualBoundingBoxDescent: 2,
+        }) as TextMetrics,
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -45,8 +49,8 @@ if (typeof window !== "undefined") {
       rotate: () => {},
       transform: () => {},
       resetTransform: () => {},
-      createLinearGradient: () => ({ addColorStop: () => {} } as unknown as CanvasGradient),
-      createRadialGradient: () => ({ addColorStop: () => {} } as unknown as CanvasGradient),
+      createLinearGradient: () => ({ addColorStop: () => {} }) as unknown as CanvasGradient,
+      createRadialGradient: () => ({ addColorStop: () => {} }) as unknown as CanvasGradient,
       createPattern: () => null,
     };
 

@@ -10,7 +10,8 @@ export function updateAnimation(
   state: AnimationState,
   dt: number
 ): number {
-  if (anim.frameHeight <= 0 || anim.totalFrames <= 0 || anim.framesPerSecond <= 0) return state.currentFrame;
+  if (anim.frameHeight <= 0 || anim.totalFrames <= 0 || anim.framesPerSecond <= 0)
+    return state.currentFrame;
 
   state.elapsed += dt;
   const frameDuration = 1 / anim.framesPerSecond;
@@ -35,6 +36,6 @@ export function getFrameSourceRect(
     x: frameIndex * anim.frameWidth,
     y: 0,
     width: anim.frameWidth,
-    height: anim.frameHeight
+    height: anim.frameHeight,
   };
 }

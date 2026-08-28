@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import type { GameKitEntity, AabbColliderComponent, CircleColliderComponent } from "@gamekit/schema";
+import type {
+  GameKitEntity,
+  AabbColliderComponent,
+  CircleColliderComponent,
+} from "@gamekit/schema";
 import { AabbColliderSection } from "../../src/components/inspector/AabbColliderSection.js";
 import { CircleColliderSection } from "../../src/components/inspector/CircleColliderSection.js";
 

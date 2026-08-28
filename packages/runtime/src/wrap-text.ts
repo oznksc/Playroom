@@ -7,11 +7,7 @@ export type FontMeasure = {
  * widths. Words longer than `maxWidth` are clipped to the line instead of
  * overflowing forever. Returns an array of wrapped lines.
  */
-export function wrapText(
-  text: string,
-  measure: FontMeasure,
-  maxWidth: number,
-): string[] {
+export function wrapText(text: string, measure: FontMeasure, maxWidth: number): string[] {
   if (maxWidth <= 0) return [text];
 
   const lines: string[] = [];

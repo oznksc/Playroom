@@ -87,7 +87,7 @@ export function useAgentKeys() {
       apiKey: string,
       passphrase: string,
       model?: string,
-      baseUrl?: string,
+      baseUrl?: string
     ) => {
       await storeApiKey(provider, apiKey, passphrase, model, baseUrl);
 
@@ -103,7 +103,7 @@ export function useAgentKeys() {
 
       window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
     },
-    [],
+    []
   );
 
   const removeKey = useCallback(async (provider: string) => {
@@ -111,9 +111,12 @@ export function useAgentKeys() {
     window.dispatchEvent(new Event("gamekit:agent:keys-updated"));
   }, []);
 
-  const getKey = useCallback(async (provider: string, passphrase: string): Promise<string | null> => {
-    return loadApiKey(provider, passphrase);
-  }, []);
+  const getKey = useCallback(
+    async (provider: string, passphrase: string): Promise<string | null> => {
+      return loadApiKey(provider, passphrase);
+    },
+    []
+  );
 
   const sessionKey = useCallback((provider: string): string | undefined => {
     return getSessionSecret(provider);

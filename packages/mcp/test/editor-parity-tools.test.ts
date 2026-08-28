@@ -9,10 +9,16 @@ import { createMcpServer } from "../src/server.js";
 let tmpDir: string;
 let server: ReturnType<typeof createMcpServer>;
 
-function tool(name: string): { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> } {
-  const registered = (server as unknown as { _registeredTools: Record<string, { handler?: unknown }> })._registeredTools[name];
+function tool(name: string): {
+  handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+} {
+  const registered = (
+    server as unknown as { _registeredTools: Record<string, { handler?: unknown }> }
+  )._registeredTools[name];
   if (!registered?.handler) throw new Error(`Tool not registered: ${name}`);
-  return registered as { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> };
+  return registered as {
+    handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+  };
 }
 
 async function call(name: string, args: unknown): Promise<{ isError?: boolean; data: any }> {
@@ -78,10 +84,21 @@ describe("editor parity tools", () => {
     const world = await call("get_scene_settings", { scenePath: "main.scene.json" });
     expect(world.data.viewport).toBeTruthy();
 
-    await call("set_responsive", { scenePath: "main.scene.json", mode: "scale", orientation: "landscape" });
-    await call("set_safe_area", { scenePath: "main.scene.json", enabled: true, padding: { top: 20 } });
+    await call("set_responsive", {
+      scenePath: "main.scene.json",
+      mode: "scale",
+      orientation: "landscape",
+    });
+    await call("set_safe_area", {
+      scenePath: "main.scene.json",
+      enabled: true,
+      padding: { top: 20 },
+    });
 
-    const preset = await call("apply_input_preset", { scenePath: "main.scene.json", preset: "topdown" });
+    const preset = await call("apply_input_preset", {
+      scenePath: "main.scene.json",
+      preset: "topdown",
+    });
     expect(preset.data.actions).toContain("move_up");
 
     const rules = await call("get_game_rules", { scenePath: "main.scene.json" });

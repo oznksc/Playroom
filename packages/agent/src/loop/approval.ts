@@ -34,10 +34,7 @@ export class ApprovalGate {
     return /^(remove_|delete_)/.test(toolName);
   }
 
-  waitForApproval(
-    requestId: string,
-    signal?: AbortSignal,
-  ): Promise<"allow" | "deny"> {
+  waitForApproval(requestId: string, signal?: AbortSignal): Promise<"allow" | "deny"> {
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
         this.pending.delete(requestId);
@@ -60,7 +57,7 @@ export class ApprovalGate {
           this.pending.delete(requestId);
           resolve("deny");
         },
-        { once: true },
+        { once: true }
       );
     });
   }

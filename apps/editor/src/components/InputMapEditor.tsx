@@ -1,13 +1,7 @@
 import type { InputMapConfig, TouchControl } from "@gamekit/schema";
 import { DEFAULT_INPUT_MAP } from "@gamekit/schema";
 import { Gamepad2, Plus, Trash2, RotateCcw } from "lucide-react";
-import {
-  AccordionSection,
-  Input,
-  Select,
-  IconButton,
-  Button,
-} from "@/ui";
+import { AccordionSection, Input, Select, IconButton, Button } from "@/ui";
 
 type BindingDraft = {
   action: string;
@@ -23,14 +17,7 @@ type InputMapEditorProps = {
   onChange: (next: InputMapConfig) => void;
 };
 
-const TOUCH_OPTIONS: Array<"" | TouchControl> = [
-  "",
-  "left",
-  "right",
-  "jump",
-  "fire",
-  "action",
-];
+const TOUCH_OPTIONS: Array<"" | TouchControl> = ["", "left", "right", "jump", "fire", "action"];
 
 function toDraft(map?: InputMapConfig): BindingDraft[] {
   const source = map?.bindings?.length ? map : DEFAULT_INPUT_MAP;
@@ -78,10 +65,7 @@ export function InputMapEditor({ inputMap, open, onToggle, onChange }: InputMapE
   }
 
   function addRow() {
-    commit([
-      ...drafts,
-      { action: "custom", keys: "", touchControl: "", gamepad: "" },
-    ]);
+    commit([...drafts, { action: "custom", keys: "", touchControl: "", gamepad: "" }]);
   }
 
   return (
@@ -92,8 +76,8 @@ export function InputMapEditor({ inputMap, open, onToggle, onChange }: InputMapE
       onToggle={onToggle}
     >
       <p className="text-[10px] leading-snug text-text-muted">
-        Map actions to keys, on-screen buttons (jump/fire/action), and gamepad.
-        Play mode and mobile export both read this map.
+        Map actions to keys, on-screen buttons (jump/fire/action), and gamepad. Play mode and mobile
+        export both read this map.
       </p>
 
       <div className="space-y-2">

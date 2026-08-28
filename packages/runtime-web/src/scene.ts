@@ -35,7 +35,13 @@ import {
   particleRenderAlpha,
   type ParticleEmitterState,
 } from "@gamekit/runtime/particles";
-import { evaluateScriptEvent, hasScriptHandler, transitionFsm, updateFsm, type ScriptContext } from "@gamekit/runtime/script";
+import {
+  evaluateScriptEvent,
+  hasScriptHandler,
+  transitionFsm,
+  updateFsm,
+  type ScriptContext,
+} from "@gamekit/runtime/script";
 import { RulesEngine } from "@gamekit/runtime/rules-engine";
 import { offsetGuiNode, guiNodeOrigin } from "@gamekit/runtime/gui";
 import { updateFollowPath } from "@gamekit/runtime/path";
@@ -58,7 +64,11 @@ import { computeWorldBounds, findComponent } from "./scene-helpers.js";
 import { preloadEntityAssets, preloadGuiImageAssets } from "./asset-loader.js";
 import { createPhaserRigidBody, type PhaserRigidBody } from "./rigid-body-web.js";
 import { colliderLayerMask, solidCollides, triggerOverlaps } from "./collision-filter.js";
-import { configureSceneKeyboard, resolveScenePlayerInput, type SceneInputKeys } from "./scene-input.js";
+import {
+  configureSceneKeyboard,
+  resolveScenePlayerInput,
+  type SceneInputKeys,
+} from "./scene-input.js";
 import { setupTouchJoystick as setupTouchJoystickInput } from "./touch-joystick.js";
 import { refreshSceneHud } from "./scene-hud.js";
 import { showSceneOverlay } from "./scene-overlay.js";
@@ -163,7 +173,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     sceneData: GameKitScene,
     assetUrls: Record<string, string>,
     transition?: SceneTransitionDef,
-    options?: GameKitPhaserSceneOptions,
+    options?: GameKitPhaserSceneOptions
   ) {
     super("GameKitScene");
     this.sceneData = sceneData;
@@ -177,11 +187,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.sceneManager = options?.sceneManager;
     this.onGuiAction = options?.onGuiAction;
     const player = sceneData.entities.find((e) =>
-      e.components.some((c) => c.type === "PlayerController"),
+      e.components.some((c) => c.type === "PlayerController")
     );
-    const pt = player
-      ? findComponent<TransformComponent>(player, "Transform")
-      : undefined;
+    const pt = player ? findComponent<TransformComponent>(player, "Transform") : undefined;
     this.spawnPoint = this.gameRules.spawnPoint
       ? { ...this.gameRules.spawnPoint }
       : pt
@@ -226,7 +234,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
             (binding.gameObject as { x: number; y: number }).y = position.y;
           }
           const entity = this.activeEntities.find((e) => e.id === entityId);
-          const transform = entity ? findComponent<TransformComponent>(entity, "Transform") : undefined;
+          const transform = entity
+            ? findComponent<TransformComponent>(entity, "Transform")
+            : undefined;
           if (transform) {
             transform.position.x = position.x;
             transform.position.y = position.y;
@@ -269,7 +279,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       {
         initialSpawn: this.spawnPoint,
         level: this.hostOptions.level ?? null,
-      },
+      }
     );
     return this.rulesEngine;
   }
@@ -279,14 +289,14 @@ export class GameKitPhaserScene extends Phaser.Scene {
       this.load,
       this.activeEntities,
       this.assetUrls,
-      this.loadedFonts,
+      this.loadedFonts
     );
     preloadGuiImageAssets(
       this.load,
       this.sceneData.gui,
       this.guiComponents,
       this.assetUrls,
-      loadedKeys,
+      loadedKeys
     );
   }
 
@@ -296,7 +306,9 @@ export class GameKitPhaserScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, world.width, world.height);
     this.cameras.main.setBackgroundColor(this.sceneData.viewport.background);
 
-    this.hasLights = this.activeEntities.some((e) => findComponent<Light2DComponent>(e, "Light2D") !== undefined);
+    this.hasLights = this.activeEntities.some(
+      (e) => findComponent<Light2DComponent>(e, "Light2D") !== undefined
+    );
     if (this.hasLights) {
       this.lights.enable();
       this.lights.setAmbientColor(0x222222);
@@ -339,18 +351,24 @@ export class GameKitPhaserScene extends Phaser.Scene {
           return solidCollides(dynFilter.mask, statLayer);
         });
         if (this.tileLayers.length > 0) {
-          this.physics.add.collider(binding.gameObject, this.tileLayers, undefined, (_dyn, tile) => {
-            const dynFilter = colliderLayerMask(binding.entity);
-            const layerEntityId = (tile as Phaser.Tilemaps.Tile).layer as unknown as Phaser.Tilemaps.TilemapLayer;
-            const entityId = layerEntityId.getData("gkEntityId") as string | undefined;
-            if (entityId) {
-              this.collisionContacts.push({
-                entityId: binding.entity.id,
-                otherEntityId: entityId,
-              });
+          this.physics.add.collider(
+            binding.gameObject,
+            this.tileLayers,
+            undefined,
+            (_dyn, tile) => {
+              const dynFilter = colliderLayerMask(binding.entity);
+              const layerEntityId = (tile as Phaser.Tilemaps.Tile)
+                .layer as unknown as Phaser.Tilemaps.TilemapLayer;
+              const entityId = layerEntityId.getData("gkEntityId") as string | undefined;
+              if (entityId) {
+                this.collisionContacts.push({
+                  entityId: binding.entity.id,
+                  otherEntityId: entityId,
+                });
+              }
+              return solidCollides(dynFilter.mask, 1);
             }
-            return solidCollides(dynFilter.mask, 1);
-          });
+          );
         }
       }
     }
@@ -365,10 +383,12 @@ export class GameKitPhaserScene extends Phaser.Scene {
         },
         (_player, triggerObj) => {
           // Match Skia's trigger rule: both masks must accept the other's layer.
-          const triggerBinding = this.objectBindings.get(triggerObj as Phaser.GameObjects.GameObject);
+          const triggerBinding = this.objectBindings.get(
+            triggerObj as Phaser.GameObjects.GameObject
+          );
           if (!triggerBinding) return true;
           return triggerOverlaps(playerFilter, colliderLayerMask(triggerBinding.entity));
-        },
+        }
       );
     }
 
@@ -408,24 +428,32 @@ export class GameKitPhaserScene extends Phaser.Scene {
     for (const entity of this.activeEntities) {
       const script = findComponent<ScriptComponent>(entity, "Script");
       if (script) {
-        evaluateScriptEvent("start", script, engine.scriptContext(entity.id, {
-          destroyEntity: (id) => this.destroyEntityById(id),
-          rigidBodies: this.rigidBodies,
-          playSound: (assetId) => {
-            for (const e of this.activeEntities) {
-              const audio = e.components.find((c) => c.type === "AudioSource");
-              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
-                this.playSound(e.id);
+        evaluateScriptEvent(
+          "start",
+          script,
+          engine.scriptContext(entity.id, {
+            destroyEntity: (id) => this.destroyEntityById(id),
+            rigidBodies: this.rigidBodies,
+            playSound: (assetId) => {
+              for (const e of this.activeEntities) {
+                const audio = e.components.find((c) => c.type === "AudioSource");
+                if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                  this.playSound(e.id);
+                }
               }
-            }
-          },
-        }));
+            },
+          })
+        );
       }
     }
 
     this.refreshHud();
 
-    if (this.gameRules.fallDeathEnabled && this.gameRules.onFall === "respawn" && this.gameRules.lives > 0) {
+    if (
+      this.gameRules.fallDeathEnabled &&
+      this.gameRules.onFall === "respawn" &&
+      this.gameRules.lives > 0
+    ) {
       this.livesText = this.add
         .text(this.scale.width - 16, 14, `Lives: ${this.livesRemaining}`, {
           fontFamily: "IBM Plex Sans, system-ui, sans-serif",
@@ -437,7 +465,10 @@ export class GameKitPhaserScene extends Phaser.Scene {
         .setDepth(1600);
     }
 
-    if (this.transitionData && (this.transitionData.type === "fade" || this.transitionData.type === "slide")) {
+    if (
+      this.transitionData &&
+      (this.transitionData.type === "fade" || this.transitionData.type === "slide")
+    ) {
       // Parity with Skia: `slide` degrades to a fade (Skia applies the same
       // fade overlay for both); `none` and `skip`/`skip`-like types do nothing.
       const duration = Math.round((this.transitionData.duration ?? 0.3) * 1000);
@@ -470,7 +501,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
           dx: this.joystickDx,
           dy: this.joystickDy,
         },
-        this.sceneData.inputMap,
+        this.sceneData.inputMap
       );
       const jumpDown = input.jump;
       // Only jump on the frame the key is pressed — holding must not re-apply impulse
@@ -506,8 +537,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       if (isTopDown) {
         // Free 4-way movement when player gravity is zero.
         const dx = Number(input.right) - Number(input.left);
-        const up =
-          Boolean(input.up) || (controllerData.jumpVelocity === 0 && input.jump);
+        const up = Boolean(input.up) || (controllerData.jumpVelocity === 0 && input.jump);
         const dy = Number(Boolean(input.down)) - Number(up);
         let vx = dx * controllerData.speed;
         let vy = dy * controllerData.speed;
@@ -559,8 +589,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       const binding = this.bindings.get(entityId);
       if (!binding || !binding.body) continue;
       rb.applyDrag(dt);
-      const supported =
-        Boolean(binding.body.blocked?.down) || Boolean(binding.body.touching?.down);
+      const supported = Boolean(binding.body.blocked?.down) || Boolean(binding.body.touching?.down);
       rb.updateSleep(dt, supported);
     }
 
@@ -618,38 +647,47 @@ export class GameKitPhaserScene extends Phaser.Scene {
     for (const entity of this.activeEntities) {
       const script = findComponent<ScriptComponent>(entity, "Script");
       if (!script || !hasScriptHandler(script, "update")) continue;
-      evaluateScriptEvent("update", script, updateEngine.scriptContext(entity.id, {
-        dt,
-        destroyEntity: (id) => this.destroyEntityById(id),
-        rigidBodies: this.rigidBodies,
-        playSound: (assetId) => {
-          for (const e of this.activeEntities) {
-            const audio = e.components.find((c) => c.type === "AudioSource");
-            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
-              this.playSound(e.id);
+      evaluateScriptEvent(
+        "update",
+        script,
+        updateEngine.scriptContext(entity.id, {
+          dt,
+          destroyEntity: (id) => this.destroyEntityById(id),
+          rigidBodies: this.rigidBodies,
+          playSound: (assetId) => {
+            for (const e of this.activeEntities) {
+              const audio = e.components.find((c) => c.type === "AudioSource");
+              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                this.playSound(e.id);
+              }
             }
-          }
-        },
-      }));
+          },
+        })
+      );
     }
 
     // Per-frame StateMachine updates (on.update transitions + duration timers)
     for (const entity of this.activeEntities) {
       const sm = findComponent<StateMachineComponent>(entity, "StateMachine");
       if (!sm) continue;
-      updateFsm(sm, updateEngine.scriptContext(entity.id, {
-        dt,
-        destroyEntity: (id: string) => this.destroyEntityById(id),
-        rigidBodies: this.rigidBodies,
-        playSound: (assetId) => {
-          for (const e of this.activeEntities) {
-            const audio = e.components.find((c) => c.type === "AudioSource");
-            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
-              this.playSound(e.id);
+      updateFsm(
+        sm,
+        updateEngine.scriptContext(entity.id, {
+          dt,
+          destroyEntity: (id: string) => this.destroyEntityById(id),
+          rigidBodies: this.rigidBodies,
+          playSound: (assetId) => {
+            for (const e of this.activeEntities) {
+              const audio = e.components.find((c) => c.type === "AudioSource");
+              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                this.playSound(e.id);
+              }
             }
-          }
-        },
-      }), dt, this.fsmTimers);
+          },
+        }),
+        dt,
+        this.fsmTimers
+      );
     }
 
     // Particle systems
@@ -669,7 +707,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
           ps,
           transform.position,
           this.sceneData.gravity?.y ?? 0,
-          dt,
+          dt
         );
         for (const p of particles) {
           const c = Phaser.Display.Color.ValueToColor(particleRenderColor(p));
@@ -731,18 +769,22 @@ export class GameKitPhaserScene extends Phaser.Scene {
     for (const entity of this.activeEntities) {
       const script = findComponent<ScriptComponent>(entity, "Script");
       if (!script || !hasScriptHandler(script, eventName)) continue;
-      evaluateScriptEvent(eventName, script, engine.scriptContext(entity.id, {
-        destroyEntity: (id) => this.destroyEntityById(id),
-        rigidBodies: this.rigidBodies,
-        playSound: (assetId) => {
-          for (const e of this.activeEntities) {
-            const audio = e.components.find((c) => c.type === "AudioSource");
-            if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
-              this.playSound(e.id);
+      evaluateScriptEvent(
+        eventName,
+        script,
+        engine.scriptContext(entity.id, {
+          destroyEntity: (id) => this.destroyEntityById(id),
+          rigidBodies: this.rigidBodies,
+          playSound: (assetId) => {
+            for (const e of this.activeEntities) {
+              const audio = e.components.find((c) => c.type === "AudioSource");
+              if (audio && audio.type === "AudioSource" && audio.assetId === assetId) {
+                this.playSound(e.id);
+              }
             }
-          }
-        },
-      }));
+          },
+        })
+      );
     }
   }
 
@@ -751,22 +793,50 @@ export class GameKitPhaserScene extends Phaser.Scene {
     setupTouchJoystickInput(
       this,
       {
-        get active() { return thisScene.joystickActive; },
-        set active(value: boolean) { thisScene.joystickActive = value; },
-        get center() { return thisScene.joystickCenter; },
-        set center(value: { x: number; y: number }) { thisScene.joystickCenter = value; },
-        get dx() { return thisScene.joystickDx; },
-        set dx(value: number) { thisScene.joystickDx = value; },
-        get dy() { return thisScene.joystickDy; },
-        set dy(value: number) { thisScene.joystickDy = value; },
-        get jump() { return thisScene.touchJump; },
-        set jump(value: boolean) { thisScene.touchJump = value; },
-        get fire() { return thisScene.touchFire; },
-        set fire(value: boolean) { thisScene.touchFire = value; },
-        get action() { return thisScene.touchAction; },
-        set action(value: boolean) { thisScene.touchAction = value; },
+        get active() {
+          return thisScene.joystickActive;
+        },
+        set active(value: boolean) {
+          thisScene.joystickActive = value;
+        },
+        get center() {
+          return thisScene.joystickCenter;
+        },
+        set center(value: { x: number; y: number }) {
+          thisScene.joystickCenter = value;
+        },
+        get dx() {
+          return thisScene.joystickDx;
+        },
+        set dx(value: number) {
+          thisScene.joystickDx = value;
+        },
+        get dy() {
+          return thisScene.joystickDy;
+        },
+        set dy(value: number) {
+          thisScene.joystickDy = value;
+        },
+        get jump() {
+          return thisScene.touchJump;
+        },
+        set jump(value: boolean) {
+          thisScene.touchJump = value;
+        },
+        get fire() {
+          return thisScene.touchFire;
+        },
+        set fire(value: boolean) {
+          thisScene.touchFire = value;
+        },
+        get action() {
+          return thisScene.touchAction;
+        },
+        set action(value: boolean) {
+          thisScene.touchAction = value;
+        },
       },
-      this.sceneData.inputMap,
+      this.sceneData.inputMap
     );
   }
 
@@ -847,7 +917,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
           node.width,
           node.height,
           Phaser.Display.Color.ValueToColor(node.backgroundColor ?? "#333333").color,
-          0.95,
+          0.95
         )
         .setScrollFactor(0)
         .setDepth(1500)
@@ -884,7 +954,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
             node.width,
             node.height,
             0x444466,
-            0.8,
+            0.8
           )
           .setScrollFactor(0)
           .setDepth(1500);
@@ -898,7 +968,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   raycastScene(
     origin: { x: number; y: number },
     direction: { x: number; y: number },
-    maxDistance = 1000,
+    maxDistance = 1000
   ) {
     return raycast(origin, direction, this.activeEntities, { maxDistance });
   }
@@ -1000,7 +1070,10 @@ export class GameKitPhaserScene extends Phaser.Scene {
       // Entity was collected — count for HUD coin display
       this.coinsCollected += 1;
       this.refreshHud();
-    } else if (this.bindings.has(matchedId) === false && this.activeEntities.some((e) => e.id === matchedId)) {
+    } else if (
+      this.bindings.has(matchedId) === false &&
+      this.activeEntities.some((e) => e.id === matchedId)
+    ) {
       // Trigger handled but entity kept (e.g. goal) — leave entity without re-binding
     }
   }
@@ -1074,7 +1147,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private createTilemapLayer(
     entityId: string,
     transform: TransformComponent,
-    tilemap: TilemapComponent,
+    tilemap: TilemapComponent
   ): void {
     if (!this.textures.exists(tilemap.tilesetId)) return;
 
@@ -1097,7 +1170,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       tilemap.tilesetId,
       undefined,
       tilemap.tileWidth,
-      tilemap.tileHeight,
+      tilemap.tileHeight
     );
     if (!tileset) return;
 
@@ -1115,7 +1188,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private createEntity(
     entity: GameKitEntity,
     staticGroup: Phaser.Physics.Arcade.StaticGroup,
-    triggerGroup: Phaser.Physics.Arcade.StaticGroup,
+    triggerGroup: Phaser.Physics.Arcade.StaticGroup
   ): void {
     const transform = findComponent<TransformComponent>(entity, "Transform");
     if (!transform) return;
@@ -1140,24 +1213,19 @@ export class GameKitPhaserScene extends Phaser.Scene {
     // HUD / world text (no physics)
     if (textComp && !spriteComp && !animComp) {
       const isHud =
-        transform.position.x < this.sceneData.viewport.width &&
-        transform.position.y < 80;
-      const fontFamily = (textComp.fontAssetId && this.loadedFonts.get(textComp.fontAssetId))
-        || "IBM Plex Sans, system-ui, sans-serif";
+        transform.position.x < this.sceneData.viewport.width && transform.position.y < 80;
+      const fontFamily =
+        (textComp.fontAssetId && this.loadedFonts.get(textComp.fontAssetId)) ||
+        "IBM Plex Sans, system-ui, sans-serif";
       const textObject = this.add
         .text(transform.position.x, transform.position.y, textComp.text, {
           fontFamily,
           fontSize: `${textComp.size || 16}px`,
           color: textComp.color || "#ffffff",
           align: textComp.align || "left",
-          wordWrap: textComp.width
-            ? { width: textComp.width, useAdvancedWrap: false }
-            : undefined,
+          wordWrap: textComp.width ? { width: textComp.width, useAdvancedWrap: false } : undefined,
         })
-        .setOrigin(
-          textComp.align === "center" ? 0.5 : textComp.align === "right" ? 1 : 0,
-          0,
-        )
+        .setOrigin(textComp.align === "center" ? 0.5 : textComp.align === "right" ? 1 : 0, 0)
         .setDepth(1500);
       if (isHud) {
         textObject.setScrollFactor(0);
@@ -1175,11 +1243,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
     let originY = 0;
 
     if (animComp) {
-      const sprite = this.add.sprite(
-        transform.position.x,
-        transform.position.y,
-        animComp.assetId,
-      );
+      const sprite = this.add.sprite(transform.position.x, transform.position.y, animComp.assetId);
       const animKey = `${entity.id}-anim`;
       if (!this.anims.exists(animKey)) {
         this.anims.create({
@@ -1207,7 +1271,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         const image = this.add.image(
           transform.position.x,
           transform.position.y,
-          spriteComp.assetId,
+          spriteComp.assetId
         );
         image.setDisplaySize(spriteComp.width, spriteComp.height);
         image.setOrigin(spriteComp.anchor.x, spriteComp.anchor.y);
@@ -1226,7 +1290,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
           transform.position.y,
           spriteComp.width,
           spriteComp.height,
-          color,
+          color
         );
         rect.setOrigin(spriteComp.anchor.x, spriteComp.anchor.y);
         originX = spriteComp.anchor.x;
@@ -1277,7 +1341,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         transform.position.y,
         localPoints,
         polygonColliderComp.isStatic ? 0x8b5cf6 : 0x8b6914,
-        polygonColliderComp.isStatic ? 0.25 : 0,
+        polygonColliderComp.isStatic ? 0.25 : 0
       );
       poly.setOrigin(0, 0);
       originX = 0;
@@ -1290,7 +1354,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         colliderComp?.size.x ?? 32,
         colliderComp?.size.y ?? 32,
         0x333333,
-        colliderComp ? 0.85 : 0,
+        colliderComp ? 0.85 : 0
       );
       rect.setOrigin(0.5, 0.5);
       originX = 0.5;
@@ -1350,7 +1414,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         staticBody.setCircle(
           circleColliderComp.radius,
           circleColliderComp.offset.x,
-          circleColliderComp.offset.y,
+          circleColliderComp.offset.y
         );
         staticBody.updateFromGameObject();
         body = null;
@@ -1360,7 +1424,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         staticBody.setCircle(
           circleColliderComp.radius,
           circleColliderComp.offset.x,
-          circleColliderComp.offset.y,
+          circleColliderComp.offset.y
         );
         staticBody.updateFromGameObject();
         body = null;
@@ -1370,7 +1434,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
         body.setCircle(
           circleColliderComp.radius,
           circleColliderComp.offset.x,
-          circleColliderComp.offset.y,
+          circleColliderComp.offset.y
         );
         body.setCollideWorldBounds(true);
       }
@@ -1491,7 +1555,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private resolvePolygonSolids(
     entity: GameKitEntity,
     binding: EntityBinding,
-    transform: TransformComponent,
+    transform: TransformComponent
   ): void {
     if (this.polygonSolids.length === 0 || !binding.body) return;
     const aabbComp = findComponent<AabbColliderComponent>(entity, "AabbCollider");
@@ -1525,7 +1589,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
       this.setBodyPosition(
         binding,
         result.position.x - binding.body.halfWidth,
-        result.position.y - binding.body.halfWidth,
+        result.position.y - binding.body.halfWidth
       );
       binding.body.setVelocity(result.velocity.x, result.velocity.y);
       if (result.grounded) {
@@ -1542,7 +1606,7 @@ export class GameKitPhaserScene extends Phaser.Scene {
   private syncBlockedFlags(
     body: Phaser.Physics.Arcade.Body,
     velocity: { x: number; y: number },
-    result: { velocity: { x: number; y: number }; grounded: boolean },
+    result: { velocity: { x: number; y: number }; grounded: boolean }
   ): void {
     if (velocity.x !== 0 && result.velocity.x === 0) {
       body.blocked.left = velocity.x < 0;

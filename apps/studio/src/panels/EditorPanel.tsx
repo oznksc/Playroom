@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { startEditorServer, stopEditorServer } from "../lib/api";
+import { startEditorServer, stopEditorServer } from "../lib/api.js";
+import { Button, ErrorState, EmptyState } from "@gamekit/ui";
+import { Play, Square } from "lucide-react";
 
 export function EditorPanel({ projectPath }: { projectPath: string }) {
   const [running, setRunning] = useState(false);
@@ -38,32 +40,37 @@ export function EditorPanel({ projectPath }: { projectPath: string }) {
       <div className="flex items-center gap-3">
         <div className="type-label">Editor — embedded in hub</div>
         {!running ? (
-          <button
+          <Button
+            size="sm"
+            variant="solid"
+            loading={busy}
             disabled={busy}
             onClick={start}
-            className="rounded-md border border-accent bg-accent-muted px-3 py-1.5 text-md text-accent hover:bg-accent hover:text-bg-base disabled:opacity-50"
+            leftIcon={<Play size={12} />}
           >
-            {busy ? "Starting…" : "Start editor"}
-          </button>
+            Start editor
+          </Button>
         ) : (
-          <button
+          <Button
+            size="sm"
+            variant="danger"
+            loading={busy}
             disabled={busy}
             onClick={stop}
-            className="rounded-md border border-border-default bg-bg-elevated px-3 py-1.5 text-md text-text-primary hover:border-accent-red hover:text-accent-red disabled:opacity-50"
+            leftIcon={<Square size={12} />}
           >
-            {busy ? "Stopping…" : "Stop editor"}
-          </button>
+            Stop editor
+          </Button>
         )}
         {running && (
-          <span className="type-mono text-accent-green">● http://127.0.0.1:4177</span>
+          <span className="type-mono text-accent-green flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-accent-green animate-pulse" />
+            http://127.0.0.1:4177
+          </span>
         )}
       </div>
 
-      {error && (
-        <div className="type-body rounded-md border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-accent-red">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState compact message={error} />}
 
       <div className="glass-panel flex-1 overflow-hidden">
         {running ? (
@@ -74,9 +81,10 @@ export function EditorPanel({ projectPath }: { projectPath: string }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <div className="type-body text-text-muted">
-              Start the editor to embed the built editor dist inside the studio.
-            </div>
+            <EmptyState
+              title="Editor Server Idle"
+              description="Start the editor server to embed the built editor distribution inside GameKit Studio."
+            />
           </div>
         )}
       </div>

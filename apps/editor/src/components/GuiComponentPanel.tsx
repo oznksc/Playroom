@@ -10,16 +10,7 @@ import {
   Package,
   Plus,
 } from "lucide-react";
-import {
-  Panel,
-  PanelHeader,
-  PanelTitle,
-  PanelBody,
-  IconButton,
-  EmptyState,
-  Badge,
-  cn,
-} from "@/ui";
+import { Panel, PanelHeader, PanelTitle, PanelBody, IconButton, EmptyState, Badge, cn } from "@/ui";
 
 type GuiComponentPanelProps = {
   components: GuiComponent[];
@@ -81,9 +72,7 @@ export function GuiComponentPanel({
             <IconButton size="sm" onClick={onStopEdit} title="Back">
               <ArrowLeft size={13} />
             </IconButton>
-            <PanelTitle className="truncate">
-              {editingComponent.name}
-            </PanelTitle>
+            <PanelTitle className="truncate">{editingComponent.name}</PanelTitle>
           </div>
           <div className="flex items-center gap-0.5">
             <IconButton size="sm" title="Add Text" onClick={() => onAddNodeToComponent("Text")}>

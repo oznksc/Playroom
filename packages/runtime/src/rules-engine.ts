@@ -70,7 +70,7 @@ export class RulesEngine {
       level?: GameKitLevel | null;
       projectDefaults?: Partial<GameRulesConfig> | null;
       initialSpawn?: Vector2 | null;
-    },
+    }
   ) {
     this.host = host;
     this.level = options?.level ?? null;
@@ -79,7 +79,7 @@ export class RulesEngine {
     this.rules = mergeGameRules(
       options?.projectDefaults ?? undefined,
       scene.gameRules ?? undefined,
-      options?.level?.rules ?? undefined,
+      options?.level?.rules ?? undefined
     );
 
     const players = host.getPlayerTransforms();
@@ -108,7 +108,7 @@ export class RulesEngine {
 
     this.fallY = resolveFallDeathY(
       { viewport: scene.viewport, entities: scene.entities, gameRules: this.rules },
-      this.rules,
+      this.rules
     );
     this.autoSeedObjectivesFromEntities(scene.entities);
     this.initCollectTargets(scene.entities);
@@ -218,7 +218,7 @@ export class RulesEngine {
     // Checkpoints — update respawn point from tagged trigger position
     if (tags.includes("checkpoint") || tags.includes("spawn")) {
       const transform = trigger.components.find(
-        (c): c is TransformComponent => c.type === "Transform",
+        (c): c is TransformComponent => c.type === "Transform"
       );
       if (transform) {
         this.setSpawnPoint({ ...transform.position });
@@ -302,7 +302,12 @@ export class RulesEngine {
 
     if (this.rules.objectives.length === 0) {
       if (tagSet.has("coin")) {
-        this.rules.objectives.push({ id: "auto-collect-coin", type: "collect", tag: "coin", count: 0 });
+        this.rules.objectives.push({
+          id: "auto-collect-coin",
+          type: "collect",
+          tag: "coin",
+          count: 0,
+        });
       }
       if (tagSet.has("goal")) {
         this.rules.objectives.push({ id: "auto-reach-goal", type: "reach", tag: "goal" });

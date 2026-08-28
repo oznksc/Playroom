@@ -1,4 +1,12 @@
-import type { GameKitAsset, GameKitEntity, GameKitLevel, GameKitScene, GuiComponent, TilemapComponent, TransformComponent } from "@gamekit/schema";
+import type {
+  GameKitAsset,
+  GameKitEntity,
+  GameKitLevel,
+  GameKitScene,
+  GuiComponent,
+  TilemapComponent,
+  TransformComponent,
+} from "@gamekit/schema";
 import { GameKitEntitySchema } from "@gamekit/schema";
 import { Button, cn } from "@/ui";
 import workspaceStyles from "../Workspace.module.css";
@@ -10,7 +18,12 @@ import { TilePalette } from "../TilePalette.js";
 import { ProfilerOverlay } from "../ProfilerOverlay.js";
 import { useImageCache } from "../../hooks/useImageCache.js";
 import { isTilePaintTool, type CanvasTool, type TilePaintMode } from "../../lib/editor-tools.js";
-import { createSceneWorkspace, type ScenePaneId, type SceneWorkspaceState, type SplitMode } from "../../lib/scene-workspace.js";
+import {
+  createSceneWorkspace,
+  type ScenePaneId,
+  type SceneWorkspaceState,
+  type SplitMode,
+} from "../../lib/scene-workspace.js";
 import type { PlayProfilerSample } from "../../lib/play-profiler.js";
 import type { PlayOutcomeState } from "../../hooks/usePlaySimulation.js";
 import { USE_PHASER_PLAY_HOST } from "../../hooks/usePlaySimulation.js";
@@ -128,93 +141,88 @@ export function CanvasWorkspace({
   navigation,
 }: CanvasWorkspaceProps) {
   const {
-  scene,
-  snapshot,
-  currentSceneFile,
-  workspace,
-  dirtyFiles,
-  paneScenes,
-  activateScene,
-  handleCloseSceneTab,
-  handleSplitChange,
-  updateScene,
-  push,
-  setIsDirty,
-  triggerAutoSave,
+    scene,
+    snapshot,
+    currentSceneFile,
+    workspace,
+    dirtyFiles,
+    paneScenes,
+    activateScene,
+    handleCloseSceneTab,
+    handleSplitChange,
+    updateScene,
+    push,
+    setIsDirty,
+    triggerAutoSave,
   } = document;
   const {
-  zoom,
-  setZoom,
-  snap,
-  setSnap,
-  snapSize,
-  setSnapSize,
-  activeTool,
-  setActiveTool,
-  tilePaintMode,
-  setTilePaintMode,
-  brushSize,
-  setBrushSize,
-  paintTileId,
-  setPaintTileId,
-  showGrid,
-  setShowGrid,
-  showColliders,
-  setShowColliders,
-  viewResetKey,
-  showGuiTools = true,
+    zoom,
+    setZoom,
+    snap,
+    setSnap,
+    snapSize,
+    setSnapSize,
+    activeTool,
+    setActiveTool,
+    tilePaintMode,
+    setTilePaintMode,
+    brushSize,
+    setBrushSize,
+    paintTileId,
+    setPaintTileId,
+    showGrid,
+    setShowGrid,
+    showColliders,
+    setShowColliders,
+    viewResetKey,
+    showGuiTools = true,
   } = viewport;
   const {
-  selectedEntityIds,
-  setSelectedEntityIds,
-  selectedGuiNodeId,
-  setSelectedGuiNodeId,
-  selectedComponentInstanceId,
-  setSelectedComponentInstanceId,
-  clipboardRef,
-  addEntity,
-  deleteEntity,
-  duplicateEntity,
-  pasteEntity,
-  saveEntityAsPrefab,
+    selectedEntityIds,
+    setSelectedEntityIds,
+    selectedGuiNodeId,
+    setSelectedGuiNodeId,
+    selectedComponentInstanceId,
+    setSelectedComponentInstanceId,
+    clipboardRef,
+    addEntity,
+    deleteEntity,
+    duplicateEntity,
+    pasteEntity,
+    saveEntityAsPrefab,
   } = selection;
   const {
-  isPlaying,
-  isPaused,
-  setIsPaused,
-  playViewPan,
-  playOutcome,
-  setPlayOutcome,
-  playLives,
-  setPlayLives,
-  playHostScene,
-  playHostKey,
-  playAssetUrls,
-  playHostLevel,
-  profilerOpen,
-  profilerSample,
-  virtualTouchControls,
-  handlePlayToggle,
-  handleStop,
-  handlePlayRestart,
-  onVirtualInput,
-  onGuiAction,
-  onPhaserOutcome,
-  onMetrics,
-  playHotSwapRef,
-  playSceneManagerRef,
-  playLivesRef,
-  playOutcomeRef,
-  playVarsRef,
-  syncPlayLevelUnlocksFromManager,
-  addConsoleLog,
+    isPlaying,
+    isPaused,
+    setIsPaused,
+    playViewPan,
+    playOutcome,
+    setPlayOutcome,
+    playLives,
+    setPlayLives,
+    playHostScene,
+    playHostKey,
+    playAssetUrls,
+    playHostLevel,
+    profilerOpen,
+    profilerSample,
+    virtualTouchControls,
+    handlePlayToggle,
+    handleStop,
+    handlePlayRestart,
+    onVirtualInput,
+    onGuiAction,
+    onPhaserOutcome,
+    onMetrics,
+    playHotSwapRef,
+    playSceneManagerRef,
+    playLivesRef,
+    playOutcomeRef,
+    playVarsRef,
+    syncPlayLevelUnlocksFromManager,
+    addConsoleLog,
   } = playback;
-  const {
-  openContent,
-  openLevels,
-  openTour,
-  setNewProjectWizardOpen,
-  } = navigation;
+  const { openContent, openLevels, openTour, setNewProjectWizardOpen } = navigation;
   const paletteImages = useImageCache(snapshot.assets);
 
   const renderScenePane = (paneId: "a" | "b", targetFile: string) => {
@@ -222,11 +230,11 @@ export function CanvasWorkspace({
     const paneScene =
       paneId === "a"
         ? workspace.split !== "none" && workspace.focused !== "a"
-          ? paneScenes[workspace.paneA] ?? scene
+          ? (paneScenes[workspace.paneA] ?? scene)
           : scene
         : workspace.focused === "b"
           ? scene
-          : (workspace.paneB ? paneScenes[workspace.paneB] : undefined) ?? scene;
+          : ((workspace.paneB ? paneScenes[workspace.paneB] : undefined) ?? scene);
 
     const paneSelectedEntityIds = isFocused ? selectedEntityIds : new Set<string>();
     const paneIsPlaying = isPlaying && isFocused;
@@ -342,7 +350,8 @@ export function CanvasWorkspace({
               if (!draft) return;
               const entity = draft.entities.find((candidate) => candidate.id === id);
               const polygon = entity?.components.find(
-                (c): c is import("@gamekit/schema").PolygonColliderComponent => c.type === "PolygonCollider"
+                (c): c is import("@gamekit/schema").PolygonColliderComponent =>
+                  c.type === "PolygonCollider"
               );
               if (polygon) {
                 polygon.points = points;
@@ -415,13 +424,17 @@ export function CanvasWorkspace({
                     completeLevel: (levelId) => {
                       const unlocked = playSceneManagerRef.current?.completeLevel(levelId) ?? null;
                       if (unlocked) {
-                        addConsoleLog("system", `completeLevel("${levelId}") → unlocked "${unlocked}"`);
+                        addConsoleLog(
+                          "system",
+                          `completeLevel("${levelId}") → unlocked "${unlocked}"`
+                        );
                         syncPlayLevelUnlocksFromManager();
                       }
                       return unlocked;
                     },
                     getState: () => ({
-                      currentLevelId: playSceneManagerRef.current?.getState().currentLevelId ?? null,
+                      currentLevelId:
+                        playSceneManagerRef.current?.getState().currentLevelId ?? null,
                     }),
                     setPersistentVar: (key, value) => {
                       playSceneManagerRef.current?.setPersistentVar(key, value);
@@ -434,11 +447,7 @@ export function CanvasWorkspace({
                   }
                 : undefined
             }
-            onOutcome={
-              paneId === "a"
-                ? onPhaserOutcome
-                : undefined
-            }
+            onOutcome={paneId === "a" ? onPhaserOutcome : undefined}
             onLivesChange={
               paneId === "a"
                 ? (lives) => {
@@ -491,18 +500,10 @@ export function CanvasWorkspace({
                   : "Objectives complete. Next level unlocks via completeLevel / level onComplete."}
               </p>
               <div className="mt-4 flex justify-center gap-2">
-                <Button
-                  variant="solid"
-                  size="sm"
-                  onClick={handlePlayRestart}
-                >
+                <Button variant="solid" size="sm" onClick={handlePlayRestart}>
                   Restart
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleStop}
-                >
+                <Button variant="secondary" size="sm" onClick={handleStop}>
                   Stop
                 </Button>
               </div>
@@ -534,7 +535,7 @@ export function CanvasWorkspace({
         className={cn(
           workspaceStyles["scene-panes"],
           workspace.split === "horizontal" && workspaceStyles["split-h"],
-          workspace.split === "vertical" && workspaceStyles["split-v"],
+          workspace.split === "vertical" && workspaceStyles["split-v"]
         )}
       >
         {renderScenePane("a", workspace.paneA)}

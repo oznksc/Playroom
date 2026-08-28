@@ -83,7 +83,14 @@ async function fallbackSearch(
   rootDir: string
 ): Promise<Array<{ file: string; line: number; content: string }>> {
   const results: Array<{ file: string; line: number; content: string }> = [];
-  const excludeDirs = [".git", "node_modules", "dist", "target", ".playwright-cli", "packages/mcp/dist"];
+  const excludeDirs = [
+    ".git",
+    "node_modules",
+    "dist",
+    "target",
+    ".playwright-cli",
+    "packages/mcp/dist",
+  ];
 
   async function walk(currentDir: string) {
     const entries = await readdir(currentDir, { withFileTypes: true });

@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Sparkles,
-  Play,
-  Wand2,
-  Gamepad2,
-  Layers,
-  X,
-  Share2,
-  Compass,
-} from "lucide-react";
+import { Sparkles, Play, Wand2, Gamepad2, Layers, X, Share2, Compass } from "lucide-react";
 import { Button, Badge, cn } from "@/ui";
 
 interface QuickStartBannerProps {
@@ -62,7 +53,11 @@ export function QuickStartBanner({
               </Badge>
             </div>
             <p className="text-[11px] text-text-muted truncate">
-              Press <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[10px] text-accent">Space</kbd> to test gameplay mechanics immediately.
+              Press{" "}
+              <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[10px] text-accent">
+                Space
+              </kbd>{" "}
+              to test gameplay mechanics immediately.
             </p>
           </div>
         </div>

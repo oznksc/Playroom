@@ -4,7 +4,14 @@ import type { TimelineTrack } from "@gamekit/schema";
 import type { FileIO } from "../utils/file-io.js";
 import { toolJson } from "../utils/result.js";
 
-const PropertySchema = z.enum(["position.x", "position.y", "rotation", "scale.x", "scale.y", "alpha"]);
+const PropertySchema = z.enum([
+  "position.x",
+  "position.y",
+  "rotation",
+  "scale.x",
+  "scale.y",
+  "alpha",
+]);
 const KeyframeSchema = z.object({
   time: z.number().min(0),
   value: z.union([z.number(), z.array(z.number())]),
@@ -20,7 +27,7 @@ export function registerTimelineTools(server: McpServer, fileIO: FileIO): void {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
       return toolJson({ scenePath: filename, timeline: scene.timeline });
-    },
+    }
   );
 
   server.tool(
@@ -40,7 +47,7 @@ export function registerTimelineTools(server: McpServer, fileIO: FileIO): void {
       if (playing !== undefined) scene.timeline.playing = playing;
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, timeline: scene.timeline });
-    },
+    }
   );
 
   server.tool(
@@ -60,14 +67,21 @@ export function registerTimelineTools(server: McpServer, fileIO: FileIO): void {
       }
       const sorted = [...keyframes].sort((a, b) => a.time - b.time);
       const track: TimelineTrack = { entityId, property, keyframes: sorted };
-      const index = scene.timeline.tracks.findIndex((t) => t.entityId === entityId && t.property === property);
+      const index = scene.timeline.tracks.findIndex(
+        (t) => t.entityId === entityId && t.property === property
+      );
       if (index >= 0) scene.timeline.tracks[index] = track;
       else scene.timeline.tracks.push(track);
       const maxTime = sorted[sorted.length - 1]?.time ?? 0;
       if (maxTime > scene.timeline.duration) scene.timeline.duration = maxTime;
       await fileIO.writeScene(filename, scene);
-      return toolJson({ success: true, track, trackCount: scene.timeline.tracks.length, duration: scene.timeline.duration });
-    },
+      return toolJson({
+        success: true,
+        track,
+        trackCount: scene.timeline.tracks.length,
+        duration: scene.timeline.duration,
+      });
+    }
   );
 
   server.tool(
@@ -89,7 +103,9 @@ export function registerTimelineTools(server: McpServer, fileIO: FileIO): void {
         }
         removed = scene.timeline.tracks.splice(index, 1)[0];
       } else if (entityId && property) {
-        const i = scene.timeline.tracks.findIndex((t) => t.entityId === entityId && t.property === property);
+        const i = scene.timeline.tracks.findIndex(
+          (t) => t.entityId === entityId && t.property === property
+        );
         if (i < 0) return toolJson({ error: "Track not found." }, true);
         removed = scene.timeline.tracks.splice(i, 1)[0];
       } else {
@@ -97,6 +113,6 @@ export function registerTimelineTools(server: McpServer, fileIO: FileIO): void {
       }
       await fileIO.writeScene(filename, scene);
       return toolJson({ success: true, removed, trackCount: scene.timeline.tracks.length });
-    },
+    }
   );
 }

@@ -14,7 +14,15 @@ type Props = {
   onRemove: () => void;
 };
 
-export function CameraFollowSection({ camera, entityIds, currentEntityId, onChange, open, onToggle, onRemove }: Props) {
+export function CameraFollowSection({
+  camera,
+  entityIds,
+  currentEntityId,
+  onChange,
+  open,
+  onToggle,
+  onRemove,
+}: Props) {
   return (
     <AccordionSection
       icon={<Video size={12} />}
@@ -34,7 +42,8 @@ export function CameraFollowSection({ camera, entityIds, currentEntityId, onChan
               value={camera.targetId}
               onChange={(event) =>
                 onChange((draft) => {
-                  findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId = event.target.value;
+                  findComponent<CameraFollowComponent>(draft, "CameraFollow")!.targetId =
+                    event.target.value;
                 })
               }
             >
@@ -42,7 +51,9 @@ export function CameraFollowSection({ camera, entityIds, currentEntityId, onChan
               {entityIds
                 .filter((id) => id !== currentEntityId)
                 .map((id) => (
-                  <option key={id} value={id}>{id}</option>
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
                 ))}
             </Select>
           </label>

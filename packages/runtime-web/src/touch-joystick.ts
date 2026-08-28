@@ -39,7 +39,7 @@ function resolveButtons(inputMap?: InputMapConfig): Array<"jump" | "fire" | "act
 export function setupTouchJoystick(
   scene: Phaser.Scene,
   state: TouchJoystickState,
-  inputMap?: InputMapConfig,
+  inputMap?: InputMapConfig
 ): void {
   const baseRadius = 50;
   const thumbRadius = 18;
@@ -72,7 +72,13 @@ export function setupTouchJoystick(
 
   // Action buttons on the right
   const buttons: ButtonHandle[] = [];
-  const layout: Array<{ control: "jump" | "fire" | "action"; label: string; ox: number; oy: number; r: number }> = [
+  const layout: Array<{
+    control: "jump" | "fire" | "action";
+    label: string;
+    ox: number;
+    oy: number;
+    r: number;
+  }> = [
     { control: "jump", label: "A", ox: 70, oy: 70, r: 34 },
     { control: "fire", label: "B", ox: 140, oy: 110, r: 28 },
     { control: "action", label: "X", ox: 150, oy: 50, r: 26 },

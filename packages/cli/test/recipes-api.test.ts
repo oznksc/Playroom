@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createEntity, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createEntity,
+  createProject,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { applyRecipe, listRecipes, describeRecipe } from "../src/project.js";
 
 let root: string;
@@ -49,7 +55,7 @@ describe("CLI recipes", () => {
     expect(result.appliedComponents).toContain("Tween");
 
     const scene = JSON.parse(
-      await readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8"),
+      await readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8")
     );
     const entity = scene.entities.find((e: { id: string }) => e.id === entityId);
     const tween = entity.components.find((c: { type: string }) => c.type === "Tween");
@@ -64,10 +70,10 @@ describe("CLI recipes", () => {
     expect(result.appliedInputActions).toContain("move_up");
 
     const scene = JSON.parse(
-      await readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8"),
+      await readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8")
     );
     expect(scene.inputMap.bindings.some((b: { action: string }) => b.action === "move_up")).toBe(
-      true,
+      true
     );
   });
 });

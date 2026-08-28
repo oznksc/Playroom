@@ -39,7 +39,7 @@ import {
   HelpCircle,
   Trophy,
 } from "lucide-react";
-import { cn } from "@/ui";
+import { cn, NativeSelect } from "@gamekit/ui";
 import type { SaveState } from "../types.js";
 import type { CanvasTool } from "../lib/editor-tools.js";
 import type { EditorTabBarDestination } from "../lib/editor-layout.js";
@@ -96,10 +96,7 @@ const MAX_ZOOM = 4;
 
 type GroupId = "project" | "tools" | "view" | "create" | "more";
 
-const TOOL_META: Record<
-  CanvasTool,
-  { label: string; icon: (size?: number) => ReactNode }
-> = {
+const TOOL_META: Record<CanvasTool, { label: string; icon: (size?: number) => ReactNode }> = {
   select: {
     label: "Select",
     icon: (s = 18) => <MousePointer size={s} strokeWidth={1.75} />,
@@ -389,7 +386,8 @@ export function AppTabBar({
           />
           {snap && (
             <label className={styles["app-tabbar-select"]} title="Snap size">
-              <select
+              <NativeSelect
+                selectSize="xs"
                 value={snapSize}
                 onChange={(e) => onSnapSizeChange(Number(e.target.value))}
               >
@@ -397,7 +395,7 @@ export function AppTabBar({
                 <option value={16}>16</option>
                 <option value={32}>32</option>
                 <option value={64}>64</option>
-              </select>
+              </NativeSelect>
             </label>
           )}
         </TabGroup>
@@ -534,9 +532,7 @@ export function AppTabBar({
               <Save size={18} strokeWidth={1.75} />
             )
           }
-          tone={
-            saveState === "error" ? "error" : saveState === "saved" ? "success" : undefined
-          }
+          tone={saveState === "error" ? "error" : saveState === "saved" ? "success" : undefined}
         />
 
         <TabGroup
@@ -628,12 +624,20 @@ function TabGroup({
 }) {
   return (
     <div
-      className={cn(styles["app-tabbar-group"], open && styles.open, active && styles["has-active"])}
+      className={cn(
+        styles["app-tabbar-group"],
+        open && styles.open,
+        active && styles["has-active"]
+      )}
       data-group={id}
     >
       <button
         type="button"
-        className={cn(styles["app-tabbar-item"], styles["app-tabbar-group-trigger"], open && styles.active)}
+        className={cn(
+          styles["app-tabbar-item"],
+          styles["app-tabbar-group-trigger"],
+          open && styles.active
+        )}
         onClick={onToggle}
         title={label}
         aria-label={label}

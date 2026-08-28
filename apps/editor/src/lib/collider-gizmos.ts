@@ -39,7 +39,11 @@ export function colliderGizmoStyle(input: {
   kinematic?: boolean;
 }): ColliderGizmoStyle {
   const kind: ColliderGizmoKind = input.isTrigger ? "trigger" : "solid";
-  const stroke = input.selected ? SELECTED_STROKE : kind === "trigger" ? TRIGGER_STROKE : SOLID_STROKE;
+  const stroke = input.selected
+    ? SELECTED_STROKE
+    : kind === "trigger"
+      ? TRIGGER_STROKE
+      : SOLID_STROKE;
   const fill = input.isTrigger
     ? input.selected
       ? "rgba(56,189,248,0.16)"
@@ -57,7 +61,10 @@ export function colliderGizmoStyle(input: {
   return { kind, stroke, fill, hatch, dash, lineWidth, badge: tags.join("") };
 }
 
-export function colliderCenter(offset: { x: number; y: number }, size?: { x: number; y: number }): { x: number; y: number } {
+export function colliderCenter(
+  offset: { x: number; y: number },
+  size?: { x: number; y: number }
+): { x: number; y: number } {
   if (!size) return { x: offset.x, y: offset.y };
   return { x: offset.x + size.x / 2, y: offset.y + size.y / 2 };
 }
@@ -77,7 +84,7 @@ function fontSize(zoom: number): number {
 function setStroke(
   context: CanvasRenderingContext2D,
   style: ColliderGizmoStyle,
-  zoom: number,
+  zoom: number
 ): void {
   context.strokeStyle = style.stroke;
   context.fillStyle = style.fill;
@@ -90,7 +97,7 @@ function hatchShape(
   path: () => void,
   bounds: { x: number; y: number; w: number; h: number },
   color: string,
-  zoom: number,
+  zoom: number
 ): void {
   context.save();
   context.beginPath();
@@ -115,7 +122,7 @@ function drawInwardArrows(
   context: CanvasRenderingContext2D,
   edges: Array<{ x: number; y: number; nx: number; ny: number }>,
   color: string,
-  zoom: number,
+  zoom: number
 ): void {
   const len = 8 / Math.max(0.0001, zoom);
   context.save();
@@ -134,8 +141,14 @@ function drawInwardArrows(
     const head = 3.5 / Math.max(0.0001, zoom);
     context.beginPath();
     context.moveTo(tx, ty);
-    context.lineTo(tx - head * Math.cos(ang - Math.PI / 6), ty - head * Math.sin(ang - Math.PI / 6));
-    context.lineTo(tx - head * Math.cos(ang + Math.PI / 6), ty - head * Math.sin(ang + Math.PI / 6));
+    context.lineTo(
+      tx - head * Math.cos(ang - Math.PI / 6),
+      ty - head * Math.sin(ang - Math.PI / 6)
+    );
+    context.lineTo(
+      tx - head * Math.cos(ang + Math.PI / 6),
+      ty - head * Math.sin(ang + Math.PI / 6)
+    );
     context.closePath();
     context.fill();
   }
@@ -148,7 +161,7 @@ function drawBadge(
   y: number,
   text: string,
   style: ColliderGizmoStyle,
-  zoom: number,
+  zoom: number
 ): void {
   if (!text) return;
   const size = fontSize(zoom);
@@ -177,7 +190,7 @@ function drawOffsetStem(
   originY: number,
   centerX: number,
   centerY: number,
-  zoom: number,
+  zoom: number
 ): void {
   const dx = centerX - originX;
   const dy = centerY - originY;
@@ -203,7 +216,7 @@ function drawDimension(
   x: number,
   y: number,
   text: string,
-  zoom: number,
+  zoom: number
 ): void {
   const size = fontSize(zoom);
   context.save();
@@ -219,7 +232,7 @@ export function drawAabbColliderGizmo(
   context: CanvasRenderingContext2D,
   transform: TransformComponent,
   aabb: AabbColliderComponent,
-  options: ColliderGizmoOptions,
+  options: ColliderGizmoOptions
 ): void {
   const zoom = options.zoom ?? 1;
   const style = colliderGizmoStyle({
@@ -258,7 +271,7 @@ export function drawAabbColliderGizmo(
         { x: x + w, y: y + h / 2, nx: -1, ny: 0 },
       ],
       style.stroke,
-      zoom,
+      zoom
     );
   }
 
@@ -279,14 +292,7 @@ export function drawAabbColliderGizmo(
       context.lineTo(cx + sx * tick, cy);
       context.stroke();
     }
-    drawOffsetStem(
-      context,
-      transform.position.x,
-      transform.position.y,
-      x + w / 2,
-      y + h / 2,
-      zoom,
-    );
+    drawOffsetStem(context, transform.position.x, transform.position.y, x + w / 2, y + h / 2, zoom);
     if (options.showLabels !== false) {
       drawDimension(context, x + w / 2, y + h, `${Math.round(w)}×${Math.round(h)}`, zoom);
     }
@@ -303,7 +309,7 @@ export function drawCircleColliderGizmo(
   context: CanvasRenderingContext2D,
   transform: TransformComponent,
   circle: CircleColliderComponent,
-  options: ColliderGizmoOptions,
+  options: ColliderGizmoOptions
 ): void {
   const zoom = options.zoom ?? 1;
   const style = colliderGizmoStyle({
@@ -358,7 +364,9 @@ export function drawCircleColliderGizmo(
   }
 
   if (options.showLabels !== false) {
-    const badge = [style.badge, layerMaskLabel(circle.layer, circle.mask)].filter(Boolean).join(" ");
+    const badge = [style.badge, layerMaskLabel(circle.layer, circle.mask)]
+      .filter(Boolean)
+      .join(" ");
     drawBadge(context, cx - r, cy - r - 2 / Math.max(0.0001, zoom), badge, style, zoom);
   }
   context.restore();
@@ -368,7 +376,7 @@ export function drawPolygonColliderGizmo(
   context: CanvasRenderingContext2D,
   transform: TransformComponent,
   polygon: PolygonColliderComponent,
-  options: ColliderGizmoOptions,
+  options: ColliderGizmoOptions
 ): void {
   if (polygon.points.length < 1) return;
   const zoom = options.zoom ?? 1;
@@ -405,10 +413,16 @@ export function drawPolygonColliderGizmo(
     path();
     context.fill();
     if (polygon.isStatic || polygon.isTrigger) {
-      hatchShape(context, () => {
-        context.beginPath();
-        path();
-      }, { x: minX, y: minY, w: maxX - minX, h: maxY - minY }, style.hatch, zoom);
+      hatchShape(
+        context,
+        () => {
+          context.beginPath();
+          path();
+        },
+        { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
+        style.hatch,
+        zoom
+      );
     }
     context.beginPath();
     path();
@@ -459,7 +473,9 @@ export function drawPolygonColliderGizmo(
   }
 
   if (options.showLabels !== false) {
-    const badge = [style.badge, layerMaskLabel(polygon.layer, polygon.mask)].filter(Boolean).join(" ");
+    const badge = [style.badge, layerMaskLabel(polygon.layer, polygon.mask)]
+      .filter(Boolean)
+      .join(" ");
     drawBadge(context, minX, minY - 2 / Math.max(0.0001, zoom), badge, style, zoom);
   }
   context.restore();
@@ -469,7 +485,7 @@ export function drawRigidBodyGizmo(
   context: CanvasRenderingContext2D,
   transform: TransformComponent,
   body: RigidBodyComponent,
-  zoom = 1,
+  zoom = 1
 ): void {
   const vx = body.velocity?.x ?? 0;
   const vy = body.velocity?.y ?? 0;
@@ -482,7 +498,7 @@ export function drawRigidBodyGizmo(
       transform.position.x + vx * 0.15,
       transform.position.y + vy * 0.15,
       "#00f0ff",
-      zoom,
+      zoom
     );
   }
   const av = body.angularVelocity ?? 0;
@@ -494,19 +510,31 @@ export function drawRigidBodyGizmo(
     context.lineWidth = 1.5 * hair(zoom);
     context.setLineDash([]);
     context.beginPath();
-    context.arc(transform.position.x, transform.position.y, r, -Math.PI / 2, -Math.PI / 2 + sweep, sweep < 0);
+    context.arc(
+      transform.position.x,
+      transform.position.y,
+      r,
+      -Math.PI / 2,
+      -Math.PI / 2 + sweep,
+      sweep < 0
+    );
     context.stroke();
     context.restore();
   }
   if (body.isKinematic) {
-    const style = colliderGizmoStyle({ isTrigger: false, isStatic: false, selected: false, kinematic: true });
+    const style = colliderGizmoStyle({
+      isTrigger: false,
+      isStatic: false,
+      selected: false,
+      kinematic: true,
+    });
     drawBadge(
       context,
       transform.position.x + 8 / Math.max(0.0001, zoom),
       transform.position.y - 8 / Math.max(0.0001, zoom),
       "K",
       style,
-      zoom,
+      zoom
     );
   }
 }
@@ -518,7 +546,7 @@ export function drawGizmoArrow(
   toX: number,
   toY: number,
   color: string,
-  zoom = 1,
+  zoom = 1
 ): void {
   const headlen = 8 / Math.max(0.0001, zoom);
   const dx = toX - fromX;
@@ -535,8 +563,14 @@ export function drawGizmoArrow(
   context.stroke();
   context.beginPath();
   context.moveTo(toX, toY);
-  context.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-  context.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+  context.lineTo(
+    toX - headlen * Math.cos(angle - Math.PI / 6),
+    toY - headlen * Math.sin(angle - Math.PI / 6)
+  );
+  context.lineTo(
+    toX - headlen * Math.cos(angle + Math.PI / 6),
+    toY - headlen * Math.sin(angle + Math.PI / 6)
+  );
   context.closePath();
   context.fill();
   context.restore();
@@ -546,7 +580,7 @@ export function drawEntityColliderGizmos(
   context: CanvasRenderingContext2D,
   entity: GameKitEntity,
   transform: TransformComponent,
-  options: ColliderGizmoOptions,
+  options: ColliderGizmoOptions
 ): void {
   const aabb = findComponent<AabbColliderComponent>(entity, "AabbCollider");
   if (aabb) drawAabbColliderGizmo(context, transform, aabb, options);

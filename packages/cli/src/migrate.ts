@@ -43,7 +43,7 @@ function prettyJson(value: unknown): string {
 }
 
 async function listDocumentFiles(
-  gamekitRoot: string,
+  gamekitRoot: string
 ): Promise<Array<{ path: string; kind: SchemaDocumentKind; rel: string }>> {
   const files: Array<{ path: string; kind: SchemaDocumentKind; rel: string }> = [
     { path: join(gamekitRoot, "project.json"), kind: "project", rel: "gamekit/project.json" },
@@ -51,7 +51,7 @@ async function listDocumentFiles(
 
   try {
     const sceneFiles = (await readdir(join(gamekitRoot, "scenes"))).filter((f) =>
-      f.endsWith(".scene.json"),
+      f.endsWith(".scene.json")
     );
     for (const file of sceneFiles.sort()) {
       files.push({
@@ -66,7 +66,7 @@ async function listDocumentFiles(
 
   try {
     const prefabFiles = (await readdir(join(gamekitRoot, "prefabs"))).filter((f) =>
-      f.endsWith(".prefab.json"),
+      f.endsWith(".prefab.json")
     );
     for (const file of prefabFiles.sort()) {
       files.push({
@@ -90,7 +90,7 @@ export async function migrateProject(
   root: string,
   from: number,
   to: number,
-  options: MigrateProjectOptions = {},
+  options: MigrateProjectOptions = {}
 ): Promise<MigrateProjectResult> {
   // Validate the path up front so a missing step fails before any writes.
   listMigrationPath(from, to);
@@ -108,7 +108,7 @@ export async function migrateProject(
       if (entry.kind === "project") {
         throw new Error(
           `gamekit/project.json not found. Run \`gamekit init\` first.` +
-            (error instanceof Error ? ` (${error.message})` : ""),
+            (error instanceof Error ? ` (${error.message})` : "")
         );
       }
       continue;
@@ -217,7 +217,8 @@ export async function migrateProject(
     files,
     migrated: files.filter((f) => f.status === "migrated").length,
     skipped: files.filter((f) => f.status === "skipped").length,
-    errors: files.filter((f) => f.status === "error" || (f.status === "migrated" && !f.valid)).length,
+    errors: files.filter((f) => f.status === "error" || (f.status === "migrated" && !f.valid))
+      .length,
   };
 }
 

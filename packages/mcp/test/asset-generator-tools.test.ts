@@ -69,10 +69,14 @@ describe("Asset Generator MCP Tools", () => {
     expect(fileBytes.length).toBeGreaterThan(50);
 
     // Verify entity in scene
-    const sceneContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8"));
+    const sceneContent = JSON.parse(
+      await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8")
+    );
     const entity = sceneContent.entities.find((e: any) => e.id === data.spawnedEntityId);
     expect(entity).toBeDefined();
-    expect(entity.components.some((c: any) => c.type === "Sprite" && c.assetId === "coin-gold")).toBe(true);
+    expect(
+      entity.components.some((c: any) => c.type === "Sprite" && c.assetId === "coin-gold")
+    ).toBe(true);
   });
 
   it("generates an animated character spritesheet with Animation component", async () => {
@@ -91,7 +95,9 @@ describe("Asset Generator MCP Tools", () => {
     expect(data.framesPerSecond).toBe(8);
     expect(data.spawnedEntityId).toBeDefined();
 
-    const sceneContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8"));
+    const sceneContent = JSON.parse(
+      await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8")
+    );
     const entity = sceneContent.entities.find((e: any) => e.id === data.spawnedEntityId);
     expect(entity).toBeDefined();
     const animComp = entity.components.find((c: any) => c.type === "Animation");
@@ -109,7 +115,9 @@ describe("Asset Generator MCP Tools", () => {
     expect(data.success).toBe(true);
     expect(data.file).toBe("sfx-laser.wav");
 
-    const projectContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "project.json"), "utf8"));
+    const projectContent = JSON.parse(
+      await readFile(join(tmpDir, "gamekit", "project.json"), "utf8")
+    );
     const asset = projectContent.assets.find((a: any) => a.id === "sfx-laser");
     expect(asset).toBeDefined();
     expect(asset.kind).toBe("audio");
@@ -127,7 +135,9 @@ describe("Asset Generator MCP Tools", () => {
     expect(data.file).toBe("bgm-dungeon.wav");
     expect(data.bgmEntityId).toBeDefined();
 
-    const sceneContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8"));
+    const sceneContent = JSON.parse(
+      await readFile(join(tmpDir, "gamekit", "scenes", "main.scene.json"), "utf8")
+    );
     const bgmEntity = sceneContent.entities.find((e: any) => e.id === data.bgmEntityId);
     expect(bgmEntity).toBeDefined();
     const audioComp = bgmEntity.components.find((c: any) => c.type === "AudioSource");
@@ -203,8 +213,9 @@ describe("Asset Generator MCP Tools", () => {
     expect(data.assetCount).toBe(8); // hero, enemy, coin, tileset, 3 sfx, bgm
     expect(data.spawnedEntities.length).toBeGreaterThanOrEqual(4);
 
-    const projectContent = JSON.parse(await readFile(join(tmpDir, "gamekit", "project.json"), "utf8"));
+    const projectContent = JSON.parse(
+      await readFile(join(tmpDir, "gamekit", "project.json"), "utf8")
+    );
     expect(projectContent.assets.length).toBe(8);
   });
 });
-

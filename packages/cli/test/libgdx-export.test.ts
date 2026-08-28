@@ -2,7 +2,14 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
-import { exportProject, initProject, readProject, readScene, writeProject, writeScene } from "../src/project.js";
+import {
+  exportProject,
+  initProject,
+  readProject,
+  readScene,
+  writeProject,
+  writeScene,
+} from "../src/project.js";
 
 describe("libGDX export pipeline", () => {
   it("exports project to libGDX with tailored Android manifest and Google Play strings", async () => {
@@ -58,15 +65,17 @@ describe("libGDX export pipeline", () => {
 
     // Check strings.xml
     const stringsXml = await readFile(join(exportOut, "android/res/values/strings.xml"), "utf8");
-    expect(stringsXml).toContain("<string name=\"app_name\">Astro Runner</string>");
-    expect(stringsXml).toContain("<string name=\"game_services_project_id\">987654321012</string>");
+    expect(stringsXml).toContain('<string name="app_name">Astro Runner</string>');
+    expect(stringsXml).toContain('<string name="game_services_project_id">987654321012</string>');
 
     // Check AndroidManifest.xml
     const manifestXml = await readFile(join(exportOut, "android/AndroidManifest.xml"), "utf8");
-    expect(manifestXml).toContain("android:screenOrientation=\"sensorLandscape\"");
+    expect(manifestXml).toContain('android:screenOrientation="sensorLandscape"');
 
     // Check assets/gamekit/project.json
-    const exportedProjectJson = JSON.parse(await readFile(join(exportOut, "assets/gamekit/project.json"), "utf8"));
+    const exportedProjectJson = JSON.parse(
+      await readFile(join(exportOut, "assets/gamekit/project.json"), "utf8")
+    );
     expect(exportedProjectJson.name).toBe("Astro Runner");
     expect(exportedProjectJson.gameServices?.googlePlayAppId).toBe("987654321012");
     expect(exportedProjectJson.gameServices?.achievements).toHaveLength(1);

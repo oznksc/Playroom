@@ -4,7 +4,7 @@ import type { GameKitProject } from "@gamekit/schema";
 
 export async function regenerateAssetsManifest(
   basePath: string,
-  project: GameKitProject,
+  project: GameKitProject
 ): Promise<void> {
   const generatedDir = join(basePath, "gamekit", "generated");
   const assetsPath = join(generatedDir, "assets.ts");

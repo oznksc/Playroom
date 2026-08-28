@@ -17,17 +17,23 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
 
       const nodes = scene.gui?.nodes ?? [];
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            sceneId: scene.id,
-            sceneName: scene.name,
-            nodeCount: nodes.length,
-            nodes
-          }, null, 2)
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                sceneId: scene.id,
+                sceneName: scene.name,
+                nodeCount: nodes.length,
+                nodes,
+              },
+              null,
+              2
+            ),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -56,7 +62,7 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(newNode, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -75,7 +81,9 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `GUI node not found: ${nodeId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `GUI node not found: ${nodeId}` }) },
+          ],
           isError: true,
         };
       }
@@ -88,7 +96,7 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(node, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -106,7 +114,9 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       const index = nodes.findIndex((n) => n.id === nodeId);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `GUI node not found: ${nodeId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `GUI node not found: ${nodeId}` }) },
+          ],
           isError: true,
         };
       }
@@ -115,8 +125,13 @@ export function registerGuiTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, removed: removed.id, type: removed.type }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, removed: removed.id, type: removed.type }),
+          },
+        ],
       };
-    },
+    }
   );
 }

@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import type { GameKitLevel, GameKitScene, GuiComponent } from "@gamekit/schema";
 import type { ScriptContext } from "@gamekit/runtime/script";
 import { createGameKitGame } from "@gamekit/runtime-web";
-import { installDrawCallCounter, samplePhaserProfiler, type PlayProfilerSample } from "../lib/play-profiler.js";
+import {
+  installDrawCallCounter,
+  samplePhaserProfiler,
+  type PlayProfilerSample,
+} from "../lib/play-profiler.js";
 import styles from "./PlayRuntimeHost.module.css";
 
 export type PlayRuntimeHostProps = {
@@ -79,11 +83,9 @@ export function PlayRuntimeHost({
         nextLevel: () => callbacksRef.current.sceneManager?.nextLevel?.() ?? false,
         unlockLevel: (id) => callbacksRef.current.sceneManager?.unlockLevel?.(id) ?? false,
         completeLevel: (id) => callbacksRef.current.sceneManager?.completeLevel?.(id) ?? null,
-        getState: () =>
-          callbacksRef.current.sceneManager?.getState?.() ?? { currentLevelId: null },
+        getState: () => callbacksRef.current.sceneManager?.getState?.() ?? { currentLevelId: null },
         setPersistentVar: (k, v) => callbacksRef.current.sceneManager?.setPersistentVar(k, v),
-        getPersistentVar: (k, d) =>
-          callbacksRef.current.sceneManager?.getPersistentVar?.(k, d),
+        getPersistentVar: (k, d) => callbacksRef.current.sceneManager?.getPersistentVar?.(k, d),
       },
       onGuiAction: (action) => callbacksRef.current.onGuiAction?.(action),
       onOutcome: (kind, message) => callbacksRef.current.onOutcome?.(kind, message),

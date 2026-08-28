@@ -11,12 +11,12 @@ export function createPlayPhysicsState(scene: GameKitScene): {
 
   for (const entity of scene.entities) {
     const controller = entity.components.find(
-      (component): component is PlayerControllerComponent => component.type === "PlayerController",
+      (component): component is PlayerControllerComponent => component.type === "PlayerController"
     );
     if (controller) controllers.set(entity.id, createPlayerController(controller));
 
     const rigidBody = entity.components.find(
-      (component): component is RigidBodyComponent => component.type === "RigidBody",
+      (component): component is RigidBodyComponent => component.type === "RigidBody"
     );
     if (rigidBody) rigidBodies.set(entity.id, createRigidBody(rigidBody));
   }

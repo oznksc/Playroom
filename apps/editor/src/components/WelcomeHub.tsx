@@ -21,13 +21,7 @@ import {
   Layers,
   ArrowUpRight,
 } from "lucide-react";
-import {
-  Button,
-  IconButton,
-  Badge,
-  EmptyState,
-  cn,
-} from "@/ui";
+import { Button, IconButton, Badge, EmptyState, cn } from "@/ui";
 import { NewProjectWizard, type ProjectPlatform, type ProjectGenre } from "./NewProjectWizard.js";
 import logoUrl from "../../../../logo.png";
 
@@ -134,8 +128,9 @@ export function WelcomeHub({
               <span className="inline-block size-2 rounded-full bg-accent animate-pulse" />
             </h1>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Build high-performance games for Web (Phaser 3), Mobile iOS & Android (Expo + Skia), and Desktop (Tauri).
-              Scaffold full projects with one click, edit scenes visually, and test instantly in real-time.
+              Build high-performance games for Web (Phaser 3), Mobile iOS & Android (Expo + Skia),
+              and Desktop (Tauri). Scaffold full projects with one click, edit scenes visually, and
+              test instantly in real-time.
             </p>
           </div>
 
@@ -171,7 +166,9 @@ export function WelcomeHub({
             </div>
             <div className="space-y-1">
               <span className="font-semibold block">Failed to open project</span>
-              <p className="text-error/90 font-mono text-[11px] whitespace-pre-wrap">{projectLoadError}</p>
+              <p className="text-error/90 font-mono text-[11px] whitespace-pre-wrap">
+                {projectLoadError}
+              </p>
             </div>
           </div>
         )}
@@ -194,10 +191,14 @@ export function WelcomeHub({
               </div>
               <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
                 2D Platformer
-                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowUpRight
+                  size={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </h3>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Physics engine, responsive jump arcs, animated hero sprite, coin collection triggers, and hazard spikes.
+                Physics engine, responsive jump arcs, animated hero sprite, coin collection
+                triggers, and hazard spikes.
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
@@ -222,10 +223,14 @@ export function WelcomeHub({
               </div>
               <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
                 Top-Down Adventure
-                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowUpRight
+                  size={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </h3>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                8-directional movement, wall collision bounds, camera target smoothing, and collectible inventory.
+                8-directional movement, wall collision bounds, camera target smoothing, and
+                collectible inventory.
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
@@ -250,10 +255,14 @@ export function WelcomeHub({
               </div>
               <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
                 Physics & Puzzle
-                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowUpRight
+                  size={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </h3>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Rigid bodies, pushable puzzle boxes, pressure socket triggers, and multi-level progress states.
+                Rigid bodies, pushable puzzle boxes, pressure socket triggers, and multi-level
+                progress states.
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
@@ -262,34 +271,37 @@ export function WelcomeHub({
             </div>
           </div>
 
-        {/* Card 4: LibGDX Native */}
-        <div
-          onClick={() => openWizardWith("libgdx" as ProjectPlatform, "platformer")}
-          className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated/40 p-5 transition-all duration-200 hover:border-amber-400/50 hover:bg-bg-elevated hover:shadow-[0_8px_30px_rgba(251,191,36,0.08)] flex flex-col justify-between"
-        >
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="size-10 rounded-xl border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                <Monitor size={20} />
+          {/* Card 4: LibGDX Native */}
+          <div
+            onClick={() => openWizardWith("libgdx" as ProjectPlatform, "platformer")}
+            className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated/40 p-5 transition-all duration-200 hover:border-amber-400/50 hover:bg-bg-elevated hover:shadow-[0_8px_30px_rgba(251,191,36,0.08)] flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="size-10 rounded-xl border border-amber-400/30 bg-amber-400/15 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
+                  <Monitor size={20} />
+                </div>
+                <Badge variant="muted" className="text-[10px]">
+                  LibGDX
+                </Badge>
               </div>
-              <Badge variant="muted" className="text-[10px]">
-                LibGDX
-              </Badge>
+              <h3 className="text-base font-semibold text-text-primary group-hover:text-amber-400 transition-colors flex items-center gap-1.5">
+                Native Desktop
+                <ArrowUpRight
+                  size={14}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+              </h3>
+              <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                Java/Kotlin + Gradle pipeline for Android, Desktop, and iOS via libGDX runtime.
+              </p>
             </div>
-            <h3 className="text-base font-semibold text-text-primary group-hover:text-amber-400 transition-colors flex items-center gap-1.5">
-              Native Desktop
-              <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-            </h3>
-            <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              Java/Kotlin + Gradle pipeline for Android, Desktop, and iOS via libGDX runtime.
-            </p>
-          </div>
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
-            <span>Android / Desktop / iOS</span>
-            <span className="font-mono text-amber-400">Quick Scaffold →</span>
+            <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
+              <span>Android / Desktop / iOS</span>
+              <span className="font-mono text-amber-400">Quick Scaffold →</span>
+            </div>
           </div>
         </div>
-      </div>
 
         {/* Lower Grid: Recent Projects & Built-in Starters */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
@@ -300,9 +312,7 @@ export function WelcomeHub({
                 <Clock size={14} className="text-accent" />
                 Recent Projects
               </h2>
-              <span className="text-[11px] text-text-muted">
-                {recentProjects.length} saved
-              </span>
+              <span className="text-[11px] text-text-muted">{recentProjects.length} saved</span>
             </div>
 
             {recentProjects.length === 0 ? (
@@ -335,7 +345,10 @@ export function WelcomeHub({
                           <span className="text-xs font-semibold text-text-primary truncate block group-hover:text-accent">
                             {folderName}
                           </span>
-                          <span className="text-[10px] text-text-muted font-mono truncate block" title={path}>
+                          <span
+                            className="text-[10px] text-text-muted font-mono truncate block"
+                            title={path}
+                          >
                             {path}
                           </span>
                         </div>

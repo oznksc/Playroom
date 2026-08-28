@@ -27,82 +27,106 @@ export function useLevels({
   playSceneManagerRef,
   playUnlockedLevelIdsRef,
 }: UseLevelsOptions) {
-  const commitLevels = useCallback((levels: GameKitLevel[]) => {
-    setSnapshot((prev) => ({ ...prev, levels }));
-    persistProject({ levels }).catch((e) => {
-      setStatus(e instanceof Error ? e.message : "Failed to save levels");
-    });
-  }, [setSnapshot, persistProject, setStatus]);
+  const commitLevels = useCallback(
+    (levels: GameKitLevel[]) => {
+      setSnapshot((prev) => ({ ...prev, levels }));
+      persistProject({ levels }).catch((e) => {
+        setStatus(e instanceof Error ? e.message : "Failed to save levels");
+      });
+    },
+    [setSnapshot, persistProject, setStatus]
+  );
 
-  const handleCreateLevel = useCallback((name: string) => {
-    const baseId = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "") || "level";
-    const existing = new Set(snapshot.levels.map((l) => l.id));
-    let id = baseId;
-    let n = 2;
-    while (existing.has(id)) {
-      id = `${baseId}-${n++}`;
-    }
-    const newLevel: GameKitLevel = {
-      id,
-      name,
-      order: snapshot.levels.length + 1,
-      sceneIds: [],
-      unlocked: snapshot.levels.length === 0,
-    };
-    commitLevels([...snapshot.levels, newLevel]);
-    addConsoleLog("system", `Created new game level ${name}`);
-  }, [snapshot.levels, commitLevels, addConsoleLog]);
+  const handleCreateLevel = useCallback(
+    (name: string) => {
+      const baseId =
+        name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-_]/g, "") || "level";
+      const existing = new Set(snapshot.levels.map((l) => l.id));
+      let id = baseId;
+      let n = 2;
+      while (existing.has(id)) {
+        id = `${baseId}-${n++}`;
+      }
+      const newLevel: GameKitLevel = {
+        id,
+        name,
+        order: snapshot.levels.length + 1,
+        sceneIds: [],
+        unlocked: snapshot.levels.length === 0,
+      };
+      commitLevels([...snapshot.levels, newLevel]);
+      addConsoleLog("system", `Created new game level ${name}`);
+    },
+    [snapshot.levels, commitLevels, addConsoleLog]
+  );
 
-  const handleDeleteLevel = useCallback((levelId: string) => {
-    commitLevels(snapshot.levels.filter((l) => l.id !== levelId));
-    addConsoleLog("system", `Deleted game level ID: ${levelId}`);
-  }, [snapshot.levels, commitLevels, addConsoleLog]);
+  const handleDeleteLevel = useCallback(
+    (levelId: string) => {
+      commitLevels(snapshot.levels.filter((l) => l.id !== levelId));
+      addConsoleLog("system", `Deleted game level ID: ${levelId}`);
+    },
+    [snapshot.levels, commitLevels, addConsoleLog]
+  );
 
-  const handleToggleUnlockLevel = useCallback((levelId: string) => {
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId ? { ...l, unlocked: !l.unlocked } : l
-      )
-    );
-  }, [snapshot.levels, commitLevels]);
+  const handleToggleUnlockLevel = useCallback(
+    (levelId: string) => {
+      commitLevels(
+        snapshot.levels.map((l) => (l.id === levelId ? { ...l, unlocked: !l.unlocked } : l))
+      );
+    },
+    [snapshot.levels, commitLevels]
+  );
 
-  const handleReorderLevels = useCallback((levels: GameKitLevel[]) => {
-    commitLevels(levels);
-  }, [commitLevels]);
+  const handleReorderLevels = useCallback(
+    (levels: GameKitLevel[]) => {
+      commitLevels(levels);
+    },
+    [commitLevels]
+  );
 
-  const handleAssignSceneToLevel = useCallback((levelId: string, sceneId: string) => {
-    const file = normalizeSceneFile(sceneId);
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId && !l.sceneIds.some((s) => sceneFileMatches(s, file))
-          ? { ...l, sceneIds: [...l.sceneIds.map(normalizeSceneFile), file] }
-          : l.id === levelId
-            ? { ...l, sceneIds: l.sceneIds.map(normalizeSceneFile) }
+  const handleAssignSceneToLevel = useCallback(
+    (levelId: string, sceneId: string) => {
+      const file = normalizeSceneFile(sceneId);
+      commitLevels(
+        snapshot.levels.map((l) =>
+          l.id === levelId && !l.sceneIds.some((s) => sceneFileMatches(s, file))
+            ? { ...l, sceneIds: [...l.sceneIds.map(normalizeSceneFile), file] }
+            : l.id === levelId
+              ? { ...l, sceneIds: l.sceneIds.map(normalizeSceneFile) }
+              : l
+        )
+      );
+    },
+    [snapshot.levels, normalizeSceneFile, sceneFileMatches, commitLevels]
+  );
+
+  const handleRemoveSceneFromLevel = useCallback(
+    (levelId: string, sceneId: string) => {
+      commitLevels(
+        snapshot.levels.map((l) =>
+          l.id === levelId
+            ? {
+                ...l,
+                sceneIds: l.sceneIds
+                  .map(normalizeSceneFile)
+                  .filter((s) => !sceneFileMatches(s, sceneId)),
+              }
             : l
-      )
-    );
-  }, [snapshot.levels, normalizeSceneFile, sceneFileMatches, commitLevels]);
+        )
+      );
+    },
+    [snapshot.levels, normalizeSceneFile, sceneFileMatches, commitLevels]
+  );
 
-  const handleRemoveSceneFromLevel = useCallback((levelId: string, sceneId: string) => {
-    commitLevels(
-      snapshot.levels.map((l) =>
-        l.id === levelId
-          ? {
-              ...l,
-              sceneIds: l.sceneIds
-                .map(normalizeSceneFile)
-                .filter((s) => !sceneFileMatches(s, sceneId)),
-            }
-          : l
-      )
-    );
-  }, [snapshot.levels, normalizeSceneFile, sceneFileMatches, commitLevels]);
-
-  const handleUpdateLevel = useCallback((levelId: string, patch: Partial<GameKitLevel>) => {
-    commitLevels(
-      snapshot.levels.map((l) => (l.id === levelId ? { ...l, ...patch } : l)),
-    );
-  }, [snapshot.levels, commitLevels]);
+  const handleUpdateLevel = useCallback(
+    (levelId: string, patch: Partial<GameKitLevel>) => {
+      commitLevels(snapshot.levels.map((l) => (l.id === levelId ? { ...l, ...patch } : l)));
+    },
+    [snapshot.levels, commitLevels]
+  );
 
   /** Sync unlock flags from play SceneManager back into the project. */
   const syncPlayLevelUnlocksFromManager = useCallback(() => {
@@ -129,7 +153,14 @@ export function useLevels({
       const level = live.find((l) => l.id === id);
       addConsoleLog("system", `Unlocked level: ${level?.name ?? id}`);
     }
-  }, [playSceneManagerRef, playUnlockedLevelIdsRef, setSnapshot, persistProject, setStatus, addConsoleLog]);
+  }, [
+    playSceneManagerRef,
+    playUnlockedLevelIdsRef,
+    setSnapshot,
+    persistProject,
+    setStatus,
+    addConsoleLog,
+  ]);
 
   return {
     commitLevels,

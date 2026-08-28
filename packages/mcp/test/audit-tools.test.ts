@@ -69,7 +69,10 @@ describe("audit tools in MCP", () => {
       durationMs: 0,
     };
 
-    await writeFile(auditFile, `${JSON.stringify(log1)}\n${JSON.stringify(log2)}\n${JSON.stringify(log3)}\n`);
+    await writeFile(
+      auditFile,
+      `${JSON.stringify(log1)}\n${JSON.stringify(log2)}\n${JSON.stringify(log3)}\n`
+    );
 
     const tool = (server as any)._registeredTools.get_audit_log;
 

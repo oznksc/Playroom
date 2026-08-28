@@ -93,12 +93,17 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
         const slotPath = join(savesDir, `${slotName}.json`);
         await writeFile(slotPath, JSON.stringify(payload, null, 2));
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            success: true,
-            slotName,
-            levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
-            currentScene: payload.currentSceneId,
-          }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                slotName,
+                levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
+                currentScene: payload.currentSceneId,
+              }),
+            },
+          ],
         };
       } catch (err) {
         return {
@@ -122,16 +127,28 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
         const payload = JSON.parse(content) as GameSavePayload;
         await restoreFromPayload(payload);
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            success: true,
-            slotName,
-            levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
-            currentScene: payload.currentSceneId,
-          }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                slotName,
+                levelsUnlocked: payload.levels.filter((l) => l.unlocked).length,
+                currentScene: payload.currentSceneId,
+              }),
+            },
+          ],
         };
       } catch (err) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Save slot "${slotName}" not found or invalid: ${(err as Error).message}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Save slot "${slotName}" not found or invalid: ${(err as Error).message}`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -150,7 +167,9 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       const level = project.levels.find((l) => l.id === levelId);
       if (!level) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) },
+          ],
           isError: true,
         };
       }
@@ -159,7 +178,7 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, levelId, unlocked }) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -174,22 +193,34 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       const index = sorted.findIndex((l) => l.id === levelId);
       if (index === -1) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) },
+          ],
           isError: true,
         };
       }
       const next = sorted[index + 1];
       if (!next) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ success: true, unlocked: null, message: "No next level" }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ success: true, unlocked: null, message: "No next level" }),
+            },
+          ],
         };
       }
       next.unlocked = true;
       await fileIO.writeProject(project);
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, unlocked: next.id, name: next.name }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, unlocked: next.id, name: next.name }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -198,19 +229,19 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
     {
       levelId: z.string().describe("Level id"),
       actions: z
-        .array(
-          z
-            .object({ type: z.string().min(1) })
-            .passthrough(),
-        )
-        .describe("Script actions, e.g. [{ type: 'completeLevel' }, { type: 'unlockLevel', levelId: 'boss' }]"),
+        .array(z.object({ type: z.string().min(1) }).passthrough())
+        .describe(
+          "Script actions, e.g. [{ type: 'completeLevel' }, { type: 'unlockLevel', levelId: 'boss' }]"
+        ),
     },
     async ({ levelId, actions }) => {
       const project = await fileIO.readProject();
       const level = project.levels.find((l) => l.id === levelId);
       if (!level) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) },
+          ],
           isError: true,
         };
       }
@@ -221,16 +252,18 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       }
       await fileIO.writeProject(project);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            success: true,
-            levelId,
-            onComplete: level.onComplete ?? [],
-          }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              levelId,
+              onComplete: level.onComplete ?? [],
+            }),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -248,7 +281,9 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       const level = project.levels.find((l) => l.id === levelId);
       if (!level) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Level not found: ${levelId}` }) },
+          ],
           isError: true,
         };
       }
@@ -259,11 +294,13 @@ export function registerPersistenceTools(server: McpServer, fileIO: FileIO): voi
       }
       await fileIO.writeProject(project);
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ success: true, levelId, rules: level.rules ?? null }),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, levelId, rules: level.rules ?? null }),
+          },
+        ],
       };
-    },
+    }
   );
 }

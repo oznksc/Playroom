@@ -1,9 +1,4 @@
-import {
-  GAMEKIT_SCHEMA_VERSION,
-  validatePrefab,
-  validateProject,
-  validateScene,
-} from "./index.js";
+import { GAMEKIT_SCHEMA_VERSION, validatePrefab, validateProject, validateScene } from "./index.js";
 
 export type SchemaDocumentKind = "project" | "scene" | "prefab";
 
@@ -51,10 +46,7 @@ export function detectSchemaVersion(input: unknown): number {
 
 function migrateSceneV0(doc: JsonObject): unknown {
   const name = typeof doc.name === "string" && doc.name.trim() ? doc.name : "Untitled Scene";
-  const id =
-    typeof doc.id === "string" && doc.id.trim()
-      ? doc.id
-      : slugifyLocal(name) || "main";
+  const id = typeof doc.id === "string" && doc.id.trim() ? doc.id : slugifyLocal(name) || "main";
 
   const viewport = isObject(doc.viewport)
     ? {
@@ -141,9 +133,7 @@ function migrateEntityV0(entity: unknown): unknown {
   if (!isObject(entity)) return entity;
   const name = typeof entity.name === "string" && entity.name.trim() ? entity.name : "Entity";
   const id =
-    typeof entity.id === "string" && entity.id.trim()
-      ? entity.id
-      : slugifyLocal(name) || "entity";
+    typeof entity.id === "string" && entity.id.trim() ? entity.id : slugifyLocal(name) || "entity";
   const components = Array.isArray(entity.components)
     ? entity.components.map((component) => migrateComponentV0(component))
     : [];
@@ -299,8 +289,7 @@ function migrateProjectV0(doc: JsonObject): unknown {
 
 function migratePrefabV0(doc: JsonObject): unknown {
   const name = typeof doc.name === "string" && doc.name.trim() ? doc.name : "Prefab";
-  const id =
-    typeof doc.id === "string" && doc.id.trim() ? doc.id : slugifyLocal(name) || "prefab";
+  const id = typeof doc.id === "string" && doc.id.trim() ? doc.id : slugifyLocal(name) || "prefab";
   const components = Array.isArray(doc.components)
     ? doc.components.map((component) => migrateComponentV0(component))
     : [];
@@ -356,7 +345,7 @@ export function listMigrationPath(from: number, to: number): SchemaMigration[] {
     const step = SCHEMA_MIGRATIONS.find((migration) => migration.from === current);
     if (!step) {
       throw new Error(
-        `No migration from schemaVersion ${current} toward ${to}. Available steps: ${available}`,
+        `No migration from schemaVersion ${current} toward ${to}. Available steps: ${available}`
       );
     }
     path.push(step);
@@ -367,13 +356,16 @@ export function listMigrationPath(from: number, to: number): SchemaMigration[] {
   }
   if (current !== to) {
     throw new Error(
-      `Migration path from ${from} ends at schemaVersion ${current}, not ${to}. Available steps: ${available}`,
+      `Migration path from ${from} ends at schemaVersion ${current}, not ${to}. Available steps: ${available}`
     );
   }
   return path;
 }
 
-function validateKind(value: unknown, kind: SchemaDocumentKind): { ok: true } | { ok: false; errors: string[] } {
+function validateKind(
+  value: unknown,
+  kind: SchemaDocumentKind
+): { ok: true } | { ok: false; errors: string[] } {
   if (kind === "scene") return validateScene(value);
   if (kind === "project") return validateProject(value);
   return validatePrefab(value);
@@ -388,7 +380,7 @@ export function migrateDocument(
   input: unknown,
   from: number,
   to: number,
-  kind: SchemaDocumentKind,
+  kind: SchemaDocumentKind
 ): MigrateDocumentResult {
   const steps = listMigrationPath(from, to);
   let value = input;

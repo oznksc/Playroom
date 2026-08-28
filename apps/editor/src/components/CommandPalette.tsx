@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Search, CornerDownLeft } from "lucide-react";
 import { cn } from "@/ui";
@@ -43,9 +35,7 @@ function normalize(value: string) {
 function matchesQuery(item: CommandItem, query: string) {
   if (!query) return true;
   const q = normalize(query);
-  const haystack = [item.label, item.section, ...(item.keywords ?? [])]
-    .join(" ")
-    .toLowerCase();
+  const haystack = [item.label, item.section, ...(item.keywords ?? [])].join(" ").toLowerCase();
   // All tokens must match (order-independent)
   return q.split(/\s+/).every((token) => haystack.includes(token));
 }
@@ -111,9 +101,7 @@ export function CommandPalette({
   // Scroll active row into view
   useEffect(() => {
     if (!open) return;
-    const el = listRef.current?.querySelector<HTMLElement>(
-      `[data-command-index="${activeIndex}"]`
-    );
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-command-index="${activeIndex}"]`);
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, open, query]);
 
@@ -138,17 +126,13 @@ export function CommandPalette({
       }
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((i) =>
-          selectable.length === 0 ? 0 : (i + 1) % selectable.length
-        );
+        setActiveIndex((i) => (selectable.length === 0 ? 0 : (i + 1) % selectable.length));
         return;
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
         setActiveIndex((i) =>
-          selectable.length === 0
-            ? 0
-            : (i - 1 + selectable.length) % selectable.length
+          selectable.length === 0 ? 0 : (i - 1 + selectable.length) % selectable.length
         );
         return;
       }
@@ -203,9 +187,7 @@ export function CommandPalette({
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-activedescendant={
-              selectable[activeIndex]
-                ? `cmd-item-${selectable[activeIndex].id}`
-                : undefined
+              selectable[activeIndex] ? `cmd-item-${selectable[activeIndex].id}` : undefined
             }
             autoComplete="off"
             spellCheck={false}
@@ -226,7 +208,11 @@ export function CommandPalette({
             rows.map((row) => {
               if (row.kind === "section") {
                 return (
-                  <div key={row.id} className={styles["command-palette-section"]} role="presentation">
+                  <div
+                    key={row.id}
+                    className={styles["command-palette-section"]}
+                    role="presentation"
+                  >
                     {row.label}
                   </div>
                 );

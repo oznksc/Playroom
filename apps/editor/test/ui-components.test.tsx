@@ -146,13 +146,7 @@ describe("UI Primitives Design System (Radix + Shadcn)", () => {
   describe("Checkbox & CheckboxField", () => {
     it("renders Radix Checkbox and toggles state", () => {
       const onCheckedChange = vi.fn();
-      render(
-        <CheckboxField
-          label="Enable Physics"
-          checked={false}
-          onChange={onCheckedChange}
-        />
-      );
+      render(<CheckboxField label="Enable Physics" checked={false} onChange={onCheckedChange} />);
       const checkbox = screen.getByRole("checkbox");
       expect(checkbox.getAttribute("aria-checked")).toBe("false");
       fireEvent.click(checkbox);
@@ -164,12 +158,7 @@ describe("UI Primitives Design System (Radix + Shadcn)", () => {
     it("handles boolean toggle and fires onCheckedChange", () => {
       const onChange = vi.fn();
       render(
-        <Switch
-          variant="accent"
-          label="Snap to Grid"
-          checked={false}
-          onCheckedChange={onChange}
-        />
+        <Switch variant="accent" label="Snap to Grid" checked={false} onCheckedChange={onChange} />
       );
 
       const switchBtn = screen.getByRole("switch");

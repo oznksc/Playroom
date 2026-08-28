@@ -38,7 +38,9 @@ export async function buildProject(root: string, options: BuildOptions = {}): Pr
     const report = await runDoctor(root);
     if (!report.ok) {
       const errors = report.issues.filter((i) => i.level === "error").map((i) => i.message);
-      throw new Error(`Build blocked by doctor errors:\n${errors.map((e) => `  - ${e}`).join("\n")}`);
+      throw new Error(
+        `Build blocked by doctor errors:\n${errors.map((e) => `  - ${e}`).join("\n")}`
+      );
     }
   }
 
@@ -84,7 +86,9 @@ export async function buildProject(root: string, options: BuildOptions = {}): Pr
 
   // Prefabs if any
   try {
-    const prefabFiles = (await readdir(join(gamekitRoot, "prefabs"))).filter((f) => f.endsWith(".prefab.json"));
+    const prefabFiles = (await readdir(join(gamekitRoot, "prefabs"))).filter((f) =>
+      f.endsWith(".prefab.json")
+    );
     if (prefabFiles.length > 0) {
       await mkdir(join(outDir, "prefabs"), { recursive: true });
       for (const file of prefabFiles) {

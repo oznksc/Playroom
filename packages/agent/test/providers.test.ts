@@ -18,7 +18,10 @@ describe("agent provider adapters", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const adapter = new OpenAIAdapter();
-    const models = await adapter.listModels({ apiKey: "test-key", signal: new AbortController().signal });
+    const models = await adapter.listModels({
+      apiKey: "test-key",
+      signal: new AbortController().signal,
+    });
     expect(models).toEqual(["gpt-4o", "gpt-4-turbo"]);
     expect(mockFetch).toHaveBeenCalledWith("https://api.openai.com/v1/models", expect.any(Object));
   });
@@ -30,7 +33,10 @@ describe("agent provider adapters", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const adapter = new OpenAIAdapter();
-    const result = await adapter.validateKey({ apiKey: "test-key", signal: new AbortController().signal });
+    const result = await adapter.validateKey({
+      apiKey: "test-key",
+      signal: new AbortController().signal,
+    });
     expect(result).toEqual({ ok: true });
   });
 
@@ -62,7 +68,10 @@ describe("agent provider adapters", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const adapter = new GoogleAdapter();
-    const models = await adapter.listModels({ apiKey: "test-key", signal: new AbortController().signal });
+    const models = await adapter.listModels({
+      apiKey: "test-key",
+      signal: new AbortController().signal,
+    });
     expect(models).toContain("gemini-2.0-flash");
     expect(models).toContain("gemini-1.5-pro");
   });
@@ -91,14 +100,19 @@ describe("agent provider adapters", () => {
       apiKey: "test-key",
       model: "gpt-4o",
       messages: [
-        { role: "user", content: "Check this screenshot", screenshot: "data:image/png;base64,mockbase64" },
+        {
+          role: "user",
+          content: "Check this screenshot",
+          screenshot: "data:image/png;base64,mockbase64",
+        },
       ],
       tools: [],
       signal: new AbortController().signal,
     });
 
     // Consume stream to trigger the fetch call
-    for await (const _ of stream) {}
+    for await (const _ of stream) {
+    }
 
     expect(mockFetch).toHaveBeenCalled();
     const fetchArgs = mockFetch.mock.calls[0];

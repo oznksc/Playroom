@@ -15,16 +15,11 @@ describe("wrapText", () => {
   });
 
   it("keeps a single word on its own line even when overflowing", () => {
-    expect(wrapText("supercalifragilistic", measure, 50)).toEqual([
-      "supercalifragilistic",
-    ]);
+    expect(wrapText("supercalifragilistic", measure, 50)).toEqual(["supercalifragilistic"]);
   });
 
   it("preserves explicit newlines", () => {
-    expect(wrapText("line one\nline two", measure, 500)).toEqual([
-      "line one",
-      "line two",
-    ]);
+    expect(wrapText("line one\nline two", measure, 500)).toEqual(["line one", "line two"]);
   });
 
   it("does not wrap when width is unset (0/undefined)", () => {

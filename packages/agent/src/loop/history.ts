@@ -33,9 +33,7 @@ export class MessageHistory {
     if (systemMsg) compacted.push(systemMsg);
 
     // Summarize middle turns
-    const middle = this.messages.filter(
-      (m) => m !== systemMsg && !recent.includes(m),
-    );
+    const middle = this.messages.filter((m) => m !== systemMsg && !recent.includes(m));
     if (middle.length > 0) {
       const summaries = middle
         .filter((m) => m.role === "user" || (m.role === "assistant" && m.content))
@@ -86,7 +84,7 @@ export function toPriorProviderMessages(items: PriorTurn[] | undefined): Provide
 }
 
 export function formatToolDigest(
-  calls: Array<{ tool: string; status: string }> | undefined,
+  calls: Array<{ tool: string; status: string }> | undefined
 ): string | undefined {
   if (!calls || calls.length === 0) return undefined;
   const recent = calls.slice(-16);

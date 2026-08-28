@@ -220,13 +220,21 @@ export function GameServicesPanel({
               : "border-border-default bg-bg-base/60 text-text-muted"
           )}
         >
-          <Award size={16} className={gameServices.enabled ? "text-accent-green shrink-0 mt-0.5" : "text-text-muted shrink-0 mt-0.5"} />
+          <Award
+            size={16}
+            className={
+              gameServices.enabled
+                ? "text-accent-green shrink-0 mt-0.5"
+                : "text-text-muted shrink-0 mt-0.5"
+            }
+          />
           <div>
             <p className="font-medium text-text-primary">
               {gameServices.enabled ? "Services Active" : "Services Disabled"}
             </p>
             <p className="mt-0.5 leading-relaxed">
-              Mapped to Google Play Games (v2), Apple Game Center, and Steam. Handlers in scenes dispatch unlocks and scores automatically.
+              Mapped to Google Play Games (v2), Apple Game Center, and Steam. Handlers in scenes
+              dispatch unlocks and scores automatically.
             </p>
           </div>
         </div>
@@ -253,7 +261,8 @@ export function GameServicesPanel({
             />
           </div>
           <p className="text-[10px] text-text-muted">
-            Required for Android builds. Injected into AndroidManifest and strings.xml automatically on export.
+            Required for Android builds. Injected into AndroidManifest and strings.xml automatically
+            on export.
           </p>
         </div>
 
@@ -284,7 +293,12 @@ export function GameServicesPanel({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text-secondary">Project Achievements</span>
-              <Button size="sm" variant="secondary" onClick={handleAddAchievement} className="gap-1 text-xs">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleAddAchievement}
+                className="gap-1 text-xs"
+              >
                 <Plus size={12} /> Add Achievement
               </Button>
             </div>
@@ -293,7 +307,12 @@ export function GameServicesPanel({
               <div className="rounded-lg border border-dashed border-border-default p-4 text-center space-y-2 bg-bg-base/40">
                 <Trophy size={24} className="mx-auto text-text-muted opacity-60" />
                 <p className="text-xs text-text-muted">No achievements configured yet.</p>
-                <Button size="sm" variant="primary" onClick={handleSeedPresets} className="gap-1 mx-auto text-xs">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSeedPresets}
+                  className="gap-1 mx-auto text-xs"
+                >
                   <Sparkles size={12} /> Seed Starter Achievements
                 </Button>
               </div>
@@ -310,11 +329,20 @@ export function GameServicesPanel({
                       onClick={() => toggleExpanded(ach.id)}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        {isExpanded ? <ChevronDown size={14} className="text-text-muted shrink-0" /> : <ChevronRight size={14} className="text-text-muted shrink-0" />}
+                        {isExpanded ? (
+                          <ChevronDown size={14} className="text-text-muted shrink-0" />
+                        ) : (
+                          <ChevronRight size={14} className="text-text-muted shrink-0" />
+                        )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-medium text-text-primary truncate">{ach.name || "Untitled"}</span>
-                            <Badge variant={ach.type === "incremental" ? "default" : "muted"} className="text-[10px] py-0 px-1">
+                            <span className="text-xs font-medium text-text-primary truncate">
+                              {ach.name || "Untitled"}
+                            </span>
+                            <Badge
+                              variant={ach.type === "incremental" ? "default" : "muted"}
+                              className="text-[10px] py-0 px-1"
+                            >
                               {ach.type}
                             </Badge>
                             {ach.hidden && (
@@ -345,7 +373,9 @@ export function GameServicesPanel({
                       <div className="border-t border-border-default/60 p-3 space-y-3 bg-bg-base/30">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[11px] font-medium text-text-secondary block mb-1">ID (Slug)</label>
+                            <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                              ID (Slug)
+                            </label>
                             <Input
                               value={ach.id}
                               onChange={(e) => handleUpdateAchievement(idx, { id: e.target.value })}
@@ -354,10 +384,14 @@ export function GameServicesPanel({
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-medium text-text-secondary block mb-1">Display Title</label>
+                            <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                              Display Title
+                            </label>
                             <Input
                               value={ach.name}
-                              onChange={(e) => handleUpdateAchievement(idx, { name: e.target.value })}
+                              onChange={(e) =>
+                                handleUpdateAchievement(idx, { name: e.target.value })
+                              }
                               placeholder="First Coin"
                               className="text-xs"
                             />
@@ -365,10 +399,14 @@ export function GameServicesPanel({
                         </div>
 
                         <div>
-                          <label className="text-[11px] font-medium text-text-secondary block mb-1">Description</label>
+                          <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                            Description
+                          </label>
                           <Input
                             value={ach.description ?? ""}
-                            onChange={(e) => handleUpdateAchievement(idx, { description: e.target.value })}
+                            onChange={(e) =>
+                              handleUpdateAchievement(idx, { description: e.target.value })
+                            }
                             placeholder="Collect your very first coin in the level"
                             className="text-xs"
                           />
@@ -376,7 +414,9 @@ export function GameServicesPanel({
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[11px] font-medium text-text-secondary block mb-1">Type</label>
+                            <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                              Type
+                            </label>
                             <Select
                               value={ach.type}
                               onChange={(e) => {
@@ -399,7 +439,11 @@ export function GameServicesPanel({
                                 label="Target Steps"
                                 value={ach.steps ?? 10}
                                 min={1}
-                                onChange={(val) => handleUpdateAchievement(idx, { steps: Math.max(1, Math.round(val)) })}
+                                onChange={(val) =>
+                                  handleUpdateAchievement(idx, {
+                                    steps: Math.max(1, Math.round(val)),
+                                  })
+                                }
                               />
                             </div>
                           )}
@@ -480,7 +524,12 @@ export function GameServicesPanel({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text-secondary">Project Leaderboards</span>
-              <Button size="sm" variant="secondary" onClick={handleAddLeaderboard} className="gap-1 text-xs">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleAddLeaderboard}
+                className="gap-1 text-xs"
+              >
                 <Plus size={12} /> Add Leaderboard
               </Button>
             </div>
@@ -489,7 +538,12 @@ export function GameServicesPanel({
               <div className="rounded-lg border border-dashed border-border-default p-4 text-center space-y-2 bg-bg-base/40">
                 <ListOrdered size={24} className="mx-auto text-text-muted opacity-60" />
                 <p className="text-xs text-text-muted">No leaderboards configured yet.</p>
-                <Button size="sm" variant="primary" onClick={handleSeedPresets} className="gap-1 mx-auto text-xs">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSeedPresets}
+                  className="gap-1 mx-auto text-xs"
+                >
                   <Sparkles size={12} /> Seed Starter Presets
                 </Button>
               </div>
@@ -506,10 +560,16 @@ export function GameServicesPanel({
                       onClick={() => toggleExpanded(lb.id)}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        {isExpanded ? <ChevronDown size={14} className="text-text-muted shrink-0" /> : <ChevronRight size={14} className="text-text-muted shrink-0" />}
+                        {isExpanded ? (
+                          <ChevronDown size={14} className="text-text-muted shrink-0" />
+                        ) : (
+                          <ChevronRight size={14} className="text-text-muted shrink-0" />
+                        )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-medium text-text-primary truncate">{lb.name || "Untitled"}</span>
+                            <span className="text-xs font-medium text-text-primary truncate">
+                              {lb.name || "Untitled"}
+                            </span>
                             <Badge variant="muted" className="text-[10px] py-0 px-1">
                               {lb.order === "ascending" ? "Best Time (ASC)" : "High Score (DESC)"}
                             </Badge>
@@ -536,7 +596,9 @@ export function GameServicesPanel({
                       <div className="border-t border-border-default/60 p-3 space-y-3 bg-bg-base/30">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[11px] font-medium text-text-secondary block mb-1">ID (Slug)</label>
+                            <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                              ID (Slug)
+                            </label>
                             <Input
                               value={lb.id}
                               onChange={(e) => handleUpdateLeaderboard(idx, { id: e.target.value })}
@@ -545,10 +607,14 @@ export function GameServicesPanel({
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] font-medium text-text-secondary block mb-1">Title</label>
+                            <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                              Title
+                            </label>
                             <Input
                               value={lb.name}
-                              onChange={(e) => handleUpdateLeaderboard(idx, { name: e.target.value })}
+                              onChange={(e) =>
+                                handleUpdateLeaderboard(idx, { name: e.target.value })
+                              }
                               placeholder="High Scores"
                               className="text-xs"
                             />
@@ -556,7 +622,9 @@ export function GameServicesPanel({
                         </div>
 
                         <div>
-                          <label className="text-[11px] font-medium text-text-secondary block mb-1">Ranking Order</label>
+                          <label className="text-[11px] font-medium text-text-secondary block mb-1">
+                            Ranking Order
+                          </label>
                           <Select
                             value={lb.order}
                             onChange={(e) =>

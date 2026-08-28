@@ -26,7 +26,10 @@ beforeEach(async () => {
   root = join(tmpdir(), `gamekit-mcp-recipes-${randomUUID()}`);
   await mkdir(join(root, "gamekit", "scenes"), { recursive: true });
   await mkdir(join(root, "gamekit", "assets"), { recursive: true });
-  await writeFile(join(root, "gamekit", "project.json"), projectToJson(createProject("Recipes Test")));
+  await writeFile(
+    join(root, "gamekit", "project.json"),
+    projectToJson(createProject("Recipes Test"))
+  );
 
   const scene = createEmptyScene("Main");
   const coin = createEntity("Coin", { x: 200, y: 150 });
@@ -72,7 +75,7 @@ describe("recipe apply engine", () => {
   it("substitutes params including typed numbers", () => {
     const result = substituteParams(
       { type: "Tween", startValue: "{{startY}}", duration: "{{duration}}", label: "y={{startY}}" },
-      { startY: 150, duration: 1.2 },
+      { startY: 150, duration: 1.2 }
     ) as Record<string, unknown>;
     expect(result.startValue).toBe(150);
     expect(result.duration).toBe(1.2);
@@ -134,7 +137,7 @@ describe("recipe apply engine", () => {
     const scene = createEmptyScene("Main");
     const result = applyRecipeToScene(scene, recipe!);
     expect(result.appliedInputActions).toEqual(
-      expect.arrayContaining(["move_left", "move_right", "jump"]),
+      expect.arrayContaining(["move_left", "move_right", "jump"])
     );
     expect(scene.inputMap?.bindings.length).toBeGreaterThanOrEqual(3);
   });
@@ -171,10 +174,9 @@ describe("recipe MCP tools", () => {
 
   it("apply_recipe writes components to the scene", async () => {
     const sceneBefore = JSON.parse(
-      await (await import("node:fs/promises")).readFile(
-        join(root, "gamekit", "scenes", "main.scene.json"),
-        "utf8",
-      ),
+      await (
+        await import("node:fs/promises")
+      ).readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8")
     );
     const entityId = sceneBefore.entities[0].id;
 
@@ -188,10 +190,9 @@ describe("recipe MCP tools", () => {
     expect(payload.appliedComponents).toContain("ParticleSystem");
 
     const sceneAfter = JSON.parse(
-      await (await import("node:fs/promises")).readFile(
-        join(root, "gamekit", "scenes", "main.scene.json"),
-        "utf8",
-      ),
+      await (
+        await import("node:fs/promises")
+      ).readFile(join(root, "gamekit", "scenes", "main.scene.json"), "utf8")
     );
     const entity = sceneAfter.entities.find((e: { id: string }) => e.id === entityId);
     expect(entity.components.some((c: { type: string }) => c.type === "ParticleSystem")).toBe(true);

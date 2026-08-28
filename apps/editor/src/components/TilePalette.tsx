@@ -29,7 +29,7 @@ const MODES: Array<{ id: TilePaintMode; label: string; hint: string; icon: typeo
 
 export function resolvePaintTilemap(
   scene: GameKitScene | undefined,
-  selectedEntityIds: Set<string>,
+  selectedEntityIds: Set<string>
 ): TilemapComponent | undefined {
   if (!scene) return undefined;
   const selected = [...selectedEntityIds]
@@ -61,16 +61,17 @@ export function TilePalette({
     tileset,
     tilemap?.tileWidth ?? 32,
     tilemap?.tileHeight ?? 32,
-    tilemap?.columns ?? 8,
+    tilemap?.columns ?? 8
   );
   const ids = [0, ...Array.from({ length: count }, (_, i) => i + 1)];
   const preview = tileSrcRect(
     paintTileId,
     tilemap?.columns ?? 8,
     tilemap?.tileWidth ?? 32,
-    tilemap?.tileHeight ?? 32,
+    tilemap?.tileHeight ?? 32
   );
-  const tilesetName = assets.find((a) => a.id === tilemap?.tilesetId)?.id ?? tilemap?.tilesetId ?? "no tileset";
+  const tilesetName =
+    assets.find((a) => a.id === tilemap?.tilesetId)?.id ?? tilemap?.tilesetId ?? "no tileset";
 
   return (
     <div className={styles["tile-palette"]} role="toolbar" aria-label="Tile palette">
@@ -106,12 +107,22 @@ export function TilePalette({
         ))}
       </div>
       <span className={styles["tile-palette-label"]}>
-        {paintMode === "erase" ? "Erase" : paintMode === "fill" ? "Fill" : paintMode === "rect" ? "Rect" : paintMode === "eyedropper" ? "Pick" : "Brush"}
+        {paintMode === "erase"
+          ? "Erase"
+          : paintMode === "fill"
+            ? "Fill"
+            : paintMode === "rect"
+              ? "Rect"
+              : paintMode === "eyedropper"
+                ? "Pick"
+                : "Brush"}
         {tilemap ? ` · ${tilesetName}` : " · select a tilemap"}
       </span>
       <div className={styles["tile-palette-preview"]} aria-hidden>
         {paintTileId === 0 || !tileset || !preview ? (
-          <span className={styles["tile-palette-preview-empty"]}>{paintTileId === 0 ? "·" : paintTileId}</span>
+          <span className={styles["tile-palette-preview-empty"]}>
+            {paintTileId === 0 ? "·" : paintTileId}
+          </span>
         ) : (
           <span
             className={styles["tile-palette-preview-chip"]}
@@ -125,22 +136,39 @@ export function TilePalette({
       </div>
       <div className={styles["tile-palette-swatches"]}>
         {ids.map((id) => {
-          const src = tileSrcRect(id, tilemap?.columns ?? 8, tilemap?.tileWidth ?? 32, tilemap?.tileHeight ?? 32);
-          const active = paintTileId === id && paintMode !== "erase" ? id !== 0 : paintMode === "erase" && id === 0;
+          const src = tileSrcRect(
+            id,
+            tilemap?.columns ?? 8,
+            tilemap?.tileWidth ?? 32,
+            tilemap?.tileHeight ?? 32
+          );
+          const active =
+            paintTileId === id && paintMode !== "erase"
+              ? id !== 0
+              : paintMode === "erase" && id === 0;
           return (
             <button
               key={id}
               type="button"
-              className={cn(styles["tile-swatch"], active && styles.active, id === 0 && styles.empty)}
+              className={cn(
+                styles["tile-swatch"],
+                active && styles.active,
+                id === 0 && styles.empty
+              )}
               title={id === 0 ? "Empty (erase)" : `Tile ${id}`}
               onClick={() => {
                 onPaintTileIdChange(id);
                 if (id === 0) onPaintModeChange("erase");
-                else if (paintMode === "erase" || paintMode === "eyedropper") onPaintModeChange("brush");
+                else if (paintMode === "erase" || paintMode === "eyedropper")
+                  onPaintModeChange("brush");
               }}
             >
               {id === 0 || !tileset || !src ? (
-                id === 0 ? "·" : id
+                id === 0 ? (
+                  "·"
+                ) : (
+                  id
+                )
               ) : (
                 <span
                   className={styles["tile-swatch-chip"]}

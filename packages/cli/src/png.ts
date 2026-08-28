@@ -95,7 +95,7 @@ function toRgba(
   height: number,
   colorType: number,
   palette?: Uint8Array,
-  transparency?: Uint8Array,
+  transparency?: Uint8Array
 ): Uint8Array {
   const rgba = new Uint8Array(width * height * 4);
   const pixels = width * height;
@@ -194,8 +194,7 @@ export function decodePng(bytes: Buffer | Uint8Array): DecodedPng {
   if (interlace !== 0) throw new Error("Interlaced PNG is not supported");
   if (idat.length === 0) throw new Error("PNG has no IDAT");
 
-  const bpp =
-    colorType === 6 ? 4 : colorType === 2 ? 3 : colorType === 4 ? 2 : 1;
+  const bpp = colorType === 6 ? 4 : colorType === 2 ? 3 : colorType === 4 ? 2 : 1;
   const inflated = inflateSync(Buffer.concat(idat));
   const raw = unfilter(inflated, width, height, bpp);
   return { width, height, data: toRgba(raw, width, height, colorType, palette, transparency) };

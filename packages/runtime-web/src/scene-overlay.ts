@@ -4,7 +4,7 @@ export function showSceneOverlay(
   scene: Phaser.Scene,
   current: Phaser.GameObjects.Text | null,
   message: string,
-  color: string,
+  color: string
 ): Phaser.GameObjects.Text {
   if (current) {
     current.setColor(color);

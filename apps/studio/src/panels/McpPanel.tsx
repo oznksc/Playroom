@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { startMcp, stopMcp } from "../lib/api";
+import { startMcp, stopMcp } from "../lib/api.js";
+import { Button, Textarea, ErrorState, EmptyState } from "@gamekit/ui";
+import { Play, Wrench } from "lucide-react";
 
 interface McpTool {
   name: string;
@@ -14,6 +16,7 @@ export function McpPanel({ projectPath }: { projectPath: string }) {
   const [argsText, setArgsText] = useState("{}");
   const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -50,11 +53,13 @@ export function McpPanel({ projectPath }: { projectPath: string }) {
   async function callTool() {
     if (!selected || !port) return;
     setError(null);
+    setBusy(true);
     let parsed: Record<string, unknown> = {};
     try {
       parsed = JSON.parse(argsText || "{}");
     } catch (e) {
       setError("Invalid JSON arguments: " + String(e));
+      setBusy(false);
       return;
     }
     try {
@@ -67,6 +72,8 @@ export function McpPanel({ projectPath }: { projectPath: string }) {
       setResult(JSON.stringify(data, null, 2));
     } catch (e) {
       setError(String(e));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -76,59 +83,59 @@ export function McpPanel({ projectPath }: { projectPath: string }) {
         <div className="type-label">MCP tools {port ? `(:${port})` : ""}</div>
         <div className="glass-panel flex-1 overflow-auto p-2">
           {tools.length === 0 && (
-            <div className="type-body p-2 text-text-muted">
-              {projectPath ? "Loading tools…" : "Select a project to start the MCP server."}
-            </div>
+            <EmptyState
+              description={
+                projectPath ? "Loading tools…" : "Select a project to start the MCP server."
+              }
+            />
           )}
           {tools.map((t) => (
-            <button
+            <Button
               key={t.name}
+              variant={selected?.name === t.name ? "solid" : "secondary"}
+              size="sm"
+              fullWidth
               onClick={() => {
                 setSelected(t);
                 setResult("");
                 setArgsText("{}");
               }}
-              className={`mb-1 block w-full rounded-md border px-2 py-1.5 text-left text-md transition-colors ${
-                selected?.name === t.name
-                  ? "border-accent bg-accent-muted text-accent"
-                  : "border-border-default bg-bg-elevated text-text-primary hover:border-accent"
-              }`}
+              leftIcon={<Wrench size={12} />}
+              className="mb-1 justify-start font-mono text-xs"
             >
               {t.name}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3">
-        {error && (
-          <div className="type-body rounded-md border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-accent-red">
-            {error}
-          </div>
-        )}
+        {error && <ErrorState compact message={error} />}
         {selected ? (
           <>
             <div className="glass-panel p-3">
               <div className="type-label mb-1">Tool</div>
               <div className="type-ui text-accent">{selected.name}</div>
-              {selected.description && (
-                <div className="type-body mt-1">{selected.description}</div>
-              )}
+              {selected.description && <div className="type-body mt-1">{selected.description}</div>}
             </div>
             <div className="glass-panel flex flex-1 flex-col p-3">
               <div className="type-label mb-1">Arguments (JSON)</div>
-              <textarea
+              <Textarea
                 value={argsText}
                 onChange={(e) => setArgsText(e.target.value)}
                 spellCheck={false}
-                className="type-mono h-28 flex-1 resize-none rounded-md border border-border-default bg-bg-base p-2 text-text-primary focus-ring"
+                className="font-mono text-xs h-28 flex-1 resize-none"
               />
-              <button
+              <Button
+                variant="solid"
+                size="sm"
+                loading={busy}
                 onClick={callTool}
-                className="mt-2 self-start rounded-md border border-accent bg-accent-muted px-3 py-1.5 text-md text-accent hover:bg-accent hover:text-bg-base"
+                leftIcon={<Play size={12} />}
+                className="mt-2 self-start"
               >
                 Call tool
-              </button>
+              </Button>
             </div>
             <div className="glass-panel flex-1 overflow-auto p-3">
               <div className="type-label mb-1">Result</div>
@@ -139,9 +146,10 @@ export function McpPanel({ projectPath }: { projectPath: string }) {
           </>
         ) : (
           <div className="glass-panel flex-1 p-3">
-            <div className="type-body text-text-muted">
-              Select a tool on the left to inspect its schema and invoke it live.
-            </div>
+            <EmptyState
+              title="Select a Tool"
+              description="Select a tool on the left to inspect its schema and invoke it live."
+            />
           </div>
         )}
       </div>

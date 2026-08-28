@@ -39,8 +39,8 @@ describe("export-bootstrap helpers", () => {
     expect(
       orderSceneFiles(
         ["main.scene.json", "menu.scene.json"],
-        ["extra.scene.json", "main.scene.json", "menu.scene.json"],
-      ),
+        ["extra.scene.json", "main.scene.json", "menu.scene.json"]
+      )
     ).toEqual(["main.scene.json", "menu.scene.json", "extra.scene.json"]);
   });
 
@@ -162,7 +162,10 @@ describe("exportProject multi-scene bootstrap", () => {
     await writeFile(join(gk, "project.json"), projectToJson(project));
     await writeFile(join(gk, "scenes", "menu.scene.json"), sceneToJson(createMenuScene("Order")));
     await writeFile(join(gk, "scenes", "settings.scene.json"), sceneToJson(createSettingsScene()));
-    await writeFile(join(gk, "scenes", "main.scene.json"), sceneToJson(createStarterGameplayScene()));
+    await writeFile(
+      join(gk, "scenes", "main.scene.json"),
+      sceneToJson(createStarterGameplayScene())
+    );
 
     const input = await buildExportBootstrapInput(root);
     expect(input.scenes.map((s) => s.file)).toEqual([
@@ -195,28 +198,61 @@ describe("exportProject multi-scene bootstrap", () => {
     // Core java sources
     const gameClass = await readFile(
       join(gdxOut, "core", "src", "main", "java", "com", "playroom", "runtime", "GameKitGame.java"),
-      "utf8",
+      "utf8"
     );
     expect(gameClass).toContain("public class GameKitGame implements ApplicationListener");
 
     const servicesInterface = await readFile(
-      join(gdxOut, "core", "src", "main", "java", "com", "playroom", "runtime", "services", "GameServices.java"),
-      "utf8",
+      join(
+        gdxOut,
+        "core",
+        "src",
+        "main",
+        "java",
+        "com",
+        "playroom",
+        "runtime",
+        "services",
+        "GameServices.java"
+      ),
+      "utf8"
     );
     expect(servicesInterface).toContain("public interface GameServices");
     expect(servicesInterface).toContain("void setAchievementSteps(String logicalId, int steps);");
 
     // Desktop launcher
     const lwjglLauncher = await readFile(
-      join(gdxOut, "lwjgl3", "src", "main", "java", "com", "playroom", "runtime", "lwjgl3", "Lwjgl3Launcher.java"),
-      "utf8",
+      join(
+        gdxOut,
+        "lwjgl3",
+        "src",
+        "main",
+        "java",
+        "com",
+        "playroom",
+        "runtime",
+        "lwjgl3",
+        "Lwjgl3Launcher.java"
+      ),
+      "utf8"
     );
     expect(lwjglLauncher).toContain("Lwjgl3Application");
 
     // Android launcher + Google Play Games v2
     const playGamesServices = await readFile(
-      join(gdxOut, "android", "src", "main", "java", "com", "playroom", "runtime", "android", "PlayGamesServicesV2.java"),
-      "utf8",
+      join(
+        gdxOut,
+        "android",
+        "src",
+        "main",
+        "java",
+        "com",
+        "playroom",
+        "runtime",
+        "android",
+        "PlayGamesServicesV2.java"
+      ),
+      "utf8"
     );
     expect(playGamesServices).toContain("PlayGames.getAchievementsClient");
     expect(playGamesServices).toContain("PlayGames.getGamesSignInClient");
@@ -225,10 +261,16 @@ describe("exportProject multi-scene bootstrap", () => {
     const copiedProject = await readFile(join(gdxOut, "assets", "gamekit", "project.json"), "utf8");
     expect(copiedProject).toContain("Pixel Odyssey");
 
-    const copiedScene = await readFile(join(gdxOut, "assets", "gamekit", "scenes", "main.scene.json"), "utf8");
+    const copiedScene = await readFile(
+      join(gdxOut, "assets", "gamekit", "scenes", "main.scene.json"),
+      "utf8"
+    );
     expect(copiedScene).toContain('"id": "main"');
 
-    const assetsJson = await readFile(join(gdxOut, "assets", "gamekit", "generated", "assets.json"), "utf8");
+    const assetsJson = await readFile(
+      join(gdxOut, "assets", "gamekit", "generated", "assets.json"),
+      "utf8"
+    );
     expect(assetsJson).toContain('"assets":');
   });
 });

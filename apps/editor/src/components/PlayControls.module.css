@@ -90,7 +90,6 @@
   color: var(--text-muted);
 }
 
-
 .play-controls-cpu {
   color: var(--accent);
   opacity: 0.85;
@@ -121,7 +120,6 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
 }
-
 
 .play-controls-btn.profiler {
   width: 24px;

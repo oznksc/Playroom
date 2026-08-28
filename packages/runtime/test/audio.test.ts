@@ -27,7 +27,7 @@ describe("audio controller", () => {
       playOnStart: false,
     });
     const controller = createAudioController([entity], (id) =>
-      id === "bgm" ? "https://example.com/bgm.mp3" : undefined,
+      id === "bgm" ? "https://example.com/bgm.mp3" : undefined
     );
     expect(controller.sources).toHaveLength(1);
     expect(controller.sources[0].url).toBe("https://example.com/bgm.mp3");

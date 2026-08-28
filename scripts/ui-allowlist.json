@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Allowlist for raw HTML form and control tags in Playroom",
+  "allowedFiles": [
+    "packages/ui/src/**",
+    "apps/editor/test/**",
+    "apps/editor/src/test/**",
+    "apps/studio/src/App.test.tsx",
+    "apps/studio/test/**",
+    "e2e/**"
+  ],
+  "allowedTags": {
+    "iframe": [
+      "apps/studio/src/panels/EditorPanel.tsx"
+    ],
+    "input": [
+      "apps/editor/src/components/AssetsPanel.tsx",
+      "apps/editor/src/components/AudioPanel.tsx"
+    ]
+  }
+}

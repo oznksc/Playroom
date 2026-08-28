@@ -110,7 +110,11 @@ describe("asset tool handlers", () => {
 
   it("rejects a duplicate asset id", async () => {
     await call("add_asset", { id: "player", file: "player.png", kind: "image" });
-    const { result, data } = await call("add_asset", { id: "player", file: "other.png", kind: "image" });
+    const { result, data } = await call("add_asset", {
+      id: "player",
+      file: "other.png",
+      kind: "image",
+    });
     expect(result.isError).toBe(true);
     expect(data.error).toContain("already exists");
   });

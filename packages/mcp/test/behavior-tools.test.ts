@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createEntity, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createEntity,
+  createProject,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { createMcpServer } from "../src/server.js";
 
 let root: string;
@@ -14,7 +20,10 @@ beforeEach(async () => {
   root = join(tmpdir(), `gamekit-mcp-behavior-${randomUUID()}`);
   await mkdir(join(root, "gamekit", "scenes"), { recursive: true });
   await mkdir(join(root, "gamekit", "assets"), { recursive: true });
-  await writeFile(join(root, "gamekit", "project.json"), projectToJson(createProject("Behavior Test")));
+  await writeFile(
+    join(root, "gamekit", "project.json"),
+    projectToJson(createProject("Behavior Test"))
+  );
   const scene = createEmptyScene("Main");
   const entity = createEntity("Robot", { x: 10, y: 20 });
   entityId = entity.id;
@@ -33,9 +42,30 @@ describe("behavior tool handlers", () => {
       expect(result.isError, name).not.toBe(true);
     };
 
-    await call("add_tween", { tween: { property: "position.x", startValue: 0, endValue: 10, duration: 1, easing: "linear", loop: false, pingPong: false } });
-    await call("add_path", { followPath: { points: [{ x: 0, y: 0 }, { x: 20, y: 20 }], speed: 10, loop: true } });
-    await call("add_state_machine", { stateMachine: { initialState: "idle", states: [{ name: "idle", on: {} }] } });
+    await call("add_tween", {
+      tween: {
+        property: "position.x",
+        startValue: 0,
+        endValue: 10,
+        duration: 1,
+        easing: "linear",
+        loop: false,
+        pingPong: false,
+      },
+    });
+    await call("add_path", {
+      followPath: {
+        points: [
+          { x: 0, y: 0 },
+          { x: 20, y: 20 },
+        ],
+        speed: 10,
+        loop: true,
+      },
+    });
+    await call("add_state_machine", {
+      stateMachine: { initialState: "idle", states: [{ name: "idle", on: {} }] },
+    });
     await call("add_script", { script: { handlers: [{ event: "start", actions: [] }] } });
   });
 });

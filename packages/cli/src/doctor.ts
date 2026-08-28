@@ -67,7 +67,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     const result = validateProject(raw);
     if (!result.ok) {
       for (const err of result.errors) {
-        issues.push({ level: "error", code: "PROJECT_INVALID", message: err, path: "gamekit/project.json" });
+        issues.push({
+          level: "error",
+          code: "PROJECT_INVALID",
+          message: err,
+          path: "gamekit/project.json",
+        });
       }
       return finalize(root, issues, 0, 0, 0);
     }
@@ -104,7 +109,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
   try {
     sceneFiles = (await readdir(scenesDir)).filter((f) => f.endsWith(".scene.json"));
   } catch {
-    issues.push({ level: "error", code: "NO_SCENES_DIR", message: "gamekit/scenes/ directory missing. Run `gamekit init` to create the project structure." });
+    issues.push({
+      level: "error",
+      code: "NO_SCENES_DIR",
+      message:
+        "gamekit/scenes/ directory missing. Run `gamekit init` to create the project structure.",
+    });
   }
 
   // Project scenes listed but missing on disk
@@ -152,7 +162,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
       const result = validateScene(raw);
       if (!result.ok) {
         for (const err of result.errors) {
-          issues.push({ level: "error", code: "SCENE_INVALID", message: err, path: `gamekit/scenes/${file}` });
+          issues.push({
+            level: "error",
+            code: "SCENE_INVALID",
+            message: err,
+            path: `gamekit/scenes/${file}`,
+          });
         }
         continue;
       }
@@ -182,12 +197,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     try {
       await stat(assetPath);
     } catch {
-        issues.push({
-          level: "error",
-          code: "ASSET_FILE_MISSING",
-          message: `Asset "${asset.id}" points to missing file "${asset.file}". Re-import the asset or remove it from project.assets.`,
-          path: `gamekit/assets/${asset.file}`,
-        });
+      issues.push({
+        level: "error",
+        code: "ASSET_FILE_MISSING",
+        message: `Asset "${asset.id}" points to missing file "${asset.file}". Re-import the asset or remove it from project.assets.`,
+        path: `gamekit/assets/${asset.file}`,
+      });
     }
   }
 
@@ -231,7 +246,11 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     }
   }
 
-  if (project.activeScene && !project.scenes.includes(project.activeScene) && !sceneFiles.includes(project.activeScene)) {
+  if (
+    project.activeScene &&
+    !project.scenes.includes(project.activeScene) &&
+    !sceneFiles.includes(project.activeScene)
+  ) {
     issues.push({
       level: "warn",
       code: "ACTIVE_SCENE_MISSING",
@@ -300,7 +319,12 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
       const result = validatePrefab(raw);
       if (!result.ok) {
         for (const err of result.errors) {
-          issues.push({ level: "error", code: "PREFAB_INVALID", message: err, path: `gamekit/prefabs/${file}` });
+          issues.push({
+            level: "error",
+            code: "PREFAB_INVALID",
+            message: err,
+            path: `gamekit/prefabs/${file}`,
+          });
         }
       }
     } catch (e) {
@@ -344,7 +368,14 @@ export async function runDoctor(root: string): Promise<DoctorReport> {
     }
   }
 
-  return finalize(root, issues, sceneFiles.length, project.assets.length, project.levels.length, prefabFiles.length);
+  return finalize(
+    root,
+    issues,
+    sceneFiles.length,
+    project.assets.length,
+    project.levels.length,
+    prefabFiles.length
+  );
 }
 
 function collectAssetRefs(scene: GameKitScene, out: Set<string>): void {
@@ -353,7 +384,10 @@ function collectAssetRefs(scene: GameKitScene, out: Set<string>): void {
       if ("assetId" in comp && typeof (comp as { assetId?: string }).assetId === "string") {
         out.add((comp as { assetId: string }).assetId);
       }
-      if ("fontAssetId" in comp && typeof (comp as { fontAssetId?: string }).fontAssetId === "string") {
+      if (
+        "fontAssetId" in comp &&
+        typeof (comp as { fontAssetId?: string }).fontAssetId === "string"
+      ) {
         out.add((comp as { fontAssetId: string }).fontAssetId);
       }
       if ("tilesetId" in comp && typeof (comp as { tilesetId?: string }).tilesetId === "string") {
@@ -372,7 +406,7 @@ function finalize(
   scenes: number,
   assets: number,
   levels: number,
-  prefabs: number = 0,
+  prefabs: number = 0
 ): DoctorReport {
   const errors = issues.filter((i) => i.level === "error").length;
   const warnings = issues.filter((i) => i.level === "warn").length;

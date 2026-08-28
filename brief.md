@@ -1,74 +1,95 @@
-# Playroom Editor — Design Brief
+# Playroom Editor & Studio — Canonical Design Brief
 
 ## Register
 
-**Product.** This is a game development tool, not a marketing surface. The design earns trust through consistency, speed, and information density. Operators open this daily.
+**Product.** This is a professional 2D game development suite (Editor & Studio), not a marketing surface. The design earns developer trust through precision, high information density, speed, visual consistency, and deterministic behavior.
 
 ## Users
 
-Solo indie game developers and small-team builders working on 2D Expo/Skia games. They arrive with a game idea or an in-progress project. They need to move entities, configure scenes, manage assets, and iterate quickly. The editor is their primary workspace — hours per session.
-
-## Purpose
-
-A browser-based 2D game editor served by a local CLI. Users compose scenes with entities, sprites, colliders, GUI overlays, and reusable GUI components. The editor produces JSON files that drive the Expo/Skia runtime. An MCP server exposes the same operations to AI agents.
-
-## Artifact
-
-The real object is the **canvas** — a viewport showing the scene with entities, GUI overlays, and component instances. Everything in the sidebar and inspector exists to configure what lives on the canvas.
+Solo indie game developers, technical designers, and gameplay programmers working on 2D games (Expo/Skia, Phaser, and native runtimes). The workspace is their primary canvas — open for multi-hour production sessions daily.
 
 ## Composition Pattern
 
-**Operate.** Canvas-first: the viewport is full-bleed. Hierarchy, inspector, and content browser are floating sheets / bottom sheet overlays — they never permanently shrink the canvas. Top bar and activity rail float over the stage.
+**Canvas-First Refined Glass.** The viewport stage is full-bleed (`#06090e`). Tool chrome, inspection sheets, activity navigation, and content drawers float over the stage with refined glassmorphism (`backdrop-filter: blur(22px) saturate(1.4)`), thin high-precision borders, and subtle glow signaling. Chrome never permanently squeezes or shrinks the primary canvas.
 
-## Visual Foundation
+---
 
-- **Dark base**: `#06090e` / `#0b0f17` / `#121824` surface stack
-- **Primary accent**: Cyber Cyan `#00f0ff` — active states, selection borders, glow effects
-- **Secondary accent**: Engine Violet `#8b5cf6` — component sections, text node badges
-- **Tertiary accents**: Gold `#ffb300` (selection highlight), Green `#10b981` (play/success), Red `#ef4444` (stop/error)
-- **Neutral tint**: Blues (not pure gray) — `#94a3b8` secondary, `#64748b` muted
-- **Typography**: IBM Plex Sans (UI) + IBM Plex Mono (data) — technical tool faces, not soft SaaS geometrics. Compact scale 9–13px. Labels medium weight, modest tracking; avoid ultra-wide uppercase chrome.
-- **Sidebar nav**: Vertical icon rail (activity bar), not a horizontal tab strip.
-- **Radii**: 3px / 6px / 10px scale
-- **Borders**: Thin, low-contrast (`rgba(255,255,255,0.06)` default), cyan-tinted subtle
-- **Glow effects**: Cyan, green, red glows for active states — used sparingly
+## Visual Foundation & Tokens
 
-## Voice
+### 1. Color Palette & Signals
 
-Technical, precise, minimal. No marketing copy, no exclamation points. Labels are terse. Console logs use engine metaphors ("IGNITE SIMULATOR", "Physics world stepped"). Status text is factual.
+- **Dark Base Stack**:
+  - Base Stage: `#06090e` (`--color-bg-base`, `--color-surface-base`)
+  - Sunken / Inputs: `#030508` (`--color-surface-sunken`)
+  - Raised Surface: `#0b0f17` (`--color-bg-surface`, `--color-surface-raised`)
+  - Elevated Chrome: `#121824` (`--color-bg-elevated`, `--color-surface-overlay`)
+  - Overlay Glass: `#182030` (`--color-bg-overlay`)
+- **Semantic Signal Colors**:
+  - **Cyber Cyan** (`#00f0ff`): Selection border, active navigation item, highlighted tree nodes, focused states.
+  - **Engine Green** (`#10b981`): Simulation running, play mode active, successful build/validation, positive metrics.
+  - **Destructive Red** (`#ef4444`): Stop simulation, errors, delete/remove actions, validation failures.
+  - **Engine Violet** (`#8b5cf6`): Component identities, prefab badges, script section headers, custom extensions.
+  - **Canvas Gold** (`#ffb300`): Canvas gizmo selection highlight, primary entity marquee box.
+- **Neutrals & Text Hierarchy**:
+  - Primary Text: `rgba(245, 245, 247, 0.96)`
+  - Secondary Text: `rgba(235, 235, 245, 0.60)`
+  - Muted Text: `rgba(235, 235, 245, 0.40)`
+  - Disabled Text: `rgba(235, 235, 245, 0.25)`
 
-## Design Principles
+### 2. Geometry & Scale
 
-1. **Canvas-first.** The viewport is full-bleed. Tool chrome floats; never a fixed 3-column squeeze.
-2. **Density over decoration.** Every pixel earns its place. No empty hero spaces inside panels.
-3. **Color as signal.** Accents indicate state (active, selected, playing, error), not decoration.
-4. **Consistent compactness.** Inspector fields, badges, and controls are uniformly small (22px height inputs, 10px labels). Scale stays tight.
-5. **Glow as feedback.** Neon glows communicate active/running states — not ambient styling.
-6. **Accordion pattern.** Collapsible glass sections with uniform low-contrast borders group related controls. Do not rainbow-color left edges.
-7. **Monospace for data.** UUIDs, coordinates, numeric values use monospace for alignment.
+- **Radii Scale**:
+  - Small Controls (tags, tool buttons, badges): `6px` (`--radius-sm`)
+  - Standard Inputs & Action Buttons: `8px` (`--radius-md`)
+  - Large Controls & Dialog Buttons: `10px` (`--radius-lg`)
+  - Cards & Content Blocks: `10px` / `14px` (`--radius-card-sm` / `--radius-card-lg`)
+  - Floating Sheets & Main Overlays: `18px` (`--radius-sheet` / `--glass-radius`)
+  - Status Dots & Explicit Segmented Pills: `999px` (`--radius-full`)
+- **Control & Target Heights**:
+  - Micro / Compact Scrubber: `24px` (`--height-control-xs`)
+  - Standard Inspector Input / Tool Button: `28px` (`--height-control-sm`)
+  - Regular Button / Dropdown Trigger: `32px` (`--height-control-md`)
+  - Primary Action / Modal Button: `36px` (`--height-control-lg`)
+  - Panel Headers & Toolbar Strips: `40px` (`--height-panel-header`)
+  - Primary Navigation Target / Tab Bar Item: `44px` (`--height-nav-target` minimum touch target)
 
-## Anti-References
+### 3. Glass & Shadows
 
-- No SaaS dashboard card grids
-- No marketing hero sections or gradient blobs
-- No rounded pill buttons or soft pastel palettes
-- No playful/whimsical illustration style
-- No generic "dark mode SaaS" with blue-purple gradients
+- **Glass Surface**:
+  - Fill: `rgba(22, 22, 24, 0.82)` / Deep: `rgba(16, 18, 22, 0.90)`
+  - Filter: `blur(22px) saturate(1.4)`
+  - Border Ring: `0 0 0 0.5px rgba(255, 255, 255, 0.08)`
+  - Inset Highlight: `inset 0 0.5px 0 rgba(255, 255, 255, 0.10)`
+  - Shadow: `0 10px 40px rgba(0, 0, 0, 0.48)`
+- **Signal Glows**:
+  - Cyan Glow: `0 0 12px rgba(0, 240, 255, 0.35)`
+  - Green Glow: `0 0 12px rgba(16, 185, 129, 0.35)`
+  - Red Glow: `0 0 12px rgba(239, 68, 68, 0.35)`
 
-## Accessibility
+### 4. Typography
 
-- Dark theme with sufficient contrast for extended use
-- Focus indicators on interactive elements (accent border on focus-within)
-- Touch targets via `::before` expansion where visual size is small
-- Keyboard navigation: Escape clears selection, standard tab order
-- No motion system needed — transitions are fast (120ms) and functional
+- **UI Font**: `IBM Plex Sans` (bundled locally in `@gamekit/ui`), weights 400, 500, 600, 700.
+- **Data / Code Font**: `IBM Plex Mono` (bundled locally in `@gamekit/ui`), weights 400, 500, 600.
+- **Type Roles**:
+  - `--type-label`: 9px / 1.25 line-height / 0.08em tracking / uppercase / 600 weight
+  - `--type-micro`: 10px / 1.30 line-height / 500 weight
+  - `--type-ui`: 11px / 1.35 line-height / 500 weight
+  - `--type-body`: 12px / 1.40 line-height / 400 weight
+  - `--type-title`: 13px / 1.40 line-height / 600 weight
+  - `--type-display`: 18px–22px / 1.20 line-height / 600 weight
+  - `--type-mono`: IBM Plex Mono / tabular numbers / 10px–11px
 
-## Component Rules
+### 5. Motion & Focus
 
-- **Inspector fields**: 22px height, badge + input pattern, monospace for numbers
-- **Accordions**: Uniform 1px low-contrast border (no multi-color left stripes), ~36px header, collapsible body
-- **Buttons**: Icon buttons (20–24px), text buttons with 10px font, ghost style default
-- **Panels**: Full-height flex column, header bar (38px), scroll area below; panel titles are plain text (no colored left bar)
-- **Sidebar activity rail**: 44px wide, icon + micro label, active = muted fill + cyan text/icon (not a rainbow of edge bars)
-- **Bottom drawer tabs**: title case, optional icon, bottom accent underline (not rounded pills)
-- **Status**: Dots (6px) for state, badges for types, monospace for IDs
+- **Transitions**: Fast and functional (`120ms cubic-bezier(0.4, 0, 0.2, 1)` standard, `220ms` for drawer slide-in).
+- **Reduced Motion**: Respects `prefers-reduced-motion: reduce` by disabling nonessential slide animations and glows.
+- **Focus Indicators**: 2px focus ring (`--color-border-focus: rgba(0, 240, 255, 0.40)`) with zero layout shift.
+
+---
+
+## Component System Rules
+
+1. **All interactive controls must derive from `@gamekit/ui` primitives**. No raw `<button>`, `<input>`, `<select>`, or `<textarea>` in application code.
+2. **Every icon-only button must have an accessible name, title, and tooltip**.
+3. **No hardcoded arbitrary styling values**. All colors, heights, padding, and radii reference semantic design tokens.
+4. **Offline determinism**. All fonts and assets render reliably in offline Tauri and CI test runners.

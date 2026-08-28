@@ -163,7 +163,12 @@ export function Sidebar({
       </div>
 
       <div className="flex flex-wrap gap-1 px-2 pb-1.5">
-        <Button size="sm" variant="ghost" onClick={() => onAddTemplate?.("empty")} title="Empty entity">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onAddTemplate?.("empty")}
+          title="Empty entity"
+        >
           <Layers size={11} />
         </Button>
         <Button size="sm" variant="ghost" onClick={() => onAddTemplate?.("sprite")} title="Sprite">

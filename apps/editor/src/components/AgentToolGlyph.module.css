@@ -31,7 +31,6 @@
 }
 
 @keyframes agent-tool-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -45,7 +44,6 @@
 }
 
 @keyframes agent-tool-bounce {
-
   0%,
   100% {
     transform: translateY(0);
@@ -57,7 +55,6 @@
 }
 
 @keyframes agent-tool-sweep {
-
   0%,
   100% {
     transform: translateX(0);

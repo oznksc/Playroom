@@ -3,7 +3,13 @@ import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createEntity, createProject, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createEntity,
+  createProject,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { createMcpServer } from "../src/server.js";
 
 let root: string;
@@ -42,9 +48,24 @@ describe("gravity and tilemap tool handlers", () => {
   });
 
   it("adds a tilemap and paints a tile", async () => {
-    const add = await tool("add_tilemap").handler({ scenePath: sceneFile, entityId, tilesetId: "tiles", tileWidth: 16, tileHeight: 16, columns: 4, gridWidth: 2, gridHeight: 2 });
+    const add = await tool("add_tilemap").handler({
+      scenePath: sceneFile,
+      entityId,
+      tilesetId: "tiles",
+      tileWidth: 16,
+      tileHeight: 16,
+      columns: 4,
+      gridWidth: 2,
+      gridHeight: 2,
+    });
     expect(add.isError).not.toBe(true);
-    const paint = await tool("paint_tile").handler({ scenePath: sceneFile, entityId, gridX: 1, gridY: 0, tileId: 3 });
+    const paint = await tool("paint_tile").handler({
+      scenePath: sceneFile,
+      entityId,
+      gridX: 1,
+      gridY: 0,
+      tileId: 3,
+    });
     expect(paint.isError).not.toBe(true);
     const tilemap = JSON.parse(paint.content[0].text);
     expect(tilemap.tiles).toEqual([0, 3]);
@@ -79,8 +100,23 @@ describe("gravity and tilemap tool handlers", () => {
   });
 
   it("rejects painting outside tilemap bounds", async () => {
-    await tool("add_tilemap").handler({ scenePath: sceneFile, entityId, tilesetId: "tiles", tileWidth: 16, tileHeight: 16, columns: 4, gridWidth: 2, gridHeight: 2 });
-    const result = await tool("paint_tile").handler({ scenePath: sceneFile, entityId, gridX: 2, gridY: 0, tileId: 1 });
+    await tool("add_tilemap").handler({
+      scenePath: sceneFile,
+      entityId,
+      tilesetId: "tiles",
+      tileWidth: 16,
+      tileHeight: 16,
+      columns: 4,
+      gridWidth: 2,
+      gridHeight: 2,
+    });
+    const result = await tool("paint_tile").handler({
+      scenePath: sceneFile,
+      entityId,
+      gridX: 2,
+      gridY: 0,
+      tileId: 1,
+    });
     expect(result.content[0].text).toContain("out of bounds");
   });
 });

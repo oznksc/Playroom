@@ -71,9 +71,9 @@ describe("new validation and search tools", () => {
           type: "Transform",
           position: { x: 50, y: 50 },
           rotation: 0,
-          scale: { x: 1, y: 1 }
-        }
-      ]
+          scale: { x: 1, y: 1 },
+        },
+      ],
     });
     const gkDir = join(tmpDir, "gamekit");
     const scenesDir = join(gkDir, "scenes");
@@ -88,8 +88,8 @@ describe("new validation and search tools", () => {
         fontAssetId: "custom-font",
         size: 24,
         color: "#ffffff",
-        align: "center"
-      }
+        align: "center",
+      },
     });
 
     expect(result).toBeDefined();
@@ -114,9 +114,9 @@ describe("new validation and search tools", () => {
           type: "Transform",
           position: { x: 50, y: 50 },
           rotation: 0,
-          scale: { x: 1, y: 1 }
-        }
-      ]
+          scale: { x: 1, y: 1 },
+        },
+      ],
     });
     const gkDir = join(tmpDir, "gamekit");
     const scenesDir = join(gkDir, "scenes");
@@ -130,8 +130,8 @@ describe("new validation and search tools", () => {
         assetId: "bg-music",
         volume: 0.8,
         loop: true,
-        playOnStart: true
-      }
+        playOnStart: true,
+      },
     });
 
     expect(result).toBeDefined();
@@ -155,9 +155,9 @@ describe("new validation and search tools", () => {
           type: "Transform",
           position: { x: 50, y: 50 },
           rotation: 0,
-          scale: { x: 1, y: 1 }
-        }
-      ]
+          scale: { x: 1, y: 1 },
+        },
+      ],
     });
     const gkDir = join(tmpDir, "gamekit");
     const scenesDir = join(gkDir, "scenes");
@@ -181,7 +181,7 @@ describe("new validation and search tools", () => {
         width: 0,
         height: 0,
         active: true,
-      }
+      },
     });
 
     expect(result).toBeDefined();
@@ -212,9 +212,9 @@ describe("new validation and search tools", () => {
           type: "Transform",
           position: { x: 50, y: 50 },
           rotation: 0,
-          scale: { x: 1, y: 1 }
-        }
-      ]
+          scale: { x: 1, y: 1 },
+        },
+      ],
     });
     const gkDir = join(tmpDir, "gamekit");
     const scenesDir = join(gkDir, "scenes");
@@ -228,8 +228,8 @@ describe("new validation and search tools", () => {
         kind: "spot",
         range: 300,
         intensity: 1.5,
-        color: "#ffff00"
-      }
+        color: "#ffff00",
+      },
     });
 
     expect(result).toBeDefined();
@@ -253,9 +253,9 @@ describe("new validation and search tools", () => {
           type: "Transform",
           position: { x: 100, y: 100 },
           rotation: 0,
-          scale: { x: 1, y: 1 }
-        }
-      ]
+          scale: { x: 1, y: 1 },
+        },
+      ],
     });
     const gkDir = join(tmpDir, "gamekit");
     const scenesDir = join(gkDir, "scenes");
@@ -272,8 +272,8 @@ describe("new validation and search tools", () => {
         leftWidth: 15,
         rightWidth: 15,
         topHeight: 15,
-        bottomHeight: 15
-      }
+        bottomHeight: 15,
+      },
     });
 
     expect(result).toBeDefined();

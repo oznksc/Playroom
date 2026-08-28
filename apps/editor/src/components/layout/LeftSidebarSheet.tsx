@@ -1,4 +1,10 @@
-import type { GameKitEntity, GameKitLevel, GameKitScene, GuiNode, GameServicesDef } from "@gamekit/schema";
+import type {
+  GameKitEntity,
+  GameKitLevel,
+  GameKitScene,
+  GuiNode,
+  GameServicesDef,
+} from "@gamekit/schema";
 import { GameKitEntitySchema, findLevelForScene } from "@gamekit/schema";
 import { FloatingSheet } from "@/ui";
 import { Sidebar } from "../Sidebar.js";
@@ -110,71 +116,68 @@ export function LeftSidebarSheet({
   services,
 }: LeftSidebarSheetProps) {
   const {
-  sidebarOpen,
-  activeTab,
-  agentExpanded,
-  setAgentExpanded,
-  setInspectorOpen,
-  setAgentSettingsOpen,
+    sidebarOpen,
+    activeTab,
+    agentExpanded,
+    setAgentExpanded,
+    setInspectorOpen,
+    setAgentSettingsOpen,
   } = layout;
   const {
-  snapshot,
-  currentSceneFile,
-  setCurrentSceneFile,
-  scene,
-  updateScene,
-  refresh,
-  setStatus,
-  addConsoleLog,
-  activateScene,
-  handleCreateScene,
-  handleDeleteScene,
-  normalizeSceneFile,
-  sceneFileMatches,
+    snapshot,
+    currentSceneFile,
+    setCurrentSceneFile,
+    scene,
+    updateScene,
+    refresh,
+    setStatus,
+    addConsoleLog,
+    activateScene,
+    handleCreateScene,
+    handleDeleteScene,
+    normalizeSceneFile,
+    sceneFileMatches,
   } = document;
   const {
-  selectedEntityIds,
-  setSelectedEntityIds,
-  selectedEntityId,
-  selectedEntity,
-  clipboardRef,
-  deleteEntity,
-  duplicateEntity,
-  pasteEntity,
-  saveEntityAsPrefab,
-  addEntity,
-  addTemplateEntity,
+    selectedEntityIds,
+    setSelectedEntityIds,
+    selectedEntityId,
+    selectedEntity,
+    clipboardRef,
+    deleteEntity,
+    duplicateEntity,
+    pasteEntity,
+    saveEntityAsPrefab,
+    addEntity,
+    addTemplateEntity,
   } = selection;
   const { isPlaying } = playback;
   const {
-  showLevels = true,
-  handleCreateLevel,
-  handleDeleteLevel,
-  handleToggleUnlockLevel,
-  handleReorderLevels,
-  handleAssignSceneToLevel,
-  handleRemoveSceneFromLevel,
-  handleUpdateLevel,
+    showLevels = true,
+    handleCreateLevel,
+    handleDeleteLevel,
+    handleToggleUnlockLevel,
+    handleReorderLevels,
+    handleAssignSceneToLevel,
+    handleRemoveSceneFromLevel,
+    handleUpdateLevel,
   } = levels;
   const {
-  showGuiTools = true,
-  selectedGuiNodeId,
-  setSelectedGuiNodeId,
-  setSelectedComponentInstanceId,
-  addGuiNode,
-  deleteGuiNode,
-  editingComponentId,
-  setEditingComponentId,
-  addGuiComponent,
-  deleteGuiComponent,
-  addNodeToEditingComponent,
-  deleteNodeFromEditingComponent,
-  addGuiComponentInstance,
+    showGuiTools = true,
+    selectedGuiNodeId,
+    setSelectedGuiNodeId,
+    setSelectedComponentInstanceId,
+    addGuiNode,
+    deleteGuiNode,
+    editingComponentId,
+    setEditingComponentId,
+    addGuiComponent,
+    deleteGuiComponent,
+    addNodeToEditingComponent,
+    deleteNodeFromEditingComponent,
+    addGuiComponentInstance,
   } = gui;
-  const {
-  gameServices,
-  onUpdateGameServices,
-  } = services;
+  const { gameServices, onUpdateGameServices } = services;
   return (
     <FloatingSheet
       side="left"
@@ -184,7 +187,10 @@ export function LeftSidebarSheet({
       aria-label="Workspace panel"
     >
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-        <div key={activeTab} className="animate-sheet-panel relative flex h-full min-h-0 w-full flex-col">
+        <div
+          key={activeTab}
+          className="animate-sheet-panel relative flex h-full min-h-0 w-full flex-col"
+        >
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -200,7 +206,8 @@ export function LeftSidebarSheet({
               onDeleteEntity={(id) => deleteEntity(id)}
               onCopyEntity={(id) => {
                 const entity = scene?.entities.find((e) => e.id === id);
-                if (entity) clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
+                if (entity)
+                  clipboardRef.current = GameKitEntitySchema.parse(structuredClone(entity));
               }}
               onCutEntity={(id) => {
                 const entity = scene?.entities.find((e) => e.id === id);
@@ -234,7 +241,9 @@ export function LeftSidebarSheet({
               selectedEntityId={selectedEntityId}
               selectedEntityName={selectedEntity?.name}
               onInstantiated={() => {
-                refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+                refresh().catch((e) =>
+                  setStatus(e instanceof Error ? e.message : "Refresh failed")
+                );
               }}
               onStatus={(message) => {
                 setStatus(message);
@@ -265,14 +274,14 @@ export function LeftSidebarSheet({
               onSettings={() => setAgentSettingsOpen(true)}
               onSceneMutated={() => {
                 if (!isPlaying) {
-                  refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+                  refresh().catch((e) =>
+                    setStatus(e instanceof Error ? e.message : "Refresh failed")
+                  );
                 }
               }}
             />
           )}
-          {activeTab === "world" && scene && (
-            <SceneSettings scene={scene} onChange={updateScene} />
-          )}
+          {activeTab === "world" && scene && <SceneSettings scene={scene} onChange={updateScene} />}
           {activeTab === "world" && !scene && (
             <div className="flex h-full items-center justify-center p-4 text-center text-[12px] text-text-muted">
               Load a scene to edit world settings.
@@ -343,7 +352,9 @@ export function LeftSidebarSheet({
               selectedEntityId={selectedEntityId ?? null}
               selectedEntityName={selectedEntity?.name}
               onApplied={() => {
-                refresh().catch((e) => setStatus(e instanceof Error ? e.message : "Refresh failed"));
+                refresh().catch((e) =>
+                  setStatus(e instanceof Error ? e.message : "Refresh failed")
+                );
               }}
               onStatus={(message) => {
                 setStatus(message);

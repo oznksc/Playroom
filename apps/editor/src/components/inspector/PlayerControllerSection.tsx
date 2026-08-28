@@ -28,30 +28,43 @@ export function PlayerControllerSection({ player, onChange, open, onToggle, onRe
             <NumberField
               label="Speed"
               value={player.speed}
-              onChange={(value) => onChange((draft) => {
-                findComponent<PlayerControllerComponent>(draft, "PlayerController")!.speed = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<PlayerControllerComponent>(draft, "PlayerController")!.speed =
+                    value;
+                })
+              }
             />
             <NumberField
               label="Jump Vel"
               value={player.jumpVelocity}
-              onChange={(value) => onChange((draft) => {
-                findComponent<PlayerControllerComponent>(draft, "PlayerController")!.jumpVelocity = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<PlayerControllerComponent>(
+                    draft,
+                    "PlayerController"
+                  )!.jumpVelocity = value;
+                })
+              }
             />
           </div>
           <div className="grid grid-cols-1 gap-1.5">
             <NumberField
               label="Gravity"
               value={player.gravity}
-              onChange={(value) => onChange((draft) => {
-                findComponent<PlayerControllerComponent>(draft, "PlayerController")!.gravity = value;
-              })}
+              onChange={(value) =>
+                onChange((draft) => {
+                  findComponent<PlayerControllerComponent>(draft, "PlayerController")!.gravity =
+                    value;
+                })
+              }
             />
           </div>
         </>
       ) : (
-        <p className="text-center text-[10px] text-text-muted">Standard physics controller unassigned</p>
+        <p className="text-center text-[10px] text-text-muted">
+          Standard physics controller unassigned
+        </p>
       )}
     </AccordionSection>
   );

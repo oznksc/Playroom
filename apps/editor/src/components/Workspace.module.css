@@ -47,7 +47,7 @@
  * Do NOT use `.canvas-panel > *` — absolute HUD chrome is also a direct child
  * and would stretch to full-screen if given width/height 100%.
  */
-.canvas-stage .canvas-panel>[data-canvas-shell],
+.canvas-stage .canvas-panel > [data-canvas-shell],
 .canvas-stage .canvas-panel [data-canvas-workspace] {
   flex: 1 1 auto;
   min-height: 0;
@@ -57,8 +57,8 @@
 }
 
 /* Absolute HUD overlays must size to content, never flex-fill the stage */
-.canvas-stage .canvas-panel>.absolute,
-.canvas-stage .canvas-panel>[class*="absolute"] {
+.canvas-stage .canvas-panel > .absolute,
+.canvas-stage .canvas-panel > [class*="absolute"] {
   flex: 0 0 auto !important;
   width: max-content !important;
   max-width: calc(100% - 24px);
@@ -108,7 +108,10 @@
   font-weight: 600;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    transform 0.08s ease;
 }
 
 .canvas-virtual-btn:active,
@@ -191,6 +194,7 @@
   inset: 0;
 }
 
-:global(main[data-bottom-sheet-open="true"]:not([data-drawer-collapsed="true"])) .canvas-virtual-pad {
+:global(main[data-bottom-sheet-open="true"]:not([data-drawer-collapsed="true"]))
+  .canvas-virtual-pad {
   bottom: calc(min(44vh, 400px) + 96px);
 }

@@ -4,7 +4,7 @@ export type SseParsedEvent = {
 };
 
 export async function* parseSseStream(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
+  reader: ReadableStreamDefaultReader<Uint8Array>
 ): AsyncGenerator<SseParsedEvent> {
   const decoder = new TextDecoder();
   let buffer = "";

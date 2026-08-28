@@ -19,7 +19,9 @@
       "@gamekit/runtime-web": ["packages/runtime-web/src/index.ts"],
       "@gamekit/runtime-web/*": ["packages/runtime-web/src/*"],
       "@gamekit/agent": ["packages/agent/src/index.ts"],
-      "@gamekit/agent/*": ["packages/agent/src/*"]
+      "@gamekit/agent/*": ["packages/agent/src/*"],
+      "@gamekit/ui": ["packages/ui/src/index.ts"],
+      "@gamekit/ui/*": ["packages/ui/src/*"]
     }
   }
 }

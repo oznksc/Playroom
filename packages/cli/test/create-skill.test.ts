@@ -26,7 +26,7 @@ describe("createGameFromSkill", () => {
   it("lists genre skills", async () => {
     const skills = await listSkills();
     expect(skills.map((s) => s.id)).toEqual(
-      expect.arrayContaining(["platformer", "topdown", "physics-puzzle"]),
+      expect.arrayContaining(["platformer", "topdown", "physics-puzzle"])
     );
   });
 
@@ -58,11 +58,21 @@ describe("createGameFromSkill", () => {
     const playAction = menu.entities
       .flatMap((e) => e.components)
       .filter((c) => c.type === "Script")
-      .flatMap((c) => (c as { handlers: Array<{ event: string; actions: Array<{ type: string; sceneId?: string }> }> }).handlers)
+      .flatMap(
+        (c) =>
+          (
+            c as {
+              handlers: Array<{
+                event: string;
+                actions: Array<{ type: string; sceneId?: string }>;
+              }>;
+            }
+          ).handlers
+      )
       .find((h) => h.event === "startGame");
-    expect(playAction?.actions.some((a) => a.type === "switchScene" && a.sceneId === "platformer")).toBe(
-      true,
-    );
+    expect(
+      playAction?.actions.some((a) => a.type === "switchScene" && a.sceneId === "platformer")
+    ).toBe(true);
 
     const gameplay = await readScene(root, "platformer.scene.json");
     expect(gameplay.id).toBe("platformer");

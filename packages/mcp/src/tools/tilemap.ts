@@ -17,16 +17,31 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       columns: z.number().int().positive().describe("Tiles per row in the tileset image"),
       gridWidth: z.number().int().positive().describe("Map width in tiles"),
       gridHeight: z.number().int().positive().describe("Map height in tiles"),
-      solid: z.boolean().optional().describe("When true, every non-empty tile collides as a static solid"),
+      solid: z
+        .boolean()
+        .optional()
+        .describe("When true, every non-empty tile collides as a static solid"),
     },
-    async ({ scenePath, entityId, tilesetId, tileWidth, tileHeight, columns, gridWidth, gridHeight, solid }) => {
+    async ({
+      scenePath,
+      entityId,
+      tilesetId,
+      tileWidth,
+      tileHeight,
+      columns,
+      gridWidth,
+      gridHeight,
+      solid,
+    }) => {
       const filename = fileIO.resolveScenePath(scenePath);
       const scene = await fileIO.readScene(filename);
 
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -34,7 +49,12 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       const existing = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (existing) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity already has a Tilemap component" }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Entity already has a Tilemap component" }),
+            },
+          ],
           isError: true,
         };
       }
@@ -57,7 +77,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(entity, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -74,23 +94,29 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
       const tilemap = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (!tilemap) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) },
+          ],
           isError: true,
         };
       }
       tilemap.solid = solid;
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, solid: tilemap.solid }, null, 2) }],
+        content: [
+          { type: "text", text: JSON.stringify({ success: true, solid: tilemap.solid }, null, 2) },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -110,7 +136,9 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -118,7 +146,9 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       const tilemap = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (!tilemap) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) },
+          ],
           isError: true,
         };
       }
@@ -133,7 +163,14 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
         index >= tilemap.gridWidth * tilemap.gridHeight
       ) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Grid position (${gridX}, ${gridY}) is out of bounds for map size ${tilemap.gridWidth}x${tilemap.gridHeight}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Grid position (${gridX}, ${gridY}) is out of bounds for map size ${tilemap.gridWidth}x${tilemap.gridHeight}`,
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -148,7 +185,7 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(tilemap, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -171,14 +208,18 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
       const tilemap = entity.components.find((c): c is TilemapComponent => c.type === "Tilemap");
       if (!tilemap) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: "Entity has no Tilemap component" }) },
+          ],
           isError: true,
         };
       }
@@ -240,11 +281,11 @@ export function registerTilemapTools(server: McpServer, fileIO: FileIO): void {
                 tiles: tilemap.tiles,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

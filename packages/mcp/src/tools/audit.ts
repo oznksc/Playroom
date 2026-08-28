@@ -11,10 +11,16 @@ export function registerAuditTools(server: McpServer, fileIO: FileIO): void {
     "get_audit_log",
     "Query recent tool execution audit logs persisted to disk (status, duration, approval, arguments, results).",
     {
-      limit: z.number().optional().describe("Max number of recent log entries to return (default: 20)"),
+      limit: z
+        .number()
+        .optional()
+        .describe("Max number of recent log entries to return (default: 20)"),
       tool: z.string().optional().describe("Filter entries by tool name"),
       sceneId: z.string().optional().describe("Filter entries by scene ID"),
-      status: z.enum(["ok", "error", "denied", "cached", "cancelled"]).optional().describe("Filter by status"),
+      status: z
+        .enum(["ok", "error", "denied", "cached", "cancelled"])
+        .optional()
+        .describe("Filter by status"),
     },
     async (args) => {
       const auditFilePath = join(fileIO.projectRoot, "gamekit", "agent", "audit.jsonl");
@@ -51,8 +57,11 @@ export function registerAuditTools(server: McpServer, fileIO: FileIO): void {
           entries,
         });
       } catch (err) {
-        return toolJson({ error: `Failed to read audit logs: ${err instanceof Error ? err.message : err}` }, true);
+        return toolJson(
+          { error: `Failed to read audit logs: ${err instanceof Error ? err.message : err}` },
+          true
+        );
       }
-    },
+    }
   );
 }

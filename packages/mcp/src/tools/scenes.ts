@@ -28,7 +28,7 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(scene, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -74,7 +74,7 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify({ filename, scene }, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -94,7 +94,7 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify({ success: true, deleted: filename }) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -112,7 +112,9 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
         };
       } catch (err: any) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) }],
+          content: [
+            { type: "text", text: JSON.stringify({ ok: false, errors: [err.message] }, null, 2) },
+          ],
         };
       }
     }
@@ -134,7 +136,10 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       // Ensure scene exists
       await fileIO.readScene(filename);
       const project = await fileIO.readProject();
-      if (!project.scenes.includes(filename) && !project.scenes.includes(filename.replace(/\.scene\.json$/, ""))) {
+      if (
+        !project.scenes.includes(filename) &&
+        !project.scenes.includes(filename.replace(/\.scene\.json$/, ""))
+      ) {
         // still allow load if file exists on disk
       }
       const previous = project.activeScene ?? project.scenes[0] ?? null;
@@ -156,12 +161,12 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
                 },
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -193,9 +198,11 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeProject(project);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, transition: def }, null, 2) }],
+        content: [
+          { type: "text", text: JSON.stringify({ success: true, transition: def }, null, 2) },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -233,12 +240,12 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
                 orientation: scene.responsive.orientation,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -282,12 +289,12 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
                 entityCount: scene.entities.length,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -309,9 +316,14 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       if (orientation) scene.responsive.orientation = orientation;
       await fileIO.writeScene(filename, scene);
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, responsive: scene.responsive }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, responsive: scene.responsive }, null, 2),
+          },
+        ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -342,10 +354,13 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
       return {
         content: [
-          { type: "text", text: JSON.stringify({ success: true, safeArea: scene.responsive.safeArea }, null, 2) },
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, safeArea: scene.responsive.safeArea }, null, 2),
+          },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -361,7 +376,14 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
       const filename = `${slugify(name)}.scene.json`;
       if (filename === sourceFile) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Clone name resolves to the same filename as the source." }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: "Clone name resolves to the same filename as the source.",
+              }),
+            },
+          ],
           isError: true,
         };
       }
@@ -386,12 +408,12 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
                 entityCount: clone.entities.length,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 
   server.tool(
@@ -411,11 +433,11 @@ export function registerSceneTools(server: McpServer, fileIO: FileIO): void {
                 transitions: project.transitions ?? [],
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

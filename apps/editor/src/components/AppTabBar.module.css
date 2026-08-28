@@ -43,7 +43,7 @@
   align-items: flex-end;
 }
 
-.app-tabbar-group.has-active>.app-tabbar-group-trigger:not(.active) {
+.app-tabbar-group.has-active > .app-tabbar-group-trigger:not(.active) {
   color: rgba(235, 235, 245, 0.78);
 }
 
@@ -55,7 +55,9 @@
 
 .app-tabbar-chevron {
   opacity: 0.55;
-  transition: transform 160ms ease, opacity 120ms ease;
+  transition:
+    transform 160ms ease,
+    opacity 120ms ease;
   transform: rotate(0deg);
 }
 

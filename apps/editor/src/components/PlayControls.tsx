@@ -40,11 +40,21 @@ export function PlayControls({
   const live = isPlaying && !isPaused;
 
   return (
-    <div id="tour-topbar-play" className={styles["play-controls"]} role="toolbar" aria-label="Simulation">
+    <div
+      id="tour-topbar-play"
+      className={styles["play-controls"]}
+      role="toolbar"
+      aria-label="Simulation"
+    >
       <button
         type="button"
         data-testid="play-toggle"
-        className={cn(styles["play-controls-btn"], styles.play, live && styles.live, isPaused && styles.paused)}
+        className={cn(
+          styles["play-controls-btn"],
+          styles.play,
+          live && styles.live,
+          isPaused && styles.paused
+        )}
         title={live ? "Pause" : isPlaying ? "Resume" : "Play"}
         aria-label={live ? "Pause" : "Play"}
         onClick={onPlayToggle}
@@ -125,7 +135,11 @@ export function PlayControls({
           {onToggleProfiler && (
             <button
               type="button"
-              className={cn(styles["play-controls-btn"], styles.profiler, profilerOpen && styles.live)}
+              className={cn(
+                styles["play-controls-btn"],
+                styles.profiler,
+                profilerOpen && styles.live
+              )}
               title={profilerOpen ? "Hide profiler" : "Show profiler"}
               aria-label="Toggle profiler"
               aria-pressed={profilerOpen}

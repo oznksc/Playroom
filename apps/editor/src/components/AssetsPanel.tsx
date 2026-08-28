@@ -1,5 +1,17 @@
 import type { GameKitAsset } from "@gamekit/schema";
-import { ImagePlus, Trash2, Search, Upload, FileImage, Sparkles, Volume2, Music, Type, Play, Pause } from "lucide-react";
+import {
+  ImagePlus,
+  Trash2,
+  Search,
+  Upload,
+  FileImage,
+  Sparkles,
+  Volume2,
+  Music,
+  Type,
+  Play,
+  Pause,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { getApiUrl } from "../lib/api.js";
 import { Button, Input, EmptyState, IconButton, Badge, cn } from "@/ui";
@@ -110,8 +122,13 @@ export function AssetsPanel({
           <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
             {filteredAssets.map((asset) => {
               const active = asset.id === selectedAssetId;
-              const isAudio = asset.kind === "audio" || asset.file.endsWith(".wav") || asset.file.endsWith(".mp3") || asset.file.endsWith(".ogg");
-              const isFont = asset.kind === "font" || asset.file.endsWith(".ttf") || asset.file.endsWith(".otf");
+              const isAudio =
+                asset.kind === "audio" ||
+                asset.file.endsWith(".wav") ||
+                asset.file.endsWith(".mp3") ||
+                asset.file.endsWith(".ogg");
+              const isFont =
+                asset.kind === "font" || asset.file.endsWith(".ttf") || asset.file.endsWith(".otf");
               const isPlaying = playingAudioId === asset.id;
 
               return (
@@ -148,7 +165,10 @@ export function AssetsPanel({
                         >
                           {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
                         </div>
-                        <Badge variant="muted" className="absolute left-1 top-1 text-[8px] bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                        <Badge
+                          variant="muted"
+                          className="absolute left-1 top-1 text-[8px] bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                        >
                           AUDIO
                         </Badge>
                       </div>
@@ -167,13 +187,15 @@ export function AssetsPanel({
                           className="max-h-full max-w-full object-contain p-1 [image-rendering:pixelated]"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
-                            const fallback = e.currentTarget.parentElement?.querySelector(
-                              "[data-asset-fallback]"
-                            );
+                            const fallback =
+                              e.currentTarget.parentElement?.querySelector("[data-asset-fallback]");
                             if (fallback) (fallback as HTMLElement).style.display = "flex";
                           }}
                         />
-                        <div data-asset-fallback className="absolute inset-0 hidden items-center justify-center text-text-muted">
+                        <div
+                          data-asset-fallback
+                          className="absolute inset-0 hidden items-center justify-center text-text-muted"
+                        >
                           <FileImage size={22} />
                         </div>
                         <Badge variant="muted" className="absolute left-1 top-1 text-[8px]">

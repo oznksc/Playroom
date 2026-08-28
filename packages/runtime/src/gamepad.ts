@@ -65,7 +65,7 @@ export function pollGamepad(index = 0): GamepadSnapshot {
 export function isGamepadBindingActive(
   binding: string | undefined,
   snapshot: GamepadSnapshot,
-  deadzone = 0.35,
+  deadzone = 0.35
 ): boolean {
   if (!binding || !snapshot.connected) return false;
   const key = binding.toUpperCase();

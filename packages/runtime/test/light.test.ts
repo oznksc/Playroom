@@ -33,7 +33,7 @@ describe("pointLightColors", () => {
     const dim = pointLightColors("#ffffff", 0.5);
     const bright = pointLightColors("#ffffff", 1);
     expect(Number.parseInt(dim[0].slice(7), 16)).toBeLessThan(
-      Number.parseInt(bright[0].slice(7), 16),
+      Number.parseInt(bright[0].slice(7), 16)
     );
   });
 });

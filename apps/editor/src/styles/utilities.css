@@ -5,7 +5,9 @@ kbd,
 samp,
 pre {
   font-family: var(--font-mono);
-  font-feature-settings: "liga" 0, "calt" 1;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 1;
   letter-spacing: 0;
 }
 
@@ -116,7 +118,9 @@ pre {
   font-weight: 500;
   line-height: 1;
   text-align: left;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .list-row:hover {

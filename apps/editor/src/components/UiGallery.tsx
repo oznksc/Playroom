@@ -20,14 +20,13 @@ import {
   RotateCcw,
   Check,
   ChevronDown,
-  Info,
+  Gamepad2,
 } from "lucide-react";
 import {
   Button,
   IconButton,
   ButtonGroup,
   Switch,
-  Checkbox,
   Dialog,
   Kbd,
   Badge,
@@ -69,12 +68,18 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   SimpleTooltip,
-  Field,
   NumberField,
   CheckboxField,
   ColorField,
+  Range,
+  SelectableCard,
+  LoadingState,
+  ErrorState,
+  Toolbar,
+  ToolbarButton,
+  ColorControl,
   type SegmentedControlOption,
-} from "@/ui";
+} from "@gamekit/ui";
 
 const transformOptions = [
   { value: "translate", label: "Move", icon: <Move size={12} /> },
@@ -106,15 +111,21 @@ export function UiGallery() {
   const [accordionOpen, setAccordionOpen] = useState(true);
   const [dropdownCheck, setDropdownCheck] = useState(true);
   const [colorValue, setColorValue] = useState("#00f0ff");
+  const [rangeValue, setRangeValue] = useState(65);
+  const [cardSelected, setCardSelected] = useState(true);
 
   return (
     <main className="min-h-full overflow-auto bg-surface-base p-5 text-text-primary sm:p-8">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border-subtle pb-5">
           <div>
-            <p className="type-label mb-1 uppercase tracking-[0.1em] text-signal-select">Playroom / Design System</p>
+            <p className="type-label mb-1 uppercase tracking-[0.1em] text-signal-select">
+              Playroom / Design System
+            </p>
             <h1 className="m-0 text-xl font-semibold tracking-[-0.025em]">UI Component Gallery</h1>
-            <p className="type-body mb-0 mt-1">Radix UI primitives, shadcn architecture, and custom cyber/glass styling.</p>
+            <p className="type-body mb-0 mt-1">
+              Radix UI primitives, shadcn architecture, and custom cyber/glass styling.
+            </p>
           </div>
           <div className="flex items-center gap-1.5 type-micro">
             <span>Open with</span>
@@ -124,7 +135,10 @@ export function UiGallery() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* ── BUTTON VARIANTS ── */}
-          <GalleryCard title="Button Variants" description="Unified styling palette across primary, secondary, solid, ghost, danger, and simulation transports.">
+          <GalleryCard
+            title="Button Variants"
+            description="Unified styling palette across primary, secondary, solid, ghost, danger, and simulation transports."
+          >
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="primary">Primary (Cyan)</Button>
               <Button variant="secondary">Secondary</Button>
@@ -132,22 +146,41 @@ export function UiGallery() {
               <Button variant="ghost">Ghost</Button>
               <Button variant="outline">Outline</Button>
               <Button variant="danger">Danger</Button>
-              <Button variant="play" leftIcon={<Play size={12} fill="currentColor" />}>Play</Button>
-              <Button variant="stop" leftIcon={<Square size={10} fill="currentColor" />}>Stop</Button>
+              <Button variant="play" leftIcon={<Play size={12} fill="currentColor" />}>
+                Play
+              </Button>
+              <Button variant="stop" leftIcon={<Square size={10} fill="currentColor" />}>
+                Stop
+              </Button>
             </div>
           </GalleryCard>
 
           {/* ── BUTTON SIZES & STATES ── */}
-          <GalleryCard title="Button Sizes & States" description="Ultra-dense xs (24px) for inspector rows up to lg (36px). Includes loading spinners and icon slots.">
+          <GalleryCard
+            title="Button Sizes & States"
+            description="Ultra-dense xs (24px) for inspector rows up to lg (36px). Includes loading spinners and icon slots."
+          >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Button size="xs" variant="secondary">Size XS (24px)</Button>
-                <Button size="sm" variant="secondary">Size SM (28px)</Button>
-                <Button size="md" variant="secondary">Size MD (32px)</Button>
-                <Button size="lg" variant="secondary">Size LG (36px)</Button>
+                <Button size="xs" variant="secondary">
+                  Size XS (24px)
+                </Button>
+                <Button size="sm" variant="secondary">
+                  Size SM (28px)
+                </Button>
+                <Button size="md" variant="secondary">
+                  Size MD (32px)
+                </Button>
+                <Button size="lg" variant="secondary">
+                  Size LG (36px)
+                </Button>
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-subtle">
-                <Button variant="solid" leftIcon={<Sparkles size={12} />} onClick={() => setIsLoading(!isLoading)}>
+                <Button
+                  variant="solid"
+                  leftIcon={<Sparkles size={12} />}
+                  onClick={() => setIsLoading(!isLoading)}
+                >
                   {isLoading ? "Loading..." : "Toggle Loading"}
                 </Button>
                 <Button variant="primary" loading={isLoading} leftIcon={<Plus size={12} />}>
@@ -161,23 +194,36 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── ICON BUTTONS & TOOLTIPS ── */}
-          <GalleryCard title="Icon Buttons & Tooltips" description="Compact action triggers with active states, loaders, and Radix floating tooltips.">
+          <GalleryCard
+            title="Icon Buttons & Tooltips"
+            description="Compact action triggers with active states, loaders, and Radix floating tooltips."
+          >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <SimpleTooltip content="Settings (XS)">
-                  <IconButton size="xs" variant="ghost" title="XS Ghost"><Settings size={11} /></IconButton>
+                  <IconButton size="xs" variant="ghost" title="XS Ghost">
+                    <Settings size={11} />
+                  </IconButton>
                 </SimpleTooltip>
                 <SimpleTooltip content="Add Entity (SM)">
-                  <IconButton size="sm" variant="secondary" title="SM Secondary"><Plus size={13} /></IconButton>
+                  <IconButton size="sm" variant="secondary" title="SM Secondary">
+                    <Plus size={13} />
+                  </IconButton>
                 </SimpleTooltip>
                 <SimpleTooltip content="Magic Action (MD)">
-                  <IconButton size="md" variant="solid" title="MD Solid"><Sparkles size={14} /></IconButton>
+                  <IconButton size="md" variant="solid" title="MD Solid">
+                    <Sparkles size={14} />
+                  </IconButton>
                 </SimpleTooltip>
                 <SimpleTooltip content="Play Simulation (LG)">
-                  <IconButton size="lg" variant="primary" title="LG Primary"><Play size={15} fill="currentColor" /></IconButton>
+                  <IconButton size="lg" variant="primary" title="LG Primary">
+                    <Play size={15} fill="currentColor" />
+                  </IconButton>
                 </SimpleTooltip>
                 <SimpleTooltip content="Delete Entity">
-                  <IconButton size="md" variant="danger" title="Danger"><Trash2 size={14} /></IconButton>
+                  <IconButton size="md" variant="danger" title="Danger">
+                    <Trash2 size={14} />
+                  </IconButton>
                 </SimpleTooltip>
                 <SimpleTooltip content="Toggle Active State">
                   <IconButton
@@ -189,30 +235,108 @@ export function UiGallery() {
                     <Check size={14} />
                   </IconButton>
                 </SimpleTooltip>
-                <IconButton size="md" loading title="Loading"><Sparkles size={14} /></IconButton>
+                <IconButton size="md" loading title="Loading">
+                  <Sparkles size={14} />
+                </IconButton>
               </div>
             </div>
           </GalleryCard>
 
-          {/* ── BUTTON GROUPS ── */}
-          <GalleryCard title="Button Groups" description="Joined toolbars and zoom controls without redundant internal borders.">
-            <div className="flex flex-wrap items-center gap-4">
-              <ButtonGroup attached>
-                <Button size="sm" variant="secondary">Left</Button>
-                <Button size="sm" variant="secondary">Middle</Button>
-                <Button size="sm" variant="secondary">Right</Button>
-              </ButtonGroup>
+          {/* ── BUTTON GROUPS & TOOLBAR ── */}
+          <GalleryCard
+            title="Button Groups & Toolbar"
+            description="Joined toolbars and action docks without redundant internal borders."
+          >
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-4">
+                <ButtonGroup attached>
+                  <Button size="sm" variant="secondary">
+                    Left
+                  </Button>
+                  <Button size="sm" variant="secondary">
+                    Middle
+                  </Button>
+                  <Button size="sm" variant="secondary">
+                    Right
+                  </Button>
+                </ButtonGroup>
 
-              <ButtonGroup attached>
-                <IconButton size="sm" variant="secondary" title="Zoom In"><ZoomIn size={13} /></IconButton>
-                <IconButton size="sm" variant="secondary" title="Zoom Out"><ZoomOut size={13} /></IconButton>
-                <IconButton size="sm" variant="secondary" title="Reset View"><RotateCcw size={13} /></IconButton>
-              </ButtonGroup>
+                <ButtonGroup attached>
+                  <IconButton size="sm" variant="secondary" title="Zoom In">
+                    <ZoomIn size={13} />
+                  </IconButton>
+                  <IconButton size="sm" variant="secondary" title="Zoom Out">
+                    <ZoomOut size={13} />
+                  </IconButton>
+                  <IconButton size="sm" variant="secondary" title="Reset View">
+                    <RotateCcw size={13} />
+                  </IconButton>
+                </ButtonGroup>
+              </div>
+              <Toolbar>
+                <ToolbarButton label="Move Tool" tooltip="Select tool (V)">
+                  <Move size={13} />
+                </ToolbarButton>
+                <ToolbarButton label="Rotate Tool" tooltip="Rotate tool (R)">
+                  <RotateCw size={13} />
+                </ToolbarButton>
+                <ToolbarButton label="Scale Tool" tooltip="Scale tool (S)">
+                  <Maximize2 size={13} />
+                </ToolbarButton>
+              </Toolbar>
+            </div>
+          </GalleryCard>
+
+          {/* ── EXTENDED VOCABULARY: RANGE, SELECTABLE CARD, COLOR CONTROL ── */}
+          <GalleryCard
+            title="Range Slider & Color Control"
+            description="Continuous value sliders and dedicated color controls."
+          >
+            <div className="space-y-3">
+              <div>
+                <span className="type-micro mb-1 block text-text-muted">Slider with value:</span>
+                <Range value={rangeValue} onValueChange={setRangeValue} showValue />
+              </div>
+              <div className="pt-2 border-t border-border-subtle">
+                <span className="type-micro mb-1 block text-text-muted">
+                  ColorControl Primitive:
+                </span>
+                <ColorControl value={colorValue} onChange={setColorValue} />
+              </div>
+            </div>
+          </GalleryCard>
+
+          {/* ── SELECTABLE CARD ── */}
+          <GalleryCard
+            title="Selectable Cards"
+            description="Interactive genre and preset selectors with checked states."
+          >
+            <SelectableCard
+              selected={cardSelected}
+              onSelect={() => setCardSelected(!cardSelected)}
+              icon={<Gamepad2 size={14} />}
+              title="2D Action Platformer"
+              description="Full platforming physics with wall jumps, collectibles, and hazards."
+              badge={<Badge variant="accent">Featured</Badge>}
+            />
+          </GalleryCard>
+
+          {/* ── ASYNC STATES: LOADING & ERROR ── */}
+          <GalleryCard
+            title="Normalized Async States"
+            description="Explicit feedback for idle, loading, and error states."
+          >
+            <div className="space-y-3">
+              <LoadingState message="Baking texture atlas…" size="sm" />
+              <ErrorState compact message="Export target /dist was locked." onRetry={() => {}} />
             </div>
           </GalleryCard>
 
           {/* ── RADIX SELECT PRIMITIVES ── */}
-          <GalleryCard title="Radix Select & SimpleSelect" description="Accessible glass dropdown with full keyboard navigation and scroll buttons.">
+          <GalleryCard
+            title="Radix Select & SimpleSelect"
+            description="Accessible glass dropdown with full keyboard navigation and scroll buttons."
+          >
             <div className="space-y-3">
               <div>
                 <span className="type-micro mb-1 block text-text-muted">SimpleSelect Helper:</span>
@@ -224,7 +348,9 @@ export function UiGallery() {
                 />
               </div>
               <div className="pt-2 border-t border-border-subtle">
-                <span className="type-micro mb-1 block text-text-muted">Radix Composition Pattern:</span>
+                <span className="type-micro mb-1 block text-text-muted">
+                  Radix Composition Pattern:
+                </span>
                 <Select value={selectedEngine} onValueChange={setSelectedEngine}>
                   <SelectTrigger size="sm">
                     <SelectValue placeholder="Choose solver..." />
@@ -245,7 +371,10 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── RADIX ACCORDION ── */}
-          <GalleryCard title="Radix Accordion & Sections" description="Collapsible inspector cards powered by Radix Accordion with animated heights.">
+          <GalleryCard
+            title="Radix Accordion & Sections"
+            description="Collapsible inspector cards powered by Radix Accordion with animated heights."
+          >
             <div className="space-y-3">
               <AccordionSection
                 label="Transform Component"
@@ -262,7 +391,9 @@ export function UiGallery() {
 
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="item-1">
-                  <AccordionTrigger icon={<Layers size={12} />}>Colliders & Physics</AccordionTrigger>
+                  <AccordionTrigger icon={<Layers size={12} />}>
+                    Colliders & Physics
+                  </AccordionTrigger>
                   <AccordionContent>
                     Box collider dynamic body with restitution 0.8 and friction 0.2.
                   </AccordionContent>
@@ -272,7 +403,10 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── SEGMENTED CONTROL ── */}
-          <GalleryCard title="Segmented Controls" description="Mutually exclusive mode switchers with icon, badge, and size options.">
+          <GalleryCard
+            title="Segmented Controls"
+            description="Mutually exclusive mode switchers with icon, badge, and size options."
+          >
             <div className="space-y-3">
               <div>
                 <span className="type-micro mb-1 block text-text-muted">Standard (sm):</span>
@@ -280,16 +414,26 @@ export function UiGallery() {
               </div>
               <div>
                 <span className="type-micro mb-1 block text-text-muted">Pill Variant (xs):</span>
-                <SegmentedControl size="xs" variant="pills" value={mode} onValueChange={setMode} options={transformOptions} />
+                <SegmentedControl
+                  size="xs"
+                  variant="pills"
+                  value={mode}
+                  onValueChange={setMode}
+                  options={transformOptions}
+                />
               </div>
               <p className="type-micro mt-2">
-                Active mode: <span className="type-mono text-signal-select font-semibold">{mode}</span>
+                Active mode:{" "}
+                <span className="type-mono text-signal-select font-semibold">{mode}</span>
               </p>
             </div>
           </GalleryCard>
 
           {/* ── RADIX TABS (SEGMENTED & UNDERLINE) ── */}
-          <GalleryCard title="Radix Tabs Navigation" description="Multi-style tab containers (Segmented vs Underline) with full Radix keyboard navigation.">
+          <GalleryCard
+            title="Radix Tabs Navigation"
+            description="Multi-style tab containers (Segmented vs Underline) with full Radix keyboard navigation."
+          >
             <div className="space-y-4">
               <div>
                 <span className="type-micro mb-1.5 block text-text-muted">Segmented Tabs:</span>
@@ -318,11 +462,20 @@ export function UiGallery() {
               </div>
 
               <div className="pt-2 border-t border-border-subtle">
-                <span className="type-micro mb-1.5 block text-text-muted">Underline Tabs (Dock / Drawers):</span>
-                <Tabs variant="underline" size="xs" value={underlineTab} onValueChange={setUnderlineTab}>
+                <span className="type-micro mb-1.5 block text-text-muted">
+                  Underline Tabs (Dock / Drawers):
+                </span>
+                <Tabs
+                  variant="underline"
+                  size="xs"
+                  value={underlineTab}
+                  onValueChange={setUnderlineTab}
+                >
                   <TabsList>
                     <TabsTrigger value="general">General</TabsTrigger>
-                    <TabsTrigger value="physics" badge="New">Physics</TabsTrigger>
+                    <TabsTrigger value="physics" badge="New">
+                      Physics
+                    </TabsTrigger>
                     <TabsTrigger value="audio">Audio</TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -331,7 +484,10 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── RADIX SWITCH & CHECKBOX ── */}
-          <GalleryCard title="Radix Switch & Checkbox" description="Accessible boolean toggles with cyan/green signals, smooth micro-animation, and label integration.">
+          <GalleryCard
+            title="Radix Switch & Checkbox"
+            description="Accessible boolean toggles with cyan/green signals, smooth micro-animation, and label integration."
+          >
             <div className="space-y-3">
               <Switch
                 checked={snapEnabled}
@@ -358,7 +514,10 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── MENUS (DROPDOWN & CONTEXT) ── */}
-          <GalleryCard title="Dropdown & Context Menus" description="Floating glass menus with submenus, checkboxes, and keyboard shortcuts.">
+          <GalleryCard
+            title="Dropdown & Context Menus"
+            description="Floating glass menus with submenus, checkboxes, and keyboard shortcuts."
+          >
             <div className="flex flex-wrap items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -369,9 +528,13 @@ export function UiGallery() {
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Project Actions</DropdownMenuLabel>
                   <DropdownMenuItem>
-                    <Plus size={13} className="mr-1.5 text-accent" /> New Scene <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
+                    <Plus size={13} className="mr-1.5 text-accent" /> New Scene{" "}
+                    <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
                   </DropdownMenuItem>
-                  <DropdownMenuCheckboxItem checked={dropdownCheck} onCheckedChange={setDropdownCheck}>
+                  <DropdownMenuCheckboxItem
+                    checked={dropdownCheck}
+                    onCheckedChange={setDropdownCheck}
+                  >
                     Show Grid Overlay
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuSeparator />
@@ -389,7 +552,8 @@ export function UiGallery() {
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuItem>
-                    <Copy size={13} className="mr-1.5 text-accent" /> Duplicate Entity <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+                    <Copy size={13} className="mr-1.5 text-accent" /> Duplicate Entity{" "}
+                    <ContextMenuShortcut>⌘D</ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem danger>
@@ -401,10 +565,15 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── KEYBOARD HINTS, BADGES & STATUS DOTS ── */}
-          <GalleryCard title="Signals, Badges & Status Dots" description="Adjacent keyboard shortcut badges and luminous status signals.">
+          <GalleryCard
+            title="Signals, Badges & Status Dots"
+            description="Adjacent keyboard shortcut badges and luminous status signals."
+          >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="secondary"><Copy size={13} /> Duplicate <Kbd>⌘D</Kbd></Button>
+                <Button variant="secondary">
+                  <Copy size={13} /> Duplicate <Kbd>⌘D</Kbd>
+                </Button>
                 <Kbd>Esc</Kbd>
                 <Kbd>Space</Kbd>
                 <Kbd>⌘K</Kbd>
@@ -426,27 +595,49 @@ export function UiGallery() {
           </GalleryCard>
 
           {/* ── FORM FIELDS & COLOR PICKER ── */}
-          <GalleryCard title="Inspector Fields & Color Picker" description="Composed fields with badge labels, color swatches, and numeric inputs.">
+          <GalleryCard
+            title="Inspector Fields & Color Picker"
+            description="Composed fields with badge labels, color swatches, and numeric inputs."
+          >
             <div className="space-y-2">
               <ColorField label="Tint" value={colorValue} onChange={setColorValue} />
-              <NumberField label="Speed" value={120} onChange={() => {}} step={10} min={0} max={500} />
+              <NumberField
+                label="Speed"
+                value={120}
+                onChange={() => {}}
+                step={10}
+                min={0}
+                max={500}
+              />
             </div>
           </GalleryCard>
 
           {/* ── INSPECTOR PROPERTIES ── */}
-          <GalleryCard title="Inspector Properties" description="Drag a label horizontally or enter a numeric value directly.">
+          <GalleryCard
+            title="Inspector Properties"
+            description="Drag a label horizontally or enter a numeric value directly."
+          >
             <PropertyGroup title="Transform" className="border-0 py-0">
               <PropertyRow label="Position X" hint="World-space horizontal position.">
                 <NumberScrubberField label="X" value={x} onValueChange={setX} unit="px" />
               </PropertyRow>
               <PropertyRow label="Rotation" hint="Clockwise angle in degrees.">
-                <NumberScrubberField label="R" value={rotation} onValueChange={setRotation} unit="deg" step={5} />
+                <NumberScrubberField
+                  label="R"
+                  value={rotation}
+                  onValueChange={setRotation}
+                  unit="deg"
+                  step={5}
+                />
               </PropertyRow>
             </PropertyGroup>
           </GalleryCard>
 
           {/* ── MODAL ANATOMY ── */}
-          <GalleryCard title="Modal Anatomy" description="Fixed title bar, scrolling content, and sticky action buttons.">
+          <GalleryCard
+            title="Modal Anatomy"
+            description="Fixed title bar, scrolling content, and sticky action buttons."
+          >
             <Button variant="secondary" onClick={() => setModalOpen(true)}>
               <SlidersHorizontal size={13} /> Open modal demo
             </Button>
@@ -470,14 +661,25 @@ export function UiGallery() {
               >
                 <PropertyGroup title="World">
                   <PropertyRow label="Gravity X">
-                    <NumberScrubberField label="X" value={0} onValueChange={() => {}} unit="px/s²" />
+                    <NumberScrubberField
+                      label="X"
+                      value={0}
+                      onValueChange={() => {}}
+                      unit="px/s²"
+                    />
                   </PropertyRow>
                   <PropertyRow label="Gravity Y">
-                    <NumberScrubberField label="Y" value={980} onValueChange={() => {}} unit="px/s²" />
+                    <NumberScrubberField
+                      label="Y"
+                      value={980}
+                      onValueChange={() => {}}
+                      unit="px/s²"
+                    />
                   </PropertyRow>
                 </PropertyGroup>
                 <p className="type-body mt-2">
-                  The body area scrolls independently when a modal has more content than the viewport.
+                  The body area scrolls independently when a modal has more content than the
+                  viewport.
                 </p>
               </ModalShell>
             </Dialog>
@@ -488,7 +690,15 @@ export function UiGallery() {
   );
 }
 
-function GalleryCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function GalleryCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-[14px] border border-border-default bg-surface-raised p-4 shadow-sm flex flex-col justify-between">
       <div>

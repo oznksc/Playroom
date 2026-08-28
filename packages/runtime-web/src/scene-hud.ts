@@ -3,7 +3,7 @@ import type { TextBinding } from "./scene-types.js";
 export function refreshSceneHud(
   textBindings: TextBinding[],
   coinsCollected: number,
-  totalCoins: number,
+  totalCoins: number
 ): void {
   for (const binding of textBindings) {
     let text = binding.baseTemplate;

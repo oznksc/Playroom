@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { z } from "zod";
-import type { GameKitScene, GameKitAsset, GameKitLevel, GuiComponent, GameKitProject, GameServicesDef } from "@gamekit/schema";
+import type {
+  GameKitScene,
+  GameKitAsset,
+  GameKitLevel,
+  GuiComponent,
+  GameKitProject,
+  GameServicesDef,
+} from "@gamekit/schema";
 import { parseScene, createEmptyScene } from "@gamekit/schema";
 import { useUndo } from "./useUndo.js";
 import { getApiUrl } from "../lib/api.js";
@@ -22,7 +29,10 @@ import type { ConsoleLog } from "../components/ConsolePanel.js";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 const ApiErrorSchema = z.object({ error: z.string().optional() });
-const SaveErrorSchema = z.object({ error: z.string().optional(), errors: z.array(z.string()).optional() });
+const SaveErrorSchema = z.object({
+  error: z.string().optional(),
+  errors: z.array(z.string()).optional(),
+});
 
 export interface ExampleProject {
   id: string;
@@ -32,7 +42,9 @@ export interface ExampleProject {
 }
 
 export function useProjectState() {
-  const isTauri = typeof window !== "undefined" && (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
+  const isTauri =
+    typeof window !== "undefined" &&
+    (!!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__);
   const [projectPath, setProjectPath] = useState<string | null>(null);
   const [recentProjects, setRecentProjects] = useState<string[]>(() => {
     try {
@@ -43,7 +55,12 @@ export function useProjectState() {
     }
   });
 
-  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({ scenes: [], assets: [], levels: [], guiComponents: [] });
+  const [snapshot, setSnapshot] = useState<ProjectSnapshot>({
+    scenes: [],
+    assets: [],
+    levels: [],
+    guiComponents: [],
+  });
   const [currentSceneFile, setCurrentSceneFile] = useState<string>("");
   const {
     current: scene,
@@ -144,7 +161,9 @@ export function useProjectState() {
 
     setCurrentSceneFile(sceneFile);
 
-    const sceneResponse = await fetch(getApiUrl(`/api/scene?file=${encodeURIComponent(sceneFile)}`));
+    const sceneResponse = await fetch(
+      getApiUrl(`/api/scene?file=${encodeURIComponent(sceneFile)}`)
+    );
     if (!sceneResponse.ok) {
       throw new Error(`Failed to load scene ${sceneFile} (${sceneResponse.status})`);
     }
@@ -157,45 +176,44 @@ export function useProjectState() {
     setStatus("Ready");
   }, [currentSceneFile, reset]);
 
-  const loadProjectFolder = useCallback(async (path: string) => {
-    setIsLoadingProject(true);
-    setProjectLoadError(null);
-    try {
-      if (isTauri) {
-        setStatus("Starting server…");
-        const { invoke } = await import("@tauri-apps/api/core");
-        const resolved = await invoke<string>("start_server", { projectPath: path });
-        setStatus("Waiting for editor API…");
-        await waitForEditorApi();
-        setStatus("Loading project…");
-        await refresh();
-        setProjectPath(resolved);
-        addToRecentProjects(resolved);
-        addConsoleLog("system", `Loaded project: ${resolved}`);
-      } else {
-        setStatus("Loading project…");
-        await refresh();
-        setProjectPath(path);
-        addToRecentProjects(path);
-        addConsoleLog("system", `Loaded project: ${path}`);
+  const loadProjectFolder = useCallback(
+    async (path: string) => {
+      setIsLoadingProject(true);
+      setProjectLoadError(null);
+      try {
+        if (isTauri) {
+          setStatus("Starting server…");
+          const { invoke } = await import("@tauri-apps/api/core");
+          const resolved = await invoke<string>("start_server", { projectPath: path });
+          setStatus("Waiting for editor API…");
+          await waitForEditorApi();
+          setStatus("Loading project…");
+          await refresh();
+          setProjectPath(resolved);
+          addToRecentProjects(resolved);
+          addConsoleLog("system", `Loaded project: ${resolved}`);
+        } else {
+          setStatus("Loading project…");
+          await refresh();
+          setProjectPath(path);
+          addToRecentProjects(path);
+          addConsoleLog("system", `Loaded project: ${path}`);
+        }
+      } catch (e) {
+        console.error(e);
+        const msg =
+          typeof e === "string" ? e : e instanceof Error ? e.message : "Failed to load project";
+        setStatus(msg);
+        setProjectLoadError(msg);
+        if (isTauri) {
+          setProjectPath(null);
+        }
+      } finally {
+        setIsLoadingProject(false);
       }
-    } catch (e) {
-      console.error(e);
-      const msg =
-        typeof e === "string"
-          ? e
-          : e instanceof Error
-            ? e.message
-            : "Failed to load project";
-      setStatus(msg);
-      setProjectLoadError(msg);
-      if (isTauri) {
-        setProjectPath(null);
-      }
-    } finally {
-      setIsLoadingProject(false);
-    }
-  }, [isTauri, refresh, addToRecentProjects, addConsoleLog]);
+    },
+    [isTauri, refresh, addToRecentProjects, addConsoleLog]
+  );
 
   const handleOpenProject = useCallback(async () => {
     try {
@@ -242,38 +260,41 @@ export function useProjectState() {
     }
   }, [isTauri, addConsoleLog]);
 
-  const saveScene = useCallback(async (nextScene = sceneRef.current) => {
-    if (!nextScene || !currentSceneFile) return;
-    setSaveState("saving");
-    try {
-      const response = await fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(nextScene),
-      });
-      if (!response.ok) {
-        const body = SaveErrorSchema.parse(await response.json());
-        throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
-      }
-      setSaveState("saved");
-      setIsDirty(false);
-      if (currentSceneFile) {
-        setDirtyFiles((prev) => {
-          if (!prev.has(currentSceneFile)) return prev;
-          const next = new Set(prev);
-          next.delete(currentSceneFile);
-          return next;
+  const saveScene = useCallback(
+    async (nextScene = sceneRef.current) => {
+      if (!nextScene || !currentSceneFile) return;
+      setSaveState("saving");
+      try {
+        const response = await fetch(getApiUrl(`/api/scene?file=${currentSceneFile}`), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(nextScene),
         });
+        if (!response.ok) {
+          const body = SaveErrorSchema.parse(await response.json());
+          throw new Error(body.error ?? body.errors?.join(", ") ?? "Save failed");
+        }
+        setSaveState("saved");
+        setIsDirty(false);
+        if (currentSceneFile) {
+          setDirtyFiles((prev) => {
+            if (!prev.has(currentSceneFile)) return prev;
+            const next = new Set(prev);
+            next.delete(currentSceneFile);
+            return next;
+          });
+        }
+        setLastSaved(new Date());
+        setStatus("Saved");
+        setTimeout(() => setSaveState("idle"), 2000);
+      } catch {
+        setSaveState("error");
+        setStatus("Save failed");
+        setTimeout(() => setSaveState("idle"), 3000);
       }
-      setLastSaved(new Date());
-      setStatus("Saved");
-      setTimeout(() => setSaveState("idle"), 2000);
-    } catch {
-      setSaveState("error");
-      setStatus("Save failed");
-      setTimeout(() => setSaveState("idle"), 3000);
-    }
-  }, [currentSceneFile]);
+    },
+    [currentSceneFile]
+  );
 
   const triggerAutoSave = useCallback(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -282,21 +303,24 @@ export function useProjectState() {
     }, AUTO_SAVE_DELAY_MS);
   }, [saveScene]);
 
-  const updateScene = useCallback((mutator: (draft: GameKitScene) => void) => {
-    push((draft) => {
-      if (draft) mutator(draft);
-    });
-    setIsDirty(true);
-    if (currentSceneFile) {
-      setDirtyFiles((prev) => {
-        if (prev.has(currentSceneFile)) return prev;
-        const next = new Set(prev);
-        next.add(currentSceneFile);
-        return next;
+  const updateScene = useCallback(
+    (mutator: (draft: GameKitScene) => void) => {
+      push((draft) => {
+        if (draft) mutator(draft);
       });
-    }
-    triggerAutoSave();
-  }, [push, currentSceneFile, triggerAutoSave]);
+      setIsDirty(true);
+      if (currentSceneFile) {
+        setDirtyFiles((prev) => {
+          if (prev.has(currentSceneFile)) return prev;
+          const next = new Set(prev);
+          next.add(currentSceneFile);
+          return next;
+        });
+      }
+      triggerAutoSave();
+    },
+    [push, currentSceneFile, triggerAutoSave]
+  );
 
   const persistProject = useCallback(async (partial: Partial<GameKitProject>) => {
     await fetch(getApiUrl("/api/project"), {
@@ -314,101 +338,131 @@ export function useProjectState() {
       }));
       await persistProject({ gameServices });
     },
-    [persistProject],
+    [persistProject]
   );
 
-  const activateScene = useCallback((file: string, pane?: ScenePaneId) => {
-    if (!file) return;
-    if (sceneRef.current && currentSceneFile && currentSceneFile !== file) {
-      sceneCacheRef.current.set(currentSceneFile, structuredClone(sceneRef.current));
-      setPaneScenes((prev) => ({ ...prev, [currentSceneFile]: sceneRef.current! }));
-    }
-    setWorkspace((ws) => {
-      const opened = openSceneTab(ws, file);
-      return pane ? focusScenePane(opened, pane) : opened;
-    });
-    if (file === currentSceneFile) return;
-    const cached = sceneCacheRef.current.get(file);
-    if (cached) {
-      skipNextSceneLoadRef.current = true;
-      reset(cached);
-      setIsDirty(dirtyFiles.has(file));
+  const activateScene = useCallback(
+    (file: string, pane?: ScenePaneId) => {
+      if (!file) return;
+      if (sceneRef.current && currentSceneFile && currentSceneFile !== file) {
+        sceneCacheRef.current.set(currentSceneFile, structuredClone(sceneRef.current));
+        setPaneScenes((prev) => ({ ...prev, [currentSceneFile]: sceneRef.current! }));
+      }
+      setWorkspace((ws) => {
+        const opened = openSceneTab(ws, file);
+        return pane ? focusScenePane(opened, pane) : opened;
+      });
+      if (file === currentSceneFile) return;
+      const cached = sceneCacheRef.current.get(file);
+      if (cached) {
+        skipNextSceneLoadRef.current = true;
+        reset(cached);
+        setIsDirty(dirtyFiles.has(file));
+        setCurrentSceneFile(file);
+        return;
+      }
       setCurrentSceneFile(file);
-      return;
-    }
-    setCurrentSceneFile(file);
-  }, [currentSceneFile, dirtyFiles, reset]);
+    },
+    [currentSceneFile, dirtyFiles, reset]
+  );
 
-  const handleCloseSceneTab = useCallback((file: string) => {
-    setWorkspace((ws) => {
-      const next = closeSceneTab(ws, file);
-      const focused = focusedSceneFile(next);
-      if (focused && focused !== currentSceneFile) activateScene(focused, next.focused);
-      return next;
-    });
-  }, [currentSceneFile, activateScene]);
+  const handleCloseSceneTab = useCallback(
+    (file: string) => {
+      setWorkspace((ws) => {
+        const next = closeSceneTab(ws, file);
+        const focused = focusedSceneFile(next);
+        if (focused && focused !== currentSceneFile) activateScene(focused, next.focused);
+        return next;
+      });
+    },
+    [currentSceneFile, activateScene]
+  );
 
-  const handleSplitChange = useCallback((split: SplitMode) => {
-    setWorkspace((ws) => setSceneSplit(ws, split, snapshot.scenes));
-  }, [snapshot.scenes]);
+  const handleSplitChange = useCallback(
+    (split: SplitMode) => {
+      setWorkspace((ws) => setSceneSplit(ws, split, snapshot.scenes));
+    },
+    [snapshot.scenes]
+  );
 
-  const handleCreateScene = useCallback((name: string) => {
-    const newScene = createEmptyScene(name);
-    const fileName = `${newScene.id}.scene.json`;
-    fetch(getApiUrl(`/api/scene?file=${fileName}`), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(newScene),
-    }).then(() => {
-      setSnapshot((prev) => ({ ...prev, scenes: [...prev.scenes, fileName] }));
-      setCurrentSceneFile(fileName);
-      refresh();
-      addConsoleLog("system", `Created new scene configuration file: ${fileName}`);
-    });
-  }, [refresh, addConsoleLog]);
+  const handleCreateScene = useCallback(
+    (name: string) => {
+      const newScene = createEmptyScene(name);
+      const fileName = `${newScene.id}.scene.json`;
+      fetch(getApiUrl(`/api/scene?file=${fileName}`), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(newScene),
+      }).then(() => {
+        setSnapshot((prev) => ({ ...prev, scenes: [...prev.scenes, fileName] }));
+        setCurrentSceneFile(fileName);
+        refresh();
+        addConsoleLog("system", `Created new scene configuration file: ${fileName}`);
+      });
+    },
+    [refresh, addConsoleLog]
+  );
 
-  const handleDeleteScene = useCallback((sceneId: string) => {
-    if (snapshot.scenes.length <= 1) {
-      alert("Cannot delete the last scene");
-      return;
-    }
-    fetch(getApiUrl(`/api/scene?file=${sceneId}`), { method: "DELETE" }).then(() => {
-      const remaining = snapshot.scenes.filter((s) => s !== sceneId);
-      setSnapshot((prev) => ({ ...prev, scenes: remaining }));
-      setWorkspace((ws) => closeSceneTab(ws, sceneId));
-      if (currentSceneFile === sceneId) setCurrentSceneFile(remaining[0]);
-      refresh();
-      addConsoleLog("system", `Deleted scene configuration file ${sceneId}`);
-    });
-  }, [snapshot.scenes, currentSceneFile, refresh, addConsoleLog]);
+  const handleDeleteScene = useCallback(
+    (sceneId: string) => {
+      if (snapshot.scenes.length <= 1) {
+        alert("Cannot delete the last scene");
+        return;
+      }
+      fetch(getApiUrl(`/api/scene?file=${sceneId}`), { method: "DELETE" }).then(() => {
+        const remaining = snapshot.scenes.filter((s) => s !== sceneId);
+        setSnapshot((prev) => ({ ...prev, scenes: remaining }));
+        setWorkspace((ws) => closeSceneTab(ws, sceneId));
+        if (currentSceneFile === sceneId) setCurrentSceneFile(remaining[0]);
+        refresh();
+        addConsoleLog("system", `Deleted scene configuration file ${sceneId}`);
+      });
+    },
+    [snapshot.scenes, currentSceneFile, refresh, addConsoleLog]
+  );
 
-  const deleteAsset = useCallback(async (assetId: string) => {
-    const usingSprites = sceneRef.current?.entities.filter((e) =>
-      e.components.some((c) => c.type === "Sprite" && (c as any).assetId === assetId)
-    );
-    if (usingSprites && usingSprites.length > 0) {
-      if (!confirm(`Asset "${assetId}" is used by ${usingSprites.length} entity(s). Delete anyway?`)) return;
-    }
-    setStatus("Deleting");
-    const response = await fetch(getApiUrl(`/api/assets?id=${encodeURIComponent(assetId)}`), { method: "DELETE" });
-    if (!response.ok) {
-      const body = ApiErrorSchema.parse(await response.json());
-      throw new Error(body.error ?? "Delete failed");
-    }
-    await refresh();
-    addConsoleLog("system", `Deleted asset ${assetId}`);
-  }, [refresh, addConsoleLog]);
+  const deleteAsset = useCallback(
+    async (assetId: string) => {
+      const usingSprites = sceneRef.current?.entities.filter((e) =>
+        e.components.some((c) => c.type === "Sprite" && (c as any).assetId === assetId)
+      );
+      if (usingSprites && usingSprites.length > 0) {
+        if (
+          !confirm(`Asset "${assetId}" is used by ${usingSprites.length} entity(s). Delete anyway?`)
+        )
+          return;
+      }
+      setStatus("Deleting");
+      const response = await fetch(getApiUrl(`/api/assets?id=${encodeURIComponent(assetId)}`), {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const body = ApiErrorSchema.parse(await response.json());
+        throw new Error(body.error ?? "Delete failed");
+      }
+      await refresh();
+      addConsoleLog("system", `Deleted asset ${assetId}`);
+    },
+    [refresh, addConsoleLog]
+  );
 
-  const importAsset = useCallback(async (file: File) => {
-    setStatus("Importing");
-    const response = await fetch(getApiUrl(`/api/assets?filename=${encodeURIComponent(file.name)}`), {
-      method: "POST",
-      body: await file.arrayBuffer(),
-    });
-    if (!response.ok) throw new Error(ApiErrorSchema.parse(await response.json()).error ?? "Import failed");
-    await refresh();
-    addConsoleLog("system", `Imported asset from file: ${file.name}`);
-  }, [refresh, addConsoleLog]);
+  const importAsset = useCallback(
+    async (file: File) => {
+      setStatus("Importing");
+      const response = await fetch(
+        getApiUrl(`/api/assets?filename=${encodeURIComponent(file.name)}`),
+        {
+          method: "POST",
+          body: await file.arrayBuffer(),
+        }
+      );
+      if (!response.ok)
+        throw new Error(ApiErrorSchema.parse(await response.json()).error ?? "Import failed");
+      await refresh();
+      addConsoleLog("system", `Imported asset from file: ${file.name}`);
+    },
+    [refresh, addConsoleLog]
+  );
 
   function normalizeSceneFile(id: string): string {
     if (!id) return id;
@@ -465,7 +519,7 @@ export function useProjectState() {
     if (scene && currentSceneFile) {
       sceneCacheRef.current.set(currentSceneFile, scene);
       setPaneScenes((prev) =>
-        prev[currentSceneFile] === scene ? prev : { ...prev, [currentSceneFile]: scene },
+        prev[currentSceneFile] === scene ? prev : { ...prev, [currentSceneFile]: scene }
       );
     }
   }, [scene, currentSceneFile]);
@@ -474,8 +528,13 @@ export function useProjectState() {
   useEffect(() => {
     if (!currentSceneFile) return;
     setWorkspace((ws) => {
-      const next = ws.openTabs.length === 0 ? createSceneWorkspace(currentSceneFile) : openSceneTab(ws, currentSceneFile);
-      return next.paneA === ws.paneA && next.openTabs.join() === ws.openTabs.join() && next.focused === ws.focused
+      const next =
+        ws.openTabs.length === 0
+          ? createSceneWorkspace(currentSceneFile)
+          : openSceneTab(ws, currentSceneFile);
+      return next.paneA === ws.paneA &&
+        next.openTabs.join() === ws.openTabs.join() &&
+        next.focused === ws.focused
         ? ws
         : next;
     });
@@ -483,7 +542,9 @@ export function useProjectState() {
 
   useEffect(() => {
     if (snapshot.scenes.length === 0) return;
-    setWorkspace((ws) => syncWorkspaceScenes(ws, snapshot.scenes, currentSceneFile || snapshot.scenes[0]));
+    setWorkspace((ws) =>
+      syncWorkspaceScenes(ws, snapshot.scenes, currentSceneFile || snapshot.scenes[0])
+    );
   }, [snapshot.scenes, currentSceneFile]);
 
   // Load current scene file when changed
@@ -503,7 +564,7 @@ export function useProjectState() {
           throw new Error(
             typeof (body as { error?: string }).error === "string"
               ? (body as { error: string }).error
-              : `Failed to load ${currentSceneFile}`,
+              : `Failed to load ${currentSceneFile}`
           );
         }
         return r.json() as Promise<GameKitScene>;
@@ -524,35 +585,40 @@ export function useProjectState() {
   }, [currentSceneFile, projectPath, isTauri, reset]);
 
   // Hot-reload scene when file changes on disk
-  const startHotReload = useCallback((isPlaying: boolean) => {
-    if (isPlaying || isDirty || !currentSceneFile) return () => {};
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const res = await fetch(getApiUrl(`/api/scene/meta?file=${encodeURIComponent(currentSceneFile)}`));
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { mtimeMs?: number };
-        if (typeof data.mtimeMs !== "number") return;
-        if (sceneMtimeRef.current === null) {
-          sceneMtimeRef.current = data.mtimeMs;
-          return;
+  const startHotReload = useCallback(
+    (isPlaying: boolean) => {
+      if (isPlaying || isDirty || !currentSceneFile) return () => {};
+      let cancelled = false;
+      const poll = async () => {
+        try {
+          const res = await fetch(
+            getApiUrl(`/api/scene/meta?file=${encodeURIComponent(currentSceneFile)}`)
+          );
+          if (!res.ok || cancelled) return;
+          const data = (await res.json()) as { mtimeMs?: number };
+          if (typeof data.mtimeMs !== "number") return;
+          if (sceneMtimeRef.current === null) {
+            sceneMtimeRef.current = data.mtimeMs;
+            return;
+          }
+          if (data.mtimeMs > sceneMtimeRef.current + 1) {
+            sceneMtimeRef.current = data.mtimeMs;
+            addConsoleLog("system", `Hot-reload: ${currentSceneFile} changed on disk`);
+            await refresh();
+          }
+        } catch {
+          // ignore
         }
-        if (data.mtimeMs > sceneMtimeRef.current + 1) {
-          sceneMtimeRef.current = data.mtimeMs;
-          addConsoleLog("system", `Hot-reload: ${currentSceneFile} changed on disk`);
-          await refresh();
-        }
-      } catch {
-        // ignore
-      }
-    };
-    const id = window.setInterval(() => void poll(), 1500);
-    void poll();
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [currentSceneFile, isDirty, addConsoleLog, refresh]);
+      };
+      const id = window.setInterval(() => void poll(), 1500);
+      void poll();
+      return () => {
+        cancelled = true;
+        window.clearInterval(id);
+      };
+    },
+    [currentSceneFile, isDirty, addConsoleLog, refresh]
+  );
 
   // Reset mtime baseline when currentSceneFile changes
   useEffect(() => {
@@ -585,9 +651,12 @@ export function useProjectState() {
     };
   }, [workspace.split, workspace.paneA, workspace.paneB, workspace.focused, paneScenes]);
 
-  useEffect(() => () => {
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    },
+    []
+  );
 
   return {
     isTauri,

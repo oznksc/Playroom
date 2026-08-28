@@ -45,8 +45,16 @@ type ExpoAvModule = {
     Sound: {
       createAsync: (
         source: { uri: string },
-        initialStatus?: { volume?: number; isLooping?: boolean; shouldPlay?: boolean },
-      ) => Promise<{ sound: { playAsync: () => Promise<unknown>; stopAsync: () => Promise<unknown>; unloadAsync: () => Promise<unknown>; setIsLoopingAsync: (v: boolean) => Promise<unknown>; setVolumeAsync: (v: number) => Promise<unknown> } }>;
+        initialStatus?: { volume?: number; isLooping?: boolean; shouldPlay?: boolean }
+      ) => Promise<{
+        sound: {
+          playAsync: () => Promise<unknown>;
+          stopAsync: () => Promise<unknown>;
+          unloadAsync: () => Promise<unknown>;
+          setIsLoopingAsync: (v: boolean) => Promise<unknown>;
+          setVolumeAsync: (v: number) => Promise<unknown>;
+        };
+      }>;
     };
     setAudioModeAsync?: (mode: Record<string, unknown>) => Promise<void>;
   };
@@ -156,7 +164,7 @@ function createExpoPlayer(url: string, volume: number, loop: boolean): BackendPl
         });
         const result = await expo.Audio.Sound.createAsync(
           { uri: url },
-          { volume: Math.max(0, Math.min(1, volume)), isLooping: loop, shouldPlay: false },
+          { volume: Math.max(0, Math.min(1, volume)), isLooping: loop, shouldPlay: false }
         );
         sound = result.sound;
         if (wantPlay) {
@@ -220,7 +228,7 @@ function createBackendPlayer(url: string, volume: number, loop: boolean): Backen
  */
 export function createAudioController(
   entities: GameKitEntity[],
-  resolveAssetUrl: AssetResolver,
+  resolveAssetUrl: AssetResolver
 ): AudioController {
   const sources: ResolvedAudioSource[] = [];
   const players = new Map<string, BackendPlayer>();
@@ -228,7 +236,7 @@ export function createAudioController(
 
   for (const entity of entities) {
     const audio = entity.components.find(
-      (c): c is AudioSourceComponent => c.type === "AudioSource",
+      (c): c is AudioSourceComponent => c.type === "AudioSource"
     );
     if (!audio) continue;
     sources.push({
@@ -287,13 +295,13 @@ export function createAudioController(
       }
       for (const entity of entities) {
         const audio = entity.components.find(
-          (c): c is AudioSourceComponent => c.type === "AudioSource",
+          (c): c is AudioSourceComponent => c.type === "AudioSource"
         );
         if (!audio) continue;
         const player = players.get(entity.id);
         if (!player) continue;
         const transform = entity.components.find(
-          (c): c is TransformComponent => c.type === "Transform",
+          (c): c is TransformComponent => c.type === "Transform"
         );
         if (!transform) continue;
         const { gain, pan } = computeSpatialAudio(listener, {

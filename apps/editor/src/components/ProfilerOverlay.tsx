@@ -45,7 +45,11 @@ export function ProfilerOverlay({ sample, open }: ProfilerOverlayProps) {
   if (current.jsHeapMb != null) rows.push(["JS heap", `${current.jsHeapMb} MB`]);
 
   return (
-    <aside className={styles["profiler-overlay"]} data-testid="profiler-overlay" aria-label="Play profiler">
+    <aside
+      className={styles["profiler-overlay"]}
+      data-testid="profiler-overlay"
+      aria-label="Play profiler"
+    >
       <header className={styles["profiler-overlay-head"]}>
         <Activity size={12} strokeWidth={1.75} />
         <span>Profiler</span>

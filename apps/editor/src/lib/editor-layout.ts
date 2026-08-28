@@ -48,7 +48,7 @@ export const INITIAL_EDITOR_LAYOUT: EditorLayoutState = {
 
 export function editorLayoutReducer(
   state: EditorLayoutState,
-  action: EditorLayoutAction,
+  action: EditorLayoutAction
 ): EditorLayoutState {
   switch (action.type) {
     case "navigate":
@@ -95,7 +95,7 @@ const TAB_BAR_DESTINATIONS: Record<EditorSidebarTab, EditorTabBarDestination> = 
 };
 
 export function getTabBarDestination(
-  destination: EditorDestination,
+  destination: EditorDestination
 ): EditorTabBarDestination | null {
   if (destination.region === "canvas") return null;
   if (destination.region === "bottom") return "content";

@@ -211,9 +211,11 @@ export const FollowPathComponentSchema = z.object({
 });
 export type FollowPathComponent = z.infer<typeof FollowPathComponentSchema>;
 
-export const ScriptActionSchema = z.object({
-  type: z.string().min(1),
-}).catchall(z.unknown());
+export const ScriptActionSchema = z
+  .object({
+    type: z.string().min(1),
+  })
+  .catchall(z.unknown());
 export type ScriptAction = z.infer<typeof ScriptActionSchema>;
 
 export const UnlockAchievementActionSchema = z.object({
@@ -264,27 +266,27 @@ export function createUnlockAchievementAction(achievementId: string): UnlockAchi
 
 export function createIncrementAchievementAction(
   achievementId: string,
-  amount = 1,
+  amount = 1
 ): IncrementAchievementAction {
   return { type: "achievement.increment", achievementId, amount };
 }
 
 export function createSetAchievementStepsAction(
   achievementId: string,
-  steps: number,
+  steps: number
 ): SetAchievementStepsAction {
   return { type: "achievement.setSteps", achievementId, steps };
 }
 
 export function createSubmitLeaderboardAction(
   leaderboardId: string,
-  value: number | string,
+  value: number | string
 ): SubmitLeaderboardAction {
   return { type: "leaderboard.submit", leaderboardId, value };
 }
 
 export function createShowGameServicesUIAction(
-  target: "achievements" | "leaderboards" | "all" = "all",
+  target: "achievements" | "leaderboards" | "all" = "all"
 ): ShowGameServicesUIAction {
   return { type: "services.showUI", target };
 }
@@ -556,10 +558,19 @@ export const GameRulesConfigSchema = z.object({
   fallY: z.number().optional(),
   fallMargin: z.number().default(120),
   onFall: FallDeathActionSchema.default("gameOver"),
-  lives: z.number().default(3).transform((v) => Math.max(0, Math.floor(v))),
+  lives: z
+    .number()
+    .default(3)
+    .transform((v) => Math.max(0, Math.floor(v))),
   spawnPoint: Vector2Schema.optional(),
-  gameOverMessage: z.string().default("Game Over").transform((v) => v.trim() || "Game Over"),
-  winMessage: z.string().default("You win!").transform((v) => v.trim() || "You win!"),
+  gameOverMessage: z
+    .string()
+    .default("Game Over")
+    .transform((v) => v.trim() || "Game Over"),
+  winMessage: z
+    .string()
+    .default("You win!")
+    .transform((v) => v.trim() || "You win!"),
   // --- Programmable rules ---
   hazards: z.array(GameRuleHazardSchema).default([]),
   objectives: z.array(GameRuleObjectiveSchema).default([]),
@@ -572,8 +583,18 @@ export type GameRulesConfig = z.infer<typeof GameRulesConfigSchema>;
 
 export const DEFAULT_INPUT_MAP: InputMapConfig = {
   bindings: [
-    { action: "move_left", keys: ["ArrowLeft", "a", "A"], touchControl: "left", gamepad: "LEFT_STICK_X_NEG" },
-    { action: "move_right", keys: ["ArrowRight", "d", "D"], touchControl: "right", gamepad: "LEFT_STICK_X_POS" },
+    {
+      action: "move_left",
+      keys: ["ArrowLeft", "a", "A"],
+      touchControl: "left",
+      gamepad: "LEFT_STICK_X_NEG",
+    },
+    {
+      action: "move_right",
+      keys: ["ArrowRight", "d", "D"],
+      touchControl: "right",
+      gamepad: "LEFT_STICK_X_POS",
+    },
     { action: "jump", keys: ["ArrowUp", " ", "w", "W"], touchControl: "jump", gamepad: "A" },
     { action: "fire", keys: ["j", "J"], touchControl: "fire", gamepad: "B" },
     { action: "action", keys: ["k", "K"], touchControl: "action", gamepad: "X" },
@@ -633,7 +654,10 @@ export function mergeGameRules(
 }
 
 /** True if entity carries the given tag (case-sensitive). */
-export function entityHasTag(entity: { tags?: string[] | null; name?: string }, tag: string): boolean {
+export function entityHasTag(
+  entity: { tags?: string[] | null; name?: string },
+  tag: string
+): boolean {
   if (entity.tags?.includes(tag)) return true;
   return false;
 }
@@ -658,15 +682,19 @@ export function resolveFallDeathY(
     entities: GameKitEntity[];
     gameRules?: GameRulesConfig;
   },
-  rules?: GameRulesConfig,
+  rules?: GameRulesConfig
 ): number {
   const r = resolveGameRules(rules ?? scene.gameRules);
   if (typeof r.fallY === "number") return r.fallY;
 
   let maxBottom = Number.NEGATIVE_INFINITY;
   for (const entity of scene.entities) {
-    const transform = entity.components.find((c): c is TransformComponent => c.type === "Transform");
-    const aabb = entity.components.find((c): c is AabbColliderComponent => c.type === "AabbCollider");
+    const transform = entity.components.find(
+      (c): c is TransformComponent => c.type === "Transform"
+    );
+    const aabb = entity.components.find(
+      (c): c is AabbColliderComponent => c.type === "AabbCollider"
+    );
     if (!transform || !aabb || !aabb.isStatic || aabb.isTrigger) continue;
     const bottom = transform.position.y + aabb.offset.y + aabb.size.y;
     if (bottom > maxBottom) maxBottom = bottom;
@@ -696,14 +724,16 @@ export const GameKitSceneSchema = z.object({
     orientation: "portrait",
     safeArea: {
       enabled: true,
-      padding: { top: 0, bottom: 0, left: 0, right: 0 }
-    }
+      padding: { top: 0, bottom: 0, left: 0, right: 0 },
+    },
   }),
   timeline: TimelineDataSchema.default({ tracks: [], duration: 0, loop: false, playing: false }),
-  gui: z.object({
-    nodes: z.array(GuiNodeSchema).default([]),
-    componentInstances: z.array(GuiComponentInstanceSchema).default([]),
-  }).default({ nodes: [], componentInstances: [] }),
+  gui: z
+    .object({
+      nodes: z.array(GuiNodeSchema).default([]),
+      componentInstances: z.array(GuiComponentInstanceSchema).default([]),
+    })
+    .default({ nodes: [], componentInstances: [] }),
   inputMap: InputMapConfigSchema.optional(),
   gameRules: GameRulesConfigSchema.optional(),
 });
@@ -834,9 +864,7 @@ export const GameKitPrefabSchema = z.object({
 });
 export type GameKitPrefab = z.infer<typeof GameKitPrefabSchema>;
 
-export type ValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; errors: string[] };
+export type ValidationResult<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
 export function createEmptyScene(name = "Main Scene"): GameKitScene {
   return {
@@ -846,7 +874,7 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
     viewport: {
       width: 390,
       height: 844,
-      background: "#101820"
+      background: "#101820",
     },
     gravity: { x: 0, y: 1800 },
     assets: [],
@@ -858,8 +886,8 @@ export function createEmptyScene(name = "Main Scene"): GameKitScene {
       orientation: "portrait",
       safeArea: {
         enabled: true,
-        padding: { top: 0, bottom: 0, left: 0, right: 0 }
-      }
+        padding: { top: 0, bottom: 0, left: 0, right: 0 },
+      },
     },
     timeline: { tracks: [], duration: 0, loop: false, playing: false },
     gui: { nodes: [], componentInstances: [] },
@@ -887,8 +915,8 @@ export function createProject(name = "Playroom Game"): GameKitProject {
         name: "Level 1",
         order: 1,
         sceneIds: ["main"],
-        unlocked: true
-      }
+        unlocked: true,
+      },
     ],
     assets: [],
     guiComponents: createDefaultGuiComponents(),
@@ -906,9 +934,9 @@ export function createEntity(name: string, position: Vector2 = { x: 0, y: 0 }): 
         type: "Transform",
         position,
         rotation: 0,
-        scale: { x: 1, y: 1 }
-      }
-    ]
+        scale: { x: 1, y: 1 },
+      },
+    ],
   };
 }
 
@@ -933,7 +961,7 @@ export function createDefaultGameServices(): GameServicesDef {
 export function createAchievement(
   id: string,
   name: string,
-  options?: Partial<Omit<GameServiceAchievement, "id" | "name">>,
+  options?: Partial<Omit<GameServiceAchievement, "id" | "name">>
 ): GameServiceAchievement {
   return {
     id: slugify(id) || id,
@@ -949,7 +977,7 @@ export function createAchievement(
 export function createLeaderboard(
   id: string,
   name: string,
-  options?: Partial<Omit<GameServiceLeaderboard, "id" | "name">>,
+  options?: Partial<Omit<GameServiceLeaderboard, "id" | "name">>
 ): GameServiceLeaderboard {
   return {
     id: slugify(id) || id,
@@ -972,7 +1000,7 @@ export function normalizeSceneFileId(id: string): string {
  */
 export function findLevelForScene(
   levels: GameKitLevel[],
-  sceneIdOrFile: string | null | undefined,
+  sceneIdOrFile: string | null | undefined
 ): GameKitLevel | null {
   if (!sceneIdOrFile) return null;
   const target = normalizeSceneFileId(sceneIdOrFile);
@@ -981,7 +1009,7 @@ export function findLevelForScene(
     level.sceneIds.some((sid) => {
       const n = normalizeSceneFileId(sid);
       return n === target || sid === bare || sid === sceneIdOrFile;
-    }),
+    })
   );
   if (matches.length === 0) return null;
   return [...matches].sort((a, b) => a.order - b.order)[0] ?? null;
@@ -991,7 +1019,7 @@ export function createGuiComponent(name: string): GuiComponent {
   return {
     id: slugify(name) || `component-${Math.random().toString(36).slice(2, 8)}`,
     name,
-    nodes: []
+    nodes: [],
   };
 }
 
@@ -1004,7 +1032,7 @@ export function createGuiComponentInstance(
     componentId,
     x: position.x,
     y: position.y,
-    visible: true
+    visible: true,
   };
 }
 
@@ -1060,7 +1088,7 @@ const C = {
 function menuControllerEntity(
   id: string,
   name: string,
-  handlers: Array<{ event: string; actions: ScriptAction[] }>,
+  handlers: Array<{ event: string; actions: ScriptAction[] }>
 ): GameKitEntity {
   return {
     id,
@@ -1093,7 +1121,7 @@ function guiButton(
     color?: string;
     backgroundColor?: string;
     interactive?: boolean;
-  },
+  }
 ): GuiNode {
   const width = opts?.width ?? BTN_W;
   const height = opts?.height ?? BTN_H;
@@ -1126,7 +1154,7 @@ function guiText(
     align?: "left" | "center" | "right";
     x?: number;
     width?: number;
-  },
+  }
 ): GuiNode {
   return {
     id,
@@ -1148,7 +1176,7 @@ function guiPanel(
   id: string,
   y: number,
   height: number,
-  opts?: { x?: number; width?: number; backgroundColor?: string },
+  opts?: { x?: number; width?: number; backgroundColor?: string }
 ): GuiNode {
   return guiButton(id, " ", y, undefined, {
     x: opts?.x ?? PANEL_X,
@@ -1171,7 +1199,11 @@ export function createMenuScene(projectName = "Playroom Game"): GameKitScene {
   scene.gui = {
     nodes: [
       // Top brand strip
-      guiPanel("menu-top-bar", 0, 56, { x: 0, width: MENU_VIEWPORT.width, backgroundColor: C.surface }),
+      guiPanel("menu-top-bar", 0, 56, {
+        x: 0,
+        width: MENU_VIEWPORT.width,
+        backgroundColor: C.surface,
+      }),
       guiText("menu-brand", "PLAYROOM", 16, {
         fontSize: 12,
         color: C.cyan,
@@ -1273,7 +1305,11 @@ export function createMenuScene(projectName = "Playroom Game"): GameKitScene {
       }),
 
       // Footer
-      guiPanel("menu-footer", 780, 64, { x: 0, width: MENU_VIEWPORT.width, backgroundColor: C.surface }),
+      guiPanel("menu-footer", 780, 64, {
+        x: 0,
+        width: MENU_VIEWPORT.width,
+        backgroundColor: C.surface,
+      }),
       guiText("menu-footer-credits", "Made with Playroom  ·  Double-click labels to edit", 800, {
         fontSize: 11,
         color: C.dim,
@@ -1321,7 +1357,11 @@ export function createSettingsScene(): GameKitScene {
   scene.gui = {
     nodes: [
       // Header
-      guiPanel("settings-header", 0, 72, { x: 0, width: MENU_VIEWPORT.width, backgroundColor: C.surface }),
+      guiPanel("settings-header", 0, 72, {
+        x: 0,
+        width: MENU_VIEWPORT.width,
+        backgroundColor: C.surface,
+      }),
       guiText("title-settings", "Settings", 22, {
         fontSize: 24,
         color: C.cyan,
@@ -1490,11 +1530,16 @@ export function createSettingsScene(): GameKitScene {
         color: C.text,
         backgroundColor: C.btn,
       }),
-      guiText("settings-footer", "Toggles store vars (musicOn, sfxOn, quality) — wire audio later", 768, {
-        fontSize: 10,
-        color: C.dim,
-        height: 36,
-      }),
+      guiText(
+        "settings-footer",
+        "Toggles store vars (musicOn, sfxOn, quality) — wire audio later",
+        768,
+        {
+          fontSize: 10,
+          color: C.dim,
+          height: 36,
+        }
+      ),
     ],
     componentInstances: [],
   };
@@ -1534,7 +1579,13 @@ export function createSettingsScene(): GameKitScene {
 export function createDefaultGuiComponents(): GuiComponent[] {
   const overlayW = 300;
   const overlayX = Math.round((MENU_VIEWPORT.width - overlayW) / 2);
-  const overlayBtn = (id: string, text: string, y: number, action: string, opts?: { color?: string; backgroundColor?: string }) =>
+  const overlayBtn = (
+    id: string,
+    text: string,
+    y: number,
+    action: string,
+    opts?: { color?: string; backgroundColor?: string }
+  ) =>
     guiButton(id, text, y, action, {
       width: overlayW - 40,
       x: overlayX + 20,
@@ -1549,7 +1600,11 @@ export function createDefaultGuiComponents(): GuiComponent[] {
       id: "hud",
       name: "HUD",
       nodes: [
-        guiPanel("hud-bar", 0, 48, { x: 0, width: MENU_VIEWPORT.width, backgroundColor: C.surface }),
+        guiPanel("hud-bar", 0, 48, {
+          x: 0,
+          width: MENU_VIEWPORT.width,
+          backgroundColor: C.surface,
+        }),
         guiText("hud-score", "Coins: 0", 12, {
           fontSize: 15,
           color: C.gold,
@@ -1572,7 +1627,11 @@ export function createDefaultGuiComponents(): GuiComponent[] {
       id: "pause-menu",
       name: "Pause Menu",
       nodes: [
-        guiPanel("pause-backdrop", 180, 320, { x: overlayX, width: overlayW, backgroundColor: C.panel }),
+        guiPanel("pause-backdrop", 180, 320, {
+          x: overlayX,
+          width: overlayW,
+          backgroundColor: C.panel,
+        }),
         guiText("pause-title", "Paused", 208, { fontSize: 26, color: C.cyan, height: 36 }),
         guiText("pause-sub", "Game is frozen — edit this overlay", 250, {
           fontSize: 12,
@@ -1594,7 +1653,11 @@ export function createDefaultGuiComponents(): GuiComponent[] {
       id: "game-over",
       name: "Game Over",
       nodes: [
-        guiPanel("gameover-backdrop", 200, 280, { x: overlayX, width: overlayW, backgroundColor: C.panel }),
+        guiPanel("gameover-backdrop", 200, 280, {
+          x: overlayX,
+          width: overlayW,
+          backgroundColor: C.panel,
+        }),
         guiText("gameover-title", "Game Over", 228, { fontSize: 26, color: "#f87171", height: 36 }),
         guiText("gameover-sub", "Try again or return to menu", 270, {
           fontSize: 12,
@@ -1612,7 +1675,11 @@ export function createDefaultGuiComponents(): GuiComponent[] {
       id: "you-win",
       name: "You Win",
       nodes: [
-        guiPanel("win-backdrop", 200, 280, { x: overlayX, width: overlayW, backgroundColor: C.panel }),
+        guiPanel("win-backdrop", 200, 280, {
+          x: overlayX,
+          width: overlayW,
+          backgroundColor: C.panel,
+        }),
         guiText("win-title", "You Win!", 228, { fontSize: 26, color: C.green, height: 36 }),
         guiText("win-sub", "Level complete", 270, {
           fontSize: 12,
@@ -1774,7 +1841,9 @@ export function createStarterGameplayScene(): GameKitScene {
 export function parseScene(input: unknown): GameKitScene {
   const result = validateScene(input);
   if (!result.ok) {
-    throw new Error(`Invalid Playroom scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`);
+    throw new Error(
+      `Invalid Playroom scene:\n${result.errors.map((error) => `- ${error}`).join("\n")}`
+    );
   }
   return result.value;
 }
@@ -1819,7 +1888,7 @@ export function createId(value: string): string {
 export function createPrefab(
   name: string,
   components: GameKitComponent[],
-  sourceEntityName?: string,
+  sourceEntityName?: string
 ): GameKitPrefab {
   return {
     schemaVersion: GAMEKIT_SCHEMA_VERSION,
@@ -1854,7 +1923,7 @@ export function validatePrefab(input: unknown): ValidationResult<GameKitPrefab> 
 function formatZodError(error: z.ZodError): string[] {
   return error.errors.map((err) => {
     const pathStr = err.path.join(".");
-    
+
     // Handle exact custom validation checks
     if (pathStr === "viewport.width") {
       return "viewport.width must be a finite number";
@@ -1879,7 +1948,7 @@ function formatZodError(error: z.ZodError): string[] {
         return `${pathStr} must be a boolean`;
       }
     }
-    
+
     return `${pathStr ? pathStr + " " : ""}must be valid: ${err.message}`;
   });
 }

@@ -21,8 +21,13 @@ export function registerGravityTools(server: McpServer, fileIO: FileIO): void {
       await fileIO.writeScene(filename, scene);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: true, scenePath: filename, gravity: { x, y } }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ success: true, scenePath: filename, gravity: { x, y } }),
+          },
+        ],
       };
-    },
+    }
   );
 }

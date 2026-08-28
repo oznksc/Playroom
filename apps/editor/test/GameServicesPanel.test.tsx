@@ -6,7 +6,12 @@ import type { GameServicesDef } from "@gamekit/schema";
 describe("GameServicesPanel", () => {
   it("renders panel header, enable toggle, and empty state", () => {
     const onUpdate = vi.fn();
-    render(<GameServicesPanel gameServices={{ enabled: false, achievements: [], leaderboards: [] }} onUpdateGameServices={onUpdate} />);
+    render(
+      <GameServicesPanel
+        gameServices={{ enabled: false, achievements: [], leaderboards: [] }}
+        onUpdateGameServices={onUpdate}
+      />
+    );
 
     expect(screen.getByText("Game Services")).toBeDefined();
     expect(screen.getByText("Services Disabled")).toBeDefined();

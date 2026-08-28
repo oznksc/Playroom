@@ -53,11 +53,11 @@ export function registerSimulateTools(server: McpServer, fileIO: FileIO): void {
                 entities: result.entitySummaries,
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

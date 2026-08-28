@@ -83,7 +83,7 @@ describe("E2E pipeline (create → doctor → simulate → export → API)", () 
       expect(doctor.summary.errors).toBe(0);
 
       const sceneRes = await fetch(
-        `${handle.url}/api/scene?file=${encodeURIComponent("topdown.scene.json")}`,
+        `${handle.url}/api/scene?file=${encodeURIComponent("topdown.scene.json")}`
       );
       expect(sceneRes.ok).toBe(true);
       const scene = (await sceneRes.json()) as { id: string };

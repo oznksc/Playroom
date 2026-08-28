@@ -43,9 +43,7 @@ test("API project snapshot includes menu + platformer scenes", async ({ request 
   const res = await request.get(`${server.url}/api/project`);
   expect(res.ok()).toBeTruthy();
   const body = (await res.json()) as { scenes: string[]; project: { activeScene?: string } };
-  expect(body.scenes).toEqual(
-    expect.arrayContaining(["menu.scene.json", "platformer.scene.json"]),
-  );
+  expect(body.scenes).toEqual(expect.arrayContaining(["menu.scene.json", "platformer.scene.json"]));
   expect(body.project.activeScene).toBe("menu.scene.json");
 });
 
@@ -57,6 +55,10 @@ test("editor loads and Phaser play host mounts / stops", async ({ page }) => {
     if (msg.type() === "error") pageErrors.push(msg.text());
   });
 
+  await page.addInitScript(() => {
+    localStorage.setItem("playroom_tour_completed", "true");
+  });
+
   await page.goto(server.url, { waitUntil: "networkidle" });
 
   const playToggle = page.getByTestId("play-toggle");
@@ -64,16 +66,19 @@ test("editor loads and Phaser play host mounts / stops", async ({ page }) => {
 
   // Wait until the active scene is loaded via API-backed refresh (project GET succeeds).
   await expect
-    .poll(async () => {
-      return page.evaluate(async () => {
-        try {
-          const r = await fetch("/api/project");
-          return r.ok;
-        } catch {
-          return false;
-        }
-      });
-    }, { timeout: 15_000 })
+    .poll(
+      async () => {
+        return page.evaluate(async () => {
+          try {
+            const r = await fetch("/api/project");
+            return r.ok;
+          } catch {
+            return false;
+          }
+        });
+      },
+      { timeout: 15_000 }
+    )
     .toBeTruthy();
 
   // Give React a beat to hydrate scene state after first fetch
@@ -86,7 +91,7 @@ test("editor loads and Phaser play host mounts / stops", async ({ page }) => {
     await expect(host).toBeVisible({ timeout: 45_000 });
   } catch (err) {
     throw new Error(
-      `Play host did not mount.\nPage errors:\n${pageErrors.join("\n") || "(none)"}\nOriginal: ${err}`,
+      `Play host did not mount.\nPage errors:\n${pageErrors.join("\n") || "(none)"}\nOriginal: ${err}`
     );
   }
 

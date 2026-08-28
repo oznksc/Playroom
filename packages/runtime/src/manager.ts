@@ -74,10 +74,11 @@ export class SceneManager {
       scenes: config.scenes,
       levels: sortedLevels,
       transition: config.transition,
-      isTransitioning: false
+      isTransitioning: false,
     };
 
-    this.storageProvider = storageProvider ?? 
+    this.storageProvider =
+      storageProvider ??
       (typeof localStorage !== "undefined" ? new LocalStorageProvider() : new InMemoryStorage());
   }
 
@@ -111,7 +112,11 @@ export class SceneManager {
       .filter((s): s is LoadedScene => s !== null && s !== undefined);
   }
 
-  loadProject(project: GameKitProject, sceneJsonLoader: (file: string) => unknown, assets: AssetRegistry = {}): void {
+  loadProject(
+    project: GameKitProject,
+    sceneJsonLoader: (file: string) => unknown,
+    assets: AssetRegistry = {}
+  ): void {
     const scenes: Record<string, LoadedScene> = {};
 
     for (const file of project.scenes) {
@@ -146,7 +151,7 @@ export class SceneManager {
       levels: sortedLevels,
       currentSceneId: firstSceneId,
       currentLevelId: sortedLevels[0]?.id ?? null,
-      currentLevelIndex: 0
+      currentLevelIndex: 0,
     };
 
     this.notify();
@@ -179,7 +184,7 @@ export class SceneManager {
     this.state = {
       ...this.state,
       currentSceneId: canonical,
-      isTransitioning: this.state.transition.type !== "none"
+      isTransitioning: this.state.transition.type !== "none",
     };
 
     if (this.state.transition.type === "none") {
@@ -208,7 +213,7 @@ export class SceneManager {
       currentLevelId: levelId,
       currentLevelIndex: this.state.levels.indexOf(level),
       currentSceneId: firstSceneId,
-      isTransitioning: this.state.transition.type !== "none"
+      isTransitioning: this.state.transition.type !== "none",
     };
 
     if (this.state.transition.type === "none") {
@@ -276,9 +281,7 @@ export class SceneManager {
 
     this.state = {
       ...this.state,
-      levels: this.state.levels.map((l) =>
-        l.id === levelId ? { ...l, unlocked: true } : l
-      )
+      levels: this.state.levels.map((l) => (l.id === levelId ? { ...l, unlocked: true } : l)),
     };
 
     this.notify();
@@ -297,7 +300,7 @@ export class SceneManager {
     const resolvedScene =
       preferred && this.state.scenes[preferred]
         ? preferred
-        : level.sceneIds.find((id) => this.state.scenes[id]) ?? this.state.currentSceneId;
+        : (level.sceneIds.find((id) => this.state.scenes[id]) ?? this.state.currentSceneId);
 
     this.state = {
       ...this.state,

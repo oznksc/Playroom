@@ -11,6 +11,17 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@gamekit/ui/theme.css": path.resolve(__dirname, "../../packages/ui/src/styles/theme.css"),
+      "@gamekit/ui": path.resolve(__dirname, "../../packages/ui/src/index.ts"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+        },
+      },
     },
   },
   clearScreen: false,

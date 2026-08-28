@@ -31,7 +31,7 @@ export const MAX_UP_VELOCITY_FLOOR = 200;
 export function createPlayerController(component: PlayerControllerComponent) {
   const state: PlayerControllerState = {
     velocity: { x: 0, y: 0 },
-    grounded: false
+    grounded: false,
   };
   let groundedGraceFrames = 0;
   let jumpBufferFrames = 0;
@@ -43,8 +43,7 @@ export function createPlayerController(component: PlayerControllerComponent) {
       if (isTopDownController(component)) {
         const dx = Number(input.right) - Number(input.left);
         // jumpVelocity 0 + jump key ⇒ treat jump as "up" for legacy top-down skills
-        const up =
-          Boolean(input.up) || (component.jumpVelocity === 0 && input.jump);
+        const up = Boolean(input.up) || (component.jumpVelocity === 0 && input.jump);
         const down = Boolean(input.down);
         const dy = Number(down) - Number(up);
         let vx = dx * component.speed;
@@ -104,6 +103,6 @@ export function createPlayerController(component: PlayerControllerComponent) {
     },
     setGrounded(grounded: boolean): void {
       state.grounded = grounded;
-    }
+    },
   };
 }

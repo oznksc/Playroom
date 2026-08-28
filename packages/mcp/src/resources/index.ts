@@ -48,10 +48,42 @@ export function registerResources(server: McpServer, fileIO: FileIO): void {
     const presets = {
       spriteCategories: ["character", "enemy", "item", "tile", "prop", "icon"],
       palettes: ["pico8", "gameboy", "cyberpunk", "nes", "pastel", "monochrome"],
-      characterArchetypes: ["hero", "knight", "rogue", "wizard", "monster", "slime", "robot", "alien"],
+      characterArchetypes: [
+        "hero",
+        "knight",
+        "rogue",
+        "wizard",
+        "monster",
+        "slime",
+        "robot",
+        "alien",
+      ],
       animationActions: ["idle", "walk", "run", "jump", "attack", "hurt", "die"],
-      sfxPresets: ["jump", "coin", "laser", "explosion", "hit", "powerup", "hurt", "ui_click", "defeat", "victory", "step", "whoosh", "teleport", "item_pickup"],
-      musicPresets: ["chiptune_adventure", "boss_battle", "chill_dungeon", "cyberpunk_pulse", "retro_menu", "victory_fanfare", "spooky_night"],
+      sfxPresets: [
+        "jump",
+        "coin",
+        "laser",
+        "explosion",
+        "hit",
+        "powerup",
+        "hurt",
+        "ui_click",
+        "defeat",
+        "victory",
+        "step",
+        "whoosh",
+        "teleport",
+        "item_pickup",
+      ],
+      musicPresets: [
+        "chiptune_adventure",
+        "boss_battle",
+        "chill_dungeon",
+        "cyberpunk_pulse",
+        "retro_menu",
+        "victory_fanfare",
+        "spooky_night",
+      ],
       tilesetThemes: ["grass", "stone", "brick", "dungeon", "scifi", "cyberpunk"],
       packThemes: ["cyberpunk", "dungeon", "fantasy", "arcade", "retro", "scifi"],
     };
@@ -67,4 +99,3 @@ export function registerResources(server: McpServer, fileIO: FileIO): void {
     };
   });
 }
-

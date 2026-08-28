@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type Phaser from "phaser";
-import {
-  preloadEntityAssets,
-  preloadGuiImageAssets,
-} from "../src/asset-loader.js";
+import { preloadEntityAssets, preloadGuiImageAssets } from "../src/asset-loader.js";
 
 function createFakeLoader() {
   const image = vi.fn();
@@ -24,12 +21,18 @@ describe("asset-loader", () => {
           name: "Player",
           components: [
             { type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } },
-            { type: "Sprite", assetId: "player", width: 32, height: 32, anchor: { x: 0.5, y: 0.5 } },
+            {
+              type: "Sprite",
+              assetId: "player",
+              width: 32,
+              height: 32,
+              anchor: { x: 0.5, y: 0.5 },
+            },
           ],
         },
       ],
       { player: "player.svg" },
-      new Map(),
+      new Map()
     );
     expect(image).toHaveBeenCalledTimes(1);
     expect(image).toHaveBeenCalledWith("player", "player.svg");
@@ -43,9 +46,7 @@ describe("asset-loader", () => {
     preloadGuiImageAssets(
       loader,
       {
-        nodes: [
-          { id: "n1", type: "Image", x: 0, y: 0, width: 10, height: 10, assetId: "panel" },
-        ],
+        nodes: [{ id: "n1", type: "Image", x: 0, y: 0, width: 10, height: 10, assetId: "panel" }],
       },
       [
         {
@@ -64,7 +65,7 @@ describe("asset-loader", () => {
         already: "already.svg",
         unused: "unused.svg",
       },
-      loadedKeys,
+      loadedKeys
     );
 
     expect(image).toHaveBeenCalledTimes(2);

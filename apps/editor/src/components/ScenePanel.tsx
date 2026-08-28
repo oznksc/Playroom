@@ -1,14 +1,5 @@
 import { Plus, Trash2, FileCode } from "lucide-react";
-import {
-  Panel,
-  PanelHeader,
-  PanelTitle,
-  PanelBody,
-  IconButton,
-  EmptyState,
-  Badge,
-  cn,
-} from "@/ui";
+import { Panel, PanelHeader, PanelTitle, PanelBody, IconButton, EmptyState, Badge, cn } from "@/ui";
 
 type ScenePanelProps = {
   scenes: string[];

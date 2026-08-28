@@ -13,8 +13,14 @@ beforeEach(async () => {
   root = join(tmpdir(), `gamekit-mcp-skills-${randomUUID()}`);
   await mkdir(join(root, "gamekit", "scenes"), { recursive: true });
   await mkdir(join(root, "gamekit", "assets"), { recursive: true });
-  await writeFile(join(root, "gamekit", "project.json"), projectToJson(createProject("Skills Test")));
-  await writeFile(join(root, "gamekit", "scenes", "main.scene.json"), sceneToJson(createEmptyScene("Main")));
+  await writeFile(
+    join(root, "gamekit", "project.json"),
+    projectToJson(createProject("Skills Test"))
+  );
+  await writeFile(
+    join(root, "gamekit", "scenes", "main.scene.json"),
+    sceneToJson(createEmptyScene("Main"))
+  );
   server = createMcpServer(root);
 });
 
@@ -29,8 +35,12 @@ describe("suggestion and skill tool handlers", () => {
     const result = await tool("suggest_components").handler({ role: "player" });
     const payload = JSON.parse(result.content[0].text);
     expect(payload.role).toBe("player");
-    expect(payload.components.map((component: { type: string }) => component.type)).toContain("PlayerController");
-    expect(payload.components.map((component: { type: string }) => component.type)).toContain("CameraFollow");
+    expect(payload.components.map((component: { type: string }) => component.type)).toContain(
+      "PlayerController"
+    );
+    expect(payload.components.map((component: { type: string }) => component.type)).toContain(
+      "CameraFollow"
+    );
   });
 
   it("lists skills and rejects an unknown skill without writing a scene", async () => {

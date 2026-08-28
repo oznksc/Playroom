@@ -1,12 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  RecipeSchema,
-  type Recipe,
-  type RecipeCategory,
-  type RecipeSummary,
-} from "./types.js";
+import { RecipeSchema, type Recipe, type RecipeCategory, type RecipeSummary } from "./types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,13 +11,7 @@ export function getRecipesDir(): string {
   return join(__dirname, "..", "..", "recipes");
 }
 
-const CATEGORY_DIRS: RecipeCategory[] = [
-  "effect",
-  "mechanic",
-  "script",
-  "animation",
-  "gesture",
-];
+const CATEGORY_DIRS: RecipeCategory[] = ["effect", "mechanic", "script", "animation", "gesture"];
 
 /** Map category → subdirectory name (plural). */
 function categoryDir(category: RecipeCategory): string {
@@ -71,9 +60,7 @@ export async function listRecipes(options?: {
   query?: string;
 }): Promise<RecipeSummary[]> {
   const root = getRecipesDir();
-  const categories = options?.category
-    ? [options.category]
-    : CATEGORY_DIRS;
+  const categories = options?.category ? [options.category] : CATEGORY_DIRS;
 
   const summaries: RecipeSummary[] = [];
 
@@ -92,19 +79,14 @@ export async function listRecipes(options?: {
 
       if (options?.tags?.length) {
         const hasTag = options.tags.some((t) =>
-          recipe.tags.map((x) => x.toLowerCase()).includes(t.toLowerCase()),
+          recipe.tags.map((x) => x.toLowerCase()).includes(t.toLowerCase())
         );
         if (!hasTag) continue;
       }
 
       if (options?.query) {
         const q = options.query.toLowerCase();
-        const hay = [
-          recipe.id,
-          recipe.name,
-          recipe.description,
-          ...recipe.tags,
-        ]
+        const hay = [recipe.id, recipe.name, recipe.description, ...recipe.tags]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(q)) continue;

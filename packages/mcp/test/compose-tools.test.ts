@@ -9,10 +9,16 @@ import { createMcpServer } from "../src/server.js";
 let tmpDir: string;
 let server: ReturnType<typeof createMcpServer>;
 
-function tool(name: string): { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> } {
-  const registered = (server as unknown as { _registeredTools: Record<string, { handler?: unknown }> })._registeredTools[name];
+function tool(name: string): {
+  handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+} {
+  const registered = (
+    server as unknown as { _registeredTools: Record<string, { handler?: unknown }> }
+  )._registeredTools[name];
   if (!registered?.handler) throw new Error(`Tool not registered: ${name}`);
-  return registered as { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> };
+  return registered as {
+    handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+  };
 }
 
 async function call(name: string, args: unknown): Promise<{ isError?: boolean; data: any }> {
@@ -48,10 +54,18 @@ describe("compose tools", () => {
     });
     expect(sprite.data.sprite.width).toBe(64);
 
-    const fitted = await call("fit_collider_to_sprite", { scenePath: "main.scene.json", entityId: id, isStatic: false });
+    const fitted = await call("fit_collider_to_sprite", {
+      scenePath: "main.scene.json",
+      entityId: id,
+      isStatic: false,
+    });
     expect(fitted.data.fitted).toEqual({ width: 64, height: 32 });
 
-    const cam = await call("wire_camera_follow", { scenePath: "main.scene.json", targetId: id, smoothing: 0.2 });
+    const cam = await call("wire_camera_follow", {
+      scenePath: "main.scene.json",
+      targetId: id,
+      smoothing: 0.2,
+    });
     expect(cam.data.camera.targetId).toBe(id);
     expect(cam.data.camera.smoothing).toBe(0.2);
   });
@@ -81,7 +95,9 @@ describe("compose tools", () => {
   it("adds a script handler and catalogs actions", async () => {
     const catalog = await call("list_script_catalog", {});
     expect(catalog.data.events).toContain("triggerEnter");
-    expect(catalog.data.actions.some((a: { type: string }) => a.type === "destroyEntity")).toBe(true);
+    expect(catalog.data.actions.some((a: { type: string }) => a.type === "destroyEntity")).toBe(
+      true
+    );
 
     const types = await call("list_component_types", {});
     expect(types.data.components.some((c: { type: string }) => c.type === "Sprite")).toBe(true);
@@ -116,7 +132,11 @@ describe("compose tools", () => {
   });
 
   it("replaces asset refs and flips scale", async () => {
-    const entity = await call("spawn_role", { scenePath: "main.scene.json", role: "platform", assetId: "wood" });
+    const entity = await call("spawn_role", {
+      scenePath: "main.scene.json",
+      role: "platform",
+      assetId: "wood",
+    });
     const swapped = await call("replace_asset_refs", {
       scenePath: "main.scene.json",
       fromAssetId: "wood",

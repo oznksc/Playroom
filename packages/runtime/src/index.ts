@@ -16,7 +16,7 @@ export type {
   SafeAreaConfig,
   SpriteComponent,
   TransformComponent,
-  Vector2
+  Vector2,
 } from "@gamekit/schema";
 
 export { createLevel } from "@gamekit/schema";
@@ -56,12 +56,9 @@ export {
   raycast,
   solidAabb,
   updateCollisionEvents,
-  updateTriggerEvents
+  updateTriggerEvents,
 } from "./collision.js";
-export {
-  type CameraState,
-  createCameraFollow
-} from "./camera.js";
+export { type CameraState, createCameraFollow } from "./camera.js";
 export {
   type PlayerControllerInput,
   type PlayerControllerState,
@@ -76,13 +73,20 @@ export {
   RIGID_BODY_FIXED_DT,
   RIGID_BODY_SLEEP_DELAY,
   RIGID_BODY_SLEEP_LINEAR_THRESHOLD,
-  RIGID_BODY_SLEEP_ANGULAR_THRESHOLD
+  RIGID_BODY_SLEEP_ANGULAR_THRESHOLD,
 } from "./rigid-body.js";
 export { usePlayerInput } from "./input.js";
 export type { ExtendedPlayerInput } from "./input.js";
 export { updateTween } from "./tween.js";
 export { updateFollowPath } from "./path.js";
-export { executeActions, transitionFsm, updateFsm, evaluateScriptEvent, hasScriptHandler, type ScriptContext } from "./script.js";
+export {
+  executeActions,
+  transitionFsm,
+  updateFsm,
+  evaluateScriptEvent,
+  hasScriptHandler,
+  type ScriptContext,
+} from "./script.js";
 export {
   RulesEngine,
   type RulesEngineHost,
@@ -113,11 +117,7 @@ export {
   type ResolvedActionKeys,
   type ResolvedGamepadBindings,
 } from "./input-map.js";
-export {
-  simulateSceneSteps,
-  type SimulateOptions,
-  type SimulateResult,
-} from "./simulate.js";
+export { simulateSceneSteps, type SimulateOptions, type SimulateResult } from "./simulate.js";
 export { VirtualJoystick } from "./joystick.js";
 export type { VirtualJoystickProps } from "./joystick.js";
 export { VirtualButton } from "./virtual-button.js";
@@ -160,8 +160,4 @@ export {
   type LightPoint,
   type SpotCone,
 } from "./light.js";
-export {
-  createRng,
-  seedFromString,
-  type SeededRng,
-} from "./rng.js";
+export { createRng, seedFromString, type SeededRng } from "./rng.js";

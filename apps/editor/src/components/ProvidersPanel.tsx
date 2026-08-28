@@ -31,13 +31,76 @@ export type ProviderCatalogItem = {
 };
 
 export const PROVIDERS: ProviderCatalogItem[] = [
-  { id: "anthropic", label: "Anthropic Claude", defaultModel: "claude-sonnet-4-5", requiresKey: true, defaultBaseUrl: "https://api.anthropic.com", hint: "Best at long tool loops for scene building.", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
-  { id: "openai", label: "OpenAI", defaultModel: "gpt-4o", requiresKey: true, defaultBaseUrl: "https://api.openai.com/v1", hint: "GPT-4o and GPT-5. Uses the Chat Completions API.", color: "#34d399", bg: "rgba(52,211,153,0.15)" },
-  { id: "xai", label: "xAI Grok", defaultModel: "grok-4", requiresKey: true, defaultBaseUrl: "https://api.x.ai/v1", hint: "OpenAI-compatible API. Create a key at console.x.ai.", color: "#818cf8", bg: "rgba(129,140,248,0.15)" },
-  { id: "google", label: "Google AI", defaultModel: "gemini-2.0-flash", requiresKey: true, defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", hint: "Gemini via the OpenAI-compatible endpoint.", color: "#60a5fa", bg: "rgba(96,165,250,0.15)" },
-  { id: "openrouter", label: "OpenRouter", defaultModel: "anthropic/claude-sonnet-4.5", requiresKey: true, defaultBaseUrl: "https://openrouter.ai/api/v1", hint: "One key for many models. Set the model id from OpenRouter.", color: "#a78bfa", bg: "rgba(167,139,250,0.15)" },
-  { id: "ollama", label: "Ollama (local)", defaultModel: "llama3.1:8b", requiresKey: false, defaultBaseUrl: "http://localhost:11434", hint: "Run ollama serve. No API key.", color: "#fb923c", bg: "rgba(251,146,60,0.15)" },
-  { id: "lmstudio", label: "LM Studio (local)", defaultModel: "local-model", requiresKey: false, defaultBaseUrl: "http://127.0.0.1:1234", hint: "Start the local server in LM Studio. No API key.", color: "#f472b6", bg: "rgba(244,114,182,0.15)" },
+  {
+    id: "anthropic",
+    label: "Anthropic Claude",
+    defaultModel: "claude-sonnet-4-5",
+    requiresKey: true,
+    defaultBaseUrl: "https://api.anthropic.com",
+    hint: "Best at long tool loops for scene building.",
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.15)",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    defaultModel: "gpt-4o",
+    requiresKey: true,
+    defaultBaseUrl: "https://api.openai.com/v1",
+    hint: "GPT-4o and GPT-5. Uses the Chat Completions API.",
+    color: "#34d399",
+    bg: "rgba(52,211,153,0.15)",
+  },
+  {
+    id: "xai",
+    label: "xAI Grok",
+    defaultModel: "grok-4",
+    requiresKey: true,
+    defaultBaseUrl: "https://api.x.ai/v1",
+    hint: "OpenAI-compatible API. Create a key at console.x.ai.",
+    color: "#818cf8",
+    bg: "rgba(129,140,248,0.15)",
+  },
+  {
+    id: "google",
+    label: "Google AI",
+    defaultModel: "gemini-2.0-flash",
+    requiresKey: true,
+    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    hint: "Gemini via the OpenAI-compatible endpoint.",
+    color: "#60a5fa",
+    bg: "rgba(96,165,250,0.15)",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    defaultModel: "anthropic/claude-sonnet-4.5",
+    requiresKey: true,
+    defaultBaseUrl: "https://openrouter.ai/api/v1",
+    hint: "One key for many models. Set the model id from OpenRouter.",
+    color: "#a78bfa",
+    bg: "rgba(167,139,250,0.15)",
+  },
+  {
+    id: "ollama",
+    label: "Ollama (local)",
+    defaultModel: "llama3.1:8b",
+    requiresKey: false,
+    defaultBaseUrl: "http://localhost:11434",
+    hint: "Run ollama serve. No API key.",
+    color: "#fb923c",
+    bg: "rgba(251,146,60,0.15)",
+  },
+  {
+    id: "lmstudio",
+    label: "LM Studio (local)",
+    defaultModel: "local-model",
+    requiresKey: false,
+    defaultBaseUrl: "http://127.0.0.1:1234",
+    hint: "Start the local server in LM Studio. No API key.",
+    color: "#f472b6",
+    bg: "rgba(244,114,182,0.15)",
+  },
 ];
 
 export type ProvidersPanelProps = {
@@ -46,7 +109,11 @@ export type ProvidersPanelProps = {
   className?: string;
 };
 
-export function ProvidersPanel({ embedded = false, onOpenSettings, className }: ProvidersPanelProps) {
+export function ProvidersPanel({
+  embedded = false,
+  onOpenSettings,
+  className,
+}: ProvidersPanelProps) {
   const { keys, addKey, removeKey, osKeychain } = useAgentKeys();
 
   // Provider editing state
@@ -163,7 +230,9 @@ export function ProvidersPanel({ embedded = false, onOpenSettings, className }: 
         </div>
       )}
 
-      <div className={cn("min-h-0 flex-1 overflow-auto p-4", embedded && "max-w-4xl mx-auto w-full")}>
+      <div
+        className={cn("min-h-0 flex-1 overflow-auto p-4", embedded && "max-w-4xl mx-auto w-full")}
+      >
         <div className="space-y-2">
           {!embedded && (
             <p className={styles["agent-settings-section-desc"]}>
@@ -178,22 +247,26 @@ export function ProvidersPanel({ embedded = false, onOpenSettings, className }: 
               return (
                 <div key={p.id}>
                   <div
-                    className={cn(styles["provider-card"], entry && styles.connected, isEditing && styles.editing)}
+                    className={cn(
+                      styles["provider-card"],
+                      entry && styles.connected,
+                      isEditing && styles.editing
+                    )}
                     style={isEditing ? { borderRadius: "12px 12px 0 0" } : undefined}
                   >
                     <div
                       className={styles["provider-card-avatar"]}
                       style={{ background: p.bg, color: p.color }}
                     >
-                      {PROVIDER_ICONS[p.id]
-                        ? PROVIDER_ICONS[p.id]({ size: 18 })
-                        : p.label[0]}
+                      {PROVIDER_ICONS[p.id] ? PROVIDER_ICONS[p.id]({ size: 18 }) : p.label[0]}
                     </div>
                     <div className={styles["provider-card-info"]}>
                       <div className={styles["provider-card-name"]}>{p.label}</div>
                       <div className={styles["provider-card-hint"]}>
                         {entry ? (
-                          <span className="font-mono text-[10px] text-text-muted">{entry.model ?? p.defaultModel}</span>
+                          <span className="font-mono text-[10px] text-text-muted">
+                            {entry.model ?? p.defaultModel}
+                          </span>
                         ) : (
                           p.hint
                         )}
@@ -238,9 +311,7 @@ export function ProvidersPanel({ embedded = false, onOpenSettings, className }: 
                     <div className={styles["provider-card-form"]}>
                       {needsKey && (
                         <label className={styles["provider-card-form-label"]}>
-                          <span>
-                            API Key {existing && !apiKey ? "(leave blank to keep)" : ""}
-                          </span>
+                          <span>API Key {existing && !apiKey ? "(leave blank to keep)" : ""}</span>
                           <Input
                             type="password"
                             value={apiKey}
@@ -280,8 +351,12 @@ export function ProvidersPanel({ embedded = false, onOpenSettings, className }: 
                         </label>
                       )}
                       {testResult && (
-                        <p className={`m-0 text-[10px] ${testResult.ok ? "text-accent-green" : "text-error"}`}>
-                          {testResult.ok ? "✓ Connection successful." : `✕ Failed: ${testResult.reason ?? "unknown"}`}
+                        <p
+                          className={`m-0 text-[10px] ${testResult.ok ? "text-accent-green" : "text-error"}`}
+                        >
+                          {testResult.ok
+                            ? "✓ Connection successful."
+                            : `✕ Failed: ${testResult.reason ?? "unknown"}`}
                         </p>
                       )}
                       {needsKey && (
@@ -295,14 +370,28 @@ export function ProvidersPanel({ embedded = false, onOpenSettings, className }: 
                         <Button variant="ghost" size="md" onClick={cancelEdit}>
                           Cancel
                         </Button>
-                        <Button variant="secondary" size="md" onClick={() => void handleTest()} disabled={testing}>
-                          {testing ? <Loader size={12} className="animate-spin" /> : <Unplug size={12} />} Test
+                        <Button
+                          variant="secondary"
+                          size="md"
+                          onClick={() => void handleTest()}
+                          disabled={testing}
+                        >
+                          {testing ? (
+                            <Loader size={12} className="animate-spin" />
+                          ) : (
+                            <Unplug size={12} />
+                          )}{" "}
+                          Test
                         </Button>
                         <Button
                           variant="primary"
                           size="md"
                           onClick={() => void handleSave()}
-                          disabled={needsKey && !existing ? !apiKey || (needsPassphrase && !passphrase) : false}
+                          disabled={
+                            needsKey && !existing
+                              ? !apiKey || (needsPassphrase && !passphrase)
+                              : false
+                          }
                         >
                           <Check size={12} /> {existing ? "Save" : "Connect"}
                         </Button>

@@ -13,7 +13,7 @@ export function createCameraFollow(options: {
   const smoothing = options.smoothing ?? 0.18;
   const state: CameraState = options.initial ?? {
     position: { x: 0, y: 0 },
-    zoom: 1
+    zoom: 1,
   };
 
   return {
@@ -21,13 +21,13 @@ export function createCameraFollow(options: {
     update(target: Vector2): CameraState {
       const desired = {
         x: target.x - options.viewport.x / 2,
-        y: target.y - options.viewport.y / 2
+        y: target.y - options.viewport.y / 2,
       };
 
       state.position.x = lerp(state.position.x, desired.x, smoothing);
       state.position.y = lerp(state.position.y, desired.y, smoothing);
       return state;
-    }
+    },
   };
 }
 

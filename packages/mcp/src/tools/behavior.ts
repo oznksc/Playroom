@@ -11,7 +11,7 @@ import {
   AudioSourceInputSchema,
   ParticleSystemInputSchema,
   Light2DInputSchema,
-  NineSliceInputSchema
+  NineSliceInputSchema,
 } from "../schemas/component.js";
 
 export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
@@ -30,7 +30,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -51,7 +53,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      followPath: FollowPathInputSchema.omit({ type: true }).describe("FollowPath configuration properties"),
+      followPath: FollowPathInputSchema.omit({ type: true }).describe(
+        "FollowPath configuration properties"
+      ),
     },
     async ({ scenePath, entityId, followPath }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -60,7 +64,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -81,7 +87,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      stateMachine: StateMachineInputSchema.omit({ type: true }).describe("StateMachine configuration properties"),
+      stateMachine: StateMachineInputSchema.omit({ type: true }).describe(
+        "StateMachine configuration properties"
+      ),
     },
     async ({ scenePath, entityId, stateMachine }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -90,7 +98,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -120,7 +130,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -150,7 +162,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -171,7 +185,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      audioSource: AudioSourceInputSchema.omit({ type: true }).describe("AudioSource configuration properties"),
+      audioSource: AudioSourceInputSchema.omit({ type: true }).describe(
+        "AudioSource configuration properties"
+      ),
     },
     async ({ scenePath, entityId, audioSource }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -180,7 +196,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -201,7 +219,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      particleSystem: ParticleSystemInputSchema.omit({ type: true }).describe("ParticleSystem configuration properties"),
+      particleSystem: ParticleSystemInputSchema.omit({ type: true }).describe(
+        "ParticleSystem configuration properties"
+      ),
     },
     async ({ scenePath, entityId, particleSystem }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -210,7 +230,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -240,7 +262,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }
@@ -261,7 +285,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
     {
       scenePath: z.string().describe("Scene filename"),
       entityId: z.string().describe("Entity ID"),
-      nineSlice: NineSliceInputSchema.omit({ type: true }).describe("NineSlice configuration properties"),
+      nineSlice: NineSliceInputSchema.omit({ type: true }).describe(
+        "NineSlice configuration properties"
+      ),
     },
     async ({ scenePath, entityId, nineSlice }) => {
       const filename = fileIO.resolveScenePath(scenePath);
@@ -270,7 +296,9 @@ export function registerBehaviorTools(server: McpServer, fileIO: FileIO): void {
       const entity = scene.entities.find((e) => e.id === entityId);
       if (!entity) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Entity not found: ${entityId}` }) },
+          ],
           isError: true,
         };
       }

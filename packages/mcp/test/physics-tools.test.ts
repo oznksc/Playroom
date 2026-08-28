@@ -3,7 +3,13 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { createEmptyScene, createProject, createEntity, projectToJson, sceneToJson } from "@gamekit/schema";
+import {
+  createEmptyScene,
+  createProject,
+  createEntity,
+  projectToJson,
+  sceneToJson,
+} from "@gamekit/schema";
 import { FileIO } from "../src/utils/file-io.js";
 
 let tmpDir: string;
@@ -76,7 +82,9 @@ describe("physics MCP tools (via FileIO)", () => {
     await fileIO.writeScene("main.scene.json", scene);
 
     const loaded = await fileIO.readScene("main.scene.json");
-    const aabb = loaded.entities[0].components.find((c) => c.type === "AabbCollider") as AabbCollider;
+    const aabb = loaded.entities[0].components.find(
+      (c) => c.type === "AabbCollider"
+    ) as AabbCollider;
     expect(aabb).toBeDefined();
     expect(aabb.size.x).toBe(800);
     expect(aabb.size.y).toBe(32);
@@ -126,13 +134,17 @@ describe("physics MCP tools (via FileIO)", () => {
     await fileIO.writeScene("main.scene.json", scene);
 
     scene = await fileIO.readScene("main.scene.json");
-    const collider = scene.entities[0].components.find((c) => c.type === "CircleCollider") as CircleCollider;
+    const collider = scene.entities[0].components.find(
+      (c) => c.type === "CircleCollider"
+    ) as CircleCollider;
     collider.layer = 2;
     collider.mask = 3;
     await fileIO.writeScene("main.scene.json", scene);
 
     const loaded = await fileIO.readScene("main.scene.json");
-    const cc = loaded.entities[0].components.find((c) => c.type === "CircleCollider") as CircleCollider;
+    const cc = loaded.entities[0].components.find(
+      (c) => c.type === "CircleCollider"
+    ) as CircleCollider;
     expect(cc.layer).toBe(2);
     expect(cc.mask).toBe(3);
   });
@@ -151,12 +163,16 @@ describe("physics MCP tools (via FileIO)", () => {
     await fileIO.writeScene("main.scene.json", scene);
 
     scene = await fileIO.readScene("main.scene.json");
-    const aabb = scene.entities[0].components.find((c) => c.type === "AabbCollider") as AabbCollider;
+    const aabb = scene.entities[0].components.find(
+      (c) => c.type === "AabbCollider"
+    ) as AabbCollider;
     (aabb as Record<string, unknown>).isTrigger = true;
     await fileIO.writeScene("main.scene.json", scene);
 
     const loaded = await fileIO.readScene("main.scene.json");
-    const updated = loaded.entities[0].components.find((c) => c.type === "AabbCollider") as AabbCollider;
+    const updated = loaded.entities[0].components.find(
+      (c) => c.type === "AabbCollider"
+    ) as AabbCollider;
     expect((updated as Record<string, unknown>).isTrigger).toBe(true);
   });
 
@@ -195,83 +211,103 @@ describe("physics MCP tools (via FileIO)", () => {
 });
 
 it("adds PolygonCollider with 4 points to an entity", async () => {
-    let scene = await fileIO.readScene("main.scene.json");
-    const entity = createEntity("Pentagon");
-    scene.entities.push(entity);
-    await fileIO.writeScene("main.scene.json", scene);
+  let scene = await fileIO.readScene("main.scene.json");
+  const entity = createEntity("Pentagon");
+  scene.entities.push(entity);
+  await fileIO.writeScene("main.scene.json", scene);
 
-    scene = await fileIO.readScene("main.scene.json");
-    const pentagon = scene.entities[0];
-    pentagon.components.push({
-      type: "PolygonCollider",
-      offset: { x: 10, y: 20 },
-      points: [
-        { x: 0, y: -32 },
-        { x: 32, y: 0 },
-        { x: 0, y: 32 },
-        { x: -32, y: 0 },
-      ],
-      isStatic: true,
-    });
-    await fileIO.writeScene("main.scene.json", scene);
-
-    const loaded = await fileIO.readScene("main.scene.json");
-    const pc = loaded.entities[0].components.find((c) => c.type === "PolygonCollider") as PolygonCollider;
-    expect(pc).toBeDefined();
-    expect(pc.points).toHaveLength(4);
-    expect(pc.points[0]).toEqual({ x: 0, y: -32 });
-    expect(pc.points[1].x).toBe(32);
-    expect(pc.isStatic).toBe(true);
-    expect(pc.offset.x).toBe(10);
-    expect(pc.offset.y).toBe(20);
+  scene = await fileIO.readScene("main.scene.json");
+  const pentagon = scene.entities[0];
+  pentagon.components.push({
+    type: "PolygonCollider",
+    offset: { x: 10, y: 20 },
+    points: [
+      { x: 0, y: -32 },
+      { x: 32, y: 0 },
+      { x: 0, y: 32 },
+      { x: -32, y: 0 },
+    ],
+    isStatic: true,
   });
+  await fileIO.writeScene("main.scene.json", scene);
 
-  it("sets collision layer and mask on PolygonCollider entity", async () => {
-    let scene = await fileIO.readScene("main.scene.json");
-    const entity = createEntity("PolyWalls");
-    entity.components.push({
-      type: "PolygonCollider",
-      offset: { x: 0, y: 0 },
-      points: [{ x: 0, y: 0 }, { x: 64, y: 0 }, { x: 64, y: 64 }, { x: 0, y: 64 }],
-      isStatic: true,
-    });
-    scene.entities.push(entity);
-    await fileIO.writeScene("main.scene.json", scene);
+  const loaded = await fileIO.readScene("main.scene.json");
+  const pc = loaded.entities[0].components.find(
+    (c) => c.type === "PolygonCollider"
+  ) as PolygonCollider;
+  expect(pc).toBeDefined();
+  expect(pc.points).toHaveLength(4);
+  expect(pc.points[0]).toEqual({ x: 0, y: -32 });
+  expect(pc.points[1].x).toBe(32);
+  expect(pc.isStatic).toBe(true);
+  expect(pc.offset.x).toBe(10);
+  expect(pc.offset.y).toBe(20);
+});
 
-    scene = await fileIO.readScene("main.scene.json");
-    const pc = scene.entities[0].components.find((c) => c.type === "PolygonCollider") as PolygonCollider;
-    pc.layer = 2;
-    pc.mask = 5;
-    await fileIO.writeScene("main.scene.json", scene);
-
-    const loaded = await fileIO.readScene("main.scene.json");
-    const updated = loaded.entities[0].components.find((c) => c.type === "PolygonCollider") as PolygonCollider;
-    expect(updated.layer).toBe(2);
-    expect(updated.mask).toBe(5);
+it("sets collision layer and mask on PolygonCollider entity", async () => {
+  let scene = await fileIO.readScene("main.scene.json");
+  const entity = createEntity("PolyWalls");
+  entity.components.push({
+    type: "PolygonCollider",
+    offset: { x: 0, y: 0 },
+    points: [
+      { x: 0, y: 0 },
+      { x: 64, y: 0 },
+      { x: 64, y: 64 },
+      { x: 0, y: 64 },
+    ],
+    isStatic: true,
   });
+  scene.entities.push(entity);
+  await fileIO.writeScene("main.scene.json", scene);
 
-  it("sets trigger on PolygonCollider entity", async () => {
-    let scene = await fileIO.readScene("main.scene.json");
-    const entity = createEntity("PolyTrigger");
-    entity.components.push({
-      type: "PolygonCollider",
-      offset: { x: 0, y: 0 },
-      points: [{ x: 0, y: 0 }, { x: 64, y: 0 }, { x: 64, y: 64 }, { x: 0, y: 64 }],
-      isStatic: false,
-      isTrigger: false,
-    });
-    scene.entities.push(entity);
-    await fileIO.writeScene("main.scene.json", scene);
+  scene = await fileIO.readScene("main.scene.json");
+  const pc = scene.entities[0].components.find(
+    (c) => c.type === "PolygonCollider"
+  ) as PolygonCollider;
+  pc.layer = 2;
+  pc.mask = 5;
+  await fileIO.writeScene("main.scene.json", scene);
 
-    scene = await fileIO.readScene("main.scene.json");
-    const pc = scene.entities[0].components.find((c) => c.type === "PolygonCollider") as PolygonCollider;
-    (pc as Record<string, unknown>).isTrigger = true;
-    await fileIO.writeScene("main.scene.json", scene);
+  const loaded = await fileIO.readScene("main.scene.json");
+  const updated = loaded.entities[0].components.find(
+    (c) => c.type === "PolygonCollider"
+  ) as PolygonCollider;
+  expect(updated.layer).toBe(2);
+  expect(updated.mask).toBe(5);
+});
 
-    const loaded = await fileIO.readScene("main.scene.json");
-    const updated = loaded.entities[0].components.find((c) => c.type === "PolygonCollider") as PolygonCollider;
-    expect((updated as Record<string, unknown>).isTrigger).toBe(true);
+it("sets trigger on PolygonCollider entity", async () => {
+  let scene = await fileIO.readScene("main.scene.json");
+  const entity = createEntity("PolyTrigger");
+  entity.components.push({
+    type: "PolygonCollider",
+    offset: { x: 0, y: 0 },
+    points: [
+      { x: 0, y: 0 },
+      { x: 64, y: 0 },
+      { x: 64, y: 64 },
+      { x: 0, y: 64 },
+    ],
+    isStatic: false,
+    isTrigger: false,
   });
+  scene.entities.push(entity);
+  await fileIO.writeScene("main.scene.json", scene);
+
+  scene = await fileIO.readScene("main.scene.json");
+  const pc = scene.entities[0].components.find(
+    (c) => c.type === "PolygonCollider"
+  ) as PolygonCollider;
+  (pc as Record<string, unknown>).isTrigger = true;
+  await fileIO.writeScene("main.scene.json", scene);
+
+  const loaded = await fileIO.readScene("main.scene.json");
+  const updated = loaded.entities[0].components.find(
+    (c) => c.type === "PolygonCollider"
+  ) as PolygonCollider;
+  expect((updated as Record<string, unknown>).isTrigger).toBe(true);
+});
 
 type PolygonCollider = {
   type: "PolygonCollider";

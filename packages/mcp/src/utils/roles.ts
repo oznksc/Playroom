@@ -31,7 +31,13 @@ export const ROLE_COMPONENTS: Record<EntityRole, ComponentDef[]> = {
   collectible: [
     { type: "Transform", position: { x: 400, y: 150 }, rotation: 0, scale: { x: 1, y: 1 } },
     { type: "Sprite", assetId: "coin", width: 24, height: 24, anchor: { x: 0.5, y: 0.5 } },
-    { type: "AabbCollider", offset: { x: 0, y: 0 }, size: { x: 24, y: 24 }, isStatic: true, isTrigger: true },
+    {
+      type: "AabbCollider",
+      offset: { x: 0, y: 0 },
+      size: { x: 24, y: 24 },
+      isStatic: true,
+      isTrigger: true,
+    },
   ],
   platform: [
     { type: "Transform", position: { x: 400, y: 400 }, rotation: 0, scale: { x: 1, y: 1 } },

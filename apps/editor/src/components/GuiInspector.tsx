@@ -61,22 +61,78 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
           onToggle={() => toggleCollapse("transform")}
         >
           <div className="grid grid-cols-2 gap-1.5">
-            <NumberField label="X" value={node.x} onChange={(v) => onChange((d) => { d.x = v; })} />
-            <NumberField label="Y" value={node.y} onChange={(v) => onChange((d) => { d.y = v; })} />
-            <NumberField label="Width" value={node.width} onChange={(v) => onChange((d) => { d.width = v; })} />
-            <NumberField label="Height" value={node.height} onChange={(v) => onChange((d) => { d.height = v; })} />
-            <NumberField label="Anchor X" value={node.anchorX ?? 0} onChange={(v) => onChange((d) => { d.anchorX = v; })} />
-            <NumberField label="Anchor Y" value={node.anchorY ?? 0} onChange={(v) => onChange((d) => { d.anchorY = v; })} />
+            <NumberField
+              label="X"
+              value={node.x}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.x = v;
+                })
+              }
+            />
+            <NumberField
+              label="Y"
+              value={node.y}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.y = v;
+                })
+              }
+            />
+            <NumberField
+              label="Width"
+              value={node.width}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.width = v;
+                })
+              }
+            />
+            <NumberField
+              label="Height"
+              value={node.height}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.height = v;
+                })
+              }
+            />
+            <NumberField
+              label="Anchor X"
+              value={node.anchorX ?? 0}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.anchorX = v;
+                })
+              }
+            />
+            <NumberField
+              label="Anchor Y"
+              value={node.anchorY ?? 0}
+              onChange={(v) =>
+                onChange((d) => {
+                  d.anchorY = v;
+                })
+              }
+            />
           </div>
           <CheckboxField
             label="Visible"
             checked={node.visible !== false}
-            onChange={(checked) => onChange((d) => { d.visible = checked; })}
+            onChange={(checked) =>
+              onChange((d) => {
+                d.visible = checked;
+              })
+            }
           />
           <CheckboxField
             label="Interactive"
             checked={node.interactive === true}
-            onChange={(checked) => onChange((d) => { d.interactive = checked; })}
+            onChange={(checked) =>
+              onChange((d) => {
+                d.interactive = checked;
+              })
+            }
           />
         </AccordionSection>
 
@@ -88,29 +144,47 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             onToggle={() => toggleCollapse("content")}
           >
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Text
+              </span>
               <Input
                 type="text"
                 value={(node as GuiText).text}
-                onChange={(e) => onChange((d) => { (d as GuiText).text = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiText).text = e.target.value;
+                  })
+                }
               />
             </label>
             <NumberField
               label="Font Size"
               value={(node as GuiText).fontSize ?? 16}
-              onChange={(v) => onChange((d) => { (d as GuiText).fontSize = v; })}
+              onChange={(v) =>
+                onChange((d) => {
+                  (d as GuiText).fontSize = v;
+                })
+              }
             />
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Color</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Color
+              </span>
               <input
                 type="color"
                 className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
                 value={(node as GuiText).color ?? "#ffffff"}
-                onChange={(e) => onChange((d) => { (d as GuiText).color = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiText).color = e.target.value;
+                  })
+                }
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Align</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Align
+              </span>
               <Select
                 value={(node as GuiText).align ?? "left"}
                 onChange={(e) =>
@@ -135,43 +209,71 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             onToggle={() => toggleCollapse("content")}
           >
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Text
+              </span>
               <Input
                 type="text"
                 value={(node as GuiButton).text}
-                onChange={(e) => onChange((d) => { (d as GuiButton).text = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiButton).text = e.target.value;
+                  })
+                }
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Action</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Action
+              </span>
               <Input
                 type="text"
                 value={(node as GuiButton).action ?? ""}
-                onChange={(e) => onChange((d) => { (d as GuiButton).action = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiButton).action = e.target.value;
+                  })
+                }
                 placeholder="e.g. startGame"
               />
             </label>
             <NumberField
               label="Font Size"
               value={(node as GuiButton).fontSize ?? 16}
-              onChange={(v) => onChange((d) => { (d as GuiButton).fontSize = v; })}
+              onChange={(v) =>
+                onChange((d) => {
+                  (d as GuiButton).fontSize = v;
+                })
+              }
             />
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Text Color</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Text Color
+              </span>
               <input
                 type="color"
                 className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
                 value={(node as GuiButton).color ?? "#ffffff"}
-                onChange={(e) => onChange((d) => { (d as GuiButton).color = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiButton).color = e.target.value;
+                  })
+                }
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">BG Color</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                BG Color
+              </span>
               <input
                 type="color"
                 className="h-7 w-full cursor-pointer rounded border border-border-default bg-transparent"
                 value={(node as GuiButton).backgroundColor ?? "#333333"}
-                onChange={(e) => onChange((d) => { (d as GuiButton).backgroundColor = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiButton).backgroundColor = e.target.value;
+                  })
+                }
               />
             </label>
           </AccordionSection>
@@ -185,10 +287,16 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
             onToggle={() => toggleCollapse("content")}
           >
             <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Asset
+              </span>
               <Select
                 value={(node as GuiImage).assetId}
-                onChange={(e) => onChange((d) => { (d as GuiImage).assetId = e.target.value; })}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiImage).assetId = e.target.value;
+                  })
+                }
               >
                 <option value="">— Select Asset —</option>
                 {assets.map((asset) => (

@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@gamekit/ui/theme.css": path.resolve(__dirname, "../../packages/ui/src/styles/theme.css"),
+      "@gamekit/ui": path.resolve(__dirname, "../../packages/ui/src/index.ts"),
       // Prefer live schema source so touchControl (fire/action) stays in sync during dev.
       "@gamekit/schema": path.resolve(__dirname, "../../packages/schema/src/index.ts"),
       "@gamekit/runtime-web": path.resolve(__dirname, "../../packages/runtime-web/src/index.ts"),
@@ -19,16 +21,28 @@ export default defineConfig({
       "@gamekit/runtime/scene": path.resolve(__dirname, "../../packages/runtime/src/scene.ts"),
       "@gamekit/runtime/script": path.resolve(__dirname, "../../packages/runtime/src/script.ts"),
       "@gamekit/runtime/player": path.resolve(__dirname, "../../packages/runtime/src/player.ts"),
-      "@gamekit/runtime/input-map": path.resolve(__dirname, "../../packages/runtime/src/input-map.ts"),
+      "@gamekit/runtime/input-map": path.resolve(
+        __dirname,
+        "../../packages/runtime/src/input-map.ts"
+      ),
       "@gamekit/runtime/gamepad": path.resolve(__dirname, "../../packages/runtime/src/gamepad.ts"),
-      "@gamekit/runtime/collision": path.resolve(__dirname, "../../packages/runtime/src/collision.ts"),
+      "@gamekit/runtime/collision": path.resolve(
+        __dirname,
+        "../../packages/runtime/src/collision.ts"
+      ),
       "@gamekit/runtime/tween": path.resolve(__dirname, "../../packages/runtime/src/tween.ts"),
       "@gamekit/runtime/path": path.resolve(__dirname, "../../packages/runtime/src/path.ts"),
-      "@gamekit/runtime/timeline": path.resolve(__dirname, "../../packages/runtime/src/timeline.ts"),
-      "@gamekit/runtime/particles": path.resolve(__dirname, "../../packages/runtime/src/particles.ts"),
+      "@gamekit/runtime/timeline": path.resolve(
+        __dirname,
+        "../../packages/runtime/src/timeline.ts"
+      ),
+      "@gamekit/runtime/particles": path.resolve(
+        __dirname,
+        "../../packages/runtime/src/particles.ts"
+      ),
       "@gamekit/runtime/rules-engine": path.resolve(
         __dirname,
-        "../../packages/runtime/src/rules-engine.ts",
+        "../../packages/runtime/src/rules-engine.ts"
       ),
       "@gamekit/runtime/clone": path.resolve(__dirname, "../../packages/runtime/src/clone.ts"),
       "@gamekit/runtime/gui": path.resolve(__dirname, "../../packages/runtime/src/gui.ts"),
@@ -48,6 +62,14 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ["phaser"],
+          vendor: ["react", "react-dom"],
+        },
+      },
     },
   },
   server: {

@@ -8,7 +8,18 @@ import type {
   ScriptAction,
 } from "@gamekit/schema";
 import { createId, resolveGameRules } from "@gamekit/schema";
-import { Settings, Monitor, Shield, Gauge, Globe, Skull, Plus, Trash2, Flag, Trophy } from "lucide-react";
+import {
+  Settings,
+  Monitor,
+  Shield,
+  Gauge,
+  Globe,
+  Skull,
+  Plus,
+  Trash2,
+  Flag,
+  Trophy,
+} from "lucide-react";
 import { useState } from "react";
 import {
   NumberField,
@@ -193,11 +204,14 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
         >
           <p className="text-[10px] leading-snug text-text-muted">
             Session, hazards, objectives, and outcome actions. Tag entities (
-            <span className="font-mono">coin</span>, <span className="font-mono">goal</span>) for collect/reach.
+            <span className="font-mono">coin</span>, <span className="font-mono">goal</span>) for
+            collect/reach.
           </p>
 
           <div className="border-t border-border-default pt-2 mt-1 space-y-1.5">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Session</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Session
+            </span>
             <CheckboxField
               label="Fall death (void)"
               checked={rules.fallDeathEnabled !== false}
@@ -420,7 +434,10 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                         value={typeof obj.count === "number" ? obj.count : 0}
                         onChange={(value) =>
                           onChange((draft) => {
-                            ensureGameRules(draft).objectives[index].count = Math.max(0, Math.floor(value));
+                            ensureGameRules(draft).objectives[index].count = Math.max(
+                              0,
+                              Math.floor(value)
+                            );
                           })
                         }
                       />
@@ -506,7 +523,8 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
               <Trophy size={10} /> On win actions
             </span>
             <p className="text-[10px] text-text-muted">
-              Empty = default <span className="font-mono">completeLevel</span> when a scene manager is present.
+              Empty = default <span className="font-mono">completeLevel</span> when a scene manager
+              is present.
             </p>
             {(rules.onWin ?? []).map((action, index) => (
               <div key={index} className="flex items-center gap-1">
@@ -515,7 +533,9 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                   className="h-7 flex-1 text-[10px]"
                   onChange={(event) =>
                     onChange((draft) => {
-                      ensureGameRules(draft).onWin[index] = { type: event.target.value } as ScriptAction;
+                      ensureGameRules(draft).onWin[index] = {
+                        type: event.target.value,
+                      } as ScriptAction;
                     })
                   }
                 >
@@ -561,7 +581,9 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                   className="h-7 flex-1 text-[10px]"
                   onChange={(event) =>
                     onChange((draft) => {
-                      ensureGameRules(draft).onLose[index] = { type: event.target.value } as ScriptAction;
+                      ensureGameRules(draft).onLose[index] = {
+                        type: event.target.value,
+                      } as ScriptAction;
                     })
                   }
                 >
@@ -650,8 +672,7 @@ export function SceneSettings({ scene, onChange }: SceneSettingsProps) {
                 value={responsive.mode}
                 onChange={(event) =>
                   onChange((draft) => {
-                    draft.responsive.mode = event.target
-                      .value as ResponsiveConfig["mode"];
+                    draft.responsive.mode = event.target.value as ResponsiveConfig["mode"];
                   })
                 }
               >

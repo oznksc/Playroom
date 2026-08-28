@@ -9,10 +9,16 @@ import { createMcpServer } from "../src/server.js";
 let tmpDir: string;
 let server: ReturnType<typeof createMcpServer>;
 
-function tool(name: string): { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> } {
-  const registered = (server as unknown as { _registeredTools: Record<string, { handler?: unknown }> })._registeredTools[name];
+function tool(name: string): {
+  handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+} {
+  const registered = (
+    server as unknown as { _registeredTools: Record<string, { handler?: unknown }> }
+  )._registeredTools[name];
   if (!registered?.handler) throw new Error(`Tool not registered: ${name}`);
-  return registered as { handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }> };
+  return registered as {
+    handler: (args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>;
+  };
 }
 
 async function call(name: string, args: unknown): Promise<{ isError?: boolean; data: any }> {
@@ -43,9 +49,10 @@ describe("query tools", () => {
       position: { x: 80, y: 120 },
     });
     expect(player.data.success).toBe(true);
-    expect(player.data.entity.components.find((c: { type: string }) => c.type === "CameraFollow").targetId).toBe(
-      player.data.entity.id,
-    );
+    expect(
+      player.data.entity.components.find((c: { type: string }) => c.type === "CameraFollow")
+        .targetId
+    ).toBe(player.data.entity.id);
 
     await call("spawn_role", {
       scenePath: "main.scene.json",
@@ -62,16 +69,24 @@ describe("query tools", () => {
       scenePath: "main.scene.json",
       entityId: player.data.entity.id,
     });
-    expect(components.data.components.map((c: { type: string }) => c.type)).toContain("PlayerController");
+    expect(components.data.components.map((c: { type: string }) => c.type)).toContain(
+      "PlayerController"
+    );
 
-    const full = await call("get_entity", { scenePath: "main.scene.json", entityId: player.data.entity.id });
+    const full = await call("get_entity", {
+      scenePath: "main.scene.json",
+      entityId: player.data.entity.id,
+    });
     expect(full.data.id).toBe(player.data.entity.id);
 
     const tagged = await call("query_entities", { scenePath: "main.scene.json", tag: "coin" });
     expect(tagged.data.count).toBe(1);
     expect(tagged.data.entities[0].name).toBe("Coin");
 
-    const byType = await call("query_entities", { scenePath: "main.scene.json", componentType: "PlayerController" });
+    const byType = await call("query_entities", {
+      scenePath: "main.scene.json",
+      componentType: "PlayerController",
+    });
     expect(byType.data.count).toBe(1);
     expect(byType.data.entities[0].name).toBe("Hero");
   });
@@ -137,8 +152,18 @@ describe("layout tools", () => {
   });
 
   it("nudges transform and reorders draw order", async () => {
-    const a = await call("spawn_role", { scenePath: "main.scene.json", role: "obstacle", name: "A", position: { x: 10, y: 10 } });
-    const b = await call("spawn_role", { scenePath: "main.scene.json", role: "obstacle", name: "B", position: { x: 20, y: 20 } });
+    const a = await call("spawn_role", {
+      scenePath: "main.scene.json",
+      role: "obstacle",
+      name: "A",
+      position: { x: 10, y: 10 },
+    });
+    const b = await call("spawn_role", {
+      scenePath: "main.scene.json",
+      role: "obstacle",
+      name: "B",
+      position: { x: 20, y: 20 },
+    });
 
     await call("set_transform", {
       scenePath: "main.scene.json",
@@ -146,8 +171,13 @@ describe("layout tools", () => {
       position: { x: 5, y: 0 },
       relative: true,
     });
-    const moved = await call("get_entity", { scenePath: "main.scene.json", entityId: a.data.entity.id });
-    expect(moved.data.components.find((c: { type: string }) => c.type === "Transform").position).toEqual({ x: 15, y: 10 });
+    const moved = await call("get_entity", {
+      scenePath: "main.scene.json",
+      entityId: a.data.entity.id,
+    });
+    expect(
+      moved.data.components.find((c: { type: string }) => c.type === "Transform").position
+    ).toEqual({ x: 15, y: 10 });
 
     const reordered = await call("reorder_entity", {
       scenePath: "main.scene.json",

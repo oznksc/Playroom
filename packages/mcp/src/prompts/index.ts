@@ -30,7 +30,7 @@ export function registerPrompts(server: McpServer): void {
           },
         },
       ],
-    }),
+    })
   );
 
   server.prompt(
@@ -47,7 +47,7 @@ export function registerPrompts(server: McpServer): void {
           },
         },
       ],
-    }),
+    })
   );
 
   server.prompt(
@@ -74,7 +74,7 @@ export function registerPrompts(server: McpServer): void {
           },
         ],
       };
-    },
+    }
   );
 
   server.prompt(
@@ -100,7 +100,7 @@ export function registerPrompts(server: McpServer): void {
           },
         ],
       };
-    },
+    }
   );
 
   server.prompt(
@@ -150,7 +150,7 @@ What kind of game would you like to create?`,
           },
         },
       ],
-    }),
+    })
   );
 
   server.prompt(
@@ -189,7 +189,6 @@ GameKit MCP provides procedural neural & acoustic synthesis tools to generate pr
           },
         },
       ],
-    }),
+    })
   );
 }
-

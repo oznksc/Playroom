@@ -25,12 +25,17 @@ export function TweenSection({ tween, onChange, open, onToggle, onRemove }: Prop
       {tween ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Property</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Property
+            </span>
             <Select
               value={tween.property}
-              onChange={(e) => onChange((d) => {
-                findComponent<TweenComponent>(d, "Tween")!.property = e.target.value as TweenComponent["property"];
-              })}
+              onChange={(e) =>
+                onChange((d) => {
+                  findComponent<TweenComponent>(d, "Tween")!.property = e.target
+                    .value as TweenComponent["property"];
+                })
+              }
             >
               <option value="position.x">position.x</option>
               <option value="position.y">position.y</option>
@@ -40,23 +45,46 @@ export function TweenSection({ tween, onChange, open, onToggle, onRemove }: Prop
             </Select>
           </label>
           <div className="grid grid-cols-2 gap-1.5">
-            <NumberField label="Start" value={tween.startValue}
-              onChange={(v) => onChange((d) => { findComponent<TweenComponent>(d, "Tween")!.startValue = v; })}
+            <NumberField
+              label="Start"
+              value={tween.startValue}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TweenComponent>(d, "Tween")!.startValue = v;
+                })
+              }
             />
-            <NumberField label="End" value={tween.endValue}
-              onChange={(v) => onChange((d) => { findComponent<TweenComponent>(d, "Tween")!.endValue = v; })}
+            <NumberField
+              label="End"
+              value={tween.endValue}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TweenComponent>(d, "Tween")!.endValue = v;
+                })
+              }
             />
-            <NumberField label="Duration" value={tween.duration}
-              onChange={(v) => onChange((d) => { findComponent<TweenComponent>(d, "Tween")!.duration = v; })}
+            <NumberField
+              label="Duration"
+              value={tween.duration}
+              onChange={(v) =>
+                onChange((d) => {
+                  findComponent<TweenComponent>(d, "Tween")!.duration = v;
+                })
+              }
             />
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">Easing</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+              Easing
+            </span>
             <Select
               value={tween.easing}
-              onChange={(e) => onChange((d) => {
-                findComponent<TweenComponent>(d, "Tween")!.easing = e.target.value as TweenComponent["easing"];
-              })}
+              onChange={(e) =>
+                onChange((d) => {
+                  findComponent<TweenComponent>(d, "Tween")!.easing = e.target
+                    .value as TweenComponent["easing"];
+                })
+              }
             >
               <option value="linear">Linear</option>
               <option value="easeIn">Ease In</option>
@@ -64,11 +92,23 @@ export function TweenSection({ tween, onChange, open, onToggle, onRemove }: Prop
               <option value="easeInOut">Ease In Out</option>
             </Select>
           </label>
-          <CheckboxField label="Loop" checked={tween.loop}
-            onChange={(checked) => onChange((d) => { findComponent<TweenComponent>(d, "Tween")!.loop = checked; })}
+          <CheckboxField
+            label="Loop"
+            checked={tween.loop}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<TweenComponent>(d, "Tween")!.loop = checked;
+              })
+            }
           />
-          <CheckboxField label="Ping pong" checked={tween.pingPong}
-            onChange={(checked) => onChange((d) => { findComponent<TweenComponent>(d, "Tween")!.pingPong = checked; })}
+          <CheckboxField
+            label="Ping pong"
+            checked={tween.pingPong}
+            onChange={(checked) =>
+              onChange((d) => {
+                findComponent<TweenComponent>(d, "Tween")!.pingPong = checked;
+              })
+            }
           />
         </>
       ) : (

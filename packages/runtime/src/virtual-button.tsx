@@ -61,7 +61,7 @@ export function VirtualButton({
         setPressed(false);
         onPressOut();
       },
-    }),
+    })
   ).current;
 
   const half = size / 2;
@@ -83,9 +83,7 @@ export function VirtualButton({
             ? `rgba(0,240,255,${Math.min(0.55, bgAlpha)})`
             : `rgba(255,255,255,${bgAlpha * 0.35})`,
           borderWidth: 2,
-          borderColor: pressed
-            ? accent
-            : `rgba(255,255,255,${borderAlpha})`,
+          borderColor: pressed ? accent : `rgba(255,255,255,${borderAlpha})`,
           alignItems: "center",
           justifyContent: "center",
           position: "absolute",

@@ -143,11 +143,10 @@ async function main(argv: string[]): Promise<void> {
         const skills = await listSkills();
         throw new Error(
           `Usage: gamekit create <skill-id> [--name "..."] [--platform web|mobile]\n` +
-            `Available skills: ${skills.map((s) => s.id).join(", ")}`,
+            `Available skills: ${skills.map((s) => s.id).join(", ")}`
         );
       }
-      const platform =
-        (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
       if (platform !== "web" && platform !== "mobile") {
         throw new Error("--platform must be 'web' or 'mobile'");
       }
@@ -211,14 +210,16 @@ async function main(argv: string[]): Promise<void> {
       const mtls = args.includes("--mtls") || process.env.GAMEKIT_EDITOR_MTLS === "1";
       if (mtls && (!tlsCert || !tlsKey)) {
         throw new Error(
-          "mTLS requires HTTPS: pass --tls-cert and --tls-key (or GAMEKIT_EDITOR_TLS_CERT / GAMEKIT_EDITOR_TLS_KEY)",
+          "mTLS requires HTTPS: pass --tls-cert and --tls-key (or GAMEKIT_EDITOR_TLS_CERT / GAMEKIT_EDITOR_TLS_KEY)"
         );
       }
       if ((tlsCert && !tlsKey) || (tlsKey && !tlsCert)) {
         throw new Error("HTTPS editor requires both --tls-cert and --tls-key");
       }
       if (mtls && !tlsCa) {
-        throw new Error("mTLS requires --tls-ca (or GAMEKIT_EDITOR_TLS_CA) with the client CA certificate");
+        throw new Error(
+          "mTLS requires --tls-ca (or GAMEKIT_EDITOR_TLS_CA) with the client CA certificate"
+        );
       }
       await startEditorServer({
         root: cwd,
@@ -238,7 +239,8 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "migrate": {
-      const { migrateProject, listSchemaMigrations, listMigrationPath } = await import("./migrate.js");
+      const { migrateProject, listSchemaMigrations, listMigrationPath } =
+        await import("./migrate.js");
       if (args.includes("--list")) {
         const steps = listSchemaMigrations();
         if (steps.length === 0) {
@@ -253,7 +255,9 @@ async function main(argv: string[]): Promise<void> {
       }
       const positional = args.filter((arg) => !arg.startsWith("--"));
       if (positional.length < 2) {
-        throw new Error("Usage: gamekit migrate <from> <to> [--dry-run] [--force]\n       gamekit migrate --list");
+        throw new Error(
+          "Usage: gamekit migrate <from> <to> [--dry-run] [--force]\n       gamekit migrate --list"
+        );
       }
       const from = Number(positional[0]);
       const to = Number(positional[1]);
@@ -266,10 +270,17 @@ async function main(argv: string[]): Promise<void> {
         force: args.includes("--force"),
       });
       console.log(
-        `${result.dryRun ? "Dry-run: would migrate" : "Migrated"} schema ${result.from} → ${result.to}`,
+        `${result.dryRun ? "Dry-run: would migrate" : "Migrated"} schema ${result.from} → ${result.to}`
       );
       for (const file of result.files) {
-        const icon = file.status === "migrated" ? (file.valid ? "✓" : "!") : file.status === "error" ? "✖" : "·";
+        const icon =
+          file.status === "migrated"
+            ? file.valid
+              ? "✓"
+              : "!"
+            : file.status === "error"
+              ? "✖"
+              : "·";
         const extra = file.message ? ` — ${file.message}` : "";
         console.log(`  ${icon} [${file.kind}] ${file.path} (v${file.detectedVersion})${extra}`);
         if (file.applied.length) {
@@ -282,14 +293,15 @@ async function main(argv: string[]): Promise<void> {
         }
       }
       console.log(
-        `\n${result.migrated} migrated, ${result.skipped} skipped, ${result.errors} error(s)`,
+        `\n${result.migrated} migrated, ${result.skipped} skipped, ${result.errors} error(s)`
       );
       if (result.errors > 0) process.exitCode = 1;
       return;
     }
     case "export": {
       const path = args.find((arg) => !arg.startsWith("--")) ?? join(cwd, "build");
-      const platform = (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
+      const platform =
+        (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
       if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
         throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
@@ -358,7 +370,9 @@ async function main(argv: string[]): Promise<void> {
         console.log("No save slots found.");
       } else {
         for (const s of slots) {
-          console.log(`  ${s.slotName} — ${s.levelsUnlocked}/${s.totalLevels} levels unlocked, scene: ${s.currentScene ?? "none"}`);
+          console.log(
+            `  ${s.slotName} — ${s.levelsUnlocked}/${s.totalLevels} levels unlocked, scene: ${s.currentScene ?? "none"}`
+          );
         }
       }
       return;
@@ -383,7 +397,7 @@ async function main(argv: string[]): Promise<void> {
         const skillName = args[1];
         if (!skillName) {
           throw new Error(
-            "Usage: gamekit skills apply <skill-id> [--name SceneName] [--wire-shell]",
+            "Usage: gamekit skills apply <skill-id> [--name SceneName] [--wire-shell]"
           );
         }
         const sceneName = readOption(args, "--name");
@@ -416,7 +430,12 @@ async function main(argv: string[]): Promise<void> {
         const category = readOption(args, "--category");
         const query = readOption(args, "--query");
         const tagRaw = readOption(args, "--tag");
-        const tags = tagRaw ? tagRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined;
+        const tags = tagRaw
+          ? tagRaw
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : undefined;
         const recipes = await listRecipes({ category, query, tags });
         if (recipes.length === 0) {
           console.log("No recipes found.");
@@ -448,7 +467,7 @@ async function main(argv: string[]): Promise<void> {
         const recipeId = args[1];
         if (!recipeId) {
           throw new Error(
-            "Usage: gamekit recipes apply <recipe-id> --scene <file> [--entity <id>] [--param key=value]...",
+            "Usage: gamekit recipes apply <recipe-id> --scene <file> [--entity <id>] [--param key=value]..."
           );
         }
         const scenePath = readOption(args, "--scene") ?? "main.scene.json";
@@ -536,7 +555,7 @@ async function main(argv: string[]): Promise<void> {
     case "validate": {
       const { validateProject, validateScene } = await import("@gamekit/schema");
       const gamekitDir = join(cwd, "gamekit");
-      
+
       console.log("🔍 Validating project.json...");
       try {
         const projectRaw = JSON.parse(await readFile(join(gamekitDir, "project.json"), "utf-8"));
@@ -544,7 +563,9 @@ async function main(argv: string[]): Promise<void> {
         if (projectResult.ok) {
           console.log("✅ project.json is VALID.");
         } else {
-          console.error("❌ project.json has ERRORS:\n" + projectResult.errors.map(e => `  - ${e}`).join("\n"));
+          console.error(
+            "❌ project.json has ERRORS:\n" + projectResult.errors.map((e) => `  - ${e}`).join("\n")
+          );
         }
       } catch (err: any) {
         console.error("❌ Failed to read or parse project.json: " + err.message);
@@ -554,7 +575,7 @@ async function main(argv: string[]): Promise<void> {
       try {
         const scenesDir = join(gamekitDir, "scenes");
         const files = await readdir(scenesDir);
-        const sceneFiles = files.filter(f => f.endsWith(".scene.json"));
+        const sceneFiles = files.filter((f) => f.endsWith(".scene.json"));
         for (const file of sceneFiles) {
           try {
             const sceneRaw = JSON.parse(await readFile(join(scenesDir, file), "utf-8"));
@@ -562,7 +583,9 @@ async function main(argv: string[]): Promise<void> {
             if (sceneResult.ok) {
               console.log(`✅ ${file} is VALID.`);
             } else {
-              console.error(`❌ ${file} has ERRORS:\n` + sceneResult.errors.map(e => `  - ${e}`).join("\n"));
+              console.error(
+                `❌ ${file} has ERRORS:\n` + sceneResult.errors.map((e) => `  - ${e}`).join("\n")
+              );
             }
           } catch (err: any) {
             console.error(`❌ Failed to read or parse ${file}: ` + err.message);
@@ -579,18 +602,24 @@ async function main(argv: string[]): Promise<void> {
       const icon = { error: "✖", warn: "⚠", info: "·" } as const;
       console.log(`Playroom doctor — ${report.projectPath}`);
       console.log(
-        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}  Prefabs: ${report.summary.prefabs}`,
+        `Scenes: ${report.summary.scenes}  Assets: ${report.summary.assets}  Levels: ${report.summary.levels}  Prefabs: ${report.summary.prefabs}`
       );
       console.log("");
       for (const issue of report.issues) {
         const loc = issue.path ? ` (${issue.path})` : "";
-        console.log(`  ${icon[issue.level]} [${issue.level}] ${issue.code}: ${issue.message}${loc}`);
+        console.log(
+          `  ${icon[issue.level]} [${issue.level}] ${issue.code}: ${issue.message}${loc}`
+        );
       }
       console.log("");
       if (report.ok) {
-        console.log(`OK — ${report.summary.warnings} warning(s), ${report.summary.errors} error(s)`);
+        console.log(
+          `OK — ${report.summary.warnings} warning(s), ${report.summary.errors} error(s)`
+        );
       } else {
-        console.error(`FAILED — ${report.summary.errors} error(s), ${report.summary.warnings} warning(s)`);
+        console.error(
+          `FAILED — ${report.summary.errors} error(s), ${report.summary.warnings} warning(s)`
+        );
         process.exitCode = 1;
       }
       return;
@@ -604,7 +633,12 @@ async function main(argv: string[]): Promise<void> {
       }
       const skipDoctor = args.includes("--skip-doctor");
       const pack = !args.includes("--no-pack");
-      const result = await buildProject(cwd, { outDir: resolve(cwd, out), platform, skipDoctor, pack });
+      const result = await buildProject(cwd, {
+        outDir: resolve(cwd, out),
+        platform,
+        skipDoctor,
+        pack,
+      });
       console.log(`Built gamekit pack → ${result.outDir}`);
       console.log(`  platform: ${result.platform}`);
       console.log(`  scenes:   ${result.scenes.length}`);
@@ -612,13 +646,17 @@ async function main(argv: string[]): Promise<void> {
       if (result.packed?.atlas) {
         console.log(
           `  atlas:    ${result.packed.atlas.frames} frame(s) → ${result.packed.atlas.image}` +
-            (result.packed.atlas.skipped.length ? ` (${result.packed.atlas.skipped.length} skipped)` : ""),
+            (result.packed.atlas.skipped.length
+              ? ` (${result.packed.atlas.skipped.length} skipped)`
+              : "")
         );
       }
       if (result.packed?.audioBank) {
         console.log(
           `  audio:    ${result.packed.audioBank.clips} clip(s) → ${result.packed.audioBank.bank}` +
-            (result.packed.audioBank.skipped.length ? ` (${result.packed.audioBank.skipped.length} skipped)` : ""),
+            (result.packed.audioBank.skipped.length
+              ? ` (${result.packed.audioBank.skipped.length} skipped)`
+              : "")
         );
       }
       console.log(`  duration: ${result.durationMs}ms`);
@@ -674,11 +712,24 @@ async function main(argv: string[]): Promise<void> {
       console.log(`Tool audit logs (showing ${entries.length} recent entries):\n`);
       for (const entry of entries) {
         const time = entry.isoTime.replace("T", " ").replace("Z", "").slice(0, 19);
-        const icon = entry.status === "ok" ? "✓" : entry.status === "cached" ? "⚡" : entry.status === "denied" ? "✋" : "✖";
+        const icon =
+          entry.status === "ok"
+            ? "✓"
+            : entry.status === "cached"
+              ? "⚡"
+              : entry.status === "denied"
+                ? "✋"
+                : "✖";
         const scene = entry.sceneId ? ` [${entry.sceneId}]` : "";
         const dur = `${entry.durationMs}ms`;
-        const summary = entry.error ? ` — error: ${entry.error}` : entry.summary ? ` — ${entry.summary}` : "";
-        console.log(`  ${icon} ${time}  ${entry.tool.padEnd(24)}  ${entry.status.padEnd(8)}  ${dur.padStart(6)}${scene}${summary}`);
+        const summary = entry.error
+          ? ` — error: ${entry.error}`
+          : entry.summary
+            ? ` — ${entry.summary}`
+            : "";
+        console.log(
+          `  ${icon} ${time}  ${entry.tool.padEnd(24)}  ${entry.status.padEnd(8)}  ${dur.padStart(6)}${scene}${summary}`
+        );
       }
       return;
     }

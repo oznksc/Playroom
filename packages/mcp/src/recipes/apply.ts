@@ -7,12 +7,7 @@ import {
   type GameRulesConfig,
   type ScriptComponent,
 } from "@gamekit/schema";
-import type {
-  Recipe,
-  RecipeApplyParams,
-  RecipeApplyResult,
-  RecipeMerge,
-} from "./types.js";
+import type { Recipe, RecipeApplyParams, RecipeApplyResult, RecipeMerge } from "./types.js";
 
 /**
  * Resolve recipe params (defaults + overrides) and substitute `{{param}}`
@@ -20,7 +15,7 @@ import type {
  */
 export function resolveParams(
   recipe: Recipe,
-  overrides: RecipeApplyParams = {},
+  overrides: RecipeApplyParams = {}
 ): { values: RecipeApplyParams; warnings: string[] } {
   const values: RecipeApplyParams = {};
   const warnings: string[] = [];
@@ -52,7 +47,7 @@ export function resolveParams(
 
 function coerceParam(
   value: string | number | boolean,
-  type: "string" | "number" | "boolean",
+  type: "string" | "number" | "boolean"
 ): string | number | boolean {
   if (type === "number") {
     if (typeof value === "number") return value;
@@ -69,10 +64,7 @@ function coerceParam(
   return String(value);
 }
 
-export function substituteParams(
-  template: unknown,
-  params: RecipeApplyParams,
-): unknown {
+export function substituteParams(template: unknown, params: RecipeApplyParams): unknown {
   if (typeof template === "string") {
     const fullMatch = template.match(/^\{\{(\w+)\}\}$/);
     if (fullMatch) {
@@ -108,7 +100,9 @@ export function pruneScriptActions(component: Record<string, unknown>): Record<s
     return component;
   }
 
-  const handlers = (component.handlers as Array<{ event: string; actions: Array<Record<string, unknown>> }>)
+  const handlers = (
+    component.handlers as Array<{ event: string; actions: Array<Record<string, unknown>> }>
+  )
     .map((handler) => ({
       ...handler,
       actions: handler.actions.filter((action) => {
@@ -128,7 +122,7 @@ export function pruneScriptActions(component: Record<string, unknown>): Record<s
 
 function mergeScriptComponents(
   existing: ScriptComponent,
-  incoming: ScriptComponent,
+  incoming: ScriptComponent
 ): ScriptComponent {
   const handlers = [...existing.handlers];
   for (const h of incoming.handlers) {
@@ -146,7 +140,7 @@ function applyComponentToEntity(
   entity: GameKitEntity,
   component: GameKitComponent,
   merge: RecipeMerge,
-  skipped: string[],
+  skipped: string[]
 ): boolean {
   const existingIdx = entity.components.findIndex((c) => c.type === component.type);
 
@@ -187,7 +181,7 @@ function mergeInputMap(
     keys?: string[];
     touchControl?: "left" | "right" | "jump" | "fire" | "action";
     gamepad?: string;
-  }>,
+  }>
 ): string[] {
   const current = scene.inputMap?.bindings ? [...scene.inputMap.bindings] : [];
   const applied: string[] = [];
@@ -221,7 +215,7 @@ export function applyRecipeToScene(
   options: {
     entityId?: string;
     params?: RecipeApplyParams;
-  } = {},
+  } = {}
 ): RecipeApplyResult {
   const warnings: string[] = [];
   const appliedComponents: string[] = [];
@@ -234,11 +228,7 @@ export function applyRecipeToScene(
   warnings.push(...paramWarnings);
 
   // Default CameraFollow targetId to the entity being edited
-  if (
-    options.entityId &&
-    recipe.params.targetId &&
-    values.targetId === undefined
-  ) {
+  if (options.entityId && recipe.params.targetId && values.targetId === undefined) {
     values.targetId = options.entityId;
   }
 
@@ -259,17 +249,12 @@ export function applyRecipeToScene(
         component = GameKitComponentSchema.parse(pruned);
       } catch (err) {
         warnings.push(
-          `Skipped invalid component ${String(pruned.type)}: ${err instanceof Error ? err.message : String(err)}`,
+          `Skipped invalid component ${String(pruned.type)}: ${err instanceof Error ? err.message : String(err)}`
         );
         continue;
       }
 
-      const applied = applyComponentToEntity(
-        entity,
-        component,
-        recipe.merge,
-        skippedComponents,
-      );
+      const applied = applyComponentToEntity(entity, component, recipe.merge, skippedComponents);
       if (applied) {
         appliedComponents.push(component.type);
       }
@@ -341,12 +326,12 @@ export function applyRecipeToScene(
             entity,
             component,
             recipe.merge,
-            skippedComponents,
+            skippedComponents
           );
           if (applied) appliedComponents.push(component.type);
         } catch (err) {
           warnings.push(
-            `Skipped invalid component: ${err instanceof Error ? err.message : String(err)}`,
+            `Skipped invalid component: ${err instanceof Error ? err.message : String(err)}`
           );
         }
       }

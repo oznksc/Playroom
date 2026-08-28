@@ -85,23 +85,39 @@ export function GuiInstanceInspector({
             <NumberField
               label="X"
               value={instance.x}
-              onChange={(v) => onChange((inst) => { inst.x = v; })}
+              onChange={(v) =>
+                onChange((inst) => {
+                  inst.x = v;
+                })
+              }
             />
             <NumberField
               label="Y"
               value={instance.y}
-              onChange={(v) => onChange((inst) => { inst.y = v; })}
+              onChange={(v) =>
+                onChange((inst) => {
+                  inst.y = v;
+                })
+              }
             />
           </div>
           <CheckboxField
             label="Visible"
             checked={instance.visible !== false}
-            onChange={(checked) => onChange((inst) => { inst.visible = checked; })}
+            onChange={(checked) =>
+              onChange((inst) => {
+                inst.visible = checked;
+              })
+            }
           />
           <CheckboxField
             label="Interactive"
             checked={instance.interactive === true}
-            onChange={(checked) => onChange((inst) => { inst.interactive = checked; })}
+            onChange={(checked) =>
+              onChange((inst) => {
+                inst.interactive = checked;
+              })
+            }
           />
         </AccordionSection>
 
@@ -184,9 +200,7 @@ export function GuiInstanceInspector({
                               )}
                               onChange={(e) => setOverride(node.id, "assetId", e.target.value)}
                             >
-                              <option value="">
-                                — (default: {(node as GuiImage).assetId}) —
-                              </option>
+                              <option value="">— (default: {(node as GuiImage).assetId}) —</option>
                               {assets.map((a) => (
                                 <option key={a.id} value={a.id}>
                                   {a.id}
@@ -227,17 +241,13 @@ type OverrideFieldProps = {
   type?: "text" | "color";
 };
 
-function OverrideField({
-  label,
-  override,
-  fallback,
-  onChange,
-  type = "text",
-}: OverrideFieldProps) {
+function OverrideField({ label, override, fallback, onChange, type = "text" }: OverrideFieldProps) {
   const hasOverride = override !== undefined && override !== null;
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">{label}</span>
+      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+        {label}
+      </span>
       {type === "color" ? (
         <input
           type="color"

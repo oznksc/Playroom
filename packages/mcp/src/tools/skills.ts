@@ -107,7 +107,9 @@ export function registerSkillTools(server: McpServer, fileIO: FileIO): void {
         files = await readdir(skillsDir);
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: "Skills directory not found" }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: "Skills directory not found" }) },
+          ],
           isError: true,
         };
       }
@@ -130,7 +132,7 @@ export function registerSkillTools(server: McpServer, fileIO: FileIO): void {
       return {
         content: [{ type: "text", text: JSON.stringify(skills, null, 2) }],
       };
-    },
+    }
   );
 
   server.tool(
@@ -149,7 +151,9 @@ export function registerSkillTools(server: McpServer, fileIO: FileIO): void {
         skill = JSON.parse(raw);
       } catch {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Skill not found: ${skillName}` }) }],
+          content: [
+            { type: "text", text: JSON.stringify({ error: `Skill not found: ${skillName}` }) },
+          ],
           isError: true,
         };
       }
@@ -196,11 +200,11 @@ export function registerSkillTools(server: McpServer, fileIO: FileIO): void {
                 entities: scene.entities.map((e) => e.name),
               },
               null,
-              2,
+              2
             ),
           },
         ],
       };
-    },
+    }
   );
 }

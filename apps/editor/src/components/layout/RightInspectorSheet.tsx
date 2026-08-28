@@ -1,4 +1,11 @@
-import type { GameKitAsset, GameKitEntity, GameKitScene, GuiComponent, GuiComponentInstance, GuiNode } from "@gamekit/schema";
+import type {
+  GameKitAsset,
+  GameKitEntity,
+  GameKitScene,
+  GuiComponent,
+  GuiComponentInstance,
+  GuiNode,
+} from "@gamekit/schema";
 import { FloatingSheet } from "@/ui";
 import { GuiInstanceInspector } from "../GuiInstanceInspector.js";
 import { GuiInspector } from "../GuiInspector.js";
@@ -40,12 +47,7 @@ export function RightInspectorSheet({
   deleteEntity,
 }: RightInspectorSheetProps) {
   return (
-    <FloatingSheet
-      side="right"
-      open={inspectorOpen}
-      role="dialog"
-      aria-label="Inspector"
-    >
+    <FloatingSheet side="right" open={inspectorOpen} role="dialog" aria-label="Inspector">
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div
           key={
@@ -59,9 +61,14 @@ export function RightInspectorSheet({
         >
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector
-              instance={scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)!}
+              instance={scene.gui.componentInstances?.find(
+                (i) => i.id === selectedComponentInstanceId
+              )!}
               component={guiComponents.find(
-                (c) => c.id === scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)?.componentId
+                (c) =>
+                  c.id ===
+                  scene.gui.componentInstances?.find((i) => i.id === selectedComponentInstanceId)
+                    ?.componentId
               )}
               assets={assets}
               onChange={updateGuiComponentInstance}
@@ -82,7 +89,9 @@ export function RightInspectorSheet({
               multiCount={selectedEntityIds.size}
               onChange={(mutator) =>
                 updateScene((draft) => {
-                  const entity = draft.entities.find((candidate) => candidate.id === selectedEntityId);
+                  const entity = draft.entities.find(
+                    (candidate) => candidate.id === selectedEntityId
+                  );
                   if (entity) mutator(entity);
                 })
               }

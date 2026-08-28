@@ -82,7 +82,8 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
         </DialogHeader>
         <DialogBody className="space-y-3">
           <DialogDescription>
-            Pick a genre template. A new scene is created with entities, colliders, and input bindings.
+            Pick a genre template. A new scene is created with entities, colliders, and input
+            bindings.
           </DialogDescription>
           <div className="flex max-h-[360px] flex-col gap-1.5 overflow-auto">
             {loading ? (
@@ -111,10 +112,14 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-semibold text-text-primary">{skill.name}</span>
+                      <span className="text-[12px] font-semibold text-text-primary">
+                        {skill.name}
+                      </span>
                       <Badge variant="muted">{skill.entityCount} entities</Badge>
                     </div>
-                    <p className="mt-0.5 text-[11px] leading-snug text-text-muted">{skill.description}</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+                      {skill.description}
+                    </p>
                   </div>
                   <ChevronRight
                     size={14}
@@ -124,9 +129,7 @@ export function ProjectWizard({ open, onClose, onApplied, onStatus }: ProjectWiz
               ))
             )}
           </div>
-          {applying && (
-            <p className="text-center text-[10px] text-accent">Applying template…</p>
-          )}
+          {applying && <p className="text-center text-[10px] text-accent">Applying template…</p>}
           <div className="flex justify-end pt-1">
             <Button variant="secondary" size="md" onClick={onClose}>
               Cancel

@@ -4,7 +4,7 @@ import type {
   StreamEvent,
   ProviderMessage,
   ModelTool,
-  ToolCall
+  ToolCall,
 } from "./types.js";
 
 const DEFAULT_BASE_URL = "http://localhost:11434";
@@ -15,7 +15,11 @@ export class OllamaAdapter implements ProviderAdapter {
   readonly defaultBaseUrl = DEFAULT_BASE_URL;
   readonly requiresApiKey = false;
 
-  async listModels(input: { apiKey: string; baseUrl?: string; signal: AbortSignal }): Promise<string[]> {
+  async listModels(input: {
+    apiKey: string;
+    baseUrl?: string;
+    signal: AbortSignal;
+  }): Promise<string[]> {
     try {
       const res = await fetch(`${input.baseUrl ?? DEFAULT_BASE_URL}/api/tags`, {
         signal: input.signal,
