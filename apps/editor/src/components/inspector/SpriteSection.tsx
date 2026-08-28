@@ -1,6 +1,6 @@
 import type { SpriteComponent, GameKitAsset } from "@gamekit/schema";
 import { ImagePlus, FolderOpen } from "lucide-react";
-import { NumberField, AccordionSection } from "@/ui";
+import { NumberField, AccordionSection, Select } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import { getApiUrl } from "../../lib/api.js";
 import type { OnChange } from "./types.js";
@@ -38,7 +38,7 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
             )}
             <div className="min-w-0 flex-1">
               <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-text-muted">Asset Ref</label>
-              <select className="h-[26px] w-full rounded-md border border-border-default bg-bg-base px-2 text-[12px] outline-none focus:border-accent"
+              <Select
                 value={sprite.assetId}
                 onChange={(event) => {
                   const val = event.target.value;
@@ -50,7 +50,7 @@ export function SpriteSection({ sprite, assets, onChange, open, onToggle, onRemo
                 {assets.map((asset) => (
                   <option key={asset.id} value={asset.id}>{asset.id}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="flex flex-col gap-1.5" style={{ marginTop: 10 }}>

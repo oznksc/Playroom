@@ -1,6 +1,6 @@
 import type { GameKitScene } from "@gamekit/schema";
 import { Folder, Wand2, Clock3, Terminal, X } from "lucide-react";
-import { IconButton, SegmentedControl, Badge, cn } from "@/ui";
+import { IconButton, Tabs, TabsList, TabsTrigger, TabsContent, Badge, cn } from "@/ui";
 import shellStyles from "../AppShell.module.css";
 import sheetStyles from "../SheetChrome.module.css";
 import { AssetsPanel } from "../AssetsPanel.js";
@@ -83,69 +83,67 @@ export function BottomContentDrawer({
       aria-label="Content browser"
     >
       <div className={sheetStyles["bottom-sheet-handle"]} aria-hidden />
-      <div className={sheetStyles["bottom-sheet-header"]}>
-        {showTimeline || showConsole ? (
-          <SegmentedControl
+      <Tabs
+        value={activeBottomTab}
+        onValueChange={(tab) => setActiveBottomTab(tab as BottomTab)}
+        className="flex h-full min-h-0 flex-col"
+      >
+        <div className={sheetStyles["bottom-sheet-header"]}>
+          {showTimeline || showConsole ? (
+            <TabsList size="sm">
+              <TabsTrigger
+                value="assets"
+                icon={<Folder size={13} strokeWidth={1.75} />}
+                badge={snapshot.assets.length}
+              >
+                Content
+              </TabsTrigger>
+              <TabsTrigger
+                value="studio"
+                icon={<Wand2 size={13} strokeWidth={1.75} className="text-accent" />}
+              >
+                Studio
+              </TabsTrigger>
+              {showTimeline && (
+                <TabsTrigger
+                  value="timeline"
+                  icon={<Clock3 size={13} strokeWidth={1.75} />}
+                >
+                  Timeline
+                </TabsTrigger>
+              )}
+              {showConsole && (
+                <TabsTrigger
+                  value="console"
+                  icon={<Terminal size={13} strokeWidth={1.75} />}
+                  badge={logs.length > 0 ? logs.length : undefined}
+                >
+                  Console
+                </TabsTrigger>
+              )}
+            </TabsList>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Folder size={14} className="text-accent" />
+              <span className="text-xs font-semibold text-text-primary">Content</span>
+              <Badge variant="muted" className="font-mono text-[9px]">
+                {snapshot.assets.length}
+              </Badge>
+            </div>
+          )}
+          <IconButton
             size="sm"
-            variant="default"
-            value={activeBottomTab}
-            onValueChange={(tab) => setActiveBottomTab(tab as BottomTab)}
-            options={[
-              {
-                value: "assets",
-                label: "Content",
-                icon: <Folder size={13} strokeWidth={1.75} />,
-                badge: snapshot.assets.length,
-              },
-              {
-                value: "studio",
-                label: "Studio",
-                icon: <Wand2 size={13} strokeWidth={1.75} className="text-accent" />,
-              },
-              ...(showTimeline
-                ? [
-                    {
-                      value: "timeline" as const,
-                      label: "Timeline",
-                      icon: <Clock3 size={13} strokeWidth={1.75} />,
-                    },
-                  ]
-                : []),
-              ...(showConsole
-                ? [
-                    {
-                      value: "console" as const,
-                      label: "Console",
-                      icon: <Terminal size={13} strokeWidth={1.75} />,
-                      badge: logs.length > 0 ? logs.length : undefined,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        ) : (
-          <div className="flex items-center gap-2">
-            <Folder size={14} className="text-accent" />
-            <span className="text-xs font-semibold text-text-primary">Content</span>
-            <Badge variant="muted" className="font-mono text-[9px]">
-              {snapshot.assets.length}
-            </Badge>
-          </div>
-        )}
-        <IconButton
-          size="sm"
-          variant="ghost"
-          title="Close content drawer"
-          aria-label="Close content drawer"
-          onClick={() => setBottomDrawerCollapsed(true)}
-          className="ml-auto text-text-muted hover:text-text-primary"
-        >
-          <X size={14} strokeWidth={1.75} />
-        </IconButton>
-      </div>
-      <div className={shellStyles["drawer-content-box"]}>
-        <div key={activeBottomTab} className={shellStyles["drawer-tab-pane"]}>
-          {activeBottomTab === "assets" && (
+            variant="ghost"
+            title="Close content drawer"
+            aria-label="Close content drawer"
+            onClick={() => setBottomDrawerCollapsed(true)}
+            className="ml-auto text-text-muted hover:text-text-primary"
+          >
+            <X size={14} strokeWidth={1.75} />
+          </IconButton>
+        </div>
+        <div className={shellStyles["drawer-content-box"]}>
+          <TabsContent value="assets" className={shellStyles["drawer-tab-pane"]}>
             <AssetsPanel
               assets={snapshot.assets}
               selectedAssetId={selectedAssetId}
@@ -154,8 +152,8 @@ export function BottomContentDrawer({
               onImport={(file) => importAsset(file).catch(setError)}
               onOpenAssetStudio={() => openContent("studio")}
             />
-          )}
-          {activeBottomTab === "studio" && (
+          </TabsContent>
+          <TabsContent value="studio" className={shellStyles["drawer-tab-pane"]}>
             <AssetStudioModal
               embedded
               isOpen
@@ -170,19 +168,23 @@ export function BottomContentDrawer({
               selectedEntityId={selectedEntityId}
               activeSceneId={currentSceneFile}
             />
+          </TabsContent>
+          {showTimeline && (
+            <TabsContent value="timeline" className={shellStyles["drawer-tab-pane"]}>
+              <TimelinePanel scene={scene} onChange={updateScene} />
+            </TabsContent>
           )}
-          {showTimeline && activeBottomTab === "timeline" && (
-            <TimelinePanel scene={scene} onChange={updateScene} />
-          )}
-          {showConsole && activeBottomTab === "console" && (
-            <ConsolePanel
-              logs={logs}
-              onExecuteCommand={executeConsoleCommand}
-              onClearLogs={() => setLogs([])}
-            />
+          {showConsole && (
+            <TabsContent value="console" className={shellStyles["drawer-tab-pane"]}>
+              <ConsolePanel
+                logs={logs}
+                onExecuteCommand={executeConsoleCommand}
+                onClearLogs={() => setLogs([])}
+              />
+            </TabsContent>
           )}
         </div>
-      </div>
+      </Tabs>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import type { RigidBodyComponent } from "@gamekit/schema";
 import { Box } from "lucide-react";
-import { NumberField, AccordionSection } from "@/ui";
+import { NumberField, AccordionSection, CheckboxField } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import type { OnChange } from "./types.js";
 
@@ -48,26 +48,22 @@ export function RigidBodySection({ rigidBody, onChange, open, onToggle, onRemove
               onChange={(value) => onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.gravityScale = value; })}
             />
           </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input id="rigid-body-kinematic-check" type="checkbox" className="size-3.5 accent-accent"
-              checked={rigidBody.isKinematic}
-              onChange={(event) => {
-                const val = event.target.checked;
-                onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = val; });
-              }}
-            />
-            <label htmlFor="rigid-body-kinematic-check">Is Kinematic</label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input id="rigid-body-gravity-check" type="checkbox" className="size-3.5 accent-accent"
-              checked={rigidBody.useGravity}
-              onChange={(event) => {
-                const val = event.target.checked;
-                onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = val; });
-              }}
-            />
-            <label htmlFor="rigid-body-gravity-check">Use Gravity</label>
-          </div>
+          <CheckboxField
+            id="rigid-body-kinematic-check"
+            label="Is Kinematic"
+            checked={rigidBody.isKinematic}
+            onChange={(checked) => {
+              onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.isKinematic = checked; });
+            }}
+          />
+          <CheckboxField
+            id="rigid-body-gravity-check"
+            label="Use Gravity"
+            checked={rigidBody.useGravity}
+            onChange={(checked) => {
+              onChange((draft) => { findComponent<RigidBodyComponent>(draft, "RigidBody")!.useGravity = checked; });
+            }}
+          />
         </>
       ) : (
         <p className="text-center text-[10px] text-text-muted">No RigidBody attached</p>

@@ -1,6 +1,6 @@
 import type { PolygonColliderComponent } from "@gamekit/schema";
 import { Route } from "lucide-react";
-import { NumberField, AccordionSection } from "@/ui";
+import { NumberField, AccordionSection, CheckboxField } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import type { OnChange } from "./types.js";
 
@@ -56,28 +56,22 @@ export function PolygonColliderSection({ polygonCollider, onChange, open, onTogg
               })}
             />
           </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="polygon-collider-static-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={polygonCollider.isStatic}
-              onChange={(event) => onChange((draft) => {
-                findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isStatic = event.target.checked;
-              })}
-            />
-            <label htmlFor="polygon-collider-static-check">Is Static (Rigid obstacle)</label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="polygon-collider-trigger-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={polygonCollider.isTrigger ?? false}
-              onChange={(event) => onChange((draft) => {
-                findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isTrigger = event.target.checked;
-              })}
-            />
-            <label htmlFor="polygon-collider-trigger-check">Is Trigger (Overlap only)</label>
-          </div>
+          <CheckboxField
+            id="polygon-collider-static-check"
+            label="Is Static (Rigid obstacle)"
+            checked={polygonCollider.isStatic}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isStatic = checked;
+            })}
+          />
+          <CheckboxField
+            id="polygon-collider-trigger-check"
+            label="Is Trigger (Overlap only)"
+            checked={polygonCollider.isTrigger ?? false}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<PolygonColliderComponent>(draft, "PolygonCollider")!.isTrigger = checked;
+            })}
+          />
           <div className="text-[10px] text-text-muted">
             {polygonCollider.points.length} point{polygonCollider.points.length !== 1 ? "s" : ""} — draw on canvas to edit
           </div>

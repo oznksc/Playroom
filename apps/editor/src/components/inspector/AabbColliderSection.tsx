@@ -1,6 +1,6 @@
 import type { AabbColliderComponent } from "@gamekit/schema";
 import { Box } from "lucide-react";
-import { NumberField, AccordionSection } from "@/ui";
+import { NumberField, AccordionSection, CheckboxField } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import type { OnChange } from "./types.js";
 
@@ -76,28 +76,22 @@ export function AabbColliderSection({ collider, onChange, open, onToggle, onRemo
               />
             </div>
           )}
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="collider-static-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={collider.isStatic}
-              onChange={(event) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = event.target.checked;
-              })}
-            />
-            <label htmlFor="collider-static-check">Static collider</label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="collider-trigger-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={collider.isTrigger ?? false}
-              onChange={(event) => onChange((draft) => {
-                findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = event.target.checked;
-              })}
-            />
-            <label htmlFor="collider-trigger-check">Is Trigger (Overlap only)</label>
-          </div>
+          <CheckboxField
+            id="collider-static-check"
+            label="Static collider"
+            checked={collider.isStatic}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isStatic = checked;
+            })}
+          />
+          <CheckboxField
+            id="collider-trigger-check"
+            label="Is Trigger (Overlap only)"
+            checked={collider.isTrigger ?? false}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<AabbColliderComponent>(draft, "AabbCollider")!.isTrigger = checked;
+            })}
+          />
         </>
       ) : (
         <p className="text-center text-[10px] text-text-muted">No Box Collider attached</p>

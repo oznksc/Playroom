@@ -124,7 +124,7 @@ export const TabsTrigger = React.forwardRef<
   return (
     <TabsPrimitive.Trigger
       ref={ref}
-      className={cn(sizeStyles, variantStyles, className)}
+      className={cn("group", sizeStyles, variantStyles, className)}
       onClick={(e) => {
         onClick?.(e);
         if (props.value && ctx.onValueChange && ctx.value !== props.value) {
@@ -141,7 +141,11 @@ export const TabsTrigger = React.forwardRef<
       <span className="truncate">{children}</span>
       {badge !== undefined && (
         <span
-          className="ml-0.5 rounded-full px-1.5 py-0 text-[8px] font-mono bg-white/[0.08] text-text-muted group-data-[state=active]:bg-accent/20 group-data-[state=active]:text-accent group-data-[state=active]:font-semibold"
+          className={cn(
+            "ml-1 shrink-0 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] font-mono leading-none select-none transition-all duration-150",
+            "bg-white/[0.08] text-[rgba(235,235,245,0.6)]",
+            "group-data-[state=active]:bg-accent/25 group-data-[state=active]:text-accent group-data-[state=active]:font-bold group-data-[state=active]:shadow-[0_0_8px_rgba(0,240,255,0.3)]"
+          )}
         >
           {badge}
         </span>

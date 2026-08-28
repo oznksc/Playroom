@@ -1,6 +1,6 @@
 import type { CircleColliderComponent } from "@gamekit/schema";
 import { Circle } from "lucide-react";
-import { NumberField, AccordionSection } from "@/ui";
+import { NumberField, AccordionSection, CheckboxField } from "@/ui";
 import { findComponent } from "../../lib/components.js";
 import type { OnChange } from "./types.js";
 
@@ -65,28 +65,22 @@ export function CircleColliderSection({ circleCollider, onChange, open, onToggle
               })}
             />
           </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="circle-collider-static-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={circleCollider.isStatic}
-              onChange={(event) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = event.target.checked;
-              })}
-            />
-            <label htmlFor="circle-collider-static-check">Is Static (Rigid obstacle)</label>
-          </div>
-          <div className="flex items-center gap-2 py-0.5 text-[11px] text-text-secondary">
-            <input
-              id="circle-collider-trigger-check"
-              type="checkbox" className="size-3.5 accent-accent"
-              checked={circleCollider.isTrigger}
-              onChange={(event) => onChange((draft) => {
-                findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = event.target.checked;
-              })}
-            />
-            <label htmlFor="circle-collider-trigger-check">Is Trigger (Overlap only)</label>
-          </div>
+          <CheckboxField
+            id="circle-collider-static-check"
+            label="Is Static (Rigid obstacle)"
+            checked={circleCollider.isStatic}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isStatic = checked;
+            })}
+          />
+          <CheckboxField
+            id="circle-collider-trigger-check"
+            label="Is Trigger (Overlap only)"
+            checked={circleCollider.isTrigger}
+            onChange={(checked) => onChange((draft) => {
+              findComponent<CircleColliderComponent>(draft, "CircleCollider")!.isTrigger = checked;
+            })}
+          />
         </>
       ) : (
         <p className="text-center text-[10px] text-text-muted">No Circle Collider attached</p>
