@@ -1,6 +1,5 @@
 import type { GameKitAsset, GameKitEntity, GameKitScene, GuiComponent, GuiComponentInstance, GuiNode } from "@gamekit/schema";
-import { cn } from "@/ui";
-import shellStyles from "../AppShell.module.css";
+import { FloatingSheet } from "@/ui";
 import { GuiInstanceInspector } from "../GuiInstanceInspector.js";
 import { GuiInspector } from "../GuiInspector.js";
 import { Inspector } from "../Inspector.js";
@@ -41,15 +40,13 @@ export function RightInspectorSheet({
   deleteEntity,
 }: RightInspectorSheetProps) {
   return (
-    <div
-      className={cn(shellStyles["float-sheet-right"], inspectorOpen && shellStyles.open)}
+    <FloatingSheet
+      side="right"
+      open={inspectorOpen}
       role="dialog"
       aria-label="Inspector"
     >
-      <div
-        className={shellStyles["inspector-column"]}
-        style={{ display: "flex", flexDirection: "column", height: "100%" }}
-      >
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div
           key={
             selectedComponentInstanceId
@@ -58,7 +55,7 @@ export function RightInspectorSheet({
                 ? `gui-${selectedGuiNodeId}`
                 : `entity-${selectedEntityId ?? "none"}`
           }
-          className={shellStyles["sheet-panel-pane"]}
+          className="animate-sheet-panel relative flex h-full min-h-0 w-full flex-col"
         >
           {selectedComponentInstanceId && scene ? (
             <GuiInstanceInspector
@@ -98,6 +95,6 @@ export function RightInspectorSheet({
           )}
         </div>
       </div>
-    </div>
+    </FloatingSheet>
   );
 }

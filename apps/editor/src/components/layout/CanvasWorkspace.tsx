@@ -16,8 +16,10 @@ import type { PlayOutcomeState } from "../../hooks/usePlaySimulation.js";
 import { USE_PHASER_PLAY_HOST } from "../../hooks/usePlaySimulation.js";
 import type { ProjectSnapshot } from "../../types.js";
 import type { SceneManager } from "@gamekit/runtime/manager";
+import type { ConsoleLog } from "../ConsolePanel.js";
+import type { EditorBottomTab } from "../../lib/editor-layout.js";
 
-export interface CanvasWorkspaceProps {
+export interface CanvasDocumentContract {
   scene: GameKitScene | undefined;
   snapshot: ProjectSnapshot;
   currentSceneFile: string;
@@ -31,7 +33,9 @@ export interface CanvasWorkspaceProps {
   push: (mutator: (draft: GameKitScene | undefined) => void) => void;
   setIsDirty: (dirty: boolean) => void;
   triggerAutoSave: () => void;
-  // Tools & Viewport
+}
+
+export interface CanvasViewportContract {
   zoom: number;
   setZoom: (z: number | ((prev: number) => number)) => void;
   snap: boolean;
@@ -52,7 +56,9 @@ export interface CanvasWorkspaceProps {
   setShowColliders: (show: boolean | ((prev: boolean) => boolean)) => void;
   viewResetKey: number;
   showGuiTools?: boolean;
-  // Selection
+}
+
+export interface CanvasSelectionContract {
   selectedEntityIds: Set<string>;
   setSelectedEntityIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedGuiNodeId: string | null;
@@ -65,7 +71,9 @@ export interface CanvasWorkspaceProps {
   duplicateEntity: (id: string) => void;
   pasteEntity: (source: GameKitEntity) => void;
   saveEntityAsPrefab: (id: string) => Promise<void>;
-  // Play Simulation
+}
+
+export interface CanvasPlaybackContract {
   isPlaying: boolean;
   isPaused: boolean;
   setIsPaused: React.Dispatch<React.SetStateAction<boolean>>;
@@ -94,15 +102,32 @@ export interface CanvasWorkspaceProps {
   playOutcomeRef: React.MutableRefObject<"none" | "gameOver" | "win">;
   playVarsRef: React.MutableRefObject<Record<string, unknown>>;
   syncPlayLevelUnlocksFromManager: () => void;
-  addConsoleLog: (type: any, message: string) => void;
-  // Nav banner callbacks
-  openContent: (tab?: any) => void;
+  addConsoleLog: (type: ConsoleLog["type"], message: string) => void;
+}
+
+export interface CanvasNavigationContract {
+  openContent: (tab?: EditorBottomTab) => void;
   openLevels: () => void;
   openTour: () => void;
   setNewProjectWizardOpen: (open: boolean) => void;
 }
 
+export interface CanvasWorkspaceProps {
+  document: CanvasDocumentContract;
+  viewport: CanvasViewportContract;
+  selection: CanvasSelectionContract;
+  playback: CanvasPlaybackContract;
+  navigation: CanvasNavigationContract;
+}
+
 export function CanvasWorkspace({
+  document,
+  viewport,
+  selection,
+  playback,
+  navigation,
+}: CanvasWorkspaceProps) {
+  const {
   scene,
   snapshot,
   currentSceneFile,
@@ -116,6 +141,8 @@ export function CanvasWorkspace({
   push,
   setIsDirty,
   triggerAutoSave,
+  } = document;
+  const {
   zoom,
   setZoom,
   snap,
@@ -136,6 +163,8 @@ export function CanvasWorkspace({
   setShowColliders,
   viewResetKey,
   showGuiTools = true,
+  } = viewport;
+  const {
   selectedEntityIds,
   setSelectedEntityIds,
   selectedGuiNodeId,
@@ -148,6 +177,8 @@ export function CanvasWorkspace({
   duplicateEntity,
   pasteEntity,
   saveEntityAsPrefab,
+  } = selection;
+  const {
   isPlaying,
   isPaused,
   setIsPaused,
@@ -177,11 +208,13 @@ export function CanvasWorkspace({
   playVarsRef,
   syncPlayLevelUnlocksFromManager,
   addConsoleLog,
+  } = playback;
+  const {
   openContent,
   openLevels,
   openTour,
   setNewProjectWizardOpen,
-}: CanvasWorkspaceProps) {
+  } = navigation;
   const paletteImages = useImageCache(snapshot.assets);
 
   const renderScenePane = (paneId: "a" | "b", targetFile: string) => {

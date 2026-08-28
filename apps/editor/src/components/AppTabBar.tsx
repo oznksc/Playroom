@@ -42,22 +42,12 @@ import {
 import { cn } from "@/ui";
 import type { SaveState } from "../types.js";
 import type { CanvasTool } from "../lib/editor-tools.js";
+import type { EditorTabBarDestination } from "../lib/editor-layout.js";
 import styles from "./AppTabBar.module.css";
 export type { CanvasTool } from "../lib/editor-tools.js";
 
 /** Left workspace destinations (shown on tab bar). */
-export type TabBarDestination =
-  | "hierarchy"
-  | "scenes"
-  | "prefabs"
-  | "levels"
-  | "guis"
-  | "gui-components"
-  | "recipes"
-  | "services"
-  | "content"
-  | "agent"
-  | "world";
+export type TabBarDestination = EditorTabBarDestination;
 
 type AppTabBarProps = {
   active: TabBarDestination | null;

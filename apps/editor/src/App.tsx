@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { BrandCorner } from "./components/BrandCorner.js";
 import { AppTabBar } from "./components/AppTabBar.js";
 import { PlayControls } from "./components/PlayControls.js";
@@ -12,6 +12,13 @@ import { NewProjectWizard } from "./components/NewProjectWizard.js";
 import { AgentSettings } from "./components/AgentSettings.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { getApiUrl } from "./lib/api.js";
+import {
+  INITIAL_EDITOR_LAYOUT,
+  editorLayoutReducer,
+  getBottomDestination,
+  getLeftDestination,
+  getTabBarDestination,
+} from "./lib/editor-layout.js";
 import shellStyles from "./components/AppShell.module.css";
 
 // Modular Domain Hooks
@@ -37,11 +44,17 @@ export function App() {
   const { isTourOpen, openTour, closeTour } = useEditorTour();
 
   // Layout and Drawer UI State
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<SidebarTabId>("entities");
-  const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [bottomDrawerCollapsed, setBottomDrawerCollapsed] = useState(true);
-  const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>("assets");
+  const [layout, dispatchLayout] = useReducer(editorLayoutReducer, INITIAL_EDITOR_LAYOUT);
+  const leftDestination = getLeftDestination(layout.destination);
+  const bottomDestination = getBottomDestination(layout.destination);
+  const sidebarOpen = leftDestination !== null;
+  const activeTab: SidebarTabId = leftDestination ?? "entities";
+  const inspectorOpen = layout.inspectorOpen;
+  const bottomDrawerCollapsed = bottomDestination === null;
+  const activeBottomTab: BottomTab = bottomDestination ?? "assets";
+  const setInspectorOpen = useCallback((open: boolean) => {
+    dispatchLayout({ type: "set-inspector-open", open });
+  }, []);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [agentExpanded, setAgentExpanded] = useState(
     () => localStorage.getItem("gamekit:agent:expanded") === "1",
@@ -122,9 +135,7 @@ export function App() {
 
   // Navigation callbacks
   const openLeftPanel = useCallback((tab: SidebarTabId) => {
-    setActiveTab(tab);
-    setSidebarOpen(true);
-    setBottomDrawerCollapsed(true);
+    dispatchLayout({ type: "navigate", destination: { region: "left", tab } });
   }, []);
 
   const openHierarchy = useCallback(() => openLeftPanel("entities"), [openLeftPanel]);
@@ -139,9 +150,7 @@ export function App() {
   const openServices = useCallback(() => openLeftPanel("services"), [openLeftPanel]);
 
   const openContent = useCallback((tab: BottomTab = "assets") => {
-    setActiveBottomTab(tab);
-    setBottomDrawerCollapsed(false);
-    setSidebarOpen(false);
+    dispatchLayout({ type: "navigate", destination: { region: "bottom", tab } });
   }, []);
 
   const centerView = useCallback(() => {
@@ -265,9 +274,7 @@ export function App() {
     selectEntity: (id) => {
       entities.selectEntity(id);
       setInspectorOpen(true);
-      setSidebarOpen(true);
-      setActiveTab("entities");
-      setBottomDrawerCollapsed(true);
+      openLeftPanel("entities");
     },
     setStatus: project.setStatus,
     showLevels: MVP_SHOW_LEVELS,
@@ -355,84 +362,94 @@ export function App() {
       data-bottom-sheet-open={!bottomDrawerCollapsed ? "true" : "false"}
     >
       <CanvasWorkspace
-        scene={project.scene}
-        snapshot={project.snapshot}
-        currentSceneFile={project.currentSceneFile}
-        workspace={project.workspace}
-        dirtyFiles={project.dirtyFiles}
-        paneScenes={project.paneScenes}
-        activateScene={project.activateScene}
-        handleCloseSceneTab={project.handleCloseSceneTab}
-        handleSplitChange={project.handleSplitChange}
-        updateScene={project.updateScene}
-        push={project.push}
-        setIsDirty={project.setIsDirty}
-        triggerAutoSave={project.triggerAutoSave}
-        zoom={zoom}
-        setZoom={setZoom}
-        snap={snap}
-        setSnap={setSnap}
-        snapSize={snapSize}
-        setSnapSize={setSnapSize}
-        activeTool={activeTool}
-        setActiveTool={setActiveTool}
-        tilePaintMode={tilePaintMode}
-        setTilePaintMode={setTilePaintMode}
-        brushSize={brushSize}
-        setBrushSize={setBrushSize}
-        paintTileId={paintTileId}
-        setPaintTileId={setPaintTileId}
-        showGrid={showGrid}
-        setShowGrid={setShowGrid}
-        showColliders={showColliders}
-        setShowColliders={setShowColliders}
-        viewResetKey={viewResetKey}
-        showGuiTools={MVP_SHOW_GUI_TOOLS}
-        selectedEntityIds={entities.selectedEntityIds}
-        setSelectedEntityIds={entities.setSelectedEntityIds}
-        selectedGuiNodeId={gui.selectedGuiNodeId}
-        setSelectedGuiNodeId={gui.setSelectedGuiNodeId}
-        selectedComponentInstanceId={gui.selectedComponentInstanceId}
-        setSelectedComponentInstanceId={gui.setSelectedComponentInstanceId}
-        clipboardRef={entities.clipboardRef}
-        addEntity={entities.addEntity}
-        deleteEntity={entities.deleteEntity}
-        duplicateEntity={entities.duplicateEntity}
-        pasteEntity={entities.pasteEntity}
-        saveEntityAsPrefab={entities.saveEntityAsPrefab}
-        isPlaying={play.isPlaying}
-        isPaused={play.isPaused}
-        setIsPaused={play.setIsPaused}
-        playViewPan={play.playViewPan}
-        playOutcome={play.playOutcome}
-        setPlayOutcome={play.setPlayOutcome}
-        playLives={play.playLives}
-        setPlayLives={play.setPlayLives}
-        playHostScene={play.playHostScene}
-        playHostKey={play.playHostKey}
-        playAssetUrls={play.playAssetUrls}
-        playHostLevel={play.playHostLevel}
-        profilerOpen={play.profilerOpen}
-        profilerSample={play.profilerSample}
-        virtualTouchControls={play.virtualTouchControls}
-        handlePlayToggle={play.handlePlayToggle}
-        handleStop={play.handleStop}
-        handlePlayRestart={play.handlePlayRestart}
-        onVirtualInput={play.onVirtualInput}
-        onGuiAction={play.onGuiAction}
-        onPhaserOutcome={play.onPhaserOutcome}
-        onMetrics={play.onMetrics}
-        playHotSwapRef={play.playHotSwapRef}
-        playSceneManagerRef={play.playSceneManagerRef}
-        playLivesRef={play.playLivesRef}
-        playOutcomeRef={play.playOutcomeRef}
-        playVarsRef={play.playVarsRef}
-        syncPlayLevelUnlocksFromManager={levels.syncPlayLevelUnlocksFromManager}
-        addConsoleLog={project.addConsoleLog}
-        openContent={openContent}
-        openLevels={openLevels}
-        openTour={openTour}
-        setNewProjectWizardOpen={setNewProjectWizardOpen}
+        document={{
+          scene: project.scene,
+          snapshot: project.snapshot,
+          currentSceneFile: project.currentSceneFile,
+          workspace: project.workspace,
+          dirtyFiles: project.dirtyFiles,
+          paneScenes: project.paneScenes,
+          activateScene: project.activateScene,
+          handleCloseSceneTab: project.handleCloseSceneTab,
+          handleSplitChange: project.handleSplitChange,
+          updateScene: project.updateScene,
+          push: project.push,
+          setIsDirty: project.setIsDirty,
+          triggerAutoSave: project.triggerAutoSave,
+        }}
+        viewport={{
+          zoom,
+          setZoom,
+          snap,
+          setSnap,
+          snapSize,
+          setSnapSize,
+          activeTool,
+          setActiveTool,
+          tilePaintMode,
+          setTilePaintMode,
+          brushSize,
+          setBrushSize,
+          paintTileId,
+          setPaintTileId,
+          showGrid,
+          setShowGrid,
+          showColliders,
+          setShowColliders,
+          viewResetKey,
+          showGuiTools: MVP_SHOW_GUI_TOOLS,
+        }}
+        selection={{
+          selectedEntityIds: entities.selectedEntityIds,
+          setSelectedEntityIds: entities.setSelectedEntityIds,
+          selectedGuiNodeId: gui.selectedGuiNodeId,
+          setSelectedGuiNodeId: gui.setSelectedGuiNodeId,
+          selectedComponentInstanceId: gui.selectedComponentInstanceId,
+          setSelectedComponentInstanceId: gui.setSelectedComponentInstanceId,
+          clipboardRef: entities.clipboardRef,
+          addEntity: entities.addEntity,
+          deleteEntity: entities.deleteEntity,
+          duplicateEntity: entities.duplicateEntity,
+          pasteEntity: entities.pasteEntity,
+          saveEntityAsPrefab: entities.saveEntityAsPrefab,
+        }}
+        playback={{
+          isPlaying: play.isPlaying,
+          isPaused: play.isPaused,
+          setIsPaused: play.setIsPaused,
+          playViewPan: play.playViewPan,
+          playOutcome: play.playOutcome,
+          setPlayOutcome: play.setPlayOutcome,
+          playLives: play.playLives,
+          setPlayLives: play.setPlayLives,
+          playHostScene: play.playHostScene,
+          playHostKey: play.playHostKey,
+          playAssetUrls: play.playAssetUrls,
+          playHostLevel: play.playHostLevel,
+          profilerOpen: play.profilerOpen,
+          profilerSample: play.profilerSample,
+          virtualTouchControls: play.virtualTouchControls,
+          handlePlayToggle: play.handlePlayToggle,
+          handleStop: play.handleStop,
+          handlePlayRestart: play.handlePlayRestart,
+          onVirtualInput: play.onVirtualInput,
+          onGuiAction: play.onGuiAction,
+          onPhaserOutcome: play.onPhaserOutcome,
+          onMetrics: play.onMetrics,
+          playHotSwapRef: play.playHotSwapRef,
+          playSceneManagerRef: play.playSceneManagerRef,
+          playLivesRef: play.playLivesRef,
+          playOutcomeRef: play.playOutcomeRef,
+          playVarsRef: play.playVarsRef,
+          syncPlayLevelUnlocksFromManager: levels.syncPlayLevelUnlocksFromManager,
+          addConsoleLog: project.addConsoleLog,
+        }}
+        navigation={{
+          openContent,
+          openLevels,
+          openTour,
+          setNewProjectWizardOpen,
+        }}
       />
 
       {/* Bottom-left logo and state indicator */}
@@ -457,92 +474,56 @@ export function App() {
       {/* Bottom tab bar — navigation, tools, project */}
       <AppTabBar
         active={
-          !bottomDrawerCollapsed
-            ? "content"
-            : sidebarOpen && activeTab === "agent"
-              ? "agent"
-              : sidebarOpen && activeTab === "world"
-                ? "world"
-                : sidebarOpen && activeTab === "scenes"
-                  ? "scenes"
-                  : sidebarOpen && activeTab === "prefabs"
-                    ? "prefabs"
-                    : sidebarOpen && activeTab === "levels"
-                      ? "levels"
-                      : sidebarOpen && activeTab === "guis"
-                        ? "guis"
-                        : sidebarOpen && activeTab === "components"
-                          ? "gui-components"
-                          : sidebarOpen && activeTab === "recipes"
-                            ? "recipes"
-                            : sidebarOpen && activeTab === "services"
-                              ? "services"
-                              : sidebarOpen
-                                ? "hierarchy"
-                                : null
+          getTabBarDestination(layout.destination)
         }
         saveState={project.saveState}
         projectPath={project.isTauri ? project.projectPath : null}
         showLevels={MVP_SHOW_LEVELS}
         showGuiTools={MVP_SHOW_GUI_TOOLS}
         onHierarchy={() => {
-          if (sidebarOpen && activeTab === "entities") setSidebarOpen(false);
-          else openHierarchy();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "entities" } });
         }}
         onScenes={() => {
-          if (sidebarOpen && activeTab === "scenes") setSidebarOpen(false);
-          else openScenes();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "scenes" } });
         }}
         onPrefabs={() => {
-          if (sidebarOpen && activeTab === "prefabs") setSidebarOpen(false);
-          else openPrefabs();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "prefabs" } });
         }}
         onLevels={
           MVP_SHOW_LEVELS
             ? () => {
-                if (sidebarOpen && activeTab === "levels") setSidebarOpen(false);
-                else openLevels();
+                dispatchLayout({ type: "toggle", destination: { region: "left", tab: "levels" } });
               }
             : undefined
         }
         onGuis={
           MVP_SHOW_GUI_TOOLS
             ? () => {
-                if (sidebarOpen && activeTab === "guis") setSidebarOpen(false);
-                else openGuis();
+                dispatchLayout({ type: "toggle", destination: { region: "left", tab: "guis" } });
               }
             : undefined
         }
         onGuiComponents={
           MVP_SHOW_GUI_TOOLS
             ? () => {
-                if (sidebarOpen && activeTab === "components") setSidebarOpen(false);
-                else openGuiComponents();
+                dispatchLayout({ type: "toggle", destination: { region: "left", tab: "components" } });
               }
             : undefined
         }
         onRecipes={() => {
-          if (sidebarOpen && activeTab === "recipes") setSidebarOpen(false);
-          else openRecipes();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "recipes" } });
         }}
         onServices={() => {
-          if (sidebarOpen && activeTab === "services") setSidebarOpen(false);
-          else openServices();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "services" } });
         }}
         onContent={() => {
-          if (!bottomDrawerCollapsed && activeBottomTab === "assets") {
-            setBottomDrawerCollapsed(true);
-          } else {
-            openContent("assets");
-          }
+          dispatchLayout({ type: "toggle", destination: { region: "bottom", tab: "assets" } });
         }}
         onAgent={() => {
-          if (sidebarOpen && activeTab === "agent") setSidebarOpen(false);
-          else openAgent();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "agent" } });
         }}
         onWorld={() => {
-          if (sidebarOpen && activeTab === "world") setSidebarOpen(false);
-          else openWorld();
+          dispatchLayout({ type: "toggle", destination: { region: "left", tab: "world" } });
         }}
         onSave={project.saveScene}
         onRefresh={project.refresh}
@@ -571,60 +552,72 @@ export function App() {
 
       {/* Left floating sheet */}
       <LeftSidebarSheet
-        sidebarOpen={sidebarOpen}
-        activeTab={activeTab}
-        agentExpanded={agentExpanded}
-        setAgentExpanded={setAgentExpanded}
-        setInspectorOpen={setInspectorOpen}
-        setAgentSettingsOpen={setAgentSettingsOpen}
-        gameServices={project.snapshot.project?.gameServices}
-        onUpdateGameServices={project.handleUpdateGameServices}
-        snapshot={project.snapshot}
-        currentSceneFile={project.currentSceneFile}
-        setCurrentSceneFile={project.setCurrentSceneFile}
-        scene={project.scene}
-        updateScene={project.updateScene}
-        refresh={project.refresh}
-        setStatus={project.setStatus}
-        addConsoleLog={project.addConsoleLog}
-        activateScene={project.activateScene}
-        handleCreateScene={project.handleCreateScene}
-        handleDeleteScene={project.handleDeleteScene}
-        normalizeSceneFile={project.normalizeSceneFile}
-        sceneFileMatches={project.sceneFileMatches}
-        selectedEntityIds={entities.selectedEntityIds}
-        setSelectedEntityIds={entities.setSelectedEntityIds}
-        selectedEntityId={entities.selectedEntityId}
-        selectedEntity={entities.selectedEntity}
-        clipboardRef={entities.clipboardRef}
-        deleteEntity={entities.deleteEntity}
-        duplicateEntity={entities.duplicateEntity}
-        pasteEntity={entities.pasteEntity}
-        saveEntityAsPrefab={entities.saveEntityAsPrefab}
-        addEntity={entities.addEntity}
-        addTemplateEntity={entities.addTemplateEntity}
-        isPlaying={play.isPlaying}
-        showLevels={MVP_SHOW_LEVELS}
-        handleCreateLevel={levels.handleCreateLevel}
-        handleDeleteLevel={levels.handleDeleteLevel}
-        handleToggleUnlockLevel={levels.handleToggleUnlockLevel}
-        handleReorderLevels={levels.handleReorderLevels}
-        handleAssignSceneToLevel={levels.handleAssignSceneToLevel}
-        handleRemoveSceneFromLevel={levels.handleRemoveSceneFromLevel}
-        handleUpdateLevel={levels.handleUpdateLevel}
-        showGuiTools={MVP_SHOW_GUI_TOOLS}
-        selectedGuiNodeId={gui.selectedGuiNodeId}
-        setSelectedGuiNodeId={gui.setSelectedGuiNodeId}
-        setSelectedComponentInstanceId={gui.setSelectedComponentInstanceId}
-        addGuiNode={gui.addGuiNode}
-        deleteGuiNode={gui.deleteGuiNode}
-        editingComponentId={gui.editingComponentId}
-        setEditingComponentId={gui.setEditingComponentId}
-        addGuiComponent={gui.addGuiComponent}
-        deleteGuiComponent={gui.deleteGuiComponent}
-        addNodeToEditingComponent={gui.addNodeToEditingComponent}
-        deleteNodeFromEditingComponent={gui.deleteNodeFromEditingComponent}
-        addGuiComponentInstance={gui.addGuiComponentInstance}
+        layout={{
+          sidebarOpen,
+          activeTab,
+          agentExpanded,
+          setAgentExpanded,
+          setInspectorOpen,
+          setAgentSettingsOpen,
+        }}
+        document={{
+          snapshot: project.snapshot,
+          currentSceneFile: project.currentSceneFile,
+          setCurrentSceneFile: project.setCurrentSceneFile,
+          scene: project.scene,
+          updateScene: project.updateScene,
+          refresh: project.refresh,
+          setStatus: project.setStatus,
+          addConsoleLog: project.addConsoleLog,
+          activateScene: project.activateScene,
+          handleCreateScene: project.handleCreateScene,
+          handleDeleteScene: project.handleDeleteScene,
+          normalizeSceneFile: project.normalizeSceneFile,
+          sceneFileMatches: project.sceneFileMatches,
+        }}
+        selection={{
+          selectedEntityIds: entities.selectedEntityIds,
+          setSelectedEntityIds: entities.setSelectedEntityIds,
+          selectedEntityId: entities.selectedEntityId,
+          selectedEntity: entities.selectedEntity,
+          clipboardRef: entities.clipboardRef,
+          deleteEntity: entities.deleteEntity,
+          duplicateEntity: entities.duplicateEntity,
+          pasteEntity: entities.pasteEntity,
+          saveEntityAsPrefab: entities.saveEntityAsPrefab,
+          addEntity: entities.addEntity,
+          addTemplateEntity: entities.addTemplateEntity,
+        }}
+        playback={{ isPlaying: play.isPlaying }}
+        levels={{
+          showLevels: MVP_SHOW_LEVELS,
+          handleCreateLevel: levels.handleCreateLevel,
+          handleDeleteLevel: levels.handleDeleteLevel,
+          handleToggleUnlockLevel: levels.handleToggleUnlockLevel,
+          handleReorderLevels: levels.handleReorderLevels,
+          handleAssignSceneToLevel: levels.handleAssignSceneToLevel,
+          handleRemoveSceneFromLevel: levels.handleRemoveSceneFromLevel,
+          handleUpdateLevel: levels.handleUpdateLevel,
+        }}
+        gui={{
+          showGuiTools: MVP_SHOW_GUI_TOOLS,
+          selectedGuiNodeId: gui.selectedGuiNodeId,
+          setSelectedGuiNodeId: gui.setSelectedGuiNodeId,
+          setSelectedComponentInstanceId: gui.setSelectedComponentInstanceId,
+          addGuiNode: gui.addGuiNode,
+          deleteGuiNode: gui.deleteGuiNode,
+          editingComponentId: gui.editingComponentId,
+          setEditingComponentId: gui.setEditingComponentId,
+          addGuiComponent: gui.addGuiComponent,
+          deleteGuiComponent: gui.deleteGuiComponent,
+          addNodeToEditingComponent: gui.addNodeToEditingComponent,
+          deleteNodeFromEditingComponent: gui.deleteNodeFromEditingComponent,
+          addGuiComponentInstance: gui.addGuiComponentInstance,
+        }}
+        services={{
+          gameServices: project.snapshot.project?.gameServices,
+          onUpdateGameServices: project.handleUpdateGameServices,
+        }}
       />
 
       {/* Right floating inspector sheet */}
@@ -650,9 +643,12 @@ export function App() {
       <BottomContentDrawer
         scene={project.scene}
         bottomDrawerCollapsed={bottomDrawerCollapsed}
-        setBottomDrawerCollapsed={setBottomDrawerCollapsed}
+        setBottomDrawerCollapsed={(collapsed) => {
+          if (collapsed) dispatchLayout({ type: "close-navigation" });
+          else openContent(activeBottomTab);
+        }}
         activeBottomTab={activeBottomTab}
-        setActiveBottomTab={setActiveBottomTab}
+        setActiveBottomTab={openContent}
         snapshot={project.snapshot}
         selectedAssetId={project.selectedAssetId}
         setSelectedAssetId={project.setSelectedAssetId}

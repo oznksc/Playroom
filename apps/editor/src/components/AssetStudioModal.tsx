@@ -10,17 +10,8 @@ import {
   Film,
   Plus,
   Download,
-  Wand2,
-  Square,
-  Zap,
-  Flame,
-  Shield,
-  Heart,
   Skull,
   Coins,
-  Crosshair,
-  Footprints,
-  Wind,
   Maximize2,
   Sliders,
   X,
@@ -30,48 +21,31 @@ import {
   ZoomIn,
   ZoomOut,
   Radio,
-  RefreshCw,
-  Lightbulb,
-  Send,
   Bot,
   Target,
   CheckCircle2,
-  Disc,
 } from "lucide-react";
 import {
   Button,
   IconButton,
-  Input,
-  Select,
-  Field,
   Badge,
   SegmentedControl,
   cn,
 } from "@/ui";
-import { getApiUrl } from "../lib/api.js";
 import { useAgent } from "../hooks/useAgent.js";
 import { useAgentKeys } from "../hooks/useAgentKeys.js";
-import { AgentMessage } from "./AgentMessage.js";
-import { AgentToolTrace } from "./AgentToolTrace.js";
+import { AssetStudioStationDeck } from "./AssetStudioStations.js";
 import styles from "./AssetStudioModal.module.css";
 import sheetStyles from "./SheetChrome.module.css";
-import {
-  parseAiPrompt,
-  enhanceAiPrompt,
-  generateAiVariationSet,
-  renderClientSprite,
-  renderClientSpritesheet,
-  playWebAudioSfx,
-  PALETTES,
-  type PaletteName,
-  type SpriteCategory,
-  type AnimationAction,
-  type AiSpriteVariation,
-} from "../lib/client-asset-generator.js";
 import type { GameKitAsset } from "@gamekit/schema";
+import { useAssetStudioAudio } from "../hooks/useAssetStudioAudio.js";
+import {
+  useAssetStudioGeneration,
+  type AssetStudioTab,
+} from "../hooks/useAssetStudioGeneration.js";
 
 type StudioMode = "sheet" | "expanded" | "fullscreen";
-type StudioTab = "copilot" | "sprites" | "animated" | "sfx" | "music";
+type StudioTab = AssetStudioTab;
 
 type AssetStudioModalProps = {
   isOpen: boolean;
@@ -149,40 +123,6 @@ const PINPOINT_SUGGESTIONS: PinpointSuggestion[] = [
   },
 ];
 
-const SFX_BUTTON_PRESETS = [
-  { id: "jump", label: "Jump", icon: Footprints, desc: "Classic 8-bit pitch rise" },
-  { id: "coin", label: "Coin / Gem", icon: Coins, desc: "Bright shimmering pickup" },
-  { id: "laser", label: "Laser Gun", icon: Zap, desc: "Fast pew-pew pitch drop" },
-  { id: "explosion", label: "Explosion", icon: Flame, desc: "Low rumble noise blast" },
-  { id: "hit", label: "Hit Impact", icon: Shield, desc: "Punchy damage strike" },
-  { id: "powerup", label: "Powerup", icon: Sparkles, desc: "Ascending victory chime" },
-  { id: "hurt", label: "Hurt Grunt", icon: Heart, desc: "Damage grunt with noise" },
-  { id: "ui_click", label: "UI Click", icon: Square, desc: "Crisp UI button tap" },
-  { id: "defeat", label: "Defeat", icon: Skull, desc: "Sad descending slide" },
-  { id: "victory", label: "Victory", icon: Sparkles, desc: "Triumphant fanfare" },
-  { id: "whoosh", label: "Whoosh", icon: Wind, desc: "Air sweep transition" },
-  { id: "teleport", label: "Teleport", icon: Crosshair, desc: "Sci-fi frequency warble" },
-];
-
-const MUSIC_GENRE_PRESETS = [
-  { id: "chiptune_adventure", label: "Chiptune Adventure", bpm: 130, scale: "major", key: "C", desc: "Upbeat 8-bit overworld melody" },
-  { id: "boss_battle", label: "Boss Battle", bpm: 145, scale: "harmonic_minor", key: "D", desc: "Tense, aggressive combat pace" },
-  { id: "chill_dungeon", label: "Chill Dungeon", bpm: 92, scale: "dorian", key: "E", desc: "Mysterious ambient cave loop" },
-  { id: "cyberpunk_pulse", label: "Cyberpunk Pulse", bpm: 120, scale: "minor", key: "F", desc: "Driving synthwave bassline" },
-  { id: "retro_menu", label: "Retro Menu Theme", bpm: 110, scale: "major", key: "G", desc: "Catchy friendly title theme" },
-  { id: "victory_fanfare", label: "Victory Fanfare", bpm: 125, scale: "major", key: "C", desc: "Celebratory brass flourish" },
-  { id: "spooky_night", label: "Spooky Night", bpm: 96, scale: "minor", key: "A", desc: "Eerie suspenseful atmosphere" },
-];
-
-const PALETTE_OPTIONS: { value: PaletteName; label: string }[] = [
-  { value: "pico8", label: "PICO-8 (16 Retro Colors)" },
-  { value: "gameboy", label: "Game Boy (4 Green Tones)" },
-  { value: "cyberpunk", label: "Cyberpunk (Neon Cyan & Violet)" },
-  { value: "nes", label: "NES (8-bit Classic)" },
-  { value: "pastel", label: "Pastel Fantasy" },
-  { value: "monochrome", label: "Monochrome (Ink & Paper)" },
-];
-
 export function AssetStudioModal({
   isOpen,
   embedded = false,
@@ -224,55 +164,70 @@ export function AssetStudioModal({
     activeKeyEntry?.baseUrl
   );
 
-  // --- AI Prompt Engine ---
-  const [aiPrompt, setAiPrompt] = useState("cyberpunk armored knight with neon cyan blade, glowing visor");
-  const [isSynthesizingAi, setIsSynthesizingAi] = useState(false);
-
-  // --- AI 4-Variation Grid State ---
-  const [variations, setVariations] = useState<AiSpriteVariation[]>([]);
-  const [selectedVariationIndex, setSelectedVariationIndex] = useState<number>(0);
-
   // --- Stage Viewport Controls ---
   const [zoomLevel, setZoomLevel] = useState<number>(3);
   const [showGrid, setShowGrid] = useState(false);
 
-  // --- Parameters State ---
-  const [spriteId, setSpriteId] = useState("hero-cyber-knight");
-  const [spriteCategory, setSpriteCategory] = useState<SpriteCategory>("character");
-  const [spriteArchetype, setSpriteArchetype] = useState("knight");
-  const [spritePalette, setSpritePalette] = useState<PaletteName>("cyberpunk");
-  const [spriteSize, setSpriteSize] = useState(32);
+  const {
+    sfxId,
+    sfxPreset,
+    sfxVolume,
+    setSfxVolume,
+    musicId,
+    musicPreset,
+    setMusicPreset,
+    musicBpm,
+    setMusicBpm,
+    setMusicKey,
+    musicScale,
+    setMusicScale,
+    isPlayingMusicPreview,
+    audioVisualBars,
+    playSfxPreset: handlePlaySfxPreset,
+    generateMusic: handleGenerateMusic,
+    toggleMusicPlay,
+  } = useAssetStudioAudio({ isAgentStreaming: isStreaming, onAssetCreated });
 
-  // --- Spritesheet Animation State ---
-  const [sheetId, setSheetId] = useState("hero-walk");
-  const [sheetAnimation, setSheetAnimation] = useState<AnimationAction>("walk");
-  const [sheetFrames, setSheetFrames] = useState(4);
-  const [sheetFrameSize, setSheetFrameSize] = useState(32);
-  const [sheetFps, setSheetFps] = useState(8);
-  const [sheetPreviewUrl, setSheetPreviewUrl] = useState<string | null>(null);
-  const [isPlayingSheetAnim, setIsPlayingSheetAnim] = useState(true);
-  const [sheetCurrentFrame, setSheetCurrentFrame] = useState(0);
+  const {
+    aiPrompt,
+    setAiPrompt,
+    isSynthesizingAi,
+    variations,
+    selectedVariationIndex,
+    setSelectedVariationIndex,
+    activeVariation,
+    spriteId,
+    spriteCategory,
+    spriteArchetype,
+    setSpriteArchetype,
+    spritePalette,
+    setSpritePalette,
+    spriteSize,
+    setSpriteSize,
+    sheetId,
+    setSheetId,
+    sheetAnimation,
+    setSheetAnimation,
+    sheetFrames,
+    setSheetFrames,
+    sheetFrameSize,
+    sheetFps,
+    setSheetFps,
+    sheetPreviewUrl,
+    isPlayingSheetAnim,
+    setIsPlayingSheetAnim,
+    sheetCurrentFrame,
+    setSheetCurrentFrame,
+    canvasAnimRef,
+    generate: handleGenerateWithAi,
+  } = useAssetStudioGeneration({
+    activeTab,
+    isOpen,
+    onAssetCreated,
+    onGenerateSfx: handlePlaySfxPreset,
+    onGenerateMusic: (preset) => handleGenerateMusic(preset, true),
+  });
 
-  // --- SFX State ---
-  const [sfxId, setSfxId] = useState("sfx-laser");
-  const [sfxPreset, setSfxPreset] = useState("laser");
-  const [sfxVolume, setSfxVolume] = useState(0.8);
-  const [isSynthesizingSfx, setIsSynthesizingSfx] = useState(false);
-
-  // --- Music & BGM State ---
-  const [musicId, setMusicId] = useState("bgm-cyberpunk_pulse");
-  const [musicPreset, setMusicPreset] = useState("cyberpunk_pulse");
-  const [musicBpm, setMusicBpm] = useState(120);
-  const [musicDuration, setMusicDuration] = useState(8);
-  const [musicKey, setMusicKey] = useState("F");
-  const [musicScale, setMusicScale] = useState("minor");
-  const [isPlayingMusicPreview, setIsPlayingMusicPreview] = useState(false);
-  const [musicAudioUrl, setMusicAudioUrl] = useState<string | null>(null);
-  const [audioVisualBars, setAudioVisualBars] = useState<number[]>([12, 24, 18, 30, 42, 28, 14, 36, 48, 20]);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const canvasAnimRef = useRef<HTMLCanvasElement | null>(null);
-  const sheetImageRef = useRef<HTMLImageElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll agent message container
@@ -280,250 +235,10 @@ export function AssetStudioModal({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolCalls, isStreaming]);
 
-  // Initial Seed
-  useEffect(() => {
-    if (isOpen && variations.length === 0) {
-      const analysis = parseAiPrompt(aiPrompt);
-      setSpriteCategory(analysis.category);
-      setSpriteArchetype(analysis.archetype);
-      setSpritePalette(analysis.palette);
-      setSheetAnimation(analysis.animationAction);
-      setVariations(generateAiVariationSet(aiPrompt, analysis.category, analysis.palette, spriteSize));
-      setSelectedVariationIndex(0);
-    }
-  }, [isOpen]);
-
-  // Spritesheet animation loop
-  useEffect(() => {
-    if (!sheetPreviewUrl) return;
-
-    const img = new Image();
-    img.src = sheetPreviewUrl;
-    img.onload = () => {
-      sheetImageRef.current = img;
-    };
-
-    let intervalId: any;
-    if (isPlayingSheetAnim) {
-      intervalId = setInterval(() => {
-        setSheetCurrentFrame((prev) => (prev + 1) % sheetFrames);
-      }, 1000 / Math.max(1, sheetFps));
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [sheetPreviewUrl, sheetFrames, sheetFps, isPlayingSheetAnim]);
-
-  // Canvas Stage Drawing
-  useEffect(() => {
-    const canvas = canvasAnimRef.current;
-    const img = sheetImageRef.current;
-    if (!canvas || !img || !img.complete) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const pw = 8;
-    for (let y = 0; y < canvas.height; y += pw) {
-      for (let x = 0; x < canvas.width; x += pw) {
-        ctx.fillStyle = (Math.floor(x / pw) + Math.floor(y / pw)) % 2 === 0 ? "#0c111c" : "#131a29";
-        ctx.fillRect(x, y, pw, pw);
-      }
-    }
-
-    const sx = sheetCurrentFrame * sheetFrameSize;
-    const sy = 0;
-    const sWidth = sheetFrameSize;
-    const sHeight = sheetFrameSize;
-
-    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-  }, [sheetCurrentFrame, sheetFrameSize, sheetPreviewUrl]);
-
-  // Audio wave visualizer effect
-  useEffect(() => {
-    let animId: number;
-    if (isPlayingMusicPreview || isSynthesizingSfx || isStreaming) {
-      const updateBars = () => {
-        setAudioVisualBars(
-          Array.from({ length: 20 }, () => Math.floor(8 + Math.random() * 64))
-        );
-        animId = requestAnimationFrame(updateBars);
-      };
-      animId = requestAnimationFrame(updateBars);
-    } else {
-      setAudioVisualBars([12, 18, 14, 22, 16, 28, 20, 15, 24, 18, 12, 20, 16, 22, 14, 10, 18, 12, 16, 14]);
-    }
-    return () => {
-      if (animId) cancelAnimationFrame(animId);
-    };
-  }, [isPlayingMusicPreview, isSynthesizingSfx, isStreaming]);
-
-  // ----------------------------------------------------
-  // Generation & Agent Dispatch
-  // ----------------------------------------------------
-
-  async function handleGenerateWithAi(customPrompt?: string) {
-    const p = customPrompt ?? aiPrompt;
-    setIsSynthesizingAi(true);
-
-    const analysis = parseAiPrompt(p);
-    setSpriteCategory(analysis.category);
-    setSpriteArchetype(analysis.archetype);
-    setSpritePalette(analysis.palette);
-    setSheetAnimation(analysis.animationAction);
-
-    const baseName = `${analysis.category}-${analysis.archetype.replace(/[^a-z0-9]+/g, "-")}`;
-    setSpriteId(baseName);
-    setSheetId(`anim-${baseName}`);
-
-    if (activeTab === "sprites" || activeTab === "copilot") {
-      const variationSet = generateAiVariationSet(p, analysis.category, analysis.palette, spriteSize);
-      setVariations(variationSet);
-      setSelectedVariationIndex(0);
-
-      // Attempt backend persistence
-      try {
-        const res = await fetch(getApiUrl("/api/assets/generate/sprite"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: baseName,
-            category: analysis.category,
-            archetype: analysis.archetype,
-            palette: analysis.palette,
-            size: spriteSize,
-            prompt: p,
-          }),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as { asset: GameKitAsset };
-          if (onAssetCreated) onAssetCreated(data.asset);
-        }
-      } catch {
-        // Offline
-      }
-    } else if (activeTab === "animated") {
-      const dataUrl = renderClientSpritesheet(
-        analysis.archetype,
-        analysis.animationAction,
-        sheetFrames,
-        sheetFrameSize,
-        analysis.palette
-      );
-      setSheetPreviewUrl(dataUrl);
-      setSheetCurrentFrame(0);
-    } else if (activeTab === "sfx") {
-      setSfxPreset(analysis.sfxPreset);
-      playWebAudioSfx(analysis.sfxPreset, sfxVolume);
-    } else if (activeTab === "music") {
-      setMusicPreset(analysis.musicGenre);
-      handleGenerateMusic(analysis.musicGenre, true);
-    }
-
-    setIsSynthesizingAi(false);
-  }
-
   async function handleExecutePinpointSuggestion(suggestion: PinpointSuggestion) {
     setActiveTab("copilot");
     setAiPrompt(suggestion.prompt);
     await sendMessage(suggestion.prompt);
-  }
-
-  async function handlePlaySfxPreset(presetName: string) {
-    setSfxPreset(presetName);
-    const chosenId = `sfx-${presetName}`;
-    setSfxId(chosenId);
-    setIsSynthesizingSfx(true);
-
-    try {
-      const res = await fetch(getApiUrl("/api/assets/generate/sfx"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: chosenId,
-          preset: presetName,
-          volume: sfxVolume,
-        }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { asset: GameKitAsset };
-        if (onAssetCreated) onAssetCreated(data.asset);
-
-        const audioUrl = getApiUrl(`/gamekit/assets/${data.asset.file}`);
-        const sound = new Audio(audioUrl);
-        sound.volume = sfxVolume;
-        sound.play().catch(() => playWebAudioSfx(presetName, sfxVolume));
-        setIsSynthesizingSfx(false);
-        return;
-      }
-    } catch {
-      // Backend offline — use Web Audio
-    }
-
-    playWebAudioSfx(presetName, sfxVolume);
-    setIsSynthesizingSfx(false);
-  }
-
-  async function handleGenerateMusic(presetName?: string, autoPlay = true) {
-    const p = presetName || musicPreset;
-    const chosenId = `bgm-${p}`;
-    setMusicId(chosenId);
-    setIsSynthesizingAi(true);
-
-    try {
-      const res = await fetch(getApiUrl("/api/assets/generate/music"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: chosenId,
-          preset: p,
-          bpm: musicBpm,
-          durationSec: musicDuration,
-          key: musicKey,
-          scale: musicScale,
-        }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { asset: GameKitAsset };
-        const fileUrl = getApiUrl(`/gamekit/assets/${data.asset.file}`);
-        setMusicAudioUrl(fileUrl);
-        if (onAssetCreated) onAssetCreated(data.asset);
-
-        if (autoPlay && audioRef.current) {
-          audioRef.current.src = fileUrl;
-          audioRef.current.loop = true;
-          audioRef.current.play().catch(() => {});
-          setIsPlayingMusicPreview(true);
-        }
-      }
-    } catch {
-      // Offline
-    } finally {
-      setIsSynthesizingAi(false);
-    }
-  }
-
-  function toggleMusicPlay() {
-    if (!audioRef.current) return;
-    if (isPlayingMusicPreview) {
-      audioRef.current.pause();
-      setIsPlayingMusicPreview(false);
-    } else {
-      if (musicAudioUrl) {
-        audioRef.current.src = musicAudioUrl;
-        audioRef.current.loop = true;
-        audioRef.current.play().catch(() => {});
-        setIsPlayingMusicPreview(true);
-      } else {
-        handleGenerateMusic(musicPreset, true);
-      }
-    }
   }
 
   function handleDownloadAsset(dataUrl: string | null, filename: string) {
@@ -535,8 +250,6 @@ export function AssetStudioModal({
     a.click();
     document.body.removeChild(a);
   }
-
-  const activeVariation = variations[selectedVariationIndex] || variations[0];
 
   if (!isOpen) return null;
 
@@ -675,7 +388,7 @@ export function AssetStudioModal({
                 type="button"
                 onClick={() => {
                   setActiveTab("sprites");
-                  handleGenerateWithAi();
+                  void handleGenerateWithAi(undefined, "sprites");
                 }}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
@@ -697,7 +410,7 @@ export function AssetStudioModal({
                 type="button"
                 onClick={() => {
                   setActiveTab("animated");
-                  handleGenerateWithAi();
+                  void handleGenerateWithAi(undefined, "animated");
                 }}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left active:scale-[0.98]",
@@ -774,304 +487,62 @@ export function AssetStudioModal({
           {/* ZONE 2: Middle Parameter Deck & Chat Stream */}
           <div className="flex-1 flex flex-col border-r border-white/[0.06] bg-black/20 overflow-hidden min-h-0">
             <div key={activeTab} className={cn(sheetStyles["studio-station-pane"], "flex-1 flex flex-col min-h-0")}>
-              {/* 1. COPILOT CHAT VIEW */}
-              {activeTab === "copilot" && (
-                <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6 gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_30px_rgba(0,240,255,0.15)]">
-                        <Bot size={24} />
-                      </div>
-                      <div className="max-w-md">
-                        <h3 className="text-sm font-bold text-white mb-1">Playroom AI Asset Copilot</h3>
-                        <p className="text-xs text-text-muted leading-relaxed">
-                          Powered by the Playroom Agent system with specialized asset generation and scene synthesis tools.
-                          Ask for characters, animations, sounds, or click any pinpoint suggestion above.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    messages.map((m) => <AgentMessage key={m.id} message={m} />)
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {toolCalls.length > 0 && (
-                  <div className="max-h-48 border-t border-white/[0.06] bg-black/30">
-                    <AgentToolTrace toolCalls={toolCalls} />
-                  </div>
-                )}
-
-                <div className="p-3 border-t border-white/[0.08] bg-black/40 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isStreaming) {
-                        sendMessage(aiPrompt);
-                      }
-                    }}
-                    placeholder="Ask the Agent to create or refine any game asset..."
-                    className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-cyan-400"
-                  />
-
-                  {isStreaming ? (
-                    <Button variant="secondary" size="sm" onClick={abort} className="border-error/40 text-error">
-                      Stop
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="solid"
-                      size="sm"
-                      onClick={() => sendMessage(aiPrompt)}
-                      disabled={!aiPrompt.trim()}
-                      className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold"
-                    >
-                      <Send size={13} /> Send
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 2. SPRITES WORKBENCH VIEW */}
-            {activeTab === "sprites" && (
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
-                <Field label="Palette Style">
-                  <Select
-                    value={spritePalette}
-                    onChange={(e) => setSpritePalette(e.target.value as PaletteName)}
-                  >
-                    {PALETTE_OPTIONS.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label="Resolution Grid">
-                  <Select
-                    value={String(spriteSize)}
-                    onChange={(e) => setSpriteSize(Number(e.target.value))}
-                  >
-                    <option value="16">16×16 (Retro Micro)</option>
-                    <option value="24">24×24 (Classic 8-bit)</option>
-                    <option value="32">32×32 (Standard 16-bit)</option>
-                    <option value="48">48×48 (High Detail)</option>
-                    <option value="64">64×64 (Ultra Pixel HD)</option>
-                  </Select>
-                </Field>
-
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => handleGenerateWithAi()}
-                  disabled={isSynthesizingAi}
-                  className="bg-cyan-500 text-black font-bold hover:bg-cyan-400"
-                >
-                  <RefreshCw size={14} className={isSynthesizingAi ? "animate-spin" : ""} />
-                  {isSynthesizingAi ? "Synthesizing..." : "Synthesize AI Variations"}
-                </Button>
-              </div>
-            )}
-
-            {/* 3. ANIMATED CYCLES VIEW */}
-            {activeTab === "animated" && (
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
-                <Field label="Character Archetype">
-                  <Select
-                    value={spriteArchetype}
-                    onChange={(e) => {
-                      setSpriteArchetype(e.target.value);
-                      setSheetId(`anim-${e.target.value}-${sheetAnimation}`);
-                    }}
-                  >
-                    <option value="hero">Hero / Adventurer</option>
-                    <option value="knight">Armored Knight</option>
-                    <option value="rogue">Shadow Rogue</option>
-                    <option value="wizard">Mystic Wizard</option>
-                    <option value="slime">Bouncy Slime</option>
-                    <option value="robot">Cyber Robot</option>
-                    <option value="alien">Green Alien</option>
-                  </Select>
-                </Field>
-
-                <Field label="Animation Action Cycle">
-                  <Select
-                    value={sheetAnimation}
-                    onChange={(e) => setSheetAnimation(e.target.value as AnimationAction)}
-                  >
-                    <option value="walk">Walk Cycle (4 Frames)</option>
-                    <option value="idle">Idle Breathing (4 Frames)</option>
-                    <option value="run">Sprint Run (4 Frames)</option>
-                    <option value="jump">Jump & Land (4 Frames)</option>
-                    <option value="attack">Weapon Slash (4 Frames)</option>
-                    <option value="hurt">Hurt Knockback (3 Frames)</option>
-                    <option value="die">Collapse / Die (4 Frames)</option>
-                  </Select>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Frames Count">
-                    <Select
-                      value={String(sheetFrames)}
-                      onChange={(e) => setSheetFrames(Number(e.target.value))}
-                    >
-                      <option value="2">2 Frames</option>
-                      <option value="4">4 Frames</option>
-                      <option value="6">6 Frames</option>
-                      <option value="8">8 Frames</option>
-                    </Select>
-                  </Field>
-
-                  <Field label="Playback FPS">
-                    <Input
-                      type="number"
-                      min={2}
-                      max={24}
-                      value={sheetFps}
-                      onChange={(e) => setSheetFps(Number(e.target.value) || 8)}
-                      className="font-mono text-xs"
-                    />
-                  </Field>
-                </div>
-
-                <Button
-                  variant="solid"
-                  size="md"
-                  onClick={() => handleGenerateWithAi()}
-                  disabled={isSynthesizingAi}
-                  className="bg-violet-600 text-white font-bold hover:bg-violet-500"
-                >
-                  <RefreshCw size={14} className={isSynthesizingAi ? "animate-spin" : ""} />
-                  {isSynthesizingAi ? "Synthesizing..." : "Synthesize Animation"}
-                </Button>
-              </div>
-            )}
-
-            {/* 4. SOUND EFFECTS (SFX) VIEW */}
-            {activeTab === "sfx" && (
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">12 SFX Presets</span>
-                  <Badge variant="muted" className="font-mono text-[10px]">16-BIT PCM</Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 overflow-y-auto max-h-72 pr-1">
-                  {SFX_BUTTON_PRESETS.map((p) => {
-                    const Icon = p.icon;
-                    const isSelected = sfxPreset === p.id;
-
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handlePlaySfxPreset(p.id)}
-                        className={cn(
-                          "flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all relative",
-                          isSelected
-                            ? "bg-yellow-500/15 border-yellow-500/50 text-white shadow-[0_0_15px_rgba(234,179,8,0.15)]"
-                            : "bg-white/[0.03] border-white/[0.06] text-text-muted hover:bg-white/[0.06] hover:text-white"
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-                            isSelected ? "bg-yellow-500 text-black font-bold" : "bg-white/[0.06] text-yellow-400"
-                          )}
-                        >
-                          <Icon size={14} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-xs font-semibold block truncate leading-tight">{p.label}</span>
-                          <span className="text-[9px] text-text-muted truncate block">{p.desc}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <Field label="Master Volume">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={sfxVolume}
-                    onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
-                    className="w-full accent-yellow-400"
-                  />
-                </Field>
-              </div>
-            )}
-
-            {/* 5. CHIPTUNE BGM VIEW */}
-            {activeTab === "music" && (
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">7 Chiptune Genres</span>
-                  <Badge variant="accent" className="font-mono text-[10px]">{musicBpm} BPM</Badge>
-                </div>
-
-                <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
-                  {MUSIC_GENRE_PRESETS.map((m) => {
-                    const isSelected = musicPreset === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => {
-                          setMusicPreset(m.id);
-                          setMusicBpm(m.bpm);
-                          setMusicKey(m.key);
-                          setMusicScale(m.scale);
-                          handleGenerateMusic(m.id, true);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between p-2.5 rounded-xl border text-left transition-all",
-                          isSelected
-                            ? "bg-purple-500/15 border-purple-500/50 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                            : "bg-white/[0.03] border-white/[0.06] text-text-muted hover:bg-white/[0.06] hover:text-white"
-                        )}
-                      >
-                        <div>
-                          <span className="text-xs font-bold block">{m.label}</span>
-                          <span className="text-[9px] text-text-muted">{m.desc}</span>
-                        </div>
-                        <Badge variant="muted" className="text-[9px] font-mono">
-                          {m.bpm} BPM
-                        </Badge>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Tempo (BPM)">
-                    <Input
-                      type="number"
-                      min={60}
-                      max={200}
-                      value={musicBpm}
-                      onChange={(e) => setMusicBpm(Number(e.target.value) || 120)}
-                      className="text-xs font-mono"
-                    />
-                  </Field>
-                  <Field label="Key & Scale">
-                    <Select
-                      value={musicScale}
-                      onChange={(e) => setMusicScale(e.target.value)}
-                    >
-                      <option value="major">Major (Upbeat)</option>
-                      <option value="minor">Minor (Tense)</option>
-                      <option value="harmonic_minor">Harmonic Minor</option>
-                      <option value="dorian">Dorian (Mystic)</option>
-                    </Select>
-                  </Field>
-                </div>
-              </div>
-            )}
+              <AssetStudioStationDeck
+                activeTab={activeTab}
+                copilot={{
+                  messages,
+                  toolCalls,
+                  messagesEndRef,
+                  prompt: aiPrompt,
+                  setPrompt: setAiPrompt,
+                  isStreaming,
+                  sendMessage: (prompt) => void sendMessage(prompt),
+                  abort,
+                }}
+                sprites={{
+                  palette: spritePalette,
+                  setPalette: setSpritePalette,
+                  size: spriteSize,
+                  setSize: setSpriteSize,
+                  synthesizing: isSynthesizingAi,
+                  generate: () => void handleGenerateWithAi(),
+                }}
+                animation={{
+                  archetype: spriteArchetype,
+                  setArchetype: (value) => {
+                    setSpriteArchetype(value);
+                    setSheetId(`anim-${value}-${sheetAnimation}`);
+                  },
+                  animation: sheetAnimation,
+                  setAnimation: setSheetAnimation,
+                  frames: sheetFrames,
+                  setFrames: setSheetFrames,
+                  fps: sheetFps,
+                  setFps: setSheetFps,
+                  synthesizing: isSynthesizingAi,
+                  generate: () => void handleGenerateWithAi(),
+                }}
+                sfx={{
+                  preset: sfxPreset,
+                  volume: sfxVolume,
+                  setVolume: setSfxVolume,
+                  playPreset: (preset) => void handlePlaySfxPreset(preset),
+                }}
+                music={{
+                  preset: musicPreset,
+                  bpm: musicBpm,
+                  setBpm: setMusicBpm,
+                  scale: musicScale,
+                  setScale: setMusicScale,
+                  selectPreset: (preset) => {
+                    setMusicPreset(preset.id);
+                    setMusicBpm(preset.bpm);
+                    setMusicKey(preset.key);
+                    setMusicScale(preset.scale);
+                    void handleGenerateMusic(preset.id, true);
+                  },
+                }}
+              />
             </div>
           </div>
 

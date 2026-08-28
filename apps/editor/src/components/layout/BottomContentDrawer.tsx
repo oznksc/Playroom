@@ -1,15 +1,15 @@
 import type { GameKitScene } from "@gamekit/schema";
 import { Folder, Wand2, Clock3, Terminal, X } from "lucide-react";
-import { IconButton, Tabs, TabsList, TabsTrigger, TabsContent, Badge, cn } from "@/ui";
-import shellStyles from "../AppShell.module.css";
+import { BottomDrawer, IconButton, Tabs, TabsList, TabsTrigger, TabsContent, Badge } from "@/ui";
 import sheetStyles from "../SheetChrome.module.css";
 import { AssetsPanel } from "../AssetsPanel.js";
 import { AssetStudioModal } from "../AssetStudioModal.js";
 import { TimelinePanel } from "../TimelinePanel.js";
 import { ConsolePanel, type ConsoleLog } from "../ConsolePanel.js";
 import type { ProjectSnapshot } from "../../types.js";
+import type { EditorBottomTab } from "../../lib/editor-layout.js";
 
-export type BottomTab = "assets" | "studio" | "timeline" | "console";
+export type BottomTab = EditorBottomTab;
 
 export interface BottomContentDrawerProps {
   scene: GameKitScene | undefined;
@@ -73,13 +73,9 @@ export function BottomContentDrawer({
   if (!scene) return null;
 
   return (
-    <section
-      className={cn(
-        shellStyles["bottom-sheet"],
-        !bottomDrawerCollapsed && shellStyles.open,
-        activeBottomTab === "studio" && shellStyles["studio-view"],
-      )}
-      aria-hidden={bottomDrawerCollapsed}
+    <BottomDrawer
+      open={!bottomDrawerCollapsed}
+      size={activeBottomTab === "studio" ? "studio" : "default"}
       aria-label="Content browser"
     >
       <div className={sheetStyles["bottom-sheet-handle"]} aria-hidden />
@@ -142,8 +138,8 @@ export function BottomContentDrawer({
             <X size={14} strokeWidth={1.75} />
           </IconButton>
         </div>
-        <div className={shellStyles["drawer-content-box"]}>
-          <TabsContent value="assets" className={shellStyles["drawer-tab-pane"]}>
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent">
+          <TabsContent value="assets" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
             <AssetsPanel
               assets={snapshot.assets}
               selectedAssetId={selectedAssetId}
@@ -153,7 +149,7 @@ export function BottomContentDrawer({
               onOpenAssetStudio={() => openContent("studio")}
             />
           </TabsContent>
-          <TabsContent value="studio" className={shellStyles["drawer-tab-pane"]}>
+          <TabsContent value="studio" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
             <AssetStudioModal
               embedded
               isOpen
@@ -170,12 +166,12 @@ export function BottomContentDrawer({
             />
           </TabsContent>
           {showTimeline && (
-            <TabsContent value="timeline" className={shellStyles["drawer-tab-pane"]}>
+            <TabsContent value="timeline" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
               <TimelinePanel scene={scene} onChange={updateScene} />
             </TabsContent>
           )}
           {showConsole && (
-            <TabsContent value="console" className={shellStyles["drawer-tab-pane"]}>
+            <TabsContent value="console" className="animate-tab-enter relative flex h-full min-h-0 w-full flex-col">
               <ConsolePanel
                 logs={logs}
                 onExecuteCommand={executeConsoleCommand}
@@ -185,6 +181,6 @@ export function BottomContentDrawer({
           )}
         </div>
       </Tabs>
-    </section>
+    </BottomDrawer>
   );
 }

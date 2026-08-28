@@ -10,18 +10,9 @@ import {
   Trophy,
 } from "lucide-react";
 import { cn } from "@/ui";
+import type { EditorSidebarTab } from "../lib/editor-layout.js";
 
-export type SidebarTabId =
-  | "entities"
-  | "scenes"
-  | "prefabs"
-  | "agent"
-  | "world"
-  | "levels"
-  | "guis"
-  | "components"
-  | "recipes"
-  | "services";
+export type SidebarTabId = EditorSidebarTab;
 
 export type SidebarRailItem = {
   id: SidebarTabId;

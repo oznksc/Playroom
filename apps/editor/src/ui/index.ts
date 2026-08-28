@@ -145,3 +145,11 @@ export {
 } from "./property";
 export { ModalShell, type ModalShellProps } from "./modal-shell";
 export { EmptyState, type EmptyStateProps } from "./empty-state";
+export {
+  GlassSurface,
+  FloatingSheet,
+  BottomDrawer,
+  type GlassSurfaceProps,
+  type FloatingSheetProps,
+  type BottomDrawerProps,
+} from "./surface";

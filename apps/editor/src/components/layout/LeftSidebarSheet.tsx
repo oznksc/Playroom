@@ -1,7 +1,6 @@
 import type { GameKitEntity, GameKitLevel, GameKitScene, GuiNode, GameServicesDef } from "@gamekit/schema";
 import { GameKitEntitySchema, findLevelForScene } from "@gamekit/schema";
-import { cn } from "@/ui";
-import shellStyles from "../AppShell.module.css";
+import { FloatingSheet } from "@/ui";
 import { Sidebar } from "../Sidebar.js";
 import { ScenePanel } from "../ScenePanel.js";
 import { PrefabPanel } from "../PrefabPanel.js";
@@ -16,14 +15,16 @@ import type { SidebarTabId } from "../SidebarRail.js";
 import type { ProjectSnapshot } from "../../types.js";
 import type { ConsoleLog } from "../ConsolePanel.js";
 
-export interface LeftSidebarSheetProps {
+export interface SidebarLayoutContract {
   sidebarOpen: boolean;
   activeTab: SidebarTabId;
   agentExpanded: boolean;
   setAgentExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   setInspectorOpen: (open: boolean) => void;
   setAgentSettingsOpen: (open: boolean) => void;
-  // Project & scene
+}
+
+export interface SidebarDocumentContract {
   snapshot: ProjectSnapshot;
   currentSceneFile: string;
   setCurrentSceneFile: (file: string) => void;
@@ -37,7 +38,9 @@ export interface LeftSidebarSheetProps {
   handleDeleteScene: (sceneId: string) => void;
   normalizeSceneFile: (id: string) => string;
   sceneFileMatches: (a: string, b: string) => boolean;
-  // Entities
+}
+
+export interface SidebarSelectionContract {
   selectedEntityIds: Set<string>;
   setSelectedEntityIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedEntityId: string | undefined;
@@ -49,9 +52,13 @@ export interface LeftSidebarSheetProps {
   saveEntityAsPrefab: (id: string) => Promise<void>;
   addEntity: () => void;
   addTemplateEntity: (templateType: "empty" | "sprite" | "collider" | "player" | "camera") => void;
-  // Simulation
+}
+
+export interface SidebarPlaybackContract {
   isPlaying: boolean;
-  // Levels
+}
+
+export interface SidebarLevelsContract {
   showLevels?: boolean;
   handleCreateLevel: (name: string) => void;
   handleDeleteLevel: (levelId: string) => void;
@@ -60,7 +67,9 @@ export interface LeftSidebarSheetProps {
   handleAssignSceneToLevel: (levelId: string, sceneId: string) => void;
   handleRemoveSceneFromLevel: (levelId: string, sceneId: string) => void;
   handleUpdateLevel: (levelId: string, patch: Partial<GameKitLevel>) => void;
-  // GUI
+}
+
+export interface SidebarGuiContract {
   showGuiTools?: boolean;
   selectedGuiNodeId: string | null;
   setSelectedGuiNodeId: (id: string | null) => void;
@@ -74,20 +83,41 @@ export interface LeftSidebarSheetProps {
   addNodeToEditingComponent: (type: GuiNode["type"]) => void;
   deleteNodeFromEditingComponent: (nodeId: string) => void;
   addGuiComponentInstance: (componentId: string) => void;
-  // Game Services
+}
+
+export interface SidebarServicesContract {
   gameServices?: GameServicesDef;
   onUpdateGameServices?: (def: GameServicesDef) => Promise<void>;
 }
 
+export interface LeftSidebarSheetProps {
+  layout: SidebarLayoutContract;
+  document: SidebarDocumentContract;
+  selection: SidebarSelectionContract;
+  playback: SidebarPlaybackContract;
+  levels: SidebarLevelsContract;
+  gui: SidebarGuiContract;
+  services: SidebarServicesContract;
+}
+
 export function LeftSidebarSheet({
+  layout,
+  document,
+  selection,
+  playback,
+  levels,
+  gui,
+  services,
+}: LeftSidebarSheetProps) {
+  const {
   sidebarOpen,
   activeTab,
   agentExpanded,
   setAgentExpanded,
   setInspectorOpen,
   setAgentSettingsOpen,
-  gameServices,
-  onUpdateGameServices,
+  } = layout;
+  const {
   snapshot,
   currentSceneFile,
   setCurrentSceneFile,
@@ -101,6 +131,8 @@ export function LeftSidebarSheet({
   handleDeleteScene,
   normalizeSceneFile,
   sceneFileMatches,
+  } = document;
+  const {
   selectedEntityIds,
   setSelectedEntityIds,
   selectedEntityId,
@@ -112,7 +144,9 @@ export function LeftSidebarSheet({
   saveEntityAsPrefab,
   addEntity,
   addTemplateEntity,
-  isPlaying,
+  } = selection;
+  const { isPlaying } = playback;
+  const {
   showLevels = true,
   handleCreateLevel,
   handleDeleteLevel,
@@ -121,6 +155,8 @@ export function LeftSidebarSheet({
   handleAssignSceneToLevel,
   handleRemoveSceneFromLevel,
   handleUpdateLevel,
+  } = levels;
+  const {
   showGuiTools = true,
   selectedGuiNodeId,
   setSelectedGuiNodeId,
@@ -134,19 +170,21 @@ export function LeftSidebarSheet({
   addNodeToEditingComponent,
   deleteNodeFromEditingComponent,
   addGuiComponentInstance,
-}: LeftSidebarSheetProps) {
+  } = gui;
+  const {
+  gameServices,
+  onUpdateGameServices,
+  } = services;
   return (
-    <div
-      className={cn(
-        shellStyles["float-sheet-left"],
-        sidebarOpen && shellStyles.open,
-        sidebarOpen && activeTab === "agent" && agentExpanded && shellStyles.expanded,
-      )}
+    <FloatingSheet
+      side="left"
+      open={sidebarOpen}
+      expanded={sidebarOpen && activeTab === "agent" && agentExpanded}
       role="dialog"
       aria-label="Workspace panel"
     >
-      <div className={shellStyles["sidebar-content"]}>
-        <div key={activeTab} className={shellStyles["sheet-panel-pane"]}>
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+        <div key={activeTab} className="animate-sheet-panel relative flex h-full min-h-0 w-full flex-col">
           {activeTab === "entities" && (
             <Sidebar
               entities={scene?.entities ?? []}
@@ -321,6 +359,6 @@ export function LeftSidebarSheet({
           )}
         </div>
       </div>
-    </div>
+    </FloatingSheet>
   );
 }

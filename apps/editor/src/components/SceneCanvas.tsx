@@ -19,13 +19,9 @@ import {
   CopyPlus,
   Boxes,
 } from "lucide-react";
-import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useImageCache } from "../hooks/useImageCache.js";
 import {
-  drawScene,
-  drawSceneFrame,
-  drawScreenSpaceText,
-  drawWorldGrid,
   hitEntity,
   hitGuiNode,
   hitComponentInstance,
@@ -35,6 +31,13 @@ import { findComponent } from "../lib/components.js";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu.js";
 import { cn } from "@/ui";
 import workspaceStyles from "./Workspace.module.css";
+import { useSceneViewport } from "../hooks/useSceneViewport.js";
+import { drawSceneCanvas } from "../lib/scene-canvas-drawing.js";
+import {
+  VirtualGameControls,
+  type VirtualInputAction,
+  type VirtualTouchControl,
+} from "./SceneCanvasOverlays.js";
 
 type SceneCanvasProps = {
   scene?: GameKitScene;
@@ -65,12 +68,9 @@ type SceneCanvasProps = {
   /** Increment to re-center the scene in the viewport. */
   viewResetKey?: number;
   /** Discrete virtual-pad actions for play mode (maps to scene.inputMap). */
-  onVirtualInput?: (
-    action: "left" | "right" | "jump" | "fire" | "action",
-    pressed: boolean,
-  ) => void;
+  onVirtualInput?: (action: VirtualInputAction, pressed: boolean) => void;
   /** Which touch buttons to show (from scene.inputMap). Defaults to jump only. */
-  virtualTouchControls?: Array<"jump" | "fire" | "action">;
+  virtualTouchControls?: VirtualTouchControl[];
   /** Play-mode: GUI Button.action fired on pointer up. */
   onGuiAction?: (action: string) => void;
   onZoomChange: (zoom: number) => void;
@@ -95,10 +95,6 @@ type SceneCanvasProps = {
   onDeleteEntity: (id: string) => void;
   onSaveAsPrefab?: (id: string) => void;
 };
-
-const MIN_ZOOM = 0.25;
-const MAX_ZOOM = 4;
-const VOID_COLOR = "#090c12";
 
 export function SceneCanvas({
   scene,
@@ -141,9 +137,6 @@ export function SceneCanvas({
   onDeleteEntity,
   onSaveAsPrefab,
 }: SceneCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [viewSize, setViewSize] = useState({ w: 0, h: 0 });
   /** Entity under the last right-click (context menu target). */
   const contextEntityIdRef = useRef<string | undefined>();
   const [, setContextMenuTick] = useState(0);
@@ -185,288 +178,43 @@ export function SceneCanvas({
     };
   }, [activeTool, isPlaying, paintDraft, paintHover, paintRectStart, paintMode, paintTileId, brushSize]);
 
-  /** World-space top-left of the visible view: screen = (world - pan) * zoom */
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const panRef = useRef(pan);
-  panRef.current = pan;
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
-
-  const [panning, setPanning] = useState<{
-    startX: number;
-    startY: number;
-    panStartX: number;
-    panStartY: number;
-  } | undefined>();
-  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const images = useImageCache(assets);
-  const didInitialCenter = useRef(false);
+  const {
+    canvasRef,
+    viewportRef,
+    viewSize,
+    pan,
+    setPan,
+    panning,
+    setPanning,
+    isSpacePressed,
+    clientToWorld,
+  } = useSceneViewport({ scene, isPlaying, viewResetKey, zoom, onZoomChange });
 
-  const centerSceneInView = useCallback(
-    (nextZoom = zoomRef.current) => {
-      if (!scene || viewSize.w <= 0 || viewSize.h <= 0) return;
-      setPan({
-        x: scene.viewport.width / 2 - viewSize.w / (2 * nextZoom),
-        y: scene.viewport.height / 2 - viewSize.h / (2 * nextZoom),
-      });
-    },
-    [scene, viewSize.w, viewSize.h]
-  );
-
-  // Full-bleed viewport size
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const cr = entries[0]?.contentRect;
-      if (!cr) return;
-      setViewSize({
-        w: Math.max(1, Math.floor(cr.width)),
-        h: Math.max(1, Math.floor(cr.height)),
-      });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // Center when requested (tab bar “Center”)
-  useEffect(() => {
-    if (!viewResetKey) return;
-    if (isPlaying) return;
-    centerSceneInView();
-  }, [viewResetKey, centerSceneInView, isPlaying]);
-
-  // First layout: center the game viewport in the workspace
-  useEffect(() => {
-    if (didInitialCenter.current) return;
-    if (!scene || viewSize.w <= 0) return;
-    didInitialCenter.current = true;
-    centerSceneInView();
-  }, [scene, viewSize.w, viewSize.h, centerSceneInView]);
-
-  // Enter play: lock editor canvas on the design game screen (do not pan workspace)
-  const wasPlayingRef = useRef(false);
-  useEffect(() => {
-    if (!wasPlayingRef.current && isPlaying) {
-      // Snap workspace so the fixed game frame is centered and fully visible
-      centerSceneInView();
-    }
-    wasPlayingRef.current = isPlaying;
-  }, [isPlaying, centerSceneInView]);
-
-  // Re-center when switching scenes (file id change via viewport dims + name)
-  const sceneKey = scene ? `${scene.id}:${scene.viewport.width}x${scene.viewport.height}` : "";
-  const prevSceneKey = useRef(sceneKey);
-  useEffect(() => {
-    if (!sceneKey || prevSceneKey.current === sceneKey) {
-      prevSceneKey.current = sceneKey;
-      return;
-    }
-    prevSceneKey.current = sceneKey;
-    centerSceneInView();
-  }, [sceneKey, centerSceneInView]);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      const ctrl = e.metaKey || e.ctrlKey;
-      const isInput =
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement ||
-        document.activeElement instanceof HTMLSelectElement;
-
-      if (!isInput) {
-        if (e.code === "Space" || e.key === " ") {
-          e.preventDefault();
-          setIsSpacePressed(true);
-        }
-
-        if (ctrl && (e.key === "=" || e.key === "+")) {
-          e.preventDefault();
-          onZoomChange(Math.min(MAX_ZOOM, zoomRef.current + 0.1));
-        } else if (ctrl && e.key === "-") {
-          e.preventDefault();
-          onZoomChange(Math.max(MIN_ZOOM, zoomRef.current - 0.1));
-        } else if (ctrl && e.key === "0") {
-          e.preventDefault();
-          onZoomChange(1);
-          centerSceneInView(1);
-        }
-      }
-    }
-
-    function handleKeyUp(e: KeyboardEvent) {
-      if (e.code === "Space" || e.key === " ") {
-        setIsSpacePressed(false);
-      }
-    }
-
-    function handleBlur() {
-      setIsSpacePressed(false);
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", handleBlur);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, [onZoomChange, centerSceneInView]);
-
-  // Wheel pan / pinch-zoom over the entire viewport
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    function handleWheel(event: WheelEvent) {
-      event.preventDefault();
-      const target = canvasRef.current;
-      if (!target) return;
-      const rect = target.getBoundingClientRect();
-      const sx = event.clientX - rect.left;
-      const sy = event.clientY - rect.top;
-      const z = zoomRef.current;
-      const p = panRef.current;
-      const worldX = sx / z + p.x;
-      const worldY = sy / z + p.y;
-
-      if (event.ctrlKey || event.metaKey) {
-        const delta = event.deltaY > 0 ? -0.08 : 0.08;
-        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((z + delta) * 100) / 100));
-        setPan({
-          x: worldX - sx / next,
-          y: worldY - sy / next,
-        });
-        onZoomChange(next);
-      } else {
-        setPan((prev) => ({
-          x: prev.x + event.deltaX / z,
-          y: prev.y + event.deltaY / z,
-        }));
-      }
-    }
-
-    canvas.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      canvas.removeEventListener("wheel", handleWheel);
-    };
-  }, [onZoomChange]);
-
-  // Full-viewport draw: void + world grid + scene + frame
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context || viewSize.w <= 0 || viewSize.h <= 0) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const cssW = viewSize.w;
-    const cssH = viewSize.h;
-    canvas.width = Math.floor(cssW * dpr);
-    canvas.height = Math.floor(cssH * dpr);
-
-    // Void fill (screen space)
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.fillStyle = VOID_COLOR;
-    context.fillRect(0, 0, cssW, cssH);
-
-    // World transform: screen = (world - pan) * zoom
-    context.setTransform(
-      dpr * zoom,
-      0,
-      0,
-      dpr * zoom,
-      -pan.x * zoom * dpr,
-      -pan.y * zoom * dpr
-    );
-
-    const worldLeft = pan.x;
-    const worldTop = pan.y;
-    const worldRight = pan.x + cssW / zoom;
-    const worldBottom = pan.y + cssH / zoom;
-
-    if (showGrid) {
-      drawWorldGrid(context, worldLeft, worldTop, worldRight, worldBottom, zoom, snapSize || 32);
-    }
-
-    if (scene) {
-      const vw = scene.viewport.width;
-      const vh = scene.viewport.height;
-      // Game camera lives only inside the locked screen (0,0)–(vw,vh)
-      const camX = isPlaying && playViewPan ? playViewPan.x : 0;
-      const camY = isPlaying && playViewPan ? playViewPan.y : 0;
-
-      if (isPlaying) {
-        // Fixed game screen background
-        context.fillStyle = scene.viewport.background;
-        context.fillRect(0, 0, vw, vh);
-
-        // Clip + scroll world only inside the game screen — editor canvas pan stays put
-        context.save();
-        context.beginPath();
-        context.rect(0, 0, vw, vh);
-        context.clip();
-        context.translate(-camX, -camY);
-
-        drawScene(
-          context,
-          scene,
-          assets,
-          images,
-          selectedEntityIds,
-          false,
-          showColliders,
-          selectedGuiNodeId,
-          guiComponents,
-          selectedComponentInstanceId,
-          showGuiTools,
-          { skipViewportChrome: true, skipScreenSpaceText: true, activeTool, zoom },
-        );
-        context.restore();
-
-        // HUD text stays fixed to the game screen (not world camera)
-        context.save();
-        context.beginPath();
-        context.rect(0, 0, vw, vh);
-        context.clip();
-        drawScreenSpaceText(context, scene);
-        context.restore();
-
-        drawSceneFrame(
-          context,
-          vw,
-          vh,
-          zoom,
-          { worldLeft, worldTop, worldRight, worldBottom },
-          `Play  ${Math.round(vw)}×${Math.round(vh)}`,
-        );
-      } else {
-        drawScene(
-          context,
-          scene,
-          assets,
-          images,
-          selectedEntityIds,
-          false,
-          showColliders,
-          selectedGuiNodeId,
-          guiComponents,
-          selectedComponentInstanceId,
-          showGuiTools,
-          {
-            activeTool,
-            zoom,
-            paintOverlay: paintOverlayForDraw,
-          },
-        );
-        drawSceneFrame(context, vw, vh, zoom, {
-          worldLeft,
-          worldTop,
-          worldRight,
-          worldBottom,
-        });
-      }
-    }
+    drawSceneCanvas({
+      canvas,
+      viewSize,
+      scene,
+      assets,
+      images,
+      selectedEntityIds,
+      selectedGuiNodeId,
+      guiComponents,
+      selectedComponentInstanceId,
+      showGuiTools,
+      showGrid,
+      showColliders,
+      snapSize,
+      activeTool,
+      zoom,
+      pan,
+      isPlaying,
+      playViewPan,
+      paintOverlay: paintOverlayForDraw,
+    });
   }, [
     scene,
     assets,
@@ -490,15 +238,6 @@ export function SceneCanvas({
     activeTool,
     paintOverlayForDraw,
   ]);
-
-  function clientToWorld(clientX: number, clientY: number, el: HTMLElement) {
-    const rect = el.getBoundingClientRect();
-    const z = zoom;
-    return {
-      x: (clientX - rect.left) / z + pan.x,
-      y: (clientY - rect.top) / z + pan.y,
-    };
-  }
 
   function pointerPosition(event: PointerEvent<HTMLCanvasElement>) {
     return clientToWorld(event.clientX, event.clientY, event.currentTarget);
@@ -964,77 +703,7 @@ export function SceneCanvas({
       </ContextMenu>
 
       {isPlaying && onVirtualInput && (
-        <div className={workspaceStyles["canvas-virtual-pad"]} aria-label="Virtual game controls">
-          <div className={workspaceStyles["canvas-virtual-pad-move"]} aria-label="Movement">
-            {(
-              [
-                ["left", "◀"],
-                ["right", "▶"],
-              ] as const
-            ).map(([action, label]) => (
-              <button
-                key={action}
-                type="button"
-                className={workspaceStyles["canvas-virtual-btn"]}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
-                  onVirtualInput(action, true);
-                }}
-                onPointerUp={(e) => {
-                  try {
-                    (e.currentTarget as HTMLButtonElement).releasePointerCapture(e.pointerId);
-                  } catch {
-                    /* already released */
-                  }
-                  onVirtualInput(action, false);
-                }}
-                onPointerCancel={() => onVirtualInput(action, false)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className={workspaceStyles["canvas-virtual-pad-actions"]} aria-label="Actions">
-            {(
-              [
-                ["jump", "A", "Jump"],
-                ["fire", "B", "Fire"],
-                ["action", "X", "Action"],
-              ] as const
-            )
-              .filter(([control]) => virtualTouchControls.includes(control))
-              .map(([action, label, title]) => (
-                <button
-                  key={action}
-                  type="button"
-                  title={title}
-                  className={cn(
-                    workspaceStyles["canvas-virtual-btn"],
-                    workspaceStyles["canvas-virtual-btn-action"],
-                    action === "jump" && workspaceStyles["canvas-virtual-btn-primary"],
-                  )}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
-                    onVirtualInput(action, true);
-                  }}
-                  onPointerUp={(e) => {
-                    try {
-                      (e.currentTarget as HTMLButtonElement).releasePointerCapture(e.pointerId);
-                    } catch {
-                      /* already released */
-                    }
-                    onVirtualInput(action, false);
-                  }}
-                  onPointerCancel={() => onVirtualInput(action, false)}
-                >
-                  <span className={workspaceStyles["canvas-virtual-btn-label"]}>{label}</span>
-                  <span className={workspaceStyles["canvas-virtual-btn-sub"]}>{title}</span>
-                </button>
-              ))}
-          </div>
-        </div>
+        <VirtualGameControls controls={virtualTouchControls} onInput={onVirtualInput} />
       )}
     </section>
   );
