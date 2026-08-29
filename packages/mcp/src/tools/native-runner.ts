@@ -1,9 +1,8 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync } from "node:fs";
-import { cp, chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, chmod, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 
 export type NativeRunnerStatus = "idle" | "launching" | "running" | "stopped" | "error";
 
@@ -15,7 +14,7 @@ export type NativeRunnerState = {
   logs: string[];
 };
 
-class McpNativeRunner {
+export class McpNativeRunner {
   private childProcess: ChildProcess | null = null;
   private currentStatus: NativeRunnerStatus = "idle";
   private logsBuffer: string[] = [];
@@ -112,7 +111,11 @@ class McpNativeRunner {
     const child = spawn(gradlewCmd, ["lwjgl3:run"], {
       cwd: nativeDir,
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env },
+      env: {
+        ...process.env,
+        PLAYROOM_DEBUG: "1",
+        PLAYROOM_DEBUG_PORT: process.env.PLAYROOM_DEBUG_PORT || "17478",
+      },
     });
 
     this.childProcess = child;
@@ -177,6 +180,10 @@ class McpNativeRunner {
 }
 
 const runnerInstance = new McpNativeRunner();
+
+export function getMcpNativeRunner(): McpNativeRunner {
+  return runnerInstance;
+}
 
 export function registerNativeRunnerTools(server: McpServer, projectRoot: string): void {
   server.tool(

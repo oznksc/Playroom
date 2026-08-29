@@ -16,6 +16,7 @@ import {
   Wand2,
   LayoutTemplate,
   HelpCircle,
+  Gamepad2,
 } from "lucide-react";
 import { useRef } from "react";
 import logoUrl from "../../../../logo.png";
@@ -39,6 +40,8 @@ type TopbarProps = {
   onPlayToggle: () => void;
   onPauseToggle: () => void;
   onStop: () => void;
+  onNativeToggle?: () => void;
+  isNativeRunning?: boolean;
   onRefresh: () => void;
   onImport: (file: File) => void;
   onSave: () => void;
@@ -72,6 +75,8 @@ export function Topbar({
   onPlayToggle,
   onPauseToggle,
   onStop,
+  onNativeToggle,
+  isNativeRunning = false,
   onRefresh,
   onImport,
   onSave,
@@ -175,6 +180,17 @@ export function Topbar({
           >
             <Square size={12} />
           </IconButton>
+          {onNativeToggle && (
+            <IconButton
+              size="md"
+              variant={isNativeRunning ? "active" : "ghost"}
+              className={cn(isNativeRunning && "text-accent shadow-glow-cyan")}
+              onClick={onNativeToggle}
+              title={isNativeRunning ? "Stop libGDX Desktop Game" : "Run libGDX Desktop Game"}
+            >
+              <Gamepad2 size={13} />
+            </IconButton>
+          )}
           {isPlaying && (
             <div className="ml-1 flex items-center gap-2 pl-2 pr-1 font-mono text-xs tracking-normal text-text-muted">
               <Cpu size={11} className="text-accent" />

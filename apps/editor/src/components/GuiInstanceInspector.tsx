@@ -231,6 +231,12 @@ function nodeLabel(node: GuiNode): string {
       return node.text || "Button";
     case "Image":
       return node.assetId || "Image";
+    case "Panel":
+      return "Panel";
+    case "ProgressBar":
+      return `Progress (${(node as any).value ?? 100}/${(node as any).maxValue ?? 100})`;
+    case "Joystick":
+      return (node as any).action || "Joystick";
   }
 }
 

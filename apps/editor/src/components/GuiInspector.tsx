@@ -1,5 +1,14 @@
-import type { GuiNode, GuiText, GuiButton, GuiImage, GameKitAsset } from "@gamekit/schema";
-import { Type, Square, Image, Trash2 } from "lucide-react";
+import type {
+  GuiNode,
+  GuiText,
+  GuiButton,
+  GuiImage,
+  GuiPanel,
+  GuiProgressBar,
+  GuiJoystick,
+  GameKitAsset,
+} from "@gamekit/schema";
+import { Type, Square, Image, Trash2, Layout, Activity, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 import {
   NumberField,
@@ -289,6 +298,174 @@ export function GuiInspector({ node, assets, onChange, onDelete }: GuiInspectorP
                 ))}
               </Select>
             </label>
+          </AccordionSection>
+        )}
+
+        {node.type === "Panel" && (
+          <AccordionSection
+            icon={<Layout size={12} />}
+            label="Panel Style"
+            open={!collapsed.content}
+            onToggle={() => toggleCollapse("content")}
+          >
+            <ColorField
+              label="Background Color"
+              value={(node as GuiPanel).backgroundColor ?? "#161b22"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiPanel).backgroundColor = value;
+                })
+              }
+            />
+            <ColorField
+              label="Border Color"
+              value={(node as GuiPanel).borderColor ?? "#30363d"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiPanel).borderColor = value;
+                })
+              }
+            />
+            <div className="grid grid-cols-2 gap-1.5">
+              <NumberField
+                label="Border Width"
+                value={(node as GuiPanel).borderWidth ?? 1}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiPanel).borderWidth = v;
+                  })
+                }
+              />
+              <NumberField
+                label="Border Radius"
+                value={(node as GuiPanel).borderRadius ?? 4}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiPanel).borderRadius = v;
+                  })
+                }
+              />
+            </div>
+          </AccordionSection>
+        )}
+
+        {node.type === "ProgressBar" && (
+          <AccordionSection
+            icon={<Activity size={12} />}
+            label="Progress Bar Properties"
+            open={!collapsed.content}
+            onToggle={() => toggleCollapse("content")}
+          >
+            <div className="grid grid-cols-2 gap-1.5">
+              <NumberField
+                label="Value"
+                value={(node as GuiProgressBar).value ?? 100}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiProgressBar).value = v;
+                  })
+                }
+              />
+              <NumberField
+                label="Max Value"
+                value={(node as GuiProgressBar).maxValue ?? 100}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiProgressBar).maxValue = v;
+                  })
+                }
+              />
+            </div>
+            <ColorField
+              label="Fill Color"
+              value={(node as GuiProgressBar).fillColor ?? "#00f0ff"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiProgressBar).fillColor = value;
+                })
+              }
+            />
+            <ColorField
+              label="Background Color"
+              value={(node as GuiProgressBar).backgroundColor ?? "#1a1f2c"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiProgressBar).backgroundColor = value;
+                })
+              }
+            />
+            <CheckboxField
+              label="Show Text Label"
+              checked={(node as GuiProgressBar).showLabel !== false}
+              onChange={(checked) =>
+                onChange((d) => {
+                  (d as GuiProgressBar).showLabel = checked;
+                })
+              }
+            />
+          </AccordionSection>
+        )}
+
+        {node.type === "Joystick" && (
+          <AccordionSection
+            icon={<Gamepad2 size={12} />}
+            label="Virtual Joystick Properties"
+            open={!collapsed.content}
+            onToggle={() => toggleCollapse("content")}
+          >
+            <label className="flex flex-col gap-1">
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-text-muted">
+                Action
+              </span>
+              <Input
+                type="text"
+                value={(node as GuiJoystick).action ?? "player.move"}
+                onChange={(e) =>
+                  onChange((d) => {
+                    (d as GuiJoystick).action = e.target.value;
+                  })
+                }
+                placeholder="e.g. player.move"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              <NumberField
+                label="Radius"
+                value={(node as GuiJoystick).radius ?? 40}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiJoystick).radius = v;
+                  })
+                }
+              />
+              <NumberField
+                label="Deadzone"
+                value={(node as GuiJoystick).deadzone ?? 5}
+                onChange={(v) =>
+                  onChange((d) => {
+                    (d as GuiJoystick).deadzone = v;
+                  })
+                }
+              />
+            </div>
+            <ColorField
+              label="Base Color"
+              value={(node as GuiJoystick).baseColor ?? "rgba(255,255,255,0.2)"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiJoystick).baseColor = value;
+                })
+              }
+            />
+            <ColorField
+              label="Knob Color"
+              value={(node as GuiJoystick).knobColor ?? "#00f0ff"}
+              onChange={(value) =>
+                onChange((d) => {
+                  (d as GuiJoystick).knobColor = value;
+                })
+              }
+            />
           </AccordionSection>
         )}
       </div>

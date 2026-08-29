@@ -1,6 +1,10 @@
 package com.playroom.runtime.components;
 
-public class TilemapComponent implements Component {
+public class TilemapComponent extends Component {
+    public TilemapComponent() {
+        super("Tilemap");
+    }
+
     public String tilesetId = "";
     public int tileWidth = 32;
     public int tileHeight = 32;

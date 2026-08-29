@@ -1,6 +1,10 @@
 package com.playroom.runtime.components;
 
-public class TweenComponent implements Component {
+public class TweenComponent extends Component {
+    public TweenComponent() {
+        super("Tween");
+    }
+
     public String property = "position.x";
     public float startValue = 0f;
     public float endValue = 0f;

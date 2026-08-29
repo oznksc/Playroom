@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.playroom.runtime.components.AnimationComponent;
 import com.playroom.runtime.components.CameraFollowComponent;
 import com.playroom.runtime.components.NineSliceComponent;
@@ -25,6 +27,12 @@ public class EntityRenderer {
     private final Map<String, NinePatch> ninePatchCache = new HashMap<>();
     private Texture fallbackWhiteTexture;
     private BitmapFont font;
+    private String renderMode = "default";
+    private int lastSpriteDraws = 0;
+    private int lastTileDraws = 0;
+    private int lastTextDraws = 0;
+    private int lastAnimDraws = 0;
+    private int lastNineSliceDraws = 0;
 
     public void init() {
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -57,36 +65,80 @@ public class EntityRenderer {
         }
     }
 
+    public void setRenderMode(String mode) {
+        this.renderMode = mode == null || mode.isEmpty() ? "default" : mode;
+    }
+
+    public String getRenderMode() {
+        return renderMode;
+    }
+
+    public java.util.Set<String> getCachedTextureIds() {
+        return textureCache.keySet();
+    }
+
+    public int getLastSpriteDraws() { return lastSpriteDraws; }
+    public int getLastTileDraws() { return lastTileDraws; }
+    public int getLastTextDraws() { return lastTextDraws; }
+    public int getLastAnimDraws() { return lastAnimDraws; }
+    public int getLastNineSliceDraws() { return lastNineSliceDraws; }
+    public int getLastDrawCallsEstimate() {
+        return lastSpriteDraws + lastTileDraws + lastTextDraws + lastAnimDraws + lastNineSliceDraws;
+    }
+
     public void render(SceneData sceneData, SpriteBatch batch, float delta) {
+        lastSpriteDraws = 0;
+        lastTileDraws = 0;
+        lastTextDraws = 0;
+        lastAnimDraws = 0;
+        lastNineSliceDraws = 0;
+        boolean skipSprites = "no_sprites".equals(renderMode)
+            || "physics".equals(renderMode)
+            || "colliders".equals(renderMode);
+
         for (Entity entity : sceneData.entities) {
             if (!entity.active) continue;
 
             TransformComponent tc = entity.getComponent(TransformComponent.class);
             if (tc == null) continue;
 
+            if (skipSprites) continue;
+
             TilemapComponent tmc = entity.getComponent(TilemapComponent.class);
             if (tmc != null) {
                 renderTilemap(batch, tc, tmc, entity.name);
+                lastTileDraws++;
             }
 
             NineSliceComponent nsc = entity.getComponent(NineSliceComponent.class);
             if (nsc != null) {
                 renderNineSlice(batch, tc, nsc, entity.name);
+                lastNineSliceDraws++;
             }
 
             SpriteComponent sc = entity.getComponent(SpriteComponent.class);
             if (sc != null) {
-                renderSprite(batch, tc, sc, entity.name);
+                if ("overdraw".equals(renderMode)) {
+                    Color previous = new Color(sc.tint);
+                    sc.tint = new Color(1f, 0.25f, 0.25f, 0.4f);
+                    renderSprite(batch, tc, sc, entity.name);
+                    sc.tint = previous;
+                } else {
+                    renderSprite(batch, tc, sc, entity.name);
+                }
+                lastSpriteDraws++;
             }
 
             AnimationComponent ac = entity.getComponent(AnimationComponent.class);
             if (ac != null && sc == null) {
                 renderAnimation(batch, tc, ac, delta, entity.name);
+                lastAnimDraws++;
             }
 
             TextComponent textComp = entity.getComponent(TextComponent.class);
             if (textComp != null && !textComp.text.isEmpty()) {
                 renderText(batch, tc, textComp);
+                lastTextDraws++;
             }
         }
     }

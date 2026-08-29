@@ -26,7 +26,7 @@ public class AudioSystem {
             AudioListenerComponent listener = entity.getComponent(AudioListenerComponent.class);
             TransformComponent transform = entity.getComponent(TransformComponent.class);
             if (listener != null && listener.enabled && transform != null) {
-                listenerPos.set(transform.x, transform.y);
+                listenerPos.set(transform.position.x, transform.position.y);
                 hasListener = true;
                 break;
             }
@@ -57,7 +57,7 @@ public class AudioSystem {
         float pan = 0f;
 
         if (transform != null) {
-            float dist = listenerPos.dst(transform.x, transform.y);
+            float dist = listenerPos.dst(transform.position.x, transform.position.y);
             float minDist = minDistance != null ? minDistance : 100f;
             float maxDist = maxDistance != null ? maxDistance : 1000f;
 
@@ -67,7 +67,7 @@ public class AudioSystem {
             }
 
             // Pan based on horizontal distance
-            float deltaX = transform.x - listenerPos.x;
+            float deltaX = transform.position.x - listenerPos.x;
             pan = Math.max(-1.0f, Math.min(1.0f, deltaX / (maxDist * 0.5f)));
         }
 
@@ -116,6 +116,22 @@ public class AudioSystem {
             }
         }
         return null;
+    }
+
+    public Map<String, Long> getActiveSoundInstances() {
+        return activeSoundInstances;
+    }
+
+    public java.util.Set<String> getCachedSoundIds() {
+        return soundCache.keySet();
+    }
+
+    public Vector2 getListenerPos() {
+        return listenerPos;
+    }
+
+    public boolean hasListener() {
+        return hasListener;
     }
 
     public void dispose() {

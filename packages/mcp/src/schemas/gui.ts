@@ -33,10 +33,46 @@ export const GuiImageInputSchema = GuiBaseSchema.extend({
   assetId: z.string().min(1),
 });
 
+export const GuiPanelInputSchema = GuiBaseSchema.extend({
+  type: z.literal("Panel"),
+  backgroundColor: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderWidth: z.number().optional(),
+  borderRadius: z.number().optional(),
+});
+
+export const GuiProgressBarInputSchema = GuiBaseSchema.extend({
+  type: z.literal("ProgressBar"),
+  value: z.number().default(100),
+  maxValue: z.number().default(100),
+  fillColor: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  showLabel: z.boolean().optional(),
+});
+
+export const GuiJoystickInputSchema = GuiBaseSchema.extend({
+  type: z.literal("Joystick"),
+  action: z.string().optional(),
+  radius: z.number().default(40),
+  deadzone: z.number().optional(),
+  baseColor: z.string().optional(),
+  knobColor: z.string().optional(),
+});
+
 export const GuiNodeInputSchema = z.discriminatedUnion("type", [
   GuiTextInputSchema,
   GuiButtonInputSchema,
   GuiImageInputSchema,
+  GuiPanelInputSchema,
+  GuiProgressBarInputSchema,
+  GuiJoystickInputSchema,
 ]);
 
-export const GuiNodeTypeSchema = z.enum(["Text", "Button", "Image"]);
+export const GuiNodeTypeSchema = z.enum([
+  "Text",
+  "Button",
+  "Image",
+  "Panel",
+  "ProgressBar",
+  "Joystick",
+]);

@@ -45,4 +45,35 @@ public class Entity {
     public List<Component> getComponents() {
         return componentsList;
     }
+
+    public boolean removeComponent(Class<? extends Component> clazz) {
+        final Component existing = getComponent(clazz);
+        if (existing == null) return false;
+        componentsList.remove(existing);
+        componentMap.entrySet().removeIf(e -> e.getValue() == existing);
+        return true;
+    }
+
+    public boolean removeComponentByType(String type) {
+        if (type == null) return false;
+        Component found = null;
+        for (Component c : componentsList) {
+            if (type.equals(c.getType())) {
+                found = c;
+                break;
+            }
+        }
+        if (found == null) return false;
+        final Component existing = found;
+        componentsList.remove(existing);
+        componentMap.entrySet().removeIf(e -> e.getValue() == existing);
+        return true;
+    }
+
+    public void setComponent(Component component) {
+        if (component == null) return;
+        removeComponentByType(component.getType());
+        removeComponent(component.getClass());
+        addComponent(component);
+    }
 }

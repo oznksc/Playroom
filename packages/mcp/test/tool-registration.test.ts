@@ -74,6 +74,14 @@ describe("MCP tool registration", () => {
         "import_image",
         "set_player_controller",
         "set_animation",
+        "libgdx_capabilities",
+        "project_info",
+        "inspect_world",
+        "spawn_entity",
+        "despawn_entity",
+        "list_android_devices",
+        "list_ios_devices",
+        "run_android",
       ])
     );
   });

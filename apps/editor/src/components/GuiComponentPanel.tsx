@@ -9,6 +9,9 @@ import {
   Layers,
   Package,
   Plus,
+  Layout,
+  Activity,
+  Gamepad2,
 } from "lucide-react";
 import { Panel, PanelHeader, PanelTitle, PanelBody, IconButton, EmptyState, Badge, cn } from "@/ui";
 
@@ -32,6 +35,12 @@ function nodeIcon(type: GuiNode["type"]) {
       return <Square size={11} className="text-accent" />;
     case "Image":
       return <Image size={11} className="text-accent-green" />;
+    case "Panel":
+      return <Layout size={11} className="text-accent-yellow" />;
+    case "ProgressBar":
+      return <Activity size={11} className="text-accent-cyan" />;
+    case "Joystick":
+      return <Gamepad2 size={11} className="text-accent-pink" />;
   }
 }
 
@@ -43,6 +52,12 @@ function nodeLabel(node: GuiNode): string {
       return node.text || "Button";
     case "Image":
       return node.assetId || "Image";
+    case "Panel":
+      return "Panel";
+    case "ProgressBar":
+      return `Progress (${(node as any).value ?? 100}/${(node as any).maxValue ?? 100})`;
+    case "Joystick":
+      return (node as any).action || "Joystick";
   }
 }
 

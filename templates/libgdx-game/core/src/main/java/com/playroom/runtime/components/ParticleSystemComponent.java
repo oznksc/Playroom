@@ -1,6 +1,10 @@
 package com.playroom.runtime.components;
 
-public class ParticleSystemComponent implements Component {
+public class ParticleSystemComponent extends Component {
+    public ParticleSystemComponent() {
+        super("ParticleSystem");
+    }
+
     public int maxParticles = 32;
     public float emissionRate = 12f;
     public float lifetime = 0.8f;

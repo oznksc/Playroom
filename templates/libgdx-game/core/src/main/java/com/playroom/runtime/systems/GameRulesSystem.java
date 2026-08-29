@@ -31,7 +31,7 @@ public class GameRulesSystem {
             TransformComponent transform = entity.getComponent(TransformComponent.class);
             if (player == null || transform == null || !entity.active) continue;
 
-            if (fallDeathEnabled && transform.y > fallDeathY) {
+            if (fallDeathEnabled && transform.position.y > fallDeathY) {
                 handlePlayerDeath(entity, executor);
             }
         }

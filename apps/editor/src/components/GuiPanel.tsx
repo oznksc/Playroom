@@ -1,5 +1,5 @@
 import type { GuiNode } from "@gamekit/schema";
-import { Plus, Trash2, Type, Square, Image, Layers } from "lucide-react";
+import { Plus, Trash2, Type, Square, Image, Layers, Layout, Activity, Gamepad2 } from "lucide-react";
 import { Panel, PanelHeader, PanelTitle, PanelBody, IconButton, EmptyState, Badge, cn } from "@/ui";
 
 type GuiPanelProps = {
@@ -18,6 +18,12 @@ function nodeIcon(type: GuiNode["type"]) {
       return <Square size={11} className="text-accent" />;
     case "Image":
       return <Image size={11} className="text-accent-green" />;
+    case "Panel":
+      return <Layout size={11} className="text-accent-yellow" />;
+    case "ProgressBar":
+      return <Activity size={11} className="text-accent-cyan" />;
+    case "Joystick":
+      return <Gamepad2 size={11} className="text-accent-pink" />;
   }
 }
 
@@ -29,6 +35,12 @@ function nodeLabel(node: GuiNode): string {
       return node.text || "Button";
     case "Image":
       return node.assetId || "Image";
+    case "Panel":
+      return "Panel";
+    case "ProgressBar":
+      return `Progress (${(node as any).value ?? 100}/${(node as any).maxValue ?? 100})`;
+    case "Joystick":
+      return (node as any).action || "Joystick";
   }
 }
 
@@ -52,6 +64,15 @@ export function GuiPanel({
           </IconButton>
           <IconButton size="sm" title="Add Image" onClick={() => onAddNode("Image")}>
             <Image size={12} />
+          </IconButton>
+          <IconButton size="sm" title="Add Panel" onClick={() => onAddNode("Panel")}>
+            <Layout size={12} />
+          </IconButton>
+          <IconButton size="sm" title="Add Progress Bar" onClick={() => onAddNode("ProgressBar")}>
+            <Activity size={12} />
+          </IconButton>
+          <IconButton size="sm" title="Add Virtual Joystick" onClick={() => onAddNode("Joystick")}>
+            <Gamepad2 size={12} />
           </IconButton>
         </div>
       </PanelHeader>

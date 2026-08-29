@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.playroom.runtime.components.*;
+import com.playroom.runtime.gui.GuiNode;
 import com.playroom.runtime.scene.Entity;
 import com.playroom.runtime.scene.SceneData;
 
@@ -78,7 +79,17 @@ public class SceneLoader {
                 }
             }
 
-            Gdx.app.log("SceneLoader", "Successfully loaded scene: " + sceneData.name + " (" + sceneData.entities.size() + " entities)");
+            if (root.has("guiNodes") || root.has("gui")) {
+                JsonValue guiArray = root.has("guiNodes") ? root.get("guiNodes") : root.get("gui");
+                for (JsonValue gJson = guiArray.child; gJson != null; gJson = gJson.next) {
+                    GuiNode node = parseGuiNode(gJson);
+                    if (node != null) {
+                        sceneData.guiNodes.add(node);
+                    }
+                }
+            }
+
+            Gdx.app.log("SceneLoader", "Successfully loaded scene: " + sceneData.name + " (" + sceneData.entities.size() + " entities, " + sceneData.guiNodes.size() + " gui nodes)");
         } catch (Exception e) {
             Gdx.app.error("SceneLoader", "Error loading scene from: " + scenePath, e);
         }
@@ -86,7 +97,17 @@ public class SceneLoader {
         return sceneData;
     }
 
-    private Entity parseEntity(JsonValue json) {
+    public Entity parseEntityJson(String json) {
+        if (json == null || json.isBlank()) return null;
+        return parseEntity(new JsonReader().parse(json));
+    }
+
+    public Component parseComponentJson(String json) {
+        if (json == null || json.isBlank()) return null;
+        return parseComponent(new JsonReader().parse(json));
+    }
+
+    public Entity parseEntity(JsonValue json) {
         String id = json.has("id") ? json.getString("id") : "entity";
         String name = json.has("name") ? json.getString("name") : id;
         Entity entity = new Entity(id, name);
@@ -104,7 +125,7 @@ public class SceneLoader {
         return entity;
     }
 
-    private Component parseComponent(JsonValue json) {
+    public Component parseComponent(JsonValue json) {
         if (!json.has("type")) return null;
         String type = json.getString("type");
 
@@ -387,6 +408,136 @@ public class SceneLoader {
             }
             default:
                 return null;
+        }
+    }
+
+    private GuiNode parseGuiNode(JsonValue json) {
+        if (json == null) return null;
+        String type = json.getString("type", "Text");
+        String id = json.getString("id", "gui_node");
+        float x = json.getFloat("x", 0f);
+        float y = json.getFloat("y", 0f);
+        float width = json.getFloat("width", 100f);
+        float height = json.getFloat("height", 40f);
+        float anchorX = json.getFloat("anchorX", 0f);
+        float anchorY = json.getFloat("anchorY", 0f);
+        boolean visible = json.getBoolean("visible", true);
+        boolean interactive = json.getBoolean("interactive", false);
+
+        if ("Button".equalsIgnoreCase(type)) {
+            GuiNode.GuiButtonNode btn = new GuiNode.GuiButtonNode();
+            btn.id = id;
+            btn.x = x;
+            btn.y = y;
+            btn.width = width;
+            btn.height = height;
+            btn.anchorX = anchorX;
+            btn.anchorY = anchorY;
+            btn.visible = visible;
+            btn.interactive = interactive;
+            btn.text = json.getString("text", "Button");
+            btn.action = json.getString("action", "");
+            btn.fontSize = json.getFloat("fontSize", 16f);
+            if (json.has("color")) {
+                try { btn.color = Color.valueOf(json.getString("color")); } catch (Exception ignored) {}
+            }
+            if (json.has("backgroundColor")) {
+                try { btn.backgroundColor = Color.valueOf(json.getString("backgroundColor")); } catch (Exception ignored) {}
+            }
+            return btn;
+        } else if ("Image".equalsIgnoreCase(type)) {
+            GuiNode.GuiImageNode img = new GuiNode.GuiImageNode();
+            img.id = id;
+            img.x = x;
+            img.y = y;
+            img.width = width;
+            img.height = height;
+            img.anchorX = anchorX;
+            img.anchorY = anchorY;
+            img.visible = visible;
+            img.interactive = interactive;
+            img.assetId = json.getString("assetId", "");
+            return img;
+        } else if ("Panel".equalsIgnoreCase(type)) {
+            GuiNode.GuiPanelNode panel = new GuiNode.GuiPanelNode();
+            panel.id = id;
+            panel.x = x;
+            panel.y = y;
+            panel.width = width;
+            panel.height = height;
+            panel.anchorX = anchorX;
+            panel.anchorY = anchorY;
+            panel.visible = visible;
+            panel.interactive = interactive;
+            if (json.has("backgroundColor")) {
+                try { panel.backgroundColor = Color.valueOf(json.getString("backgroundColor")); } catch (Exception ignored) {}
+            }
+            if (json.has("borderColor")) {
+                try { panel.borderColor = Color.valueOf(json.getString("borderColor")); } catch (Exception ignored) {}
+            }
+            panel.borderWidth = json.getFloat("borderWidth", 1f);
+            panel.borderRadius = json.getFloat("borderRadius", 4f);
+            return panel;
+        } else if ("ProgressBar".equalsIgnoreCase(type)) {
+            GuiNode.GuiProgressBarNode bar = new GuiNode.GuiProgressBarNode();
+            bar.id = id;
+            bar.x = x;
+            bar.y = y;
+            bar.width = width;
+            bar.height = height;
+            bar.anchorX = anchorX;
+            bar.anchorY = anchorY;
+            bar.visible = visible;
+            bar.interactive = interactive;
+            bar.value = json.getFloat("value", 100f);
+            bar.maxValue = json.getFloat("maxValue", 100f);
+            if (json.has("fillColor")) {
+                try { bar.fillColor = Color.valueOf(json.getString("fillColor")); } catch (Exception ignored) {}
+            }
+            if (json.has("backgroundColor")) {
+                try { bar.backgroundColor = Color.valueOf(json.getString("backgroundColor")); } catch (Exception ignored) {}
+            }
+            bar.showLabel = json.getBoolean("showLabel", true);
+            return bar;
+        } else if ("Joystick".equalsIgnoreCase(type)) {
+            GuiNode.GuiJoystickNode joy = new GuiNode.GuiJoystickNode();
+            joy.id = id;
+            joy.x = x;
+            joy.y = y;
+            joy.width = width;
+            joy.height = height;
+            joy.anchorX = anchorX;
+            joy.anchorY = anchorY;
+            joy.visible = visible;
+            joy.interactive = interactive;
+            joy.action = json.getString("action", "player.move");
+            joy.radius = json.getFloat("radius", 40f);
+            joy.deadzone = json.getFloat("deadzone", 5f);
+            if (json.has("baseColor")) {
+                try { joy.baseColor = Color.valueOf(json.getString("baseColor")); } catch (Exception ignored) {}
+            }
+            if (json.has("knobColor")) {
+                try { joy.knobColor = Color.valueOf(json.getString("knobColor")); } catch (Exception ignored) {}
+            }
+            return joy;
+        } else {
+            GuiNode.GuiTextNode txt = new GuiNode.GuiTextNode();
+            txt.id = id;
+            txt.x = x;
+            txt.y = y;
+            txt.width = width;
+            txt.height = height;
+            txt.anchorX = anchorX;
+            txt.anchorY = anchorY;
+            txt.visible = visible;
+            txt.interactive = interactive;
+            txt.text = json.getString("text", "");
+            txt.fontSize = json.getFloat("fontSize", 16f);
+            txt.align = json.getString("align", "left");
+            if (json.has("color")) {
+                try { txt.color = Color.valueOf(json.getString("color")); } catch (Exception ignored) {}
+            }
+            return txt;
         }
     }
 

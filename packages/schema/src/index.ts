@@ -459,10 +459,42 @@ export const GuiImageSchema = GuiBaseSchema.extend({
 });
 export type GuiImage = z.infer<typeof GuiImageSchema>;
 
+export const GuiPanelSchema = GuiBaseSchema.extend({
+  type: z.literal("Panel"),
+  backgroundColor: z.string().min(1).optional(),
+  borderColor: z.string().min(1).optional(),
+  borderWidth: z.number().optional(),
+  borderRadius: z.number().optional(),
+});
+export type GuiPanel = z.infer<typeof GuiPanelSchema>;
+
+export const GuiProgressBarSchema = GuiBaseSchema.extend({
+  type: z.literal("ProgressBar"),
+  value: z.number().default(100),
+  maxValue: z.number().default(100),
+  fillColor: z.string().min(1).optional(),
+  backgroundColor: z.string().min(1).optional(),
+  showLabel: z.boolean().optional(),
+});
+export type GuiProgressBar = z.infer<typeof GuiProgressBarSchema>;
+
+export const GuiJoystickSchema = GuiBaseSchema.extend({
+  type: z.literal("Joystick"),
+  action: z.string().min(1).optional(),
+  radius: z.number().default(40),
+  deadzone: z.number().optional(),
+  baseColor: z.string().min(1).optional(),
+  knobColor: z.string().min(1).optional(),
+});
+export type GuiJoystick = z.infer<typeof GuiJoystickSchema>;
+
 export const GuiNodeSchema = z.discriminatedUnion("type", [
   GuiTextSchema,
   GuiButtonSchema,
   GuiImageSchema,
+  GuiPanelSchema,
+  GuiProgressBarSchema,
+  GuiJoystickSchema,
 ]);
 export type GuiNode = z.infer<typeof GuiNodeSchema>;
 

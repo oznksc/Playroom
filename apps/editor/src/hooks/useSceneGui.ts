@@ -71,6 +71,39 @@ export function useSceneGui({
           case "Image":
             node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" };
             break;
+          case "Panel":
+            node = {
+              ...base,
+              type: "Panel",
+              backgroundColor: "#161b22",
+              borderColor: "#30363d",
+              borderWidth: 1,
+              borderRadius: 4,
+            };
+            break;
+          case "ProgressBar":
+            node = {
+              ...base,
+              type: "ProgressBar",
+              value: 100,
+              maxValue: 100,
+              fillColor: "#00f0ff",
+              backgroundColor: "#1a1f2c",
+              showLabel: true,
+            };
+            break;
+          case "Joystick":
+            node = {
+              ...base,
+              type: "Joystick",
+              action: "player.move",
+              radius: 40,
+              deadzone: 5,
+              baseColor: "rgba(255,255,255,0.2)",
+              knobColor: "#00f0ff",
+              interactive: true,
+            };
+            break;
         }
         draft.gui.nodes.push(node);
         setSelectedGuiNodeId(node.id);
@@ -171,6 +204,39 @@ export function useSceneGui({
           break;
         case "Image":
           node = { ...base, type: "Image", assetId: snapshot.assets[0]?.id ?? "" };
+          break;
+        case "Panel":
+          node = {
+            ...base,
+            type: "Panel",
+            backgroundColor: "#161b22",
+            borderColor: "#30363d",
+            borderWidth: 1,
+            borderRadius: 4,
+          };
+          break;
+        case "ProgressBar":
+          node = {
+            ...base,
+            type: "ProgressBar",
+            value: 100,
+            maxValue: 100,
+            fillColor: "#00f0ff",
+            backgroundColor: "#1a1f2c",
+            showLabel: true,
+          };
+          break;
+        case "Joystick":
+          node = {
+            ...base,
+            type: "Joystick",
+            action: "player.move",
+            radius: 40,
+            deadzone: 5,
+            baseColor: "rgba(255,255,255,0.2)",
+            knobColor: "#00f0ff",
+            interactive: true,
+          };
           break;
       }
       const newComponents = snapshot.guiComponents.map((c) =>

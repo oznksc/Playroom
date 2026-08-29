@@ -7,10 +7,19 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.playroom.runtime.components.PlayerControllerComponent;
 import com.playroom.runtime.components.TransformComponent;
 import com.playroom.runtime.physics.PhysicsSystem;
+import com.playroom.runtime.debug.DebugController;
 import com.playroom.runtime.scene.Entity;
 import com.playroom.runtime.scene.SceneData;
 
 public class PlayerControllerSystem {
+    private boolean isHeld(int key) {
+        return Gdx.input.isKeyPressed(key) || DebugController.isKeyHeld(key);
+    }
+
+    private boolean isJust(int key) {
+        return Gdx.input.isKeyJustPressed(key) || DebugController.isKeyJustPressed(key);
+    }
+
     public void update(SceneData sceneData, PhysicsSystem physics, float delta) {
         for (Entity entity : sceneData.entities) {
             PlayerControllerComponent pc = entity.getComponent(PlayerControllerComponent.class);
@@ -20,16 +29,14 @@ public class PlayerControllerSystem {
             TransformComponent tc = entity.getComponent(TransformComponent.class);
 
             float moveX = 0f;
-            if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            if (isHeld(Input.Keys.A) || isHeld(Input.Keys.LEFT)) {
                 moveX -= 1f;
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            if (isHeld(Input.Keys.D) || isHeld(Input.Keys.RIGHT)) {
                 moveX += 1f;
             }
 
-            boolean jump = Gdx.input.isKeyJustPressed(Input.Keys.SPACE) ||
-                           Gdx.input.isKeyJustPressed(Input.Keys.W) ||
-                           Gdx.input.isKeyJustPressed(Input.Keys.UP);
+            boolean jump = isJust(Input.Keys.SPACE) || isJust(Input.Keys.W) || isJust(Input.Keys.UP);
 
             if (body != null) {
                 Vector2 vel = body.getLinearVelocity();

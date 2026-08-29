@@ -1,6 +1,10 @@
 package com.playroom.runtime.components;
 
-public class NineSliceComponent implements Component {
+public class NineSliceComponent extends Component {
+    public NineSliceComponent() {
+        super("NineSlice");
+    }
+
     public String assetId = "";
     public float width = 100f;
     public float height = 100f;

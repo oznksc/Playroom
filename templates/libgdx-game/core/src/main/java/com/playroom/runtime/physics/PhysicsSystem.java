@@ -177,6 +177,40 @@ public class PhysicsSystem {
         return world;
     }
 
+    public int getBodyCount() {
+        return entityBodies.size();
+    }
+
+    public Map<Entity, Body> getEntityBodies() {
+        return entityBodies;
+    }
+
+    public void addEntity(Entity entity) {
+        if (world == null || entity == null) return;
+        if (entityBodies.containsKey(entity)) {
+            removeEntity(entity);
+        }
+        setupBodyForEntity(entity);
+    }
+
+    public void removeEntity(Entity entity) {
+        Body body = entityBodies.remove(entity);
+        if (body != null && world != null) {
+            world.destroyBody(body);
+        }
+    }
+
+    public void rebuildEntity(Entity entity) {
+        removeEntity(entity);
+        addEntity(entity);
+    }
+
+    public void setGravityPixels(float x, float y) {
+        if (world != null) {
+            world.setGravity(new Vector2(x * PPM_INV, y * PPM_INV));
+        }
+    }
+
     public void dispose() {
         if (world != null) {
             world.dispose();

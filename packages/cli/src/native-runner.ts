@@ -120,7 +120,11 @@ export class NativeRunnerManager {
     const child = spawn(gradlewCmd, ["lwjgl3:run"], {
       cwd: nativeDir,
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env },
+      env: {
+        ...process.env,
+        PLAYROOM_DEBUG: "1",
+        PLAYROOM_DEBUG_PORT: process.env.PLAYROOM_DEBUG_PORT || "17478",
+      },
     });
 
     this.childProcess = child;

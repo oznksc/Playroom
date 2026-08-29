@@ -765,6 +765,72 @@ function drawGuiNode(
       }
       break;
     }
+    case "Panel": {
+      const bg = node.backgroundColor ?? "#161b22";
+      const border = node.borderColor ?? "#30363d";
+      const borderWidth = node.borderWidth ?? 1;
+      context.fillStyle = bg;
+      context.fillRect(x, y, w, h);
+      if (borderWidth > 0) {
+        context.strokeStyle = border;
+        context.lineWidth = borderWidth;
+        context.strokeRect(x, y, w, h);
+      }
+      break;
+    }
+    case "ProgressBar": {
+      const bg = node.backgroundColor ?? "#1a1f2c";
+      const fill = node.fillColor ?? "#00f0ff";
+      const val = Math.max(0, node.value ?? 100);
+      const maxVal = Math.max(1, node.maxValue ?? 100);
+      const pct = Math.min(1, val / maxVal);
+
+      // Background track
+      context.fillStyle = bg;
+      context.fillRect(x, y, w, h);
+      context.strokeStyle = "rgba(255,255,255,0.15)";
+      context.lineWidth = 1;
+      context.strokeRect(x, y, w, h);
+
+      // Fill bar
+      if (pct > 0) {
+        context.fillStyle = fill;
+        context.fillRect(x + 1, y + 1, (w - 2) * pct, h - 2);
+      }
+
+      // Optional text
+      if (node.showLabel !== false) {
+        context.fillStyle = "#ffffff";
+        context.font = "11px sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(`${Math.round(pct * 100)}%`, x + w / 2, y + h / 2);
+      }
+      break;
+    }
+    case "Joystick": {
+      const radius = node.radius ?? 40;
+      const baseCol = node.baseColor ?? "rgba(255,255,255,0.2)";
+      const knobCol = node.knobColor ?? "#00f0ff";
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+
+      // Base ring
+      context.beginPath();
+      context.arc(cx, cy, radius, 0, Math.PI * 2);
+      context.fillStyle = baseCol;
+      context.fill();
+      context.strokeStyle = "rgba(255,255,255,0.4)";
+      context.lineWidth = 2;
+      context.stroke();
+
+      // Knob in center
+      context.beginPath();
+      context.arc(cx, cy, radius * 0.4, 0, Math.PI * 2);
+      context.fillStyle = knobCol;
+      context.fill();
+      break;
+    }
   }
 }
 

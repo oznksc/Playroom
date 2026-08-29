@@ -3,8 +3,10 @@ package com.playroom.runtime.script;
 import com.badlogic.gdx.Gdx;
 import com.playroom.runtime.audio.AudioSystem;
 import com.playroom.runtime.components.ScriptComponent;
+import com.playroom.runtime.save.SaveSystem;
 import com.playroom.runtime.scene.Entity;
 import com.playroom.runtime.scene.SceneData;
+import com.playroom.runtime.scene.SceneManager;
 import com.playroom.runtime.services.GameServices;
 import com.playroom.runtime.systems.GameRulesSystem;
 import java.util.List;
@@ -13,6 +15,8 @@ public class ActionExecutor {
     private final GameServices services;
     private AudioSystem audioSystem;
     private GameRulesSystem gameRulesSystem;
+    private SceneManager sceneManager;
+    private SaveSystem saveSystem;
 
     public ActionExecutor(GameServices services) {
         this.services = services;
@@ -24,6 +28,14 @@ public class ActionExecutor {
 
     public void setGameRulesSystem(GameRulesSystem gameRulesSystem) {
         this.gameRulesSystem = gameRulesSystem;
+    }
+
+    public void setSceneManager(SceneManager sceneManager) {
+        this.sceneManager = sceneManager;
+    }
+
+    public void setSaveSystem(SaveSystem saveSystem) {
+        this.saveSystem = saveSystem;
     }
 
     public void triggerEvent(SceneData sceneData, String eventName) {
@@ -124,6 +136,43 @@ public class ActionExecutor {
                 } else if (sceneData != null) {
                     Entity target = sceneData.findEntityById(targetId);
                     if (target != null) target.active = false;
+                }
+                break;
+            }
+            case "switchScene": {
+                String sceneId = action.getString("sceneId", action.getString("scene", ""));
+                String transition = action.getString("transition", "fade");
+                float duration = action.getFloat("duration", 0.3f);
+                if (sceneManager != null && !sceneId.isEmpty()) {
+                    sceneManager.switchScene(sceneId, transition, duration);
+                }
+                break;
+            }
+            case "restartScene": {
+                if (sceneManager != null) {
+                    sceneManager.restartScene();
+                }
+                break;
+            }
+            case "save.set": {
+                String key = action.getString("key", "");
+                String value = action.getString("value", "");
+                if (saveSystem != null && !key.isEmpty()) {
+                    saveSystem.setString(key, value);
+                }
+                break;
+            }
+            case "level.unlock": {
+                String levelId = action.getString("levelId", action.getString("level", ""));
+                if (saveSystem != null && !levelId.isEmpty()) {
+                    saveSystem.unlockLevel(levelId);
+                }
+                break;
+            }
+            case "score.setHighScore": {
+                int val = action.getInt("value", 0);
+                if (saveSystem != null) {
+                    saveSystem.setHighScore(val);
                 }
                 break;
             }

@@ -71,6 +71,14 @@ describe("libGDX export pipeline", () => {
     // Check AndroidManifest.xml
     const manifestXml = await readFile(join(exportOut, "android/AndroidManifest.xml"), "utf8");
     expect(manifestXml).toContain('android:screenOrientation="sensorLandscape"');
+    expect(manifestXml).toContain("android.permission.INTERNET");
+    expect(manifestXml).toContain("com.playroom.runtime.android.AndroidLauncher");
+
+    const debugApi = await readFile(
+      join(exportOut, "core/src/main/java/com/playroom/runtime/debug/DebugHttpServer.java"),
+      "utf8"
+    );
+    expect(debugApi).toContain("playroom-debug-http");
 
     // Check assets/gamekit/project.json
     const exportedProjectJson = JSON.parse(
@@ -205,6 +213,69 @@ describe("libGDX export pipeline", () => {
       }
     );
 
+    (scene as any).guiNodes = [
+      {
+        id: "score_hud",
+        type: "Text",
+        text: "Score: 0",
+        x: 20,
+        y: 20,
+        width: 150,
+        height: 30,
+        fontSize: 18,
+        color: "#ffffff",
+      },
+      {
+        id: "jump_btn",
+        type: "Button",
+        text: "JUMP",
+        action: "player.jump",
+        x: 300,
+        y: 750,
+        width: 80,
+        height: 60,
+        backgroundColor: "#00f0ff",
+      },
+      {
+        id: "health_bar",
+        type: "ProgressBar",
+        value: 75,
+        maxValue: 100,
+        x: 20,
+        y: 60,
+        width: 120,
+        height: 20,
+        fillColor: "#00ff66",
+        backgroundColor: "#222222",
+        showLabel: true,
+      },
+      {
+        id: "hud_panel",
+        type: "Panel",
+        x: 10,
+        y: 10,
+        width: 180,
+        height: 80,
+        backgroundColor: "#161b22",
+        borderColor: "#30363d",
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+      {
+        id: "touch_stick",
+        type: "Joystick",
+        action: "player.move",
+        x: 40,
+        y: 650,
+        width: 100,
+        height: 100,
+        radius: 45,
+        deadzone: 5,
+        baseColor: "rgba(255,255,255,0.2)",
+        knobColor: "#00f0ff",
+      },
+    ];
+
     await writeScene(root, scene, "main.scene.json");
     await exportProject(root, exportOut, "libgdx");
 
@@ -335,6 +406,42 @@ describe("libGDX export pipeline", () => {
     );
     expect(gameRulesSystemJava).toContain("class GameRulesSystem");
 
+    const guiNodeJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/gui/GuiNode.java"
+      ),
+      "utf8"
+    );
+    expect(guiNodeJava).toContain("class GuiNode");
+
+    const guiRendererJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/gui/GuiRenderer.java"
+      ),
+      "utf8"
+    );
+    expect(guiRendererJava).toContain("class GuiRenderer");
+
+    const sceneManagerJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/scene/SceneManager.java"
+      ),
+      "utf8"
+    );
+    expect(sceneManagerJava).toContain("class SceneManager");
+
+    const saveSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/save/SaveSystem.java"
+      ),
+      "utf8"
+    );
+    expect(saveSystemJava).toContain("class SaveSystem");
+
     // Verify exported scene contains the new components
     const exportedSceneJson = JSON.parse(
       await readFile(join(exportOut, "assets/gamekit/scenes/main.scene.json"), "utf8")
@@ -351,5 +458,13 @@ describe("libGDX export pipeline", () => {
     expect(effectsEntity.components.some((c: { type: string }) => c.type === "NineSlice")).toBe(true);
     expect(effectsEntity.components.some((c: { type: string }) => c.type === "Light2D")).toBe(true);
     expect(effectsEntity.components.some((c: { type: string }) => c.type === "StateMachine")).toBe(true);
+
+    // Verify exported scene contains GUI nodes
+    expect(exportedSceneJson.guiNodes.length).toBe(5);
+    expect(exportedSceneJson.guiNodes.some((n: { type: string }) => n.type === "Text")).toBe(true);
+    expect(exportedSceneJson.guiNodes.some((n: { type: string }) => n.type === "Button")).toBe(true);
+    expect(exportedSceneJson.guiNodes.some((n: { type: string }) => n.type === "ProgressBar")).toBe(true);
+    expect(exportedSceneJson.guiNodes.some((n: { type: string }) => n.type === "Panel")).toBe(true);
+    expect(exportedSceneJson.guiNodes.some((n: { type: string }) => n.type === "Joystick")).toBe(true);
   });
 });

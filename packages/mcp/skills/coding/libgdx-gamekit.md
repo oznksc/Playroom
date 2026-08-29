@@ -131,3 +131,25 @@ This syncs `.scene.json`, `project.json`, and `gamekit/assets/` to `.playroom/na
 ./gradlew android:assembleDebug
 ./gradlew android:installDebug
 ```
+
+## Live Debug MCP Agent
+
+The runtime starts an HTTP debug agent on **port 17478** (override with `PLAYROOM_DEBUG_PORT`) at the end of `GameKitGame.create()`. It binds `0.0.0.0` so Android `adb reverse tcp:17478 tcp:17478` works. Every mutating route is executed on the libGDX render thread via `Gdx.app.postRunnable`.
+
+`packages/mcp` exposes those routes plus Gradle/adb/simctl as MCP tools. Call `libgdx_capabilities` first.
+
+| MCP tool | Debug route / host command |
+|---|---|
+| `run` / `stop` / `restart` | Gradle `lwjgl3:run` + `/health` poll |
+| `pause` / `resume` / `step_frame` | `POST /control` |
+| `inspect_world` / `inspect_entity` | `GET /world`, `GET /entity?id=` |
+| `spawn_entity` / `despawn_entity` / `set_component` | live ECS (not scene JSON) |
+| `get_fps` / `get_draw_calls` / `get_triangles` | `GET /perf` + `GLProfiler` |
+| `list_shaders` / `reload_shader` / `set_render_mode` / `capture_frame` / `set_camera` | graphics routes |
+| `build` / `compile` / `test` / `clean` / `dependencies` | Gradle |
+| `list_android_devices` / `build_android` / `deploy_android` / `run_android` | adb + `android:assembleDebug` |
+| `list_ios_devices` / `boot_ios_simulator` | `xcrun simctl` (no RoboVM module yet) |
+
+`remove_entity` remains the **scene-JSON** editor tool. Live deletion is `despawn_entity`.
+
+Hex/H3/territory APIs (`create_hex`, `load_h3_region`, …) are **not** part of this runtime.

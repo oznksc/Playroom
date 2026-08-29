@@ -736,6 +736,134 @@ async function main(argv: string[]): Promise<void> {
       }
       return;
     }
+    case "native": {
+      const sub = args[0] ?? "status";
+      switch (sub) {
+        case "start": {
+          console.log("🚀 Starting libGDX desktop native runner...");
+          const state = await defaultNativeRunner.start(cwd);
+          console.log(`Native runner status: ${state.status} (PID: ${state.pid ?? "none"})`);
+          return;
+        }
+        case "stop": {
+          console.log("🛑 Stopping libGDX desktop native runner...");
+          await defaultNativeRunner.stop();
+          const state = defaultNativeRunner.getState();
+          console.log(`Native runner status: ${state.status}`);
+          return;
+        }
+        case "status": {
+          const state = defaultNativeRunner.getState();
+          console.log(`Native runner status: ${state.status} (running: ${state.running}, PID: ${state.pid ?? "none"})`);
+          if (state.logs.length > 0) {
+            console.log("\nRecent logs:");
+            state.logs.slice(-10).forEach((line) => console.log(`  ${line}`));
+          }
+          return;
+        }
+        default:
+          throw new Error("Usage: gamekit native <start|stop|status>");
+      }
+    }
+    case "run": {
+      const platform = (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "libgdx";
+      if (platform === "libgdx") {
+        console.log("🚀 Running libGDX native desktop game...");
+        const state = await defaultNativeRunner.start(cwd);
+        console.log(`Native runner started with status: ${state.status} (PID: ${state.pid})`);
+      } else {
+        const { startDevWatch } = await import("./dev.js");
+        startDevWatch(cwd, { platform });
+      }
+      return;
+    }
+    case "gui": {
+      const sub = args[0] ?? "list";
+      const sceneArg = readOption(args, "--scene") ?? "main.scene.json";
+      const { readScene, writeScene } = await import("./project.js");
+      const sceneData = await readScene(cwd, sceneArg);
+      if (!sceneData.gui) {
+        sceneData.gui = { nodes: [], componentInstances: [] };
+      }
+
+      switch (sub) {
+        case "list": {
+          console.log(`GUI Nodes in ${sceneArg} (${sceneData.gui.nodes.length} nodes):`);
+          sceneData.gui.nodes.forEach((n: any, idx: number) => {
+            console.log(`  [${idx + 1}] ID: ${n.id} | Type: ${n.type} | Pos: (${n.x}, ${n.y}) | Size: ${n.width}x${n.height}`);
+          });
+          return;
+        }
+        case "add": {
+          const type = (args[1] ?? "Text") as any;
+          const text = readOption(args, "--text") ?? type;
+          const action = readOption(args, "--action") ?? "";
+          const { createId } = await import("@gamekit/schema");
+          const newNode: any = {
+            id: createId(type),
+            type,
+            x: Number(readOption(args, "--x") ?? 20),
+            y: Number(readOption(args, "--y") ?? 20),
+            width: Number(readOption(args, "--width") ?? (type === "Button" ? 120 : 200)),
+            height: Number(readOption(args, "--height") ?? 40),
+            visible: true,
+            interactive: type === "Button" || type === "Joystick",
+          };
+          if (type === "Text" || type === "Button") {
+            newNode.text = text;
+          }
+          if (type === "Button") {
+            newNode.action = action;
+            newNode.backgroundColor = readOption(args, "--bg") ?? "#00f0ff";
+          }
+          sceneData.gui.nodes.push(newNode);
+          await writeScene(cwd, sceneData, sceneArg);
+          console.log(`✅ Added GUI node: ${newNode.id} (${type}) to ${sceneArg}`);
+          return;
+        }
+        case "remove": {
+          const id = args[1];
+          if (!id) throw new Error("Usage: gamekit gui remove <node-id> [--scene <file>]");
+          const initialLen = sceneData.gui.nodes.length;
+          sceneData.gui.nodes = sceneData.gui.nodes.filter((n: any) => n.id !== id);
+          if (sceneData.gui.nodes.length === initialLen) {
+            console.log(`Node ${id} not found in ${sceneArg}.`);
+          } else {
+            await writeScene(cwd, sceneData, sceneArg);
+            console.log(`✅ Removed GUI node ${id} from ${sceneArg}`);
+          }
+          return;
+        }
+        default:
+          throw new Error("Usage: gamekit gui <list|add|remove> [--scene <file>]");
+      }
+    }
+    case "scene": {
+      const sub = args[0] ?? "list";
+      const { readdir, readFile, writeFile } = await import("node:fs/promises");
+      const { createEmptyScene, sceneToJson } = await import("@gamekit/schema");
+      const scenesDir = join(cwd, "gamekit", "scenes");
+
+      switch (sub) {
+        case "list": {
+          const files = await readdir(scenesDir);
+          const scenes = files.filter((f) => f.endsWith(".scene.json"));
+          console.log(`Scenes in project (${scenes.length}):`);
+          scenes.forEach((s) => console.log(`  - ${s}`));
+          return;
+        }
+        case "create": {
+          const name = args[1] ?? "New Scene";
+          const fileName = `${name.toLowerCase().replace(/\s+/g, "_")}.scene.json`;
+          const newScene = createEmptyScene(name);
+          await writeFile(join(scenesDir, fileName), sceneToJson(newScene), "utf-8");
+          console.log(`✅ Created scene: ${fileName}`);
+          return;
+        }
+        default:
+          throw new Error("Usage: gamekit scene <list|create> ...");
+      }
+    }
     case "--help":
     case "-h":
     case undefined:
@@ -784,7 +912,11 @@ Usage:
   gamekit remove <asset-id>
   gamekit export [path] [--platform web|mobile|libgdx]
   gamekit play [--platform libgdx|web]
-  gamekit generate [--platform web|mobile]
+  gamekit native <start|stop|status>
+  gamekit run [--platform web|mobile|libgdx]
+  gamekit gui <list|add|remove> [--scene <file>]
+  gamekit scene <list|create>
+  gamekit generate [--platform web|mobile|libgdx]
   gamekit mcp [project-path]
   gamekit skills list
   gamekit skills apply <name>

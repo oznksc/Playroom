@@ -58,8 +58,8 @@ public class ParticleSystem {
                 Particle p = allocateParticle();
                 if (p == null) break;
 
-                float startX = transform.x;
-                float startY = transform.y;
+                float startX = transform.position.x;
+                float startY = transform.position.y;
                 if ("box".equals(pComp.shape)) {
                     startX += (random.nextFloat() - 0.5f) * pComp.width;
                     startY += (random.nextFloat() - 0.5f) * pComp.height;

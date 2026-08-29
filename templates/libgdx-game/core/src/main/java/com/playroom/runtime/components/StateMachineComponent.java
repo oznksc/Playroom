@@ -6,7 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class StateMachineComponent implements Component {
+public class StateMachineComponent extends Component {
+    public StateMachineComponent() {
+        super("StateMachine");
+    }
+
     public static class State {
         public String name = "";
         public Float duration = null;
