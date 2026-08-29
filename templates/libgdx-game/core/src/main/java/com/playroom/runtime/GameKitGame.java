@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.playroom.runtime.audio.AudioSystem;
 import com.playroom.runtime.graphics.EntityRenderer;
 import com.playroom.runtime.input.PlayerControllerSystem;
 import com.playroom.runtime.physics.PhysicsSystem;
@@ -15,6 +16,7 @@ import com.playroom.runtime.script.ActionExecutor;
 import com.playroom.runtime.services.GameServices;
 import com.playroom.runtime.services.MockGameServices;
 import com.playroom.runtime.systems.FollowPathSystem;
+import com.playroom.runtime.systems.GameRulesSystem;
 import com.playroom.runtime.systems.ParticleSystem;
 import com.playroom.runtime.systems.StateMachineSystem;
 import com.playroom.runtime.systems.TweenSystem;
@@ -33,6 +35,8 @@ public class GameKitGame implements ApplicationListener {
     private FollowPathSystem followPathSystem;
     private ParticleSystem particleSystem;
     private StateMachineSystem stateMachineSystem;
+    private AudioSystem audioSystem;
+    private GameRulesSystem gameRulesSystem;
     private EntityRenderer entityRenderer;
     private ActionExecutor actionExecutor;
 
@@ -72,6 +76,14 @@ public class GameKitGame implements ApplicationListener {
         return stateMachineSystem;
     }
 
+    public AudioSystem getAudioSystem() {
+        return audioSystem;
+    }
+
+    public GameRulesSystem getGameRulesSystem() {
+        return gameRulesSystem;
+    }
+
     @Override
     public void create() {
         batch = new SpriteBatch();
@@ -95,7 +107,13 @@ public class GameKitGame implements ApplicationListener {
         followPathSystem = new FollowPathSystem();
         particleSystem = new ParticleSystem();
         stateMachineSystem = new StateMachineSystem();
+        audioSystem = new AudioSystem();
+        gameRulesSystem = new GameRulesSystem();
+        gameRulesSystem.init(currentSceneData);
+
         actionExecutor = new ActionExecutor(services);
+        actionExecutor.setAudioSystem(audioSystem);
+        actionExecutor.setGameRulesSystem(gameRulesSystem);
 
         actionExecutor.triggerEvent(currentSceneData, "start");
 
@@ -123,6 +141,9 @@ public class GameKitGame implements ApplicationListener {
 
         if (physicsSystem != null) {
             physicsSystem.init(currentSceneData);
+        }
+        if (gameRulesSystem != null) {
+            gameRulesSystem.init(currentSceneData);
         }
         if (actionExecutor != null) {
             actionExecutor.triggerEvent(currentSceneData, "start");
@@ -166,13 +187,16 @@ public class GameKitGame implements ApplicationListener {
         followPathSystem.update(currentSceneData, delta);
         particleSystem.update(currentSceneData, delta);
         stateMachineSystem.update(currentSceneData, delta, actionExecutor);
+        gameRulesSystem.update(currentSceneData, delta, actionExecutor);
 
         // 3. Step Box2D simulation
         physicsSystem.update(delta);
 
-        // 4. Update camera tracking
+        // 4. Update camera tracking & spatial audio
         entityRenderer.updateCamera(currentSceneData, camera, delta);
         camera.update();
+        com.badlogic.gdx.math.Vector2 camPos = new com.badlogic.gdx.math.Vector2(camera.position.x, camera.position.y);
+        audioSystem.update(currentSceneData, camPos);
 
         // 5. Render frame
         ScreenUtils.clear(currentSceneData.backgroundColor);
@@ -193,5 +217,6 @@ public class GameKitGame implements ApplicationListener {
         if (batch != null) batch.dispose();
         if (entityRenderer != null) entityRenderer.dispose();
         if (physicsSystem != null) physicsSystem.dispose();
+        if (audioSystem != null) audioSystem.dispose();
     }
 }

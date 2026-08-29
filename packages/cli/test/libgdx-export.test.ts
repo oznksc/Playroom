@@ -317,6 +317,24 @@ describe("libGDX export pipeline", () => {
     );
     expect(smSystemJava).toContain("class StateMachineSystem");
 
+    const audioSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/audio/AudioSystem.java"
+      ),
+      "utf8"
+    );
+    expect(audioSystemJava).toContain("class AudioSystem");
+
+    const gameRulesSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/systems/GameRulesSystem.java"
+      ),
+      "utf8"
+    );
+    expect(gameRulesSystemJava).toContain("class GameRulesSystem");
+
     // Verify exported scene contains the new components
     const exportedSceneJson = JSON.parse(
       await readFile(join(exportOut, "assets/gamekit/scenes/main.scene.json"), "utf8")
