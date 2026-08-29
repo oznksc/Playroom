@@ -55,8 +55,17 @@ import {
 import { getSkillPack } from "./skill-packs.js";
 import { detectKmpProject, type KmpProjectInfo } from "./kmp-detector.js";
 import { adoptKmpProject, type AdoptKmpOptions, type AdoptKmpResult } from "./kmp-injector.js";
+import { detectProjectScreens, type DiscoveredScreen } from "./kmp-screen-detector.js";
 
-export { detectKmpProject, adoptKmpProject, type KmpProjectInfo, type AdoptKmpOptions, type AdoptKmpResult };
+export {
+  detectKmpProject,
+  adoptKmpProject,
+  detectProjectScreens,
+  type KmpProjectInfo,
+  type AdoptKmpOptions,
+  type AdoptKmpResult,
+  type DiscoveredScreen,
+};
 
 export type InitResult = {
   projectPath: string;

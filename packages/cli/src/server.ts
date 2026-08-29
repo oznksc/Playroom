@@ -29,6 +29,7 @@ import {
   getSceneMtime,
   detectKmpProject,
   adoptKmpProject,
+  detectProjectScreens,
 } from "./project.js";
 import {
   scaffoldProject,
@@ -321,6 +322,24 @@ async function handleRequest(
       sendJson(response, 200, result);
     } catch (err) {
       sendJson(response, 400, { error: err instanceof Error ? err.message : String(err) });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/screens" && request.method === "GET") {
+    try {
+      const detected = await detectProjectScreens(options.root);
+      const snapshot = await getProjectSnapshot(options.root);
+      sendJson(response, 200, {
+        scenes: snapshot.scenes.map((s) => ({
+          file: s,
+          name: s.replace(/\.scene\.json$/i, ""),
+          type: "scene",
+        })),
+        kotlinScreens: detected,
+      });
+    } catch (err) {
+      sendJson(response, 500, { error: err instanceof Error ? err.message : String(err) });
     }
     return;
   }

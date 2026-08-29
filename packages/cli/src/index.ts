@@ -21,9 +21,11 @@ import {
   applySkillPackRecipes,
   detectKmpProject,
   adoptKmpProject,
+  detectProjectScreens,
   type KmpProjectInfo,
   type AdoptKmpOptions,
   type AdoptKmpResult,
+  type DiscoveredScreen,
 } from "./project.js";
 import {
   scaffoldProject,
@@ -58,9 +60,11 @@ export {
   applySkillPackRecipes,
   detectKmpProject,
   adoptKmpProject,
+  detectProjectScreens,
   type KmpProjectInfo,
   type AdoptKmpOptions,
   type AdoptKmpResult,
+  type DiscoveredScreen,
 } from "./project.js";
 export {
   scaffoldProject,
