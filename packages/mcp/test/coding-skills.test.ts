@@ -100,4 +100,20 @@ describe("MCP coding skills and libGDX integration", () => {
     expect(text).toContain("## Physics & Box2D");
     expect(text).toContain("## Playroom Java Runtime");
   });
+
+  it("generates assets.json manifest for libGDX", async () => {
+    const result = await tool("generate_assets_manifest").handler({ platform: "libgdx" });
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.success).toBe(true);
+    expect(payload.platform).toBe("libgdx");
+    expect(payload.path).toBe("gamekit/generated/assets.json");
+  });
+
+  it("exports project to libgdx target directory with runnable instructions", async () => {
+    const result = await tool("export_project").handler({ platform: "libgdx" });
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.success).toBe(true);
+    expect(payload.platform).toBe("libgdx");
+    expect(payload.instructions).toContain("./gradlew lwjgl3:run");
+  });
 });

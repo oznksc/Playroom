@@ -56,4 +56,18 @@ describe("buildProject", () => {
     const sceneRaw = await readFile(join(outDir, "scenes", "main.scene.json"), "utf8");
     expect(sceneRaw.includes("\n  ")).toBe(false);
   });
+
+  it("packs gamekit output with assets.json for libgdx platform", async () => {
+    const outDir = join(root, "dist-libgdx");
+    const result = await buildProject(root, { outDir, platform: "libgdx", skipDoctor: false });
+    expect(result.platform).toBe("libgdx");
+    expect(result.scenes).toContain("main.scene.json");
+
+    await access(join(outDir, "project.json"));
+    await access(join(outDir, "scenes", "main.scene.json"));
+    await access(join(outDir, "generated", "assets.json"));
+
+    const assetsJson = JSON.parse(await readFile(join(outDir, "generated", "assets.json"), "utf8"));
+    expect(assetsJson).toHaveProperty("assets");
+  });
 });

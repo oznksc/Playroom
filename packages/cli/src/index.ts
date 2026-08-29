@@ -193,9 +193,10 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "generate": {
-      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
-      if (platform !== "web" && platform !== "mobile") {
-        throw new Error("--platform must be 'web' or 'mobile'");
+      const platform =
+        (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
+        throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
       const output = await generateAssetRegistry(cwd, platform);
       console.log(`Generated asset registry: ${output}`);
@@ -627,9 +628,10 @@ async function main(argv: string[]): Promise<void> {
     case "build": {
       const { buildProject } = await import("./build.js");
       const out = readOption(args, "--out") ?? join(cwd, "build", "gamekit");
-      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
-      if (platform !== "web" && platform !== "mobile") {
-        throw new Error("--platform must be 'web' or 'mobile'");
+      const platform =
+        (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
+        throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
       const skipDoctor = args.includes("--skip-doctor");
       const pack = !args.includes("--no-pack");

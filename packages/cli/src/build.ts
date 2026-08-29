@@ -7,7 +7,7 @@ import { packBuildAssets, type PackerResult } from "./packer.js";
 
 export type BuildOptions = {
   outDir?: string;
-  platform?: "web" | "mobile";
+  platform?: "web" | "mobile" | "libgdx";
   skipDoctor?: boolean;
   /** Pack PNG sprites into a texture atlas and audio files into a bank (default true). */
   pack?: boolean;
@@ -15,7 +15,7 @@ export type BuildOptions = {
 
 export type BuildResult = {
   outDir: string;
-  platform: "web" | "mobile";
+  platform: "web" | "mobile" | "libgdx";
   scenes: string[];
   assets: number;
   assetHashes: Record<string, string>;
@@ -77,9 +77,10 @@ export async function buildProject(root: string, options: BuildOptions = {}): Pr
   }
 
   // Registry for the target platform
-  const registrySrc = join(gamekitRoot, "generated", "assets.ts");
+  const registryFileName = platform === "libgdx" ? "assets.json" : "assets.ts";
+  const registrySrc = join(gamekitRoot, "generated", registryFileName);
   try {
-    await copyFile(registrySrc, join(outDir, "generated", "assets.ts"));
+    await copyFile(registrySrc, join(outDir, "generated", registryFileName));
   } catch {
     // regenerated path may differ; ignore if missing after generate
   }
