@@ -19,12 +19,18 @@ import {
   createGameFromSkill,
   wireShellToGameplay,
   applySkillPackRecipes,
+  detectKmpProject,
+  adoptKmpProject,
+  type KmpProjectInfo,
+  type AdoptKmpOptions,
+  type AdoptKmpResult,
 } from "./project.js";
 import {
   scaffoldProject,
   detectPackageManagers,
   GENRE_TEMPLATES,
   type ProjectPlatform,
+  type ProjectLanguage,
   type ProjectGenre,
   type PackageManager,
 } from "./scaffold.js";
@@ -50,12 +56,18 @@ export {
   createGameFromSkill,
   wireShellToGameplay,
   applySkillPackRecipes,
+  detectKmpProject,
+  adoptKmpProject,
+  type KmpProjectInfo,
+  type AdoptKmpOptions,
+  type AdoptKmpResult,
 } from "./project.js";
 export {
   scaffoldProject,
   detectPackageManagers,
   GENRE_TEMPLATES,
   type ProjectPlatform,
+  type ProjectLanguage,
   type ProjectGenre,
   type PackageManager,
   type ScaffoldOptions,
@@ -131,8 +143,32 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "init": {
-      const project = await initProject(cwd, { name: readOption(args, "--name") ?? basename(cwd) });
+      const name = readOption(args, "--name") ?? basename(cwd);
+      const shouldAdopt =
+        readOption(args, "--auto-inject") === "true" ||
+        readOption(args, "--platform") === "libgdx" ||
+        args.includes("--attach") ||
+        args.includes("--auto-inject");
+      const kmpInfo = await detectKmpProject(cwd);
+      if (kmpInfo.isGradleProject && shouldAdopt) {
+        const adoptRes = await adoptKmpProject(cwd, { name });
+        console.log(`🚀 Successfully adopted existing Gradle / KMP project (${kmpInfo.layoutType})`);
+        console.log(`   Injected runtime: ${adoptRes.injectedRuntimeDir}`);
+        console.log(`   GameKit root:     ${adoptRes.gamekitDir}`);
+        for (const inst of adoptRes.instructions) console.log(`   ${inst}`);
+        return;
+      }
+      const project = await initProject(cwd, { name });
       console.log(`Created Playroom project: ${project.projectPath}`);
+      return;
+    }
+    case "attach": {
+      const name = readOption(args, "--name") ?? basename(cwd);
+      const adoptRes = await adoptKmpProject(cwd, { name });
+      console.log(`🚀 Successfully adopted existing Gradle / KMP project (${adoptRes.projectInfo.layoutType})`);
+      console.log(`   Injected runtime: ${adoptRes.injectedRuntimeDir}`);
+      console.log(`   GameKit root:     ${adoptRes.gamekitDir}`);
+      for (const inst of adoptRes.instructions) console.log(`   ${inst}`);
       return;
     }
     case "create": {
@@ -913,7 +949,8 @@ function printHelp(): void {
   console.log(`Playroom CLI
 
 Usage:
-  gamekit init [--name MyGame]
+  gamekit init [--name MyGame] [--platform libgdx] [--attach]
+  gamekit attach [--name MyGame]
   gamekit editor [--port 4177] [--host 127.0.0.1]
            [--tls-cert path] [--tls-key path] [--tls-ca path] [--mtls]
   gamekit import <file>

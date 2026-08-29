@@ -27,6 +27,8 @@ import {
   describeRecipe,
   applyRecipe,
   getSceneMtime,
+  detectKmpProject,
+  adoptKmpProject,
 } from "./project.js";
 import {
   scaffoldProject,
@@ -294,6 +296,32 @@ async function handleRequest(
   ) {
     const selected = await openNativeFolderDialog();
     sendJson(response, 200, { path: selected });
+    return;
+  }
+
+  if (url.pathname === "/api/projects/detect" && request.method === "GET") {
+    try {
+      const targetDir = url.searchParams.get("dir") ?? process.cwd();
+      const detected = await detectKmpProject(targetDir);
+      sendJson(response, 200, { detected });
+    } catch (err) {
+      sendJson(response, 500, { error: err instanceof Error ? err.message : String(err) });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/projects/adopt" && request.method === "POST") {
+    try {
+      const raw = JSON.parse((await readBody(request)).toString("utf8")) as {
+        targetDir?: string;
+        name?: string;
+      };
+      if (!raw.targetDir) throw new Error("targetDir is required");
+      const result = await adoptKmpProject(raw.targetDir, { name: raw.name });
+      sendJson(response, 200, result);
+    } catch (err) {
+      sendJson(response, 400, { error: err instanceof Error ? err.message : String(err) });
+    }
     return;
   }
 

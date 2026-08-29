@@ -53,6 +53,10 @@ import {
   type BootstrapScene,
 } from "./export-bootstrap.js";
 import { getSkillPack } from "./skill-packs.js";
+import { detectKmpProject, type KmpProjectInfo } from "./kmp-detector.js";
+import { adoptKmpProject, type AdoptKmpOptions, type AdoptKmpResult } from "./kmp-injector.js";
+
+export { detectKmpProject, adoptKmpProject, type KmpProjectInfo, type AdoptKmpOptions, type AdoptKmpResult };
 
 export type InitResult = {
   projectPath: string;
@@ -63,8 +67,11 @@ export type InitResult = {
 
 export async function initProject(
   root: string,
-  options: { name?: string } = {}
+  options: { name?: string; autoInjectKmp?: boolean } = {}
 ): Promise<InitResult> {
+  if (options.autoInjectKmp) {
+    await adoptKmpProject(root, { name: options.name });
+  }
   const gamekitRoot = getGameKitRoot(root);
   const scenesRoot = join(gamekitRoot, "scenes");
   const assetsRoot = join(gamekitRoot, "assets");
