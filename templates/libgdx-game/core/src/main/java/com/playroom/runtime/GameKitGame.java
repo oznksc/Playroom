@@ -14,6 +14,8 @@ import com.playroom.runtime.scene.SceneData;
 import com.playroom.runtime.script.ActionExecutor;
 import com.playroom.runtime.services.GameServices;
 import com.playroom.runtime.services.MockGameServices;
+import com.playroom.runtime.systems.FollowPathSystem;
+import com.playroom.runtime.systems.TweenSystem;
 
 public class GameKitGame implements ApplicationListener {
     private final GameServices services;
@@ -25,6 +27,8 @@ public class GameKitGame implements ApplicationListener {
     private SceneData currentSceneData;
     private PhysicsSystem physicsSystem;
     private PlayerControllerSystem playerControllerSystem;
+    private TweenSystem tweenSystem;
+    private FollowPathSystem followPathSystem;
     private EntityRenderer entityRenderer;
     private ActionExecutor actionExecutor;
 
@@ -75,6 +79,8 @@ public class GameKitGame implements ApplicationListener {
         physicsSystem.init(currentSceneData);
 
         playerControllerSystem = new PlayerControllerSystem();
+        tweenSystem = new TweenSystem();
+        followPathSystem = new FollowPathSystem();
         actionExecutor = new ActionExecutor(services);
 
         actionExecutor.triggerEvent(currentSceneData, "start");
@@ -141,18 +147,22 @@ public class GameKitGame implements ApplicationListener {
         // 1. Process player controls
         playerControllerSystem.update(currentSceneData, physicsSystem, delta);
 
-        // 2. Step Box2D simulation
+        // 2. Update tweens & path followers
+        tweenSystem.update(currentSceneData, delta);
+        followPathSystem.update(currentSceneData, delta);
+
+        // 3. Step Box2D simulation
         physicsSystem.update(delta);
 
-        // 3. Update camera tracking
+        // 4. Update camera tracking
         entityRenderer.updateCamera(currentSceneData, camera, delta);
         camera.update();
 
-        // 4. Render frame
+        // 5. Render frame
         ScreenUtils.clear(currentSceneData.backgroundColor);
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        entityRenderer.render(currentSceneData, batch);
+        entityRenderer.render(currentSceneData, batch, delta);
         batch.end();
     }
 

@@ -34,6 +34,42 @@ public class PhysicsSystem {
         ColliderComponent collider = entity.getComponent(AabbColliderComponent.class);
         if (collider == null) collider = entity.getComponent(CircleColliderComponent.class);
         if (collider == null) collider = entity.getComponent(PolygonColliderComponent.class);
+        TilemapComponent tmc = entity.getComponent(TilemapComponent.class);
+
+        if (tmc != null && tmc.solid && tmc.tiles != null && tmc.tiles.length > 0) {
+            BodyDef mapBodyDef = new BodyDef();
+            mapBodyDef.type = BodyDef.BodyType.StaticBody;
+            mapBodyDef.position.set(tc.position.x * PPM_INV, tc.position.y * PPM_INV);
+            Body mapBody = world.createBody(mapBodyDef);
+            mapBody.setUserData(entity);
+
+            for (int y = 0; y < tmc.gridHeight; y++) {
+                for (int x = 0; x < tmc.gridWidth; x++) {
+                    int idx = y * tmc.gridWidth + x;
+                    if (idx >= tmc.tiles.length) break;
+                    int tileId = tmc.tiles[idx];
+                    if (tileId <= 0) continue;
+
+                    PolygonShape shape = new PolygonShape();
+                    float hx = (tmc.tileWidth * 0.5f * tc.scale.x) * PPM_INV;
+                    float hy = (tmc.tileHeight * 0.5f * tc.scale.y) * PPM_INV;
+                    Vector2 center = new Vector2(
+                        (x * tmc.tileWidth + tmc.tileWidth * 0.5f) * tc.scale.x * PPM_INV,
+                        (y * tmc.tileHeight + tmc.tileHeight * 0.5f) * tc.scale.y * PPM_INV
+                    );
+                    shape.setAsBox(hx, hy, center, 0f);
+
+                    FixtureDef fdef = new FixtureDef();
+                    fdef.shape = shape;
+                    fdef.density = 1f;
+                    fdef.friction = 0.5f;
+                    mapBody.createFixture(fdef);
+                    shape.dispose();
+                }
+            }
+            entityBodies.put(entity, mapBody);
+            return;
+        }
 
         if (rb == null && pc == null && collider == null) return;
 

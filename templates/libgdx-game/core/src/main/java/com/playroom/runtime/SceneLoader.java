@@ -239,6 +239,69 @@ public class SceneLoader {
                 asc.playOnStart = json.getBoolean("playOnStart", false);
                 return asc;
             }
+            case "AudioListener": {
+                AudioListenerComponent alc = new AudioListenerComponent();
+                alc.enabled = json.getBoolean("enabled", true);
+                return alc;
+            }
+            case "Animation": {
+                AnimationComponent ac = new AnimationComponent();
+                ac.assetId = json.getString("assetId", "");
+                ac.frameWidth = json.getFloat("frameWidth", 32f);
+                ac.frameHeight = json.getFloat("frameHeight", 32f);
+                ac.totalFrames = json.getInt("totalFrames", 1);
+                ac.framesPerSecond = json.getFloat("framesPerSecond", 10f);
+                ac.loop = json.getBoolean("loop", true);
+                ac.currentFrame = json.getInt("currentFrame", 0);
+                return ac;
+            }
+            case "Tilemap": {
+                TilemapComponent tmc = new TilemapComponent();
+                tmc.tilesetId = json.getString("tilesetId", "");
+                tmc.tileWidth = json.getInt("tileWidth", 32);
+                tmc.tileHeight = json.getInt("tileHeight", 32);
+                tmc.columns = json.getInt("columns", 8);
+                tmc.gridWidth = json.getInt("gridWidth", 10);
+                tmc.gridHeight = json.getInt("gridHeight", 10);
+                tmc.solid = json.getBoolean("solid", false);
+                if (json.has("tiles")) {
+                    JsonValue tilesArray = json.get("tiles");
+                    int[] tileList = new int[tilesArray.size];
+                    int idx = 0;
+                    for (JsonValue t = tilesArray.child; t != null; t = t.next) {
+                        tileList[idx++] = t.asInt();
+                    }
+                    tmc.tiles = tileList;
+                }
+                return tmc;
+            }
+            case "Tween": {
+                TweenComponent tc = new TweenComponent();
+                tc.property = json.getString("property", "position.x");
+                tc.startValue = json.getFloat("startValue", 0f);
+                tc.endValue = json.getFloat("endValue", 0f);
+                tc.duration = json.getFloat("duration", 1f);
+                tc.easing = json.getString("easing", "linear");
+                tc.loop = json.getBoolean("loop", false);
+                tc.pingPong = json.getBoolean("pingPong", false);
+                tc.elapsed = json.getFloat("elapsed", 0f);
+                tc.active = json.getBoolean("active", true);
+                return tc;
+            }
+            case "FollowPath": {
+                FollowPathComponent fpc = new FollowPathComponent();
+                fpc.speed = json.getFloat("speed", 100f);
+                fpc.loop = json.getBoolean("loop", true);
+                fpc.currentPointIndex = json.getInt("currentPointIndex", 0);
+                fpc.targetPointIndex = json.getInt("targetPointIndex", 0);
+                if (json.has("points")) {
+                    JsonValue pts = json.get("points");
+                    for (JsonValue pt = pts.child; pt != null; pt = pt.next) {
+                        fpc.points.add(new com.badlogic.gdx.math.Vector2(pt.getFloat("x", 0f), pt.getFloat("y", 0f)));
+                    }
+                }
+                return fpc;
+            }
             case "Script": {
                 ScriptComponent sc = new ScriptComponent();
                 if (json.has("handlers")) {

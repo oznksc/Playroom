@@ -80,4 +80,149 @@ describe("libGDX export pipeline", () => {
     expect(exportedProjectJson.gameServices?.googlePlayAppId).toBe("987654321012");
     expect(exportedProjectJson.gameServices?.achievements).toHaveLength(1);
   });
+
+  it("exports all parity runtime components and systems for libGDX", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gamekit-libgdx-components-"));
+    const exportOut = join(root, "exported-components");
+
+    await initProject(root, { name: "Mega Platformer" });
+    const project = await readProject(root);
+    const scene = await readScene(root, "main.scene.json");
+
+    // Add entity with Animation, Tilemap, Tween, and FollowPath
+    scene.entities.push(
+      {
+        id: "hero_anim",
+        name: "Hero Animated",
+        active: true,
+        components: [
+          { type: "Transform", position: { x: 100, y: 200 }, rotation: 0, scale: { x: 1, y: 1 } },
+          {
+            type: "Animation",
+            assetId: "hero_walk.png",
+            frameWidth: 32,
+            frameHeight: 32,
+            totalFrames: 8,
+            framesPerSecond: 12,
+            loop: true,
+          },
+          {
+            type: "Tween",
+            property: "scale.x",
+            startValue: 1,
+            endValue: 1.2,
+            duration: 0.5,
+            easing: "easeInOut",
+            loop: true,
+            pingPong: true,
+          },
+        ],
+      },
+      {
+        id: "tilemap_level",
+        name: "Tilemap Level",
+        active: true,
+        components: [
+          { type: "Transform", position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } },
+          {
+            type: "Tilemap",
+            tilesetId: "tileset.png",
+            tileWidth: 32,
+            tileHeight: 32,
+            columns: 8,
+            gridWidth: 4,
+            gridHeight: 2,
+            tiles: [1, 1, 1, 1, 2, 2, 2, 2],
+            solid: true,
+          },
+        ],
+      },
+      {
+        id: "patrol_enemy",
+        name: "Patrol Enemy",
+        active: true,
+        components: [
+          { type: "Transform", position: { x: 300, y: 100 }, rotation: 0, scale: { x: 1, y: 1 } },
+          {
+            type: "FollowPath",
+            points: [
+              { x: 300, y: 100 },
+              { x: 500, y: 100 },
+            ],
+            speed: 80,
+            loop: true,
+          },
+        ],
+      }
+    );
+
+    await writeScene(root, scene, "main.scene.json");
+    await exportProject(root, exportOut, "libgdx");
+
+    // Verify Java component classes exist in exported project
+    const animCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/AnimationComponent.java"
+      ),
+      "utf8"
+    );
+    expect(animCompJava).toContain("class AnimationComponent");
+
+    const tilemapCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/TilemapComponent.java"
+      ),
+      "utf8"
+    );
+    expect(tilemapCompJava).toContain("class TilemapComponent");
+
+    const tweenCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/TweenComponent.java"
+      ),
+      "utf8"
+    );
+    expect(tweenCompJava).toContain("class TweenComponent");
+
+    const followPathJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/FollowPathComponent.java"
+      ),
+      "utf8"
+    );
+    expect(followPathJava).toContain("class FollowPathComponent");
+
+    const tweenSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/systems/TweenSystem.java"
+      ),
+      "utf8"
+    );
+    expect(tweenSystemJava).toContain("class TweenSystem");
+
+    const followPathSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/systems/FollowPathSystem.java"
+      ),
+      "utf8"
+    );
+    expect(followPathSystemJava).toContain("class FollowPathSystem");
+
+    // Verify exported scene contains the new components
+    const exportedSceneJson = JSON.parse(
+      await readFile(join(exportOut, "assets/gamekit/scenes/main.scene.json"), "utf8")
+    );
+    const animEntity = exportedSceneJson.entities.find((e: { id: string }) => e.id === "hero_anim");
+    expect(animEntity.components.some((c: { type: string }) => c.type === "Animation")).toBe(true);
+    expect(animEntity.components.some((c: { type: string }) => c.type === "Tween")).toBe(true);
+
+    const tilemapEntity = exportedSceneJson.entities.find((e: { id: string }) => e.id === "tilemap_level");
+    expect(tilemapEntity.components.some((c: { type: string }) => c.type === "Tilemap")).toBe(true);
+  });
 });

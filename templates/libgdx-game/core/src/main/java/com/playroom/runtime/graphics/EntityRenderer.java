@@ -9,9 +9,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.playroom.runtime.components.AnimationComponent;
 import com.playroom.runtime.components.CameraFollowComponent;
 import com.playroom.runtime.components.SpriteComponent;
 import com.playroom.runtime.components.TextComponent;
+import com.playroom.runtime.components.TilemapComponent;
 import com.playroom.runtime.components.TransformComponent;
 import com.playroom.runtime.scene.Entity;
 import com.playroom.runtime.scene.SceneData;
@@ -54,16 +56,26 @@ public class EntityRenderer {
         }
     }
 
-    public void render(SceneData sceneData, SpriteBatch batch) {
+    public void render(SceneData sceneData, SpriteBatch batch, float delta) {
         for (Entity entity : sceneData.entities) {
             if (!entity.active) continue;
 
             TransformComponent tc = entity.getComponent(TransformComponent.class);
             if (tc == null) continue;
 
+            TilemapComponent tmc = entity.getComponent(TilemapComponent.class);
+            if (tmc != null) {
+                renderTilemap(batch, tc, tmc, entity.name);
+            }
+
             SpriteComponent sc = entity.getComponent(SpriteComponent.class);
             if (sc != null) {
                 renderSprite(batch, tc, sc, entity.name);
+            }
+
+            AnimationComponent ac = entity.getComponent(AnimationComponent.class);
+            if (ac != null && sc == null) {
+                renderAnimation(batch, tc, ac, delta, entity.name);
             }
 
             TextComponent textComp = entity.getComponent(TextComponent.class);
@@ -71,6 +83,85 @@ public class EntityRenderer {
                 renderText(batch, tc, textComp);
             }
         }
+    }
+
+    public void render(SceneData sceneData, SpriteBatch batch) {
+        render(sceneData, batch, 0.016f);
+    }
+
+    private void renderTilemap(SpriteBatch batch, TransformComponent tc, TilemapComponent tmc, String entityName) {
+        if (tmc.tiles == null || tmc.tiles.length == 0) return;
+        Texture tileset = getTexture(tmc.tilesetId, entityName);
+        if (tileset == null) tileset = fallbackWhiteTexture;
+
+        int cols = tmc.columns > 0 ? tmc.columns : Math.max(1, tileset.getWidth() / tmc.tileWidth);
+
+        for (int y = 0; y < tmc.gridHeight; y++) {
+            for (int x = 0; x < tmc.gridWidth; x++) {
+                int idx = y * tmc.gridWidth + x;
+                if (idx >= tmc.tiles.length) break;
+
+                int tileId = tmc.tiles[idx];
+                if (tileId <= 0) continue;
+
+                int tileIndex = tileId - 1;
+                int srcX = (tileIndex % cols) * tmc.tileWidth;
+                int srcY = (tileIndex / cols) * tmc.tileHeight;
+
+                float drawX = tc.position.x + (x * tmc.tileWidth * tc.scale.x);
+                float drawY = tc.position.y + (y * tmc.tileHeight * tc.scale.y);
+
+                batch.draw(
+                    tileset,
+                    drawX, drawY,
+                    0, 0,
+                    tmc.tileWidth, tmc.tileHeight,
+                    tc.scale.x, tc.scale.y,
+                    tc.rotation,
+                    srcX, srcY,
+                    tmc.tileWidth, tmc.tileHeight,
+                    false, false
+                );
+            }
+        }
+    }
+
+    private void renderAnimation(SpriteBatch batch, TransformComponent tc, AnimationComponent ac, float delta, String entityName) {
+        Texture sheet = getTexture(ac.assetId, entityName);
+        if (sheet == null) sheet = fallbackWhiteTexture;
+
+        ac.elapsedTime += delta;
+        float frameDuration = 1.0f / Math.max(1f, ac.framesPerSecond);
+        int total = Math.max(1, ac.totalFrames);
+
+        int frameIndex;
+        if (ac.loop) {
+            frameIndex = (int) (ac.elapsedTime / frameDuration) % total;
+        } else {
+            frameIndex = Math.min((int) (ac.elapsedTime / frameDuration), total - 1);
+        }
+        ac.currentFrame = frameIndex;
+
+        int cols = Math.max(1, (int) (sheet.getWidth() / ac.frameWidth));
+        int srcX = (frameIndex % cols) * (int) ac.frameWidth;
+        int srcY = (frameIndex / cols) * (int) ac.frameHeight;
+
+        float originX = ac.frameWidth * 0.5f;
+        float originY = ac.frameHeight * 0.5f;
+        float drawX = tc.position.x - originX;
+        float drawY = tc.position.y - originY;
+
+        batch.draw(
+            sheet,
+            drawX, drawY,
+            originX, originY,
+            ac.frameWidth, ac.frameHeight,
+            tc.scale.x, tc.scale.y,
+            tc.rotation,
+            srcX, srcY,
+            (int) ac.frameWidth, (int) ac.frameHeight,
+            false, false
+        );
     }
 
     private void renderSprite(SpriteBatch batch, TransformComponent tc, SpriteComponent sc, String entityName) {
