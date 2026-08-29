@@ -139,7 +139,7 @@ async function main(argv: string[]): Promise<void> {
       if (!result.installed) {
         console.log(`  ${result.packageManager} install`);
       }
-      console.log(`  pnpm gamekit editor`);
+      console.log(`  gamekit editor`);
       return;
     }
     case "init": {
@@ -207,8 +207,8 @@ async function main(argv: string[]): Promise<void> {
       console.log(`  Registry:  ${result.registryPath}`);
       console.log("");
       console.log("Next:");
-      console.log("  pnpm gamekit editor");
-      console.log(`  pnpm gamekit export ./build --platform ${platform}`);
+      console.log("  gamekit editor");
+      console.log(`  gamekit export ./build --platform ${platform}`);
       return;
     }
     case "import": {

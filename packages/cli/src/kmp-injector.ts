@@ -181,7 +181,7 @@ object PlayroomLauncher {
 
   instructions.push("✔ Playroom GameKit runtime injected into your project.");
   instructions.push("✔ Game scenes, assets, and rules configured in ./gamekit/");
-  instructions.push("✔ Run 'pnpm gamekit editor' to start visually designing levels.");
+  instructions.push("✔ Run 'gamekit editor' to start visually designing levels.");
 
   return {
     success: true,
