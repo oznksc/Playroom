@@ -95,6 +95,10 @@ public final class DebugApi {
                 return "POST".equals(m) ? setPreference(body) : ok("preferences", getPreferences(query.get("name")));
             case "/display":
                 return ok("display", display());
+            case "/screens":
+                return ok("screens", screensJson());
+            case "/screens/switch":
+                return requirePost(m, () -> switchScreen(body, query.get("name")));
             default:
                 return err("Unknown debug route: " + m + " " + path);
         }
@@ -845,20 +849,42 @@ public final class DebugApi {
         return DebugJson.obj("ok", true, "name", name, "key", key, "value", prefs.getString(key, ""));
     }
 
-    private String display() {
-        Graphics g = Gdx.graphics;
-        Graphics.DisplayMode current = g.getDisplayMode();
-        Graphics.DisplayMode[] modes = g.getDisplayModes();
-        List<String> list = new ArrayList<>();
-        if (modes != null) {
-            for (Graphics.DisplayMode mode : modes) {
-                list.add(DebugJson.obj("width", mode.width, "height", mode.height, "refreshRate", mode.refreshRate, "bitsPerPixel", mode.bitsPerPixel));
+    private String screensJson() {
+        try {
+            Class<?> registryClass = Class.forName("com.playroom.runtime.live.ScreenRegistry");
+            Object activeName = registryClass.getMethod("getActiveScreenName").invoke(null);
+            @SuppressWarnings("unchecked")
+            List<String> list = (List<String>) registryClass.getMethod("listScreens").invoke(null);
+            List<String> quoted = new ArrayList<>();
+            if (list != null) {
+                for (String s : list) quoted.add("\"" + s + "\"");
             }
+            return DebugJson.obj(
+                "active", activeName == null ? "" : activeName.toString(),
+                "screens", DebugJson.raw("[" + String.join(",", quoted) + "]")
+            );
+        } catch (Exception e) {
+            return DebugJson.obj("active", "", "screens", DebugJson.raw("[]"));
         }
-        return DebugJson.obj(
-            "current", current == null ? DebugJson.obj() : DebugJson.obj("width", current.width, "height", current.height, "refreshRate", current.refreshRate),
-            "fullscreen", g.isFullscreen(),
-            "modes", DebugJson.raw("[" + String.join(",", list) + "]")
-        );
+    }
+
+    private String switchScreen(String body, String queryName) {
+        String targetName = queryName;
+        if (targetName == null || targetName.isBlank()) {
+            JsonValue json = parseBody(body);
+            targetName = json.getString("name", json.getString("screen", ""));
+        }
+        if (targetName.isBlank()) return err("Target screen name is required");
+        final String name = targetName;
+        try {
+            Class<?> registryClass = Class.forName("com.playroom.runtime.live.ScreenRegistry");
+            Object success = registryClass.getMethod("setActiveScreen", String.class).invoke(null, name);
+            if (Boolean.TRUE.equals(success)) {
+                return DebugJson.obj("ok", true, "active", name);
+            }
+            return err("Screen not found in registry: " + name);
+        } catch (Exception e) {
+            return err("ScreenRegistry not available: " + e.getMessage());
+        }
     }
 }
