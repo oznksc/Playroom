@@ -17,25 +17,25 @@ import kotlinx.coroutines.launch
  * Idiomatic Kotlin & LibKTX extensions for Playroom GameKit Runtime.
  */
 
+import com.playroom.runtime.components.TransformComponent
+
 inline fun <reified T : Component> Entity.getComponent(): T? {
-    for (component in this.components) {
-        if (component is T) return component
-    }
-    return null
+    return this.getComponent(T::class.java)
 }
 
 inline fun <reified T : Component> Entity.hasComponent(): Boolean = getComponent<T>() != null
 
-fun Entity.position(): Vector2 = Vector2(this.x, this.y)
+fun Entity.position(): Vector2 {
+    val t = this.getComponent(TransformComponent::class.java)
+    return t?.position ?: Vector2.Zero
+}
 
 fun SceneData.findEntity(id: String): Entity? {
     return this.entities.firstOrNull { it.id == id }
 }
 
-fun SceneData.filterByTag(tag: String): List<Entity> {
-    return this.entities.filter { entity ->
-        entity.components.any { it.type == "Tag" && it.name == tag }
-    }
+fun SceneData.filterByName(name: String): List<Entity> {
+    return this.entities.filter { it.name == name }
 }
 
 /**
