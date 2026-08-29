@@ -31,6 +31,7 @@ import { registerComposeTools } from "./tools/compose.js";
 import { registerTimelineTools } from "./tools/timeline.js";
 import { registerInspectorTools } from "./tools/inspector.js";
 import { registerAuditTools } from "./tools/audit.js";
+import { registerNativeRunnerTools } from "./tools/native-runner.js";
 import { registerResources } from "./resources/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -75,6 +76,7 @@ export function createMcpServer(basePath: string): McpServer {
   registerTimelineTools(server, fileIO);
   registerInspectorTools(server, fileIO);
   registerAuditTools(server, fileIO);
+  registerNativeRunnerTools(server, fileIO.projectRoot);
   registerResources(server, fileIO);
   registerPrompts(server);
 

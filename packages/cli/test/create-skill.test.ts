@@ -113,4 +113,19 @@ describe("createGameFromSkill", () => {
     expect(again.filename).toBe("platformer.scene.json");
     expect(again.assetsCopied.length).toBeGreaterThanOrEqual(0);
   });
+
+  it("builds game from skill for libgdx platform with assets.json", async () => {
+    const result = await createGameFromSkill(root, "platformer", {
+      name: "LibGDX Platformer",
+      platform: "libgdx",
+    });
+
+    expect(result.skillId).toBe("platformer");
+    expect(result.registryPath).toContain("assets.json");
+
+    const assetsJsonRaw = await readFile(join(root, "gamekit", "generated", "assets.json"), "utf8");
+    const assetsJson = JSON.parse(assetsJsonRaw);
+    expect(assetsJson).toHaveProperty("assets");
+    expect(Array.isArray(assetsJson.assets)).toBe(true);
+  });
 });

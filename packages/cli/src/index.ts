@@ -142,13 +142,14 @@ async function main(argv: string[]): Promise<void> {
       if (!skillId) {
         const skills = await listSkills();
         throw new Error(
-          `Usage: gamekit create <skill-id> [--name "..."] [--platform web|mobile]\n` +
+          `Usage: gamekit create <skill-id> [--name "..."] [--platform web|mobile|libgdx]\n` +
             `Available skills: ${skills.map((s) => s.id).join(", ")}`
         );
       }
-      const platform = (readOption(args, "--platform") as "web" | "mobile" | undefined) ?? "mobile";
-      if (platform !== "web" && platform !== "mobile") {
-        throw new Error("--platform must be 'web' or 'mobile'");
+      const platform =
+        (readOption(args, "--platform") as "web" | "mobile" | "libgdx" | undefined) ?? "mobile";
+      if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
+        throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
       const result = await createGameFromSkill(cwd, skillId, {
         name: readOption(args, "--name") ?? basename(cwd),

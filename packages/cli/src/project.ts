@@ -968,7 +968,7 @@ export async function createGameFromSkill(
   skillId: string,
   options: {
     name?: string;
-    platform?: "web" | "mobile";
+    platform?: "web" | "mobile" | "libgdx";
   } = {}
 ): Promise<CreateGameFromSkillResult> {
   const skills = await listSkills();
