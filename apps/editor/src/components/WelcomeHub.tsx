@@ -293,11 +293,11 @@ export function WelcomeHub({
                 />
               </h3>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Java/Kotlin + Gradle pipeline for Android, Desktop, and iOS via libGDX runtime.
+                Kotlin (LibKTX), Java 17, and Kotlin Multiplatform pipeline for Android, Desktop, and iOS.
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.04] text-[11px] text-text-secondary">
-              <span>Android / Desktop / iOS</span>
+              <span>Kotlin / Java / KMP</span>
               <span className="font-mono text-amber-400">Quick Scaffold →</span>
             </div>
           </div>

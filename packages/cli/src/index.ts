@@ -307,10 +307,18 @@ async function main(argv: string[]): Promise<void> {
       if (platform !== "web" && platform !== "mobile" && platform !== "libgdx") {
         throw new Error("--platform must be 'web', 'mobile', or 'libgdx'");
       }
+      const lang = (readOption(args, "--lang") ?? readOption(args, "--language")) as
+        | "java"
+        | "kotlin"
+        | "kmp"
+        | undefined;
+      if (lang && lang !== "java" && lang !== "kotlin" && lang !== "kmp") {
+        throw new Error("--lang must be 'java', 'kotlin', or 'kmp'");
+      }
       await initProject(cwd);
-      const output = await exportProject(cwd, resolve(cwd, path), platform);
+      const output = await exportProject(cwd, resolve(cwd, path), platform, { language: lang });
       if (platform === "libgdx") {
-        console.log(`Exported runnable libGDX project: ${output}`);
+        console.log(`Exported runnable libGDX project (${lang ?? "kotlin"}): ${output}`);
         console.log(`Run 'cd ${output} && ./gradlew lwjgl3:run' for desktop preview.`);
         console.log(`Run 'cd ${output} && ./gradlew android:assembleDebug' to build Android APK.`);
       } else {
@@ -910,7 +918,7 @@ Usage:
            [--tls-cert path] [--tls-key path] [--tls-ca path] [--mtls]
   gamekit import <file>
   gamekit remove <asset-id>
-  gamekit export [path] [--platform web|mobile|libgdx]
+  gamekit export [path] [--platform web|mobile|libgdx] [--lang java|kotlin|kmp]
   gamekit play [--platform libgdx|web]
   gamekit native <start|stop|status>
   gamekit run [--platform web|mobile|libgdx]

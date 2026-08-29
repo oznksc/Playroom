@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://s01.oss.sonatype.org' }
+        google()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$androidGradlePluginVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+}
+
+configure(subprojects) {
+    repositories {
+        mavenCentral()
+        maven { url 'https://s01.oss.sonatype.org' }
+        google()
+    }
+}
+
+subprojects {
+    version = '1.0.0'
+    ext {
+        appName = 'Playroom Game'
+        gdxVersion = '1.13.1'
+        ktxVersion = '1.13.1-b1'
+        box2dVersion = '1.13.1'
+        kotlinVersion = '2.0.21'
+    }
+}

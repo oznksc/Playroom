@@ -1,6 +1,6 @@
-import { Globe, Smartphone, Monitor, Check, Loader2, FolderOpen } from "lucide-react";
-import { Button, Input, Field, cn } from "@/ui";
-import type { ProjectPlatform } from "../NewProjectWizard.js";
+import { Globe, Smartphone, Monitor, Check, Loader2, FolderOpen, Zap, Layers, Coffee } from "lucide-react";
+import { Button, Input, Field, Badge, cn } from "@/ui";
+import type { ProjectPlatform, ProjectLanguage } from "../NewProjectWizard.js";
 
 type WizardStepPlatformProps = {
   projectName: string;
@@ -9,6 +9,8 @@ type WizardStepPlatformProps = {
   setProjectLocation: (v: string) => void;
   platform: ProjectPlatform;
   setPlatform: (p: ProjectPlatform) => void;
+  language: ProjectLanguage;
+  setLanguage: (l: ProjectLanguage) => void;
   isPickingFolder: boolean;
   fullTargetPath: string;
   onBrowseFolder: () => void;
@@ -71,7 +73,7 @@ const PLATFORMS: PlatformCard[] = [
   {
     id: "libgdx",
     label: "LibGDX Native",
-    description: "Java/Kotlin + Gradle. Android, Desktop & iOS.",
+    description: "Kotlin / Java + Gradle. Android, Desktop & Multiplatform.",
     icon: Monitor,
     iconBg: "bg-amber-400/15",
     iconColor: "text-amber-400",
@@ -83,6 +85,50 @@ const PLATFORMS: PlatformCard[] = [
   },
 ];
 
+type LanguageVariant = {
+  id: ProjectLanguage;
+  name: string;
+  badge: string;
+  badgeVariant?: "accent" | "danger" | "default" | "muted" | "mono" | "success" | "purple" | "green" | "red" | "gold";
+  description: string;
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+};
+
+const LIBGDX_LANGUAGES: LanguageVariant[] = [
+  {
+    id: "kotlin",
+    name: "Kotlin (LibKTX)",
+    badge: "Recommended",
+    badgeVariant: "purple",
+    description: "Idiomatic Kotlin JVM/Android runtime with LibKTX DSLs, extension utilities, and coroutines.",
+    icon: Zap,
+    iconColor: "text-purple-400",
+    iconBg: "bg-purple-500/15",
+  },
+  {
+    id: "java",
+    name: "Java 17 (Classic)",
+    badge: "Classic",
+    badgeVariant: "muted",
+    description: "Standard LibGDX 1.13.1 + Box2D engine. Lightweight, robust, and maximum backward compatibility.",
+    icon: Coffee,
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-400/15",
+  },
+  {
+    id: "kmp",
+    name: "Kotlin Multiplatform",
+    badge: "KMP",
+    badgeVariant: "accent",
+    description: "Shared commonMain game logic and expect/actual services targeting Desktop, Android, iOS & Web.",
+    icon: Layers,
+    iconColor: "text-cyan-400",
+    iconBg: "bg-cyan-400/15",
+  },
+];
+
 /** Step 1: project name, location, and target platform. */
 export function WizardStepPlatform({
   projectName,
@@ -91,6 +137,8 @@ export function WizardStepPlatform({
   setProjectLocation,
   platform,
   setPlatform,
+  language,
+  setLanguage,
   isPickingFolder,
   fullTargetPath,
   onBrowseFolder,
@@ -202,6 +250,58 @@ export function WizardStepPlatform({
           )}
         </div>
       </div>
+
+      {/* LibGDX Language / Architecture Options */}
+      {platform === "libgdx" && (
+        <div className="pt-2 border-t border-border-default/60 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
+              Language & Architecture
+            </label>
+            <span className="text-[11px] text-text-muted">Targeting LibGDX 1.13.1 + Box2D</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {LIBGDX_LANGUAGES.map((variant) => {
+              const Icon = variant.icon;
+              const isSelected = language === variant.id;
+              return (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => setLanguage(variant.id)}
+                  className={cn(
+                    "flex flex-col text-left p-3 rounded-lg border transition-all relative group",
+                    isSelected
+                      ? "border-amber-400 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.1)]"
+                      : "border-border-default bg-bg-elevated/30 hover:bg-bg-elevated hover:border-border-strong"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("size-6 rounded-md flex items-center justify-center", variant.iconBg, variant.iconColor)}>
+                        <Icon size={14} />
+                      </div>
+                      <span className="text-xs font-semibold text-text-primary">{variant.name}</span>
+                    </div>
+                    {isSelected ? (
+                      <div className="size-4 rounded-full bg-amber-400 text-[#06090e] flex items-center justify-center">
+                        <Check size={10} strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <Badge variant={variant.badgeVariant} className="text-[10px] px-1.5 py-0">
+                        {variant.badge}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-text-muted leading-tight line-clamp-2">
+                    {variant.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

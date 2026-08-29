@@ -1,0 +1,2 @@
+include 'core', 'lwjgl3', 'android'
+rootProject.name = 'PlayroomGame'

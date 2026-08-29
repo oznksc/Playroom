@@ -34,6 +34,7 @@ import {
   openNativeFolderDialog,
   GENRE_TEMPLATES,
   type ProjectPlatform,
+  type ProjectLanguage,
   type ProjectGenre,
   type PackageManager,
 } from "./scaffold.js";
@@ -202,6 +203,7 @@ const ProjectCreateSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   targetDir: z.string().min(1, "Target directory is required"),
   platform: z.enum(["expo", "web", "tauri", "libgdx"]).default("web"),
+  language: z.enum(["java", "kotlin", "kmp"]).optional(),
   genre: z
     .enum([
       "platformer",
@@ -261,6 +263,14 @@ async function handleRequest(
             "Ultra-lightweight native desktop app for macOS, Windows, and Linux powered by Rust & Webview.",
           icon: "Monitor",
         },
+        {
+          id: "libgdx",
+          name: "LibGDX Native (Kotlin / Java / KMP)",
+          description:
+            "High-performance native 2D game engine with Kotlin/LibKTX, Java 17, or Kotlin Multiplatform.",
+          icon: "Monitor",
+          variants: ["kotlin", "java", "kmp"],
+        },
       ],
     });
     return;
@@ -295,6 +305,7 @@ async function handleRequest(
         targetDir: parsed.targetDir,
         name: parsed.name,
         platform: parsed.platform as ProjectPlatform,
+        language: parsed.language as ProjectLanguage | undefined,
         genre: parsed.genre as ProjectGenre,
         packageManager: parsed.packageManager as PackageManager | undefined,
         runInstall: parsed.runInstall,

@@ -104,6 +104,18 @@ const SKILL_REGISTRY: Record<string, { name: string; description: string; tags: 
       "Playroom Java runtime — SceneLoader, ECS systems, ActionExecutor handlers, Google Play Games Services",
     tags: ["libgdx", "java", "gamekit", "runtime", "ecs", "services", "google-play"],
   },
+  "libgdx-kotlin": {
+    name: "libGDX Kotlin & LibKTX",
+    description:
+      "libGDX with Kotlin & LibKTX — Idiomatic Kotlin, LibKTX DSLs, coroutines, extension functions, concise game loops",
+    tags: ["libgdx", "kotlin", "libktx", "coroutines", "dsl", "mobile", "desktop"],
+  },
+  "libgdx-kmp": {
+    name: "libGDX Kotlin Multiplatform (KMP)",
+    description:
+      "libGDX Kotlin Multiplatform — Multiplatform Gradle layout, commonMain shared game logic, expect/actual platform contracts",
+    tags: ["libgdx", "kotlin", "kmp", "multiplatform", "commonMain", "desktop", "android", "ios", "web"],
+  },
 };
 
 function parseSkillMeta(id: string, content: string): CodingSkillMeta {

@@ -254,12 +254,16 @@ export function registerProjectTools(server: McpServer, fileIO: FileIO): void {
         .enum(["libgdx", "web", "mobile"])
         .default("libgdx")
         .describe("Target platform"),
+      language: z
+        .enum(["java", "kotlin", "kmp"])
+        .optional()
+        .describe("Language/architecture variant for libGDX (defaults to 'kotlin')"),
       outDir: z
         .string()
         .optional()
         .describe("Output directory path (defaults to 'build/export-<platform>')"),
     },
-    async ({ platform, outDir }) => {
+    async ({ platform, language, outDir }) => {
       const project = await fileIO.readProject();
       const targetOut = outDir
         ? resolve(fileIO.projectRoot, outDir)

@@ -119,4 +119,70 @@ describe("scaffoldProject", () => {
     expect(existsSync(join(targetDir, "src-tauri", "src", "main.rs"))).toBe(true);
     expect(existsSync(join(targetDir, "src", "main.ts"))).toBe(true);
   });
+
+  it("scaffolds a LibGDX Kotlin project with LibKTX and Gradle", async () => {
+    const targetDir = join(root, "my-libgdx-kotlin-game");
+    const result = await scaffoldProject({
+      targetDir,
+      name: "Kotlin Pixel Quest",
+      platform: "libgdx",
+      language: "kotlin",
+      genre: "platformer",
+      runInstall: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.platform).toBe("libgdx");
+    expect(result.language).toBe("kotlin");
+    expect(existsSync(join(targetDir, "build.gradle"))).toBe(true);
+    expect(existsSync(join(targetDir, "settings.gradle"))).toBe(true);
+    expect(existsSync(join(targetDir, "gradle.properties"))).toBe(true);
+    expect(existsSync(join(targetDir, "core", "build.gradle"))).toBe(true);
+    expect(existsSync(join(targetDir, "core", "src", "main", "kotlin", "com", "playroom", "runtime", "ktx", "PlayroomKtx.kt"))).toBe(true);
+    expect(existsSync(join(targetDir, "lwjgl3", "src", "main", "kotlin", "com", "playroom", "runtime", "lwjgl3", "Lwjgl3Launcher.kt"))).toBe(true);
+    expect(existsSync(join(targetDir, "android", "src", "main", "kotlin", "com", "playroom", "runtime", "android", "AndroidLauncher.kt"))).toBe(true);
+    expect(existsSync(join(targetDir, "gamekit", "project.json"))).toBe(true);
+    expect(existsSync(join(targetDir, "gamekit", "scenes", "platformer.scene.json"))).toBe(true);
+
+    const gradleProps = await readFile(join(targetDir, "gradle.properties"), "utf8");
+    expect(gradleProps).toContain("kotlinVersion");
+    expect(gradleProps).toContain("ktxVersion");
+  });
+
+  it("scaffolds a LibGDX Java project with classic LibGDX setup", async () => {
+    const targetDir = join(root, "my-libgdx-java-game");
+    const result = await scaffoldProject({
+      targetDir,
+      name: "Java Platformer",
+      platform: "libgdx",
+      language: "java",
+      genre: "topdown",
+      runInstall: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.platform).toBe("libgdx");
+    expect(result.language).toBe("java");
+    expect(existsSync(join(targetDir, "build.gradle"))).toBe(true);
+    expect(existsSync(join(targetDir, "core", "src", "main", "java", "com", "playroom", "runtime", "GameKitGame.java"))).toBe(true);
+    expect(existsSync(join(targetDir, "lwjgl3", "src", "main", "java", "com", "playroom", "runtime", "lwjgl3", "Lwjgl3Launcher.java"))).toBe(true);
+  });
+
+  it("scaffolds a LibGDX Kotlin Multiplatform (KMP) project", async () => {
+    const targetDir = join(root, "my-libgdx-kmp-game");
+    const result = await scaffoldProject({
+      targetDir,
+      name: "KMP Galaxy Game",
+      platform: "libgdx",
+      language: "kmp",
+      genre: "topdown-shooter",
+      runInstall: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.platform).toBe("libgdx");
+    expect(result.language).toBe("kmp");
+    expect(existsSync(join(targetDir, "build.gradle"))).toBe(true);
+    expect(existsSync(join(targetDir, "core", "src", "main", "kotlin", "com", "playroom", "runtime", "kmp", "PlatformServices.kt"))).toBe(true);
+  });
 });

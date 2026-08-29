@@ -16,6 +16,7 @@ import { WizardStepPlatform } from "./NewProjectWizard/WizardStepPlatform.js";
 import { WizardStepBuild } from "./NewProjectWizard/WizardStepBuild.js";
 
 export type ProjectPlatform = "web" | "expo" | "tauri" | "libgdx";
+export type ProjectLanguage = "java" | "kotlin" | "kmp";
 export type ProjectGenre =
   "platformer" | "topdown" | "topdown-shooter" | "physics-puzzle" | "endless-runner" | "blank";
 export type PackageManager = "pnpm" | "bun" | "yarn" | "npm";
@@ -78,6 +79,7 @@ interface NewProjectWizardProps {
   onClose: () => void;
   onProjectCreated: (projectPath: string) => void;
   defaultPlatform?: ProjectPlatform;
+  defaultLanguage?: ProjectLanguage;
   defaultGenre?: ProjectGenre;
 }
 
@@ -86,6 +88,7 @@ export function NewProjectWizard({
   onClose,
   onProjectCreated,
   defaultPlatform = "web",
+  defaultLanguage = "kotlin",
   defaultGenre = "platformer",
 }: NewProjectWizardProps) {
   const isTauri =
@@ -97,6 +100,7 @@ export function NewProjectWizard({
   const [projectName, setProjectName] = useState("My Awesome Game");
   const [projectLocation, setProjectLocation] = useState("");
   const [platform, setPlatform] = useState<ProjectPlatform>(defaultPlatform);
+  const [language, setLanguage] = useState<ProjectLanguage>(defaultLanguage);
   const [genre, setGenre] = useState<ProjectGenre>(defaultGenre);
   const [packageManager, setPackageManager] = useState<PackageManager>("pnpm");
   const [detectedPMs, setDetectedPMs] = useState<PackageManager[]>(["pnpm", "npm"]);
@@ -193,7 +197,7 @@ export function NewProjectWizard({
     setBuildLogs([
       `Scaffolding "${projectName}"...`,
       `Target: ${fullTargetPath}`,
-      `Platform: ${platform.toUpperCase()} | Genre: ${genre}`,
+      `Platform: ${platform.toUpperCase()}${platform === "libgdx" ? ` (${language.toUpperCase()})` : ""} | Genre: ${genre}`,
       `Tooling: ${packageManager}`,
     ]);
     setBuildStepMsg("Scaffolding project structure & runtime files...");
@@ -206,6 +210,7 @@ export function NewProjectWizard({
           name: projectName,
           targetDir: fullTargetPath,
           platform,
+          language: platform === "libgdx" ? language : undefined,
           genre,
           packageManager,
           runInstall,
@@ -230,6 +235,7 @@ export function NewProjectWizard({
             name: projectName,
             targetDir: fullTargetPath,
             platform,
+            language: platform === "libgdx" ? language : undefined,
             genre,
             packageManager,
             runInstall,
@@ -353,6 +359,8 @@ export function NewProjectWizard({
             setProjectLocation={setProjectLocation}
             platform={platform}
             setPlatform={setPlatform}
+            language={language}
+            setLanguage={setLanguage}
             isPickingFolder={isPickingFolder}
             fullTargetPath={fullTargetPath}
             onBrowseFolder={handleBrowseFolder}

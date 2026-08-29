@@ -1,0 +1,27 @@
+apply plugin: 'kotlin'
+apply plugin: 'java-library'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    api "com.badlogicgames.gdx:gdx:$gdxVersion"
+    api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
+
+    // LibKTX extensions
+    api "io.github.libktx:ktx-app:$ktxVersion"
+    api "io.github.libktx:ktx-graphics:$ktxVersion"
+    api "io.github.libktx:ktx-box2d:$ktxVersion"
+    api "io.github.libktx:ktx-async:$ktxVersion"
+    api "io.github.libktx:ktx-actors:$ktxVersion"
+    api "io.github.libktx:ktx-collections:$ktxVersion"
+    api "io.github.libktx:ktx-math:$ktxVersion"
+}

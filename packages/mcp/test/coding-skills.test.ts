@@ -44,6 +44,8 @@ describe("MCP coding skills and libGDX integration", () => {
     expect(ids).toContain("libgdx-rendering");
     expect(ids).toContain("libgdx-physics");
     expect(ids).toContain("libgdx-gamekit");
+    expect(ids).toContain("libgdx-kotlin");
+    expect(ids).toContain("libgdx-kmp");
     expect(ids).toContain("phaser");
     expect(ids).toContain("shopify-skia");
   });
@@ -57,6 +59,8 @@ describe("MCP coding skills and libGDX integration", () => {
     expect(ids).toContain("libgdx-rendering");
     expect(ids).toContain("libgdx-physics");
     expect(ids).toContain("libgdx-gamekit");
+    expect(ids).toContain("libgdx-kotlin");
+    expect(ids).toContain("libgdx-kmp");
     expect(ids).not.toContain("phaser");
   });
 

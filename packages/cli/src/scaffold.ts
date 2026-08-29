@@ -14,6 +14,7 @@ import {
 import { generateMobileApp, generateWebMain } from "./export-bootstrap.js";
 
 export type ProjectPlatform = "expo" | "web" | "tauri" | "libgdx";
+export type ProjectLanguage = "java" | "kotlin" | "kmp";
 export type ProjectGenre =
   | "platformer"
   | "topdown"
@@ -28,6 +29,7 @@ export interface ScaffoldOptions {
   targetDir: string;
   name: string;
   platform: ProjectPlatform;
+  language?: ProjectLanguage;
   genre?: ProjectGenre;
   packageManager?: PackageManager;
   runInstall?: boolean;
@@ -40,6 +42,7 @@ export interface ScaffoldResult {
   targetDir: string;
   name: string;
   platform: ProjectPlatform;
+  language?: ProjectLanguage;
   genre: string;
   projectPath: string;
   scenePath: string;
@@ -182,7 +185,14 @@ function getPlayroomRoot(): string {
   return fileURLToPath(new URL("../../..", import.meta.url));
 }
 
-function getTemplateDir(name: "expo-game" | "web-game" | "libgdx-game"): string {
+function getTemplateDir(
+  name:
+    | "expo-game"
+    | "web-game"
+    | "libgdx-game"
+    | "libgdx-kotlin-game"
+    | "libgdx-kmp-game"
+): string {
   return join(getPlayroomRoot(), "templates", name);
 }
 
@@ -402,12 +412,34 @@ fn main() {
       await writeFile(join(tauriDir, "src", "main.rs"), rustMain);
     }
   } else if (platform === "libgdx") {
-    // LibGDX (Java/Kotlin, Gradle) — copy the pre-built template wholesale
-    const templateDir = getTemplateDir("libgdx-game");
+    // LibGDX (Java/Kotlin/KMP, Gradle) — copy the chosen language template
+    const lang = options.language ?? "kotlin";
+    let templateName: "libgdx-game" | "libgdx-kotlin-game" | "libgdx-kmp-game" =
+      "libgdx-kotlin-game";
+    if (lang === "java") templateName = "libgdx-game";
+    else if (lang === "kmp") templateName = "libgdx-kmp-game";
+
+    let templateDir = getTemplateDir(templateName);
+    if (!existsSync(templateDir)) {
+      templateDir = getTemplateDir("libgdx-game");
+    }
+
     const { cp } = await import("node:fs/promises");
     try {
       if (existsSync(templateDir)) {
         await cp(templateDir, targetDir, { recursive: true });
+        const sanitizedAppName = projectName.replace(/[^a-zA-Z0-9]/g, "");
+        const settingsPath = join(targetDir, "settings.gradle");
+        if (existsSync(settingsPath)) {
+          const settingsContent = await readFile(settingsPath, "utf8");
+          await writeFile(
+            settingsPath,
+            settingsContent.replace(
+              /rootProject\.name = 'PlayroomGame'/,
+              `rootProject.name = '${sanitizedAppName || "PlayroomGame"}'`
+            )
+          );
+        }
       } else {
         warnings.push(
           "LibGDX template directory not found; only the gamekit/ folder will be generated."
@@ -520,6 +552,7 @@ gamekit/generated/
     targetDir,
     name: projectName,
     platform,
+    language: options.language ?? (platform === "libgdx" ? "kotlin" : undefined),
     genre,
     projectPath: join(gamekitRoot, "project.json"),
     scenePath: join(gamekitRoot, "scenes", primarySceneFile),

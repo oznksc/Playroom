@@ -1062,7 +1062,10 @@ export async function buildExportBootstrapInput(root: string): Promise<Bootstrap
 export async function exportProject(
   root: string,
   outputDir: string,
-  platform: "mobile" | "web" | "libgdx" = "mobile"
+  platform: "mobile" | "web" | "libgdx" = "mobile",
+  options?: {
+    language?: "java" | "kotlin" | "kmp";
+  }
 ): Promise<string> {
   const { project, scenes, assets } = await getProjectSnapshot(root);
   const gamekitRoot = getGameKitRoot(root);
@@ -1075,7 +1078,15 @@ export async function exportProject(
   await mkdir(outputDir, { recursive: true });
 
   if (platform === "libgdx") {
-    const templateDir = join(playroomRoot, "templates", "libgdx-game");
+    const lang = options?.language ?? "java";
+    let templateName = "libgdx-game";
+    if (lang === "kotlin") templateName = "libgdx-kotlin-game";
+    else if (lang === "kmp") templateName = "libgdx-kmp-game";
+
+    let templateDir = join(playroomRoot, "templates", templateName);
+    if (!(await exists(templateDir))) {
+      templateDir = join(playroomRoot, "templates", "libgdx-game");
+    }
     await cp(templateDir, outputDir, {
       recursive: true,
       filter: (src) => basename(src) !== ".gradle" && basename(src) !== "node_modules",
