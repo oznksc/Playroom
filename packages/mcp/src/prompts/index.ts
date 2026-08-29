@@ -104,6 +104,32 @@ export function registerPrompts(server: McpServer): void {
   );
 
   server.prompt(
+    "libgdx_guide",
+    "Load libGDX best practices — covering core architecture, rendering, Box2D physics, and Playroom Java runtime integration",
+    {},
+    async () => {
+      const [libgdx, rendering, physics, gamekit] = await Promise.all([
+        loadCodingSkill("libgdx"),
+        loadCodingSkill("libgdx-rendering"),
+        loadCodingSkill("libgdx-physics"),
+        loadCodingSkill("libgdx-gamekit"),
+      ]);
+
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `# libGDX Complete Guide\n\n## Core Architecture\n${libgdx}\n\n## Rendering & Graphics\n${rendering}\n\n## Physics & Box2D\n${physics}\n\n## Playroom Java Runtime\n${gamekit}`,
+            },
+          },
+        ],
+      };
+    }
+  );
+
+  server.prompt(
     "create_game",
     "Guided prompt for creating a new 2D game with GameKit",
     {},

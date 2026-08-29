@@ -80,6 +80,30 @@ const SKILL_REGISTRY: Record<string, { name: string; description: string; tags: 
     description: "Phaser input — Keyboard, pointer, gamepad, combos, mobile touch, drag & drop",
     tags: ["phaser", "input", "keyboard", "touch", "gamepad", "gestures"],
   },
+  libgdx: {
+    name: "libGDX Architecture",
+    description:
+      "libGDX general — Project architecture, ApplicationListener lifecycle, Viewports, AssetManager, disposal",
+    tags: ["libgdx", "java", "game", "2d", "architecture", "lifecycle", "mobile", "desktop"],
+  },
+  "libgdx-rendering": {
+    name: "libGDX Rendering & Graphics",
+    description:
+      "libGDX rendering — SpriteBatch batching, coordinate conversion, animations, ShapeRenderer, shaders",
+    tags: ["libgdx", "java", "rendering", "graphics", "canvas", "shaders", "camera"],
+  },
+  "libgdx-physics": {
+    name: "libGDX Physics & Box2D",
+    description:
+      "libGDX Box2D physics — Meters vs PPM scaling, bodies, fixtures, collision filtering, ContactListener",
+    tags: ["libgdx", "java", "physics", "box2d", "collision", "simulation"],
+  },
+  "libgdx-gamekit": {
+    name: "Playroom libGDX Runtime",
+    description:
+      "Playroom Java runtime — SceneLoader, ECS systems, ActionExecutor handlers, Google Play Games Services",
+    tags: ["libgdx", "java", "gamekit", "runtime", "ecs", "services", "google-play"],
+  },
 };
 
 function parseSkillMeta(id: string, content: string): CodingSkillMeta {
@@ -99,12 +123,12 @@ function parseSkillMeta(id: string, content: string): CodingSkillMeta {
 export function registerCodingSkillTools(server: McpServer): void {
   server.tool(
     "list_coding_skills",
-    "List available coding best-practice skills (React, React Native, Phaser, Vite, etc.)",
+    "List available coding best-practice skills (libGDX, Phaser, React, React Native, Vite, etc.)",
     {
       tag: z
         .string()
         .optional()
-        .describe("Filter skills by tag (e.g., 'react-native', 'phaser', 'vite')"),
+        .describe("Filter skills by tag (e.g., 'libgdx', 'phaser', 'react-native', 'vite')"),
     },
     async ({ tag }) => {
       let files: string[];
@@ -147,7 +171,7 @@ export function registerCodingSkillTools(server: McpServer): void {
       skillId: z
         .string()
         .describe(
-          "Skill ID (e.g., 'shopify-skia', 'reanimated', 'phaser', 'phaser-canvas', 'react-native')"
+          "Skill ID (e.g., 'libgdx', 'libgdx-rendering', 'libgdx-physics', 'libgdx-gamekit', 'phaser', 'shopify-skia')"
         ),
     },
     async ({ skillId }) => {
