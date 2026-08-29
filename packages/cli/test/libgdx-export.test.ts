@@ -153,6 +153,55 @@ describe("libGDX export pipeline", () => {
             loop: true,
           },
         ],
+      },
+      {
+        id: "effects_box",
+        name: "Effects Box",
+        active: true,
+        components: [
+          { type: "Transform", position: { x: 50, y: 50 }, rotation: 0, scale: { x: 1, y: 1 } },
+          {
+            type: "ParticleSystem",
+            maxParticles: 40,
+            emissionRate: 15,
+            lifetime: 1.0,
+            speed: 70,
+            gravityScale: 0.5,
+            colorStart: "#00f0ff",
+            colorEnd: "#8b5cf6",
+            sizeStart: 5,
+            sizeEnd: 0,
+            shape: "point",
+            width: 0,
+            height: 0,
+            active: true,
+          },
+          {
+            type: "NineSlice",
+            assetId: "panel.png",
+            width: 120,
+            height: 80,
+            leftWidth: 8,
+            rightWidth: 8,
+            topHeight: 8,
+            bottomHeight: 8,
+          },
+          {
+            type: "Light2D",
+            kind: "point",
+            range: 150,
+            intensity: 1.2,
+            color: "#ffffff",
+          },
+          {
+            type: "StateMachine",
+            initialState: "idle",
+            states: [
+              { name: "idle", duration: 2.0, then: "active" },
+              { name: "active", duration: 1.0, then: "idle" },
+            ],
+          },
+        ],
       }
     );
 
@@ -196,6 +245,42 @@ describe("libGDX export pipeline", () => {
     );
     expect(followPathJava).toContain("class FollowPathComponent");
 
+    const particleCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/ParticleSystemComponent.java"
+      ),
+      "utf8"
+    );
+    expect(particleCompJava).toContain("class ParticleSystemComponent");
+
+    const nineSliceCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/NineSliceComponent.java"
+      ),
+      "utf8"
+    );
+    expect(nineSliceCompJava).toContain("class NineSliceComponent");
+
+    const lightCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/Light2DComponent.java"
+      ),
+      "utf8"
+    );
+    expect(lightCompJava).toContain("class Light2DComponent");
+
+    const smCompJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/components/StateMachineComponent.java"
+      ),
+      "utf8"
+    );
+    expect(smCompJava).toContain("class StateMachineComponent");
+
     const tweenSystemJava = await readFile(
       join(
         exportOut,
@@ -214,6 +299,24 @@ describe("libGDX export pipeline", () => {
     );
     expect(followPathSystemJava).toContain("class FollowPathSystem");
 
+    const particleSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/systems/ParticleSystem.java"
+      ),
+      "utf8"
+    );
+    expect(particleSystemJava).toContain("class ParticleSystem");
+
+    const smSystemJava = await readFile(
+      join(
+        exportOut,
+        "core/src/main/java/com/playroom/runtime/systems/StateMachineSystem.java"
+      ),
+      "utf8"
+    );
+    expect(smSystemJava).toContain("class StateMachineSystem");
+
     // Verify exported scene contains the new components
     const exportedSceneJson = JSON.parse(
       await readFile(join(exportOut, "assets/gamekit/scenes/main.scene.json"), "utf8")
@@ -224,5 +327,11 @@ describe("libGDX export pipeline", () => {
 
     const tilemapEntity = exportedSceneJson.entities.find((e: { id: string }) => e.id === "tilemap_level");
     expect(tilemapEntity.components.some((c: { type: string }) => c.type === "Tilemap")).toBe(true);
+
+    const effectsEntity = exportedSceneJson.entities.find((e: { id: string }) => e.id === "effects_box");
+    expect(effectsEntity.components.some((c: { type: string }) => c.type === "ParticleSystem")).toBe(true);
+    expect(effectsEntity.components.some((c: { type: string }) => c.type === "NineSlice")).toBe(true);
+    expect(effectsEntity.components.some((c: { type: string }) => c.type === "Light2D")).toBe(true);
+    expect(effectsEntity.components.some((c: { type: string }) => c.type === "StateMachine")).toBe(true);
   });
 });

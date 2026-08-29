@@ -327,6 +327,64 @@ public class SceneLoader {
                 }
                 return sc;
             }
+            case "ParticleSystem": {
+                ParticleSystemComponent psc = new ParticleSystemComponent();
+                psc.maxParticles = json.getInt("maxParticles", 32);
+                psc.emissionRate = json.getFloat("emissionRate", 12f);
+                psc.lifetime = json.getFloat("lifetime", 0.8f);
+                psc.speed = json.getFloat("speed", 60f);
+                psc.gravityScale = json.getFloat("gravityScale", 0.4f);
+                psc.colorStart = json.getString("colorStart", "#00f0ff");
+                psc.colorEnd = json.getString("colorEnd", "#8b5cf6");
+                psc.sizeStart = json.getFloat("sizeStart", 4f);
+                psc.sizeEnd = json.getFloat("sizeEnd", 0f);
+                psc.shape = json.getString("shape", "point");
+                psc.width = json.getFloat("width", 0f);
+                psc.height = json.getFloat("height", 0f);
+                psc.active = json.getBoolean("active", true);
+                return psc;
+            }
+            case "NineSlice": {
+                NineSliceComponent nsc = new NineSliceComponent();
+                nsc.assetId = json.getString("assetId", "");
+                nsc.width = json.getFloat("width", 100f);
+                nsc.height = json.getFloat("height", 100f);
+                nsc.leftWidth = json.getInt("leftWidth", 10);
+                nsc.rightWidth = json.getInt("rightWidth", 10);
+                nsc.topHeight = json.getInt("topHeight", 10);
+                nsc.bottomHeight = json.getInt("bottomHeight", 10);
+                return nsc;
+            }
+            case "Light2D": {
+                Light2DComponent l2c = new Light2DComponent();
+                l2c.kind = json.getString("kind", "point");
+                l2c.range = json.getFloat("range", 200f);
+                l2c.intensity = json.getFloat("intensity", 1f);
+                l2c.color = json.getString("color", "#ffffff");
+                return l2c;
+            }
+            case "StateMachine": {
+                StateMachineComponent smc = new StateMachineComponent();
+                smc.initialState = json.getString("initialState", "");
+                smc.currentState = json.getString("currentState", smc.initialState);
+                if (json.has("states")) {
+                    JsonValue statesJson = json.get("states");
+                    for (JsonValue s = statesJson.child; s != null; s = s.next) {
+                        StateMachineComponent.State state = new StateMachineComponent.State();
+                        state.name = s.getString("name", "");
+                        if (s.has("duration")) state.duration = s.getFloat("duration");
+                        if (s.has("then")) state.thenState = s.getString("then");
+                        if (s.has("on")) {
+                            JsonValue onJson = s.get("on");
+                            for (JsonValue t = onJson.child; t != null; t = t.next) {
+                                state.transitions.put(t.name, t.asString());
+                            }
+                        }
+                        smc.states.add(state);
+                    }
+                }
+                return smc;
+            }
             default:
                 return null;
         }

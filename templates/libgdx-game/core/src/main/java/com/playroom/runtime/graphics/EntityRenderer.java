@@ -7,10 +7,10 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.playroom.runtime.components.AnimationComponent;
 import com.playroom.runtime.components.CameraFollowComponent;
+import com.playroom.runtime.components.NineSliceComponent;
 import com.playroom.runtime.components.SpriteComponent;
 import com.playroom.runtime.components.TextComponent;
 import com.playroom.runtime.components.TilemapComponent;
@@ -22,6 +22,7 @@ import java.util.Map;
 
 public class EntityRenderer {
     private final Map<String, Texture> textureCache = new HashMap<>();
+    private final Map<String, NinePatch> ninePatchCache = new HashMap<>();
     private Texture fallbackWhiteTexture;
     private BitmapFont font;
 
@@ -68,6 +69,11 @@ public class EntityRenderer {
                 renderTilemap(batch, tc, tmc, entity.name);
             }
 
+            NineSliceComponent nsc = entity.getComponent(NineSliceComponent.class);
+            if (nsc != null) {
+                renderNineSlice(batch, tc, nsc, entity.name);
+            }
+
             SpriteComponent sc = entity.getComponent(SpriteComponent.class);
             if (sc != null) {
                 renderSprite(batch, tc, sc, entity.name);
@@ -83,6 +89,22 @@ public class EntityRenderer {
                 renderText(batch, tc, textComp);
             }
         }
+    }
+
+    private void renderNineSlice(SpriteBatch batch, TransformComponent tc, NineSliceComponent nsc, String entityName) {
+        Texture texture = getTexture(nsc.assetId, entityName);
+        if (texture == null) texture = fallbackWhiteTexture;
+
+        String key = nsc.assetId + "_" + nsc.leftWidth + "_" + nsc.rightWidth + "_" + nsc.topHeight + "_" + nsc.bottomHeight;
+        NinePatch patch = ninePatchCache.get(key);
+        if (patch == null) {
+            patch = new NinePatch(texture, nsc.leftWidth, nsc.rightWidth, nsc.topHeight, nsc.bottomHeight);
+            ninePatchCache.put(key, patch);
+        }
+
+        float drawX = tc.position.x - (nsc.width * 0.5f);
+        float drawY = tc.position.y - (nsc.height * 0.5f);
+        patch.draw(batch, drawX, drawY, nsc.width * tc.scale.x, nsc.height * tc.scale.y);
     }
 
     public void render(SceneData sceneData, SpriteBatch batch) {

@@ -15,6 +15,8 @@ import com.playroom.runtime.script.ActionExecutor;
 import com.playroom.runtime.services.GameServices;
 import com.playroom.runtime.services.MockGameServices;
 import com.playroom.runtime.systems.FollowPathSystem;
+import com.playroom.runtime.systems.ParticleSystem;
+import com.playroom.runtime.systems.StateMachineSystem;
 import com.playroom.runtime.systems.TweenSystem;
 
 public class GameKitGame implements ApplicationListener {
@@ -29,6 +31,8 @@ public class GameKitGame implements ApplicationListener {
     private PlayerControllerSystem playerControllerSystem;
     private TweenSystem tweenSystem;
     private FollowPathSystem followPathSystem;
+    private ParticleSystem particleSystem;
+    private StateMachineSystem stateMachineSystem;
     private EntityRenderer entityRenderer;
     private ActionExecutor actionExecutor;
 
@@ -60,6 +64,14 @@ public class GameKitGame implements ApplicationListener {
         return actionExecutor;
     }
 
+    public ParticleSystem getParticleSystem() {
+        return particleSystem;
+    }
+
+    public StateMachineSystem getStateMachineSystem() {
+        return stateMachineSystem;
+    }
+
     @Override
     public void create() {
         batch = new SpriteBatch();
@@ -81,6 +93,8 @@ public class GameKitGame implements ApplicationListener {
         playerControllerSystem = new PlayerControllerSystem();
         tweenSystem = new TweenSystem();
         followPathSystem = new FollowPathSystem();
+        particleSystem = new ParticleSystem();
+        stateMachineSystem = new StateMachineSystem();
         actionExecutor = new ActionExecutor(services);
 
         actionExecutor.triggerEvent(currentSceneData, "start");
@@ -147,9 +161,11 @@ public class GameKitGame implements ApplicationListener {
         // 1. Process player controls
         playerControllerSystem.update(currentSceneData, physicsSystem, delta);
 
-        // 2. Update tweens & path followers
+        // 2. Update tweens, path followers, particles & state machines
         tweenSystem.update(currentSceneData, delta);
         followPathSystem.update(currentSceneData, delta);
+        particleSystem.update(currentSceneData, delta);
+        stateMachineSystem.update(currentSceneData, delta, actionExecutor);
 
         // 3. Step Box2D simulation
         physicsSystem.update(delta);
